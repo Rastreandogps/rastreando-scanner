@@ -511,7 +511,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div class="page" id="page-painel">
 
     <div class="painel-stats">
-      <div class="stat-card s-agendado" id="fc-agendado" onclick="filtrar('agendado')">
+      <div class="stat-card s-agendado ativo" id="fc-agendado" onclick="filtrar('agendado')">
         <div class="stat-num" id="cnt-agendado">0</div>
         <div class="stat-label">Agendadas</div>
       </div>
@@ -527,7 +527,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="stat-num" id="cnt-cancelado">0</div>
         <div class="stat-label">Canceladas</div>
       </div>
-      <div class="stat-card s-todas ativo" id="fc-todas" onclick="filtrar('todas')">
+      <div class="stat-card s-todas" id="fc-todas" onclick="filtrar('todas')">
         <div class="stat-num" id="cnt-todas">0</div>
         <div class="stat-label">Todas</div>
       </div>
@@ -658,7 +658,7 @@ let tipoServico = null; // 'instalacao' | 'manutencao' | 'retirada'
 let motivoRetirada = null;
 let equipRecuperado = null;
 let osList = JSON.parse(localStorage.getItem('rastreando_os') || '[]');
-let filtroAtual = 'todas';
+let filtroAtual = 'agendado';
 let filtroTipoAtual = 'todas';
 let osAbertaIdx = null;
 
