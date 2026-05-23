@@ -505,11 +505,23 @@
     </div>
   </div>
 
+  <div class="section-label">Prefixo do nome</div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;">
+    <input type="text" id="prefixo-input" value="A J16"
+      oninput="atualizarNomes()"
+      style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px 14px;
+             color:#00e5ff;font-family:'Share Tech Mono',monospace;font-size:15px;
+             letter-spacing:2px;outline:none;"
+      placeholder="Ex: A J16"
+    />
+    <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#555;white-space:nowrap;">+ 3 últimos dígitos</div>
+  </div>
+
   <div class="counter-bar">
     <div class="counter">NOMES GERADOS <span class="counter-num" id="count-nome">0</span></div>
   </div>
 
-  <div class="section-label">Resultado — formato: A J16 XXX</div>
+  <div class="section-label" id="label-formato">Resultado — formato: A J16 XXX</div>
   <div class="output-box" id="out-nome"></div>
 
   <div class="actions">
@@ -693,10 +705,7 @@
     } else if (type === 'imei') {
       out.textContent = items.join('\n');
       // Auto-update aba NOME
-      const nomes = items.map(imei => 'A J16 ' + imei.slice(-3));
-      state.nome.items = nomes;
-      document.getElementById('out-nome').textContent = nomes.join('\n');
-      document.getElementById('count-nome').textContent = nomes.length;
+      atualizarNomes();
     } else if (type === 'nome') {
       out.textContent = state.nome.items.join('\n');
     }
@@ -709,6 +718,17 @@
     // Vibrate
     vibrate([60]);
     showToast('✓ LIDO COM SUCESSO');
+  }
+
+  // ATUALIZAR NOMES com prefixo editável
+  function atualizarNomes() {
+    const prefixo = document.getElementById('prefixo-input').value.trim() || 'A J16';
+    const imeis = state.imei.items;
+    const nomes = imeis.map(imei => prefixo + ' ' + imei.slice(-3));
+    state.nome.items = nomes;
+    document.getElementById('out-nome').textContent = nomes.join('\n');
+    document.getElementById('count-nome').textContent = nomes.length;
+    document.getElementById('label-formato').textContent = 'Resultado — formato: ' + prefixo + ' XXX';
   }
 
   // COPY
