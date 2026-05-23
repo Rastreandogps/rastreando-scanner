@@ -1183,6 +1183,21 @@ function renderPainel() {
   renderLista();
 }
 
+function getLabelData(dataStr) {
+  if (!dataStr) return null;
+  const [d, m, y] = dataStr.split('/');
+  const data = new Date(y, m - 1, d);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1);
+  data.setHours(0,0,0,0);
+  const diff = (data - hoje) / (1000*60*60*24);
+  if (diff === 0) return { texto: 'HOJE', cor: '#e31c1c', bg: '#1f0a0a', borda: '#e31c1c' };
+  if (diff === 1) return { texto: 'AMANHÃ', cor: '#fbbf24', bg: '#1a1200', borda: '#fbbf24' };
+  if (diff < 0) return null;
+  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  return { texto: dias[data.getDay()], cor: '#00e5ff', bg: '#001a2e', borda: '#00e5ff' };
+}
+
 function renderLista() {
   const lista = document.getElementById('lista-os');
   let filtered = filtroAtual === 'todas' ? osList : osList.filter(o => o.statusKey === filtroAtual);
@@ -1228,9 +1243,15 @@ function renderLista() {
     else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
     else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
 
+    // Badge dia
+    const labelData = getLabelData(o.data);
+    const badgeDia = labelData
+      ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid ${labelData.borda};color:${labelData.cor};background:${labelData.bg};margin-left:6px;">${labelData.texto}</span>`
+      : '';
+
     return `<div class="os-card ${o.statusKey}" onclick="abrirOSdoPainel(${idx})">
       <div class="os-card-top">
-        <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span></div>
+        <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span>${badgeDia}</div>
         <span class="os-badge ${o.statusKey}">${statusLabel[o.statusKey] || o.status}</span>
       </div>
       <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
