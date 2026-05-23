@@ -1016,6 +1016,12 @@ function montarMensagem(d) {
       msg += '• *Valor por veículo:* R$ ' + d.valorInst.toFixed(2).replace('.', ',') + '\n';
       msg += '💰 *Total da instalação: R$ ' + d.totalInst.toFixed(2).replace('.', ',') + '*\n';
     }
+    const mensalidadeMap2 = { com: 59.90, sem: 39.90, antigo: 54.90 };
+    const valorMes2 = d.valorMensalidade || mensalidadeMap2[d.tipoKey] || 0;
+    const totalMes2 = d.totalMensalidade || (valorMes2 * (d.qtdVeiculos || 1));
+    if (valorMes2 > 0) {
+      msg += '📅 *Mensalidade: R$ ' + totalMes2.toFixed(2).replace('.', ',') + '/mês*\n';
+    }
   } else if (ts === 'manutencao') {
     msg += '\n🔧 *MANUTENÇÃO*\n';
     if (d.data)   msg += '• *Data:* ' + d.data + '\n';
