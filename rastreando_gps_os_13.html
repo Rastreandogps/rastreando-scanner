@@ -14,7 +14,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 .topbar { background: #1a1a1a; color: white; padding: 12px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; border-bottom: 2px solid #e31c1c; }
 .topbar-logo-text { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #e31c1c; flex-shrink: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #e31c1c; font-weight: 700; font-size: 20px; }
-.topbar-logo { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #e31c1c; flex-shrink: 0; }
 .topbar-title { font-size: 16px; font-weight: 700; letter-spacing: 0.03em; color: white; }
 .topbar-sub { font-size: 11px; color: #00e5ff; opacity: 0.9; }
 .topbar-num { margin-left: auto; text-align: right; }
@@ -29,9 +28,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .page { display: none; }
 .page.active { display: block; }
 
+/* SELETOR DE TIPO DE SERVIÇO */
+.servico-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.serv-card { border: 1.5px solid #333; border-radius: 12px; padding: 14px 10px; cursor: pointer; background: #111; transition: all 0.15s; text-align: center; }
+.serv-card .sc-icon { font-size: 24px; margin-bottom: 5px; }
+.serv-card .sc-label { font-size: 13px; font-weight: 700; color: #f0f0f0; }
+.serv-card .sc-sub { font-size: 11px; color: #666; margin-top: 2px; }
+.serv-card.sel-instalacao { border-color: #00e5ff; background: #001a2e; }
+.serv-card.sel-instalacao .sc-label { color: #00e5ff; }
+.serv-card.sel-manutencao { border-color: #f59e0b; background: #1a1000; }
+.serv-card.sel-manutencao .sc-label { color: #f59e0b; }
+.serv-card.sel-retirada { border-color: #e31c1c; background: #1f0a0a; }
+.serv-card.sel-retirada .sc-label { color: #e31c1c; }
+
 .section { background: #1a1a1a; border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid #2a2a2a; }
 .section-title { font-size: 11px; font-weight: 600; color: #00e5ff; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
 .section-title svg { width: 15px; height: 15px; flex-shrink: 0; }
+.section-title.amarelo { color: #f59e0b; }
+.section-title.vermelho { color: #e31c1c; }
 
 .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
 .field:last-child { margin-bottom: 0; }
@@ -40,6 +54,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #e31c1c; background: #0f0f0f; box-shadow: 0 0 0 3px rgba(227,28,28,0.15); }
 .field textarea { resize: vertical; min-height: 70px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Seções condicionais */
+.secao-instalacao, .secao-manutencao, .secao-retirada { display: none; }
 
 .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .tipo-card { border: 1.5px solid #333; border-radius: 12px; padding: 14px 12px; cursor: pointer; background: #111; transition: all 0.15s; }
@@ -59,6 +76,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .gnv-label { font-size: 14px; font-weight: 600; color: #f0f0f0; }
 .gnv-sub { font-size: 12px; color: #aaa; }
 
+/* Opções de sim/não reutilizáveis */
+.yesno-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.yesno-card { border: 1.5px solid #333; border-radius: 12px; padding: 12px; cursor: pointer; background: #111; display: flex; align-items: center; gap: 10px; transition: all 0.15s; }
+.yesno-card.sel-sim { border-color: #00b894; background: #071a14; }
+.yesno-card.sel-nao { border-color: #e31c1c; background: #1f0a0a; }
+.yesno-icon { width: 32px; height: 32px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.yesno-card.sel-sim .yesno-icon { background: #0a3d2b; }
+.yesno-card.sel-nao .yesno-icon { background: #3d0a0a; }
+
 .status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .status-btn { border: 1.5px solid #333; border-radius: 20px; padding: 7px 15px; font-size: 13px; cursor: pointer; background: #111; color: #aaa; font-family: inherit; font-weight: 500; transition: all 0.15s; }
 .status-btn.ap { background: #1a1200; color: #fbbf24; border-color: #fbbf24; }
@@ -72,8 +98,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-limpar { grid-column: span 2; padding: 12px; background: transparent; color: #666; border: 1.5px solid #333; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
 
 /* PAINEL */
-
-
 .os-card { background: #1a1a1a; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid #2a2a2a; border-left: 4px solid #333; cursor: pointer; transition: border-color 0.15s; }
 .os-card:active { border-color: #444; }
 .os-card.pendente { border-left-color: #fbbf24; }
@@ -89,11 +113,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-badge.agendado { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
 .os-badge.concluido { background: #001a0a; color: #22c55e; border: 1px solid #22c55e; }
 .os-badge.cancelado { background: #1f0a0a; color: #e31c1c; border: 1px solid #e31c1c; }
+
+/* Badge tipo de serviço no card */
+.tipo-serv-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-right: 6px; }
+.tipo-serv-badge.instalacao { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
+.tipo-serv-badge.manutencao { background: #1a1000; color: #f59e0b; border: 1px solid #f59e0b; }
+.tipo-serv-badge.retirada { background: #1f0a0a; color: #e31c1c; border: 1px solid #e31c1c; }
+
 .os-empty { text-align: center; padding: 40px 20px; color: #555; }
 .os-empty div { font-size: 40px; margin-bottom: 10px; }
 .os-empty p { font-size: 14px; }
 
-.os-card-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a2a2a; }
+.os-card-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a2a2a; flex-wrap: wrap; }
 .os-action-btn { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; text-decoration: none; transition: opacity 0.15s; }
 .os-action-btn:active { opacity: 0.8; }
 .os-action-wa { background: #1a3d26; color: #25d366; border: 1px solid #25d366; }
@@ -118,6 +149,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .stat-card.s-cancelado .stat-num { color: #e31c1c; }
 .stat-card.s-cancelado.ativo { border-color: #e31c1c; background: #1f0a0a; }
 
+/* Filtro tipo de serviço no painel */
+.painel-tipo-filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.tipo-filtro-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #333; background: #111; color: #666; font-family: inherit; transition: all 0.15s; }
+.tipo-filtro-btn.ativo-inst { border-color: #00e5ff; background: #001a2e; color: #00e5ff; }
+.tipo-filtro-btn.ativo-man { border-color: #f59e0b; background: #1a1000; color: #f59e0b; }
+.tipo-filtro-btn.ativo-ret { border-color: #e31c1c; background: #1f0a0a; color: #e31c1c; }
+.tipo-filtro-btn.ativo-todas { border-color: #f0f0f0; background: #222; color: #f0f0f0; }
+
 /* OVERLAY */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; overflow-y: auto; padding: 20px 16px; }
 .overlay.open { display: block; }
@@ -130,6 +169,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .prev-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #222; }
 .prev-row .lbl { color: #aaa; flex-shrink: 0; margin-right: 8px; }
 .prev-row .val { font-weight: 500; text-align: right; word-break: break-all; color: #f0f0f0; }
+
 .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .badge-verde { background: #071a14; color: #22c55e; border: 1px solid #22c55e; }
 .badge-vermelho { background: #1f0a0a; color: #e31c1c; border: 1px solid #e31c1c; }
@@ -158,7 +198,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 .gnv-label-section { font-size: 12px; color: #aaa; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
 
-.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #00e5ff; border: 1px solid #00e5ff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #00e5ff; border: 1px solid #00e5ff; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 500; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 .toast.show { opacity: 1; }
 
 .valor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -198,6 +238,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <!-- ABA NOVA OS -->
   <div class="page active" id="page-nova">
 
+    <!-- SELETOR TIPO DE SERVIÇO -->
+    <div class="section">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Tipo de serviço
+      </div>
+      <div class="servico-selector">
+        <div class="serv-card" id="serv-instalacao" onclick="selServico('instalacao')">
+          <div class="sc-icon">📡</div>
+          <div class="sc-label">Instalação</div>
+          <div class="sc-sub">Novo rastreador</div>
+        </div>
+        <div class="serv-card" id="serv-manutencao" onclick="selServico('manutencao')">
+          <div class="sc-icon">🔧</div>
+          <div class="sc-label">Manutenção</div>
+          <div class="sc-sub">Reparo / ajuste</div>
+        </div>
+        <div class="serv-card" id="serv-retirada" onclick="selServico('retirada')">
+          <div class="sc-icon">📤</div>
+          <div class="sc-label">Retirada</div>
+          <div class="sc-sub">Remoção</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DADOS DO CLIENTE (sempre visível) -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -226,15 +292,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           </label>
         </div>
         <div id="maps-auto-wrap">
-          <a id="maps-auto-link" href="#" target="_blank" style="display:none; font-size:13px; color:#1a56db; font-weight:500; padding:9px 13px; border:1.5px solid #dbeafe; border-radius:10px; background:#eff6ff; text-decoration:none;">🗺️ Abrir localização no Google Maps</a>
-          <span id="maps-auto-empty" style="font-size:13px; color:#9ca3af; padding:9px 13px; border:1.5px dashed #e5e7eb; border-radius:10px; display:block;">Digite o endereço acima para gerar o link automaticamente</span>
+          <a id="maps-auto-link" href="#" target="_blank" style="display:none; font-size:13px; color:#1a56db; font-weight:500; padding:9px 13px; border:1.5px solid #1a56db; border-radius:10px; background:#001228; text-decoration:none;">🗺️ Abrir localização no Google Maps</a>
+          <span id="maps-auto-empty" style="font-size:13px; color:#9ca3af; padding:9px 13px; border:1.5px dashed #333; border-radius:10px; display:block;">Digite o endereço acima para gerar o link automaticamente</span>
         </div>
         <div id="maps-manual-wrap" style="display:none;">
-          <input type="url" id="maps-manual-input" placeholder="Cole aqui o link do Google Maps..." style="font-size:14px; padding:11px 13px; border:1.5px solid #e5e7eb; border-radius:10px; background:#f9fafb; color:#111; font-family:inherit; width:100%;" />
+          <input type="url" id="maps-manual-input" placeholder="Cole aqui o link do Google Maps..." style="font-size:14px; padding:11px 13px; border:1.5px solid #333; border-radius:10px; background:#111; color:#f0f0f0; font-family:inherit; width:100%;" />
         </div>
       </div>
     </div>
 
+    <!-- DADOS DO VEÍCULO (sempre visível) -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="9" width="20" height="9" rx="2"/><path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
@@ -263,52 +330,137 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
-        Tipo de instalação
+    <!-- ============ SEÇÃO INSTALAÇÃO ============ -->
+    <div class="secao-instalacao">
+      <div class="section">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/></svg>
+          Tipo de instalação
+        </div>
+        <div class="tipo-grid" style="grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="tipo-card" id="card-sem" onclick="selTipo('sem')">
+            <div class="tc-head"><span>📱</span> Sem bloqueio</div>
+            <div class="tc-price">R$ 39,90 / mês</div>
+          </div>
+          <div class="tipo-card" id="card-com" onclick="selTipo('com')">
+            <div class="tc-head"><span>🔒</span> Com bloqueio <span class="badge-pop">+popular</span></div>
+            <div class="tc-price">R$ 59,90 / mês</div>
+          </div>
+          <div class="tipo-card" id="card-antigo" onclick="selTipo('antigo')" style="grid-column:span 2;">
+            <div class="tc-head"><span>🔒</span> Com bloqueio — Contrato Antigo <span class="badge-pop" style="background:#0a1a2e;color:#00e5ff;border-color:#00e5ff;">cliente antigo</span></div>
+            <div class="tc-price">R$ 54,90 / mês</div>
+          </div>
+        </div>
       </div>
-      <div class="tipo-grid" style="grid-template-columns:1fr 1fr; gap:10px;">
-        <div class="tipo-card" id="card-sem" onclick="selTipo('sem')">
-          <div class="tc-head"><span>📱</span> Sem bloqueio</div>
-          <div class="tc-price">R$ 39,90 / mês</div>
+
+      <div class="section">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Valor da Instalação
         </div>
-        <div class="tipo-card" id="card-com" onclick="selTipo('com')">
-          <div class="tc-head"><span>🔒</span> Com bloqueio <span class="badge-pop">+popular</span></div>
-          <div class="tc-price">R$ 59,90 / mês</div>
+        <div class="valor-grid">
+          <div class="field">
+            <label>Valor por veículo (R$)</label>
+            <input type="number" id="valor-inst" placeholder="0,00" min="0" step="0.01" oninput="calcularTotal()" />
+          </div>
+          <div class="field">
+            <label>Qtd. de veículos</label>
+            <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" oninput="calcularTotal()" />
+          </div>
         </div>
-        <div class="tipo-card" id="card-antigo" onclick="selTipo('antigo')" style="grid-column:span 2;">
-          <div class="tc-head"><span>🔒</span> Com bloqueio — Contrato Antigo <span class="badge-pop" style="background:#0a1a2e;color:#00e5ff;border-color:#00e5ff;">cliente antigo</span></div>
-          <div class="tc-price">R$ 54,90 / mês</div>
+        <div class="valor-total-box" id="valor-total-box" style="display:none">
+          <span class="valor-total-label">💰 Total da instalação</span>
+          <span class="valor-total-num" id="valor-total-num">R$ 0,00</span>
+        </div>
+        <div class="valor-total-box" id="mensalidade-total-box" style="display:none; margin-top:8px; background:#0a0a1f; border-color:#1a56db;">
+          <span class="valor-total-label" style="color:#aaa;">📅 Total mensalidade</span>
+          <span class="valor-total-num" id="mensalidade-total-num" style="color:#00e5ff;">R$ 0,00</span>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Valor da Instalação
-      </div>
-      <div class="valor-grid">
-        <div class="field">
-          <label>Valor por veículo (R$)</label>
-          <input type="number" id="valor-inst" placeholder="0,00" min="0" step="0.01" oninput="calcularTotal()" />
+    <!-- ============ SEÇÃO MANUTENÇÃO ============ -->
+    <div class="secao-manutencao">
+      <div class="section">
+        <div class="section-title amarelo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Detalhes da manutenção
         </div>
         <div class="field">
-          <label>Qtd. de veículos</label>
-          <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" oninput="calcularTotal()" />
+          <label>Problema relatado</label>
+          <textarea id="man-problema" placeholder="Descreva o problema relatado pelo cliente..." style="min-height:80px;"></textarea>
+        </div>
+        <div class="field">
+          <label>Serviço executado</label>
+          <textarea id="man-servico" placeholder="Descreva o que foi feito..." style="min-height:80px;"></textarea>
+        </div>
+        <div class="field">
+          <label>Número de série / IMEI do equipamento</label>
+          <input type="text" id="man-imei" placeholder="Ex: 123456789012345" />
         </div>
       </div>
-      <div class="valor-total-box" id="valor-total-box" style="display:none">
-        <span class="valor-total-label">💰 Total da instalação</span>
-        <span class="valor-total-num" id="valor-total-num">R$ 0,00</span>
-      </div>
-      <div class="valor-total-box" id="mensalidade-total-box" style="display:none; margin-top:8px; background:#0a0a1f; border-color:#1a56db;">
-        <span class="valor-total-label" style="color:#aaa;">📅 Total mensalidade</span>
-        <span class="valor-total-num" id="mensalidade-total-num" style="color:#00e5ff;">R$ 0,00</span>
+
+      <div class="section">
+        <div class="section-title amarelo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Valor da Manutenção
+        </div>
+        <div class="field">
+          <label>Valor cobrado (R$)</label>
+          <input type="number" id="man-valor" placeholder="0,00" min="0" step="0.01" />
+        </div>
       </div>
     </div>
 
+    <!-- ============ SEÇÃO RETIRADA ============ -->
+    <div class="secao-retirada">
+      <div class="section">
+        <div class="section-title vermelho">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Detalhes da retirada
+        </div>
+        <div class="field">
+          <label>Motivo da retirada</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;">
+            <div class="tipo-card" id="ret-cancelamento" onclick="selMotivoRetirada('cancelamento')" style="padding:10px 12px;">
+              <div class="tc-head" style="font-size:13px;">❌ Cancelamento</div>
+            </div>
+            <div class="tipo-card" id="ret-inadimplencia" onclick="selMotivoRetirada('inadimplencia')" style="padding:10px 12px;">
+              <div class="tc-head" style="font-size:13px;">💸 Inadimplência</div>
+            </div>
+            <div class="tipo-card" id="ret-troca" onclick="selMotivoRetirada('troca')" style="padding:10px 12px;">
+              <div class="tc-head" style="font-size:13px;">🔄 Troca equip.</div>
+            </div>
+            <div class="tipo-card" id="ret-outro" onclick="selMotivoRetirada('outro')" style="padding:10px 12px;">
+              <div class="tc-head" style="font-size:13px;">📝 Outro</div>
+            </div>
+          </div>
+        </div>
+        <div class="field" id="ret-outro-wrap" style="display:none; margin-top:8px;">
+          <label>Especifique o motivo</label>
+          <input type="text" id="ret-outro-texto" placeholder="Descreva o motivo..." />
+        </div>
+        <div style="margin-top:12px">
+          <div class="gnv-label-section">📦 Equipamento recuperado?</div>
+          <div class="yesno-grid">
+            <div class="yesno-card" id="ret-rec-sim" onclick="selRecuperado('sim')">
+              <div class="yesno-icon">✔️</div>
+              <div><div class="gnv-label">Sim</div><div class="gnv-sub">Recuperado</div></div>
+            </div>
+            <div class="yesno-card" id="ret-rec-nao" onclick="selRecuperado('nao')">
+              <div class="yesno-icon">❌</div>
+              <div><div class="gnv-label">Não</div><div class="gnv-sub">Não recuperado</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label>Número de série / IMEI do equipamento</label>
+          <input type="text" id="ret-imei" placeholder="Ex: 123456789012345" />
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDAMENTO (sempre visível) -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -316,7 +468,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Data de instalação</label>
+          <label id="label-data-servico">Data do serviço</label>
           <input type="date" id="data-inst" />
         </div>
         <div class="field">
@@ -334,6 +486,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
     </div>
 
+    <!-- OBSERVAÇÕES (sempre visível) -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -348,7 +501,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <button class="btn-ver" onclick="abrirPreview()">👁️ Visualizar</button>
       <button class="btn-salvar" onclick="salvarOS()">💾 Salvar OS</button>
       <button class="btn-wa" onclick="compartilhar()" style="grid-column:span 2">💬 Enviar pelo WhatsApp</button>
-      <button onclick="compartilharFinanceiro()" style="grid-column:span 2; padding:14px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;">💰 Enviar ao Financeiro</button>
+      <button id="btn-financeiro-form" onclick="compartilharFinanceiro()" style="grid-column:span 2; padding:14px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;">💰 Enviar ao Financeiro</button>
       <button class="btn-limpar" onclick="limpar()">🗑️ Limpar formulário</button>
     </div>
 
@@ -380,6 +533,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
     </div>
 
+    <!-- Filtro por tipo de serviço -->
+    <div class="painel-tipo-filtros">
+      <button class="tipo-filtro-btn ativo-todas" id="tf-todas" onclick="filtrarTipo('todas')">Todos os tipos</button>
+      <button class="tipo-filtro-btn" id="tf-instalacao" onclick="filtrarTipo('instalacao')">📡 Instalações</button>
+      <button class="tipo-filtro-btn" id="tf-manutencao" onclick="filtrarTipo('manutencao')">🔧 Manutenções</button>
+      <button class="tipo-filtro-btn" id="tf-retirada" onclick="filtrarTipo('retirada')">📤 Retiradas</button>
+    </div>
+
     <div id="lista-os"></div>
 
   </div>
@@ -395,8 +556,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <p>CNPJ 29.488.621/0001-48 · (21) 9 8088-6087</p>
       </div>
       <div style="text-align:right">
-        <div style="font-size:14px;font-weight:700;color:#1a56db" id="p-num"></div>
+        <div style="font-size:14px;font-weight:700;color:#00e5ff" id="p-num"></div>
         <div style="font-size:12px;color:#9ca3af" id="p-dataos"></div>
+        <div id="p-tipo-serv-badge" style="margin-top:4px;"></div>
       </div>
     </div>
 
@@ -410,13 +572,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <span class="val"><a id="p-maps-a" class="maps-link-btn" target="_blank">🗺️ Abrir no Maps</a></span>
       </div>
     </div>
+
     <div class="prev-section">
       <h3>Veículo</h3>
       <div class="prev-row"><span class="lbl">Modelo</span><span class="val" id="p-modelo"></span></div>
       <div class="prev-row"><span class="lbl">Ano/modelo</span><span class="val" id="p-ano"></span></div>
       <div class="prev-row"><span class="lbl">GNV</span><span class="val" id="p-gnv"></span></div>
     </div>
-    <div class="prev-section">
+
+    <!-- Seção dinâmica do serviço -->
+    <div class="prev-section" id="p-sec-instalacao">
       <h3>Instalação</h3>
       <div class="prev-row"><span class="lbl">Tipo</span><span class="val" id="p-tipo"></span></div>
       <div class="prev-row"><span class="lbl">Data</span><span class="val" id="p-data"></span></div>
@@ -426,10 +591,39 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <div class="prev-row" id="p-total-row" style="display:none"><span class="lbl">💰 Total instalação</span><span class="val" id="p-total" style="color:#22c55e;font-weight:700;font-size:15px;"></span></div>
       <div class="prev-row" id="p-mensalidade-row" style="display:none"><span class="lbl">📅 Total mensalidade</span><span class="val" id="p-mensalidade" style="color:#00e5ff;font-weight:700;font-size:15px;"></span></div>
     </div>
+
+    <div class="prev-section" id="p-sec-manutencao" style="display:none">
+      <h3>Manutenção</h3>
+      <div class="prev-row"><span class="lbl">Data</span><span class="val" id="p-man-data"></span></div>
+      <div class="prev-row"><span class="lbl">Horário</span><span class="val" id="p-man-hora"></span></div>
+      <div class="prev-row"><span class="lbl">Status</span><span class="val" id="p-man-status"></span></div>
+      <div class="prev-row" id="p-man-imei-row"><span class="lbl">IMEI</span><span class="val" id="p-man-imei"></span></div>
+      <div class="prev-row" id="p-man-valor-row" style="display:none"><span class="lbl">💰 Valor cobrado</span><span class="val" id="p-man-valor" style="color:#22c55e;font-weight:700;font-size:15px;"></span></div>
+    </div>
+    <div class="prev-section" id="p-man-prob-sec" style="display:none">
+      <h3>Problema relatado</h3>
+      <div style="font-size:13px;background:#111;border-radius:8px;padding:10px 12px;color:#f0f0f0" id="p-man-problema"></div>
+    </div>
+    <div class="prev-section" id="p-man-serv-sec" style="display:none">
+      <h3>Serviço executado</h3>
+      <div style="font-size:13px;background:#111;border-radius:8px;padding:10px 12px;color:#f0f0f0" id="p-man-servico"></div>
+    </div>
+
+    <div class="prev-section" id="p-sec-retirada" style="display:none">
+      <h3>Retirada</h3>
+      <div class="prev-row"><span class="lbl">Data</span><span class="val" id="p-ret-data"></span></div>
+      <div class="prev-row"><span class="lbl">Horário</span><span class="val" id="p-ret-hora"></span></div>
+      <div class="prev-row"><span class="lbl">Status</span><span class="val" id="p-ret-status"></span></div>
+      <div class="prev-row"><span class="lbl">Motivo</span><span class="val" id="p-ret-motivo"></span></div>
+      <div class="prev-row"><span class="lbl">Equipamento</span><span class="val" id="p-ret-recuperado"></span></div>
+      <div class="prev-row" id="p-ret-imei-row"><span class="lbl">IMEI</span><span class="val" id="p-ret-imei"></span></div>
+    </div>
+
     <div class="prev-section" id="p-obs-sec">
       <h3>Observações</h3>
-      <div style="font-size:13px;background:#f9fafb;border-radius:8px;padding:10px 12px;color:#374151" id="p-obs"></div>
+      <div style="font-size:13px;background:#111;border-radius:8px;padding:10px 12px;color:#f0f0f0" id="p-obs"></div>
     </div>
+
     <div class="prev-section">
       <h3>Rastreando GPS</h3>
       <div class="prev-row"><span class="lbl">CNPJ</span><span class="val">29.488.621/0001-48</span></div>
@@ -460,9 +654,46 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 let tipo = null, gnv = null, status = 'pendente', counter = 1, editandoIdx = null;
+let tipoServico = null; // 'instalacao' | 'manutencao' | 'retirada'
+let motivoRetirada = null;
+let equipRecuperado = null;
 let osList = JSON.parse(localStorage.getItem('rastreando_os') || '[]');
 let filtroAtual = 'todas';
+let filtroTipoAtual = 'todas';
 let osAbertaIdx = null;
+
+// ---- Tipo de serviço ----
+function selServico(s) {
+  tipoServico = s;
+  ['instalacao','manutencao','retirada'].forEach(t => {
+    document.getElementById('serv-' + t).className = 'serv-card' + (t === s ? ' sel-' + t : '');
+  });
+  document.querySelectorAll('.secao-instalacao').forEach(el => el.style.display = s === 'instalacao' ? 'block' : 'none');
+  document.querySelectorAll('.secao-manutencao').forEach(el => el.style.display = s === 'manutencao' ? 'block' : 'none');
+  document.querySelectorAll('.secao-retirada').forEach(el => el.style.display = s === 'retirada' ? 'block' : 'none');
+  // Mostrar/ocultar botão financeiro (só para instalação)
+  document.getElementById('btn-financeiro-form').style.display = s === 'instalacao' ? 'flex' : 'none';
+  document.getElementById('btn-financeiro').style.display = s === 'instalacao' ? 'block' : 'none';
+  // Atualizar label data
+  const labelData = document.getElementById('label-data-servico');
+  if (s === 'instalacao') labelData.textContent = 'Data de instalação';
+  else if (s === 'manutencao') labelData.textContent = 'Data da manutenção';
+  else labelData.textContent = 'Data da retirada';
+}
+
+function selMotivoRetirada(m) {
+  motivoRetirada = m;
+  ['cancelamento','inadimplencia','troca','outro'].forEach(t => {
+    document.getElementById('ret-' + t).classList.toggle('selected', t === m);
+  });
+  document.getElementById('ret-outro-wrap').style.display = m === 'outro' ? 'block' : 'none';
+}
+
+function selRecuperado(v) {
+  equipRecuperado = v;
+  document.getElementById('ret-rec-sim').className = 'yesno-card' + (v === 'sim' ? ' sel-sim' : '');
+  document.getElementById('ret-rec-nao').className = 'yesno-card' + (v === 'nao' ? ' sel-nao' : '');
+}
 
 function calcularTotal() {
   const valor = parseFloat(document.getElementById('valor-inst').value) || 0;
@@ -476,7 +707,6 @@ function calcularTotal() {
   } else {
     box.style.display = 'none';
   }
-  // Somatório da mensalidade
   const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
   const valorMes = mensalidadeMap[tipo] || 0;
   const totalMes = valorMes * (qtd || 1);
@@ -496,6 +726,8 @@ function init() {
     if (nums.length) counter = Math.max(...nums) + 1;
   }
   atualizarNumero();
+  // Ocultar seções condicionais no início
+  document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
 }
 
 function atualizarNumero() {
@@ -503,7 +735,7 @@ function atualizarNumero() {
 }
 
 function mudarAba(aba) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   if (aba === 'nova') {
     document.querySelectorAll('.tab')[0].classList.add('active');
@@ -535,6 +767,11 @@ function selStatus(s) {
 }
 function g(id) { return document.getElementById(id).value.trim(); }
 
+function getMotivoRetiradaTexto() {
+  const map = { cancelamento: 'Cancelamento', inadimplencia: 'Inadimplência', troca: 'Troca de equipamento', outro: g('ret-outro-texto') || 'Outro' };
+  return motivoRetirada ? (map[motivoRetirada] || '') : '';
+}
+
 function getDados() {
   const dataRaw = g('data-inst');
   let dataFmt = '';
@@ -547,16 +784,26 @@ function getDados() {
   const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
   const valorMensalidade = mensalidadeMap[tipo] || 0;
   const totalMensalidade = valorMensalidade * qtdVeiculos;
+  // Manutenção
+  const manValor = parseFloat(document.getElementById('man-valor').value) || 0;
   return {
     osNum: document.getElementById('os-number').textContent,
+    tipoServico: tipoServico || 'instalacao',
     nome: g('nome'), contato: g('contato'), endereco: g('endereco'),
     modelo: g('modelo'), ano: g('ano'),
     gnvVal: gnv, tipo: tipoTexto, tipoKey: tipo,
     data: dataFmt, dataRaw: dataRaw, hora: g('hora-inst'),
     statusKey: status, status: statusMap[status] || '⏳ Pendente',
     obs: g('obs'), mapsLink: getMapsLink(),
+    // instalação
     valorInst: valorInst, qtdVeiculos: qtdVeiculos, totalInst: totalInst,
     valorMensalidade: valorMensalidade, totalMensalidade: totalMensalidade,
+    // manutenção
+    manProblema: g('man-problema'), manServico: g('man-servico'),
+    manImei: g('man-imei'), manValor: manValor,
+    // retirada
+    retMotivo: getMotivoRetiradaTexto(), retMotivoKey: motivoRetirada,
+    retRecuperado: equipRecuperado, retImei: g('ret-imei'),
     criadoEm: new Date().toLocaleDateString('pt-BR')
   };
 }
@@ -565,8 +812,6 @@ function toggleMapsMode() {
   const manual = document.getElementById('maps-manual-check').checked;
   document.getElementById('maps-manual-wrap').style.display = manual ? 'block' : 'none';
   document.getElementById('maps-auto-wrap').style.display = manual ? 'none' : 'block';
-  const label = document.getElementById('maps-manual-label');
-  if (label) label.style.color = manual ? '#1a56db' : '#6b7280';
   if (!manual) atualizarMaps();
 }
 function atualizarMaps() {
@@ -591,6 +836,7 @@ function getMapsLink() {
 }
 
 function salvarOS() {
+  if (!tipoServico) { mostrarToast('⚠️ Selecione o tipo de serviço!'); return; }
   const d = getDados();
   if (!d.nome) { mostrarToast('⚠️ Informe o nome do cliente!'); return; }
   if (editandoIdx !== null) {
@@ -612,6 +858,7 @@ function salvarOS() {
 }
 
 function abrirPreview() {
+  if (!tipoServico) { mostrarToast('⚠️ Selecione o tipo de serviço!'); return; }
   const d = getDados();
   preencherPreview(d, null);
   document.getElementById('status-change-wrap').style.display = 'none';
@@ -633,6 +880,10 @@ function abrirOSdoPainel(idx) {
 }
 
 function preencherPreview(d, statusAtivo) {
+  const ts = d.tipoServico || 'instalacao';
+  // Badge tipo serviço
+  const badgeLabels = { instalacao: '📡 Instalação', manutencao: '🔧 Manutenção', retirada: '📤 Retirada' };
+  document.getElementById('p-tipo-serv-badge').innerHTML = `<span class="tipo-serv-badge ${ts}">${badgeLabels[ts] || ts}</span>`;
   document.getElementById('p-num').textContent = 'OS ' + d.osNum;
   document.getElementById('p-dataos').textContent = 'Emitida em ' + (d.criadoEm || new Date().toLocaleDateString('pt-BR'));
   document.getElementById('p-nome').textContent = d.nome || '—';
@@ -647,39 +898,65 @@ function preencherPreview(d, statusAtivo) {
   if (d.gnvVal==='sim') gnvEl.innerHTML = '<span class="badge badge-verde">Sim</span>';
   else if (d.gnvVal==='nao') gnvEl.innerHTML = '<span class="badge badge-vermelho">Não</span>';
   else gnvEl.textContent = '—';
-  const tipoEl = document.getElementById('p-tipo');
-  if (d.tipoKey==='com') tipoEl.innerHTML = '<span class="badge badge-amarelo">Com bloqueio — R$ 59,90/mês</span>';
-  else if (d.tipoKey==='sem') tipoEl.innerHTML = '<span class="badge badge-azul">Sem bloqueio — R$ 39,90/mês</span>';
-  else if (d.tipoKey==='antigo') tipoEl.innerHTML = '<span class="badge badge-azul">Com bloqueio (Contrato Antigo) — R$ 54,90/mês</span>';
-  else tipoEl.textContent = d.tipo || '—';
-  document.getElementById('p-data').textContent = d.data || '—';
-  document.getElementById('p-hora').textContent = d.hora || '—';
-  document.getElementById('p-status').textContent = d.status || '—';
-  const cobRow = document.getElementById('p-cobranca-row');
-  const totRow = document.getElementById('p-total-row');
-  const mesRow = document.getElementById('p-mensalidade-row');
-  if (d.valorInst > 0 && d.qtdVeiculos > 0) {
-    document.getElementById('p-qtd').textContent = d.qtdVeiculos + ' veículo(s) × R$ ' + d.valorInst.toFixed(2).replace('.', ',');
-    document.getElementById('p-total').textContent = 'R$ ' + d.totalInst.toFixed(2).replace('.', ',');
-    cobRow.style.display = 'flex';
-    totRow.style.display = 'flex';
-  } else {
-    cobRow.style.display = 'none';
-    totRow.style.display = 'none';
+
+  // Mostrar/ocultar seções
+  document.getElementById('p-sec-instalacao').style.display = ts === 'instalacao' ? 'block' : 'none';
+  document.getElementById('p-sec-manutencao').style.display = ts === 'manutencao' ? 'block' : 'none';
+  document.getElementById('p-man-prob-sec').style.display = (ts === 'manutencao' && d.manProblema) ? 'block' : 'none';
+  document.getElementById('p-man-serv-sec').style.display = (ts === 'manutencao' && d.manServico) ? 'block' : 'none';
+  document.getElementById('p-sec-retirada').style.display = ts === 'retirada' ? 'block' : 'none';
+  document.getElementById('btn-financeiro').style.display = ts === 'instalacao' ? 'block' : 'none';
+
+  if (ts === 'instalacao') {
+    const tipoEl = document.getElementById('p-tipo');
+    if (d.tipoKey==='com') tipoEl.innerHTML = '<span class="badge badge-amarelo">Com bloqueio — R$ 59,90/mês</span>';
+    else if (d.tipoKey==='sem') tipoEl.innerHTML = '<span class="badge badge-azul">Sem bloqueio — R$ 39,90/mês</span>';
+    else if (d.tipoKey==='antigo') tipoEl.innerHTML = '<span class="badge badge-azul">Com bloqueio (Contrato Antigo) — R$ 54,90/mês</span>';
+    else tipoEl.textContent = d.tipo || '—';
+    document.getElementById('p-data').textContent = d.data || '—';
+    document.getElementById('p-hora').textContent = d.hora || '—';
+    document.getElementById('p-status').textContent = d.status || '—';
+    const cobRow = document.getElementById('p-cobranca-row');
+    const totRow = document.getElementById('p-total-row');
+    const mesRow = document.getElementById('p-mensalidade-row');
+    if (d.valorInst > 0 && d.qtdVeiculos > 0) {
+      document.getElementById('p-qtd').textContent = d.qtdVeiculos + ' veículo(s) × R$ ' + d.valorInst.toFixed(2).replace('.', ',');
+      document.getElementById('p-total').textContent = 'R$ ' + d.totalInst.toFixed(2).replace('.', ',');
+      cobRow.style.display = 'flex'; totRow.style.display = 'flex';
+    } else { cobRow.style.display='none'; totRow.style.display='none'; }
+    const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
+    const valorMes = d.valorMensalidade || mensalidadeMap[d.tipoKey] || 0;
+    const qtd = d.qtdVeiculos || 1;
+    const totalMes = d.totalMensalidade || (valorMes * qtd);
+    if (valorMes > 0) { document.getElementById('p-mensalidade').textContent = 'R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês'; mesRow.style.display='flex'; }
+    else { mesRow.style.display='none'; }
+  } else if (ts === 'manutencao') {
+    document.getElementById('p-man-data').textContent = d.data || '—';
+    document.getElementById('p-man-hora').textContent = d.hora || '—';
+    document.getElementById('p-man-status').textContent = d.status || '—';
+    document.getElementById('p-man-imei').textContent = d.manImei || '—';
+    document.getElementById('p-man-imei-row').style.display = d.manImei ? 'flex' : 'none';
+    if (d.manProblema) document.getElementById('p-man-problema').textContent = d.manProblema;
+    if (d.manServico) document.getElementById('p-man-servico').textContent = d.manServico;
+    if (d.manValor > 0) {
+      document.getElementById('p-man-valor').textContent = 'R$ ' + d.manValor.toFixed(2).replace('.', ',');
+      document.getElementById('p-man-valor-row').style.display = 'flex';
+    } else { document.getElementById('p-man-valor-row').style.display = 'none'; }
+  } else if (ts === 'retirada') {
+    document.getElementById('p-ret-data').textContent = d.data || '—';
+    document.getElementById('p-ret-hora').textContent = d.hora || '—';
+    document.getElementById('p-ret-status').textContent = d.status || '—';
+    document.getElementById('p-ret-motivo').textContent = d.retMotivo || '—';
+    const recMap = { sim: '✅ Recuperado', nao: '❌ Não recuperado' };
+    document.getElementById('p-ret-recuperado').textContent = recMap[d.retRecuperado] || '—';
+    document.getElementById('p-ret-imei').textContent = d.retImei || '—';
+    document.getElementById('p-ret-imei-row').style.display = d.retImei ? 'flex' : 'none';
   }
-  const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
-  const valorMes = d.valorMensalidade || mensalidadeMap[d.tipoKey] || 0;
-  const qtd = d.qtdVeiculos || 1;
-  const totalMes = d.totalMensalidade || (valorMes * qtd);
-  if (valorMes > 0 && qtd > 0) {
-    document.getElementById('p-mensalidade').textContent = 'R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês';
-    mesRow.style.display = 'flex';
-  } else {
-    mesRow.style.display = 'none';
-  }
+
   const obsS = document.getElementById('p-obs-sec');
   if (d.obs) { document.getElementById('p-obs').textContent = d.obs; obsS.style.display='block'; }
   else { obsS.style.display='none'; }
+
   if (statusAtivo) {
     document.querySelectorAll('.sc-btn').forEach(b => {
       b.classList.remove('ativo');
@@ -694,7 +971,9 @@ function alterarStatus(novoStatus) {
   osList[osAbertaIdx].statusKey = novoStatus;
   osList[osAbertaIdx].status = statusMap[novoStatus];
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
-  document.getElementById('p-status').textContent = statusMap[novoStatus];
+  const ts = osList[osAbertaIdx].tipoServico || 'instalacao';
+  const statusId = ts === 'instalacao' ? 'p-status' : ts === 'manutencao' ? 'p-man-status' : 'p-ret-status';
+  document.getElementById(statusId).textContent = statusMap[novoStatus];
   document.querySelectorAll('.sc-btn').forEach(b => {
     b.classList.remove('ativo');
     if (b.classList.contains(novoStatus)) b.classList.add('ativo');
@@ -709,9 +988,11 @@ function fechar() {
 }
 
 function montarMensagem(d) {
+  const ts = d.tipoServico || 'instalacao';
+  const tipoLabels = { instalacao: '📡 INSTALAÇÃO', manutencao: '🔧 MANUTENÇÃO', retirada: '📤 RETIRADA' };
   let msg = '🛰️ *RASTREANDO GPS*\n';
   msg += '━━━━━━━━━━━━━━━━━━\n';
-  msg += '📋 *Ordem de Serviço ' + d.osNum + '*\n';
+  msg += '📋 *Ordem de Serviço ' + d.osNum + '* — ' + tipoLabels[ts] + '\n';
   msg += '🗓️ *Data:* ' + (d.criadoEm || new Date().toLocaleDateString('pt-BR')) + '\n';
   msg += '━━━━━━━━━━━━━━━━━━\n\n';
   msg += '👤 *CLIENTE*\n';
@@ -723,17 +1004,38 @@ function montarMensagem(d) {
   if (d.modelo) msg += '• *Modelo:* ' + d.modelo + '\n';
   if (d.ano)    msg += '• *Ano/modelo:* ' + d.ano + '\n';
   if (d.gnvVal) msg += '• *GNV:* ' + (d.gnvVal==='sim' ? 'Sim ✅' : 'Não ❌') + '\n';
-  msg += '\n🔧 *INSTALAÇÃO*\n';
-  if (d.tipo)   msg += '• *Tipo:* ' + d.tipo + '\n';
-  if (d.data)   msg += '• *Data:* ' + d.data + '\n';
-  if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
-  if (d.status) msg += '• *Status:* ' + d.status + '\n';
-  if (d.valorInst > 0 && d.qtdVeiculos > 0) {
-    msg += '• *Qtd. veículos:* ' + d.qtdVeiculos + '\n';
-    msg += '• *Valor por veículo:* R$ ' + d.valorInst.toFixed(2).replace('.', ',') + '\n';
-    msg += '💰 *Total da instalação: R$ ' + d.totalInst.toFixed(2).replace('.', ',') + '*\n';
+
+  if (ts === 'instalacao') {
+    msg += '\n🔧 *INSTALAÇÃO*\n';
+    if (d.tipo)   msg += '• *Tipo:* ' + d.tipo + '\n';
+    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
+    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '• *Status:* ' + d.status + '\n';
+    if (d.valorInst > 0 && d.qtdVeiculos > 0) {
+      msg += '• *Qtd. veículos:* ' + d.qtdVeiculos + '\n';
+      msg += '• *Valor por veículo:* R$ ' + d.valorInst.toFixed(2).replace('.', ',') + '\n';
+      msg += '💰 *Total da instalação: R$ ' + d.totalInst.toFixed(2).replace('.', ',') + '*\n';
+    }
+  } else if (ts === 'manutencao') {
+    msg += '\n🔧 *MANUTENÇÃO*\n';
+    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
+    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '• *Status:* ' + d.status + '\n';
+    if (d.manImei) msg += '• *IMEI:* ' + d.manImei + '\n';
+    if (d.manProblema) msg += '• *Problema:* ' + d.manProblema + '\n';
+    if (d.manServico)  msg += '• *Serviço:* ' + d.manServico + '\n';
+    if (d.manValor > 0) msg += '💰 *Valor cobrado: R$ ' + d.manValor.toFixed(2).replace('.', ',') + '*\n';
+  } else if (ts === 'retirada') {
+    msg += '\n📤 *RETIRADA*\n';
+    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
+    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '• *Status:* ' + d.status + '\n';
+    if (d.retMotivo) msg += '• *Motivo:* ' + d.retMotivo + '\n';
+    if (d.retRecuperado) msg += '• *Equipamento:* ' + (d.retRecuperado === 'sim' ? 'Recuperado ✅' : 'Não recuperado ❌') + '\n';
+    if (d.retImei) msg += '• *IMEI:* ' + d.retImei + '\n';
   }
-  if (d.obs)    msg += '\n📝 *Obs:* ' + d.obs + '\n';
+
+  if (d.obs) msg += '\n📝 *Obs:* ' + d.obs + '\n';
   msg += '\n━━━━━━━━━━━━━━━━━━\n';
   msg += '🛰️ *Rastreando GPS*\n';
   msg += '📄 CNPJ: 29.488.621/0001-48\n';
@@ -742,12 +1044,8 @@ function montarMensagem(d) {
   return msg;
 }
 
-function compartilharOSCard(idx) {
-  const d = osList[idx];
-  window.open('https://wa.me/?text=' + encodeURIComponent(montarMensagem(d)), '_blank');
-}
-
 function compartilhar() {
+  if (!tipoServico) { mostrarToast('⚠️ Selecione o tipo de serviço!'); return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(montarMensagem(getDados())), '_blank');
 }
 function compartilharPreview() {
@@ -756,6 +1054,7 @@ function compartilharPreview() {
 }
 function compartilharFinanceiro() {
   const d = osAbertaIdx !== null ? osList[osAbertaIdx] : getDados();
+  if ((d.tipoServico || 'instalacao') !== 'instalacao') { mostrarToast('ℹ️ Financeiro disponível apenas para instalações'); return; }
   const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
   const tipoNomeMap = { com: 'Com bloqueio — R$ 59,90/mês', sem: 'Sem bloqueio — R$ 39,90/mês', antigo: 'Com bloqueio (Contrato Antigo) — R$ 54,90/mês' };
   const valorMes = d.valorMensalidade || mensalidadeMap[d.tipoKey] || 0;
@@ -769,16 +1068,28 @@ function compartilharFinanceiro() {
   msg += '━━━━━━━━━━━━━━━━━━\n';
   msg += '🔧 *Mensalidade:* ' + tipoNome + '\n';
   msg += '🚗 *Qtd. de veículos:* ' + qtd + '\n';
-  if (totalMes > 0) {
-    msg += '💰 *Total mensalidade:* R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês\n';
-  }
+  if (totalMes > 0) msg += '💰 *Total mensalidade:* R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês\n';
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
+// ---- Filtros painel ----
 function filtrar(f) {
   filtroAtual = f;
   document.querySelectorAll('.stat-card').forEach(b => b.classList.remove('ativo'));
   document.getElementById('fc-' + f).classList.add('ativo');
+  renderLista();
+}
+
+function filtrarTipo(t) {
+  filtroTipoAtual = t;
+  document.querySelectorAll('.tipo-filtro-btn').forEach(b => {
+    b.className = 'tipo-filtro-btn';
+  });
+  const el = document.getElementById('tf-' + t);
+  if (t === 'todas') el.classList.add('ativo-todas');
+  else if (t === 'instalacao') el.classList.add('ativo-inst');
+  else if (t === 'manutencao') el.classList.add('ativo-man');
+  else if (t === 'retirada') el.classList.add('ativo-ret');
   renderLista();
 }
 
@@ -795,69 +1106,91 @@ function renderPainel() {
 
 function renderLista() {
   const lista = document.getElementById('lista-os');
-  const filtered = filtroAtual === 'todas' ? osList : osList.filter(o => o.statusKey === filtroAtual);
+  let filtered = filtroAtual === 'todas' ? osList : osList.filter(o => o.statusKey === filtroAtual);
+  if (filtroTipoAtual !== 'todas') filtered = filtered.filter(o => (o.tipoServico || 'instalacao') === filtroTipoAtual);
+
   if (filtered.length === 0) {
     lista.innerHTML = '<div class="os-empty"><div>📋</div><p>Nenhuma OS encontrada</p></div>';
     return;
   }
-  lista.innerHTML = filtered.map((o, i) => {
+  const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  const tipoServLabels = { instalacao:'📡 Instalação', manutencao:'🔧 Manutenção', retirada:'📤 Retirada' };
+
+  lista.innerHTML = filtered.map((o) => {
     const idx = osList.indexOf(o);
-    const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+    const ts = o.tipoServico || 'instalacao';
     const telLimpo = (o.contato || '').replace(/\D/g,'');
-    const waNome = encodeURIComponent(o.nome || '');
-    const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : `https://wa.me/?phone=`;
+    const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : '';
     const mapsUrl = o.mapsLink || (o.endereco ? 'https://maps.google.com/?q=' + encodeURIComponent(o.endereco) : '');
 
     const btnWa = telLimpo.length >= 10
       ? `<a class="os-action-btn os-action-wa" href="${waLink}" target="_blank" onclick="event.stopPropagation()">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.856L.054 23.447a.75.75 0 0 0 .916.953l5.453-1.33A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.374-.222-3.88.947.993-3.73-.243-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           WhatsApp
-        </a>`
-      : '';
+        </a>` : '';
 
     const btnMaps = mapsUrl
       ? `<a class="os-action-btn os-action-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           Maps
-        </a>`
-      : '';
+        </a>` : '';
 
     const msgOS = encodeURIComponent(montarMensagem(o));
     const btnShare = `<a class="os-action-btn os-action-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Compartilhar OS
         </a>`;
+
     const acoes = (btnWa || btnMaps || btnShare) ? `<div class="os-card-actions">${btnWa}${btnMaps}${btnShare}</div>` : '';
+
+    // Info linha dependendo do tipo
+    let infoExtra = '';
+    if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
+    else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
+    else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
 
     return `<div class="os-card ${o.statusKey}" onclick="abrirOSdoPainel(${idx})">
       <div class="os-card-top">
-        <div class="os-card-num">OS ${o.osNum}</div>
+        <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span></div>
         <span class="os-badge ${o.statusKey}">${statusLabel[o.statusKey] || o.status}</span>
       </div>
       <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
-      <div class="os-card-info">${o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : ''}${o.data ? ' · 📅 ' + o.data : ''}${o.hora ? ' às ' + o.hora : ''}</div>
+      <div class="os-card-info">${infoExtra}${o.data ? ' · 📅 ' + o.data : ''}${o.hora ? ' às ' + o.hora : ''}</div>
       ${acoes}
     </div>`;
   }).join('');
 }
 
 function limpar(silencioso) {
-  ['nome','contato','endereco','modelo','ano','data-inst','hora-inst','obs','valor-inst'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['nome','contato','endereco','modelo','ano','data-inst','hora-inst','obs','valor-inst','man-problema','man-servico','man-imei','man-valor','ret-imei','ret-outro-texto'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   document.getElementById('qtd-veiculos').value = '1';
   document.getElementById('valor-total-box').style.display = 'none';
+  document.getElementById('mensalidade-total-box').style.display = 'none';
   document.getElementById('maps-manual-check').checked = false;
   document.getElementById('maps-manual-input').value = '';
   document.getElementById('maps-manual-wrap').style.display = 'none';
   document.getElementById('maps-auto-wrap').style.display = 'block';
   document.getElementById('maps-auto-link').style.display = 'none';
   document.getElementById('maps-auto-empty').style.display = 'block';
-  tipo=null; gnv=null; editandoIdx=null;
+  tipo = null; gnv = null; tipoServico = null; motivoRetirada = null; equipRecuperado = null; editandoIdx = null;
   document.getElementById('card-sem').classList.remove('selected');
   document.getElementById('card-com').classList.remove('selected');
+  document.getElementById('card-antigo').classList.remove('selected');
   document.getElementById('gv-sim').className='gnv-card';
   document.getElementById('gv-nao').className='gnv-card';
+  document.getElementById('ret-rec-sim').className='yesno-card';
+  document.getElementById('ret-rec-nao').className='yesno-card';
+  ['instalacao','manutencao','retirada'].forEach(t => {
+    document.getElementById('serv-' + t).className = 'serv-card';
+  });
+  ['cancelamento','inadimplencia','troca','outro'].forEach(t => {
+    document.getElementById('ret-' + t).classList.remove('selected');
+  });
+  document.getElementById('ret-outro-wrap').style.display = 'none';
+  document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
   selStatus('pendente');
   fechar();
   atualizarNumero();
@@ -867,7 +1200,9 @@ function editarOS() {
   if (osAbertaIdx === null) return;
   const o = osList[osAbertaIdx];
 
-  // Preencher formulário com dados da OS
+  // Tipo de serviço
+  selServico(o.tipoServico || 'instalacao');
+
   document.getElementById('nome').value = o.nome || '';
   document.getElementById('contato').value = o.contato || '';
   document.getElementById('endereco').value = o.endereco || '';
@@ -875,29 +1210,36 @@ function editarOS() {
   document.getElementById('ano').value = o.ano || '';
   document.getElementById('hora-inst').value = o.hora || '';
   document.getElementById('obs').value = o.obs || '';
-  document.getElementById('valor-inst').value = o.valorInst || '';
-  document.getElementById('qtd-veiculos').value = o.qtdVeiculos || 1;
-  calcularTotal();
-
-  // Data
   if (o.dataRaw) document.getElementById('data-inst').value = o.dataRaw;
 
-  // Tipo
-  tipo = o.tipoKey || null;
-  document.getElementById('card-sem').classList.toggle('selected', tipo === 'sem');
-  document.getElementById('card-com').classList.toggle('selected', tipo === 'com');
-  document.getElementById('card-antigo').classList.toggle('selected', tipo === 'antigo');
+  const ts = o.tipoServico || 'instalacao';
+  if (ts === 'instalacao') {
+    document.getElementById('valor-inst').value = o.valorInst || '';
+    document.getElementById('qtd-veiculos').value = o.qtdVeiculos || 1;
+    calcularTotal();
+    tipo = o.tipoKey || null;
+    document.getElementById('card-sem').classList.toggle('selected', tipo === 'sem');
+    document.getElementById('card-com').classList.toggle('selected', tipo === 'com');
+    document.getElementById('card-antigo').classList.toggle('selected', tipo === 'antigo');
+  } else if (ts === 'manutencao') {
+    document.getElementById('man-problema').value = o.manProblema || '';
+    document.getElementById('man-servico').value = o.manServico || '';
+    document.getElementById('man-imei').value = o.manImei || '';
+    document.getElementById('man-valor').value = o.manValor || '';
+  } else if (ts === 'retirada') {
+    if (o.retMotivoKey) selMotivoRetirada(o.retMotivoKey);
+    if (o.retMotivoKey === 'outro') document.getElementById('ret-outro-texto').value = o.retMotivo || '';
+    if (o.retRecuperado) selRecuperado(o.retRecuperado);
+    document.getElementById('ret-imei').value = o.retImei || '';
+  }
 
-  // GNV
   gnv = o.gnvVal || null;
   document.getElementById('gv-sim').className = 'gnv-card' + (gnv === 'sim' ? ' sel-sim' : '');
   document.getElementById('gv-nao').className = 'gnv-card' + (gnv === 'nao' ? ' sel-nao' : '');
 
-  // Status
   status = o.statusKey || 'pendente';
   selStatus(status);
 
-  // Maps
   if (o.mapsLink && o.mapsLink.startsWith('http') && !o.mapsLink.includes('maps.google.com/?q=')) {
     document.getElementById('maps-manual-check').checked = true;
     document.getElementById('maps-manual-input').value = o.mapsLink;
@@ -908,12 +1250,8 @@ function editarOS() {
     atualizarMaps();
   }
 
-  // Atualizar número da OS no topo
   document.getElementById('os-number').textContent = o.osNum;
-
-  // Marcar índice para salvar no lugar certo
   editandoIdx = osAbertaIdx;
-
   fechar();
   mudarAba('nova');
   window.scrollTo(0, 0);
