@@ -560,7 +560,10 @@
     }
   }
 
-  function startScan(type) {
+  const streams = {};
+  const scanLoops = {};
+
+  async function startScan(type) {
     const ph = document.getElementById('ph-' + type);
     if (ph) ph.style.display = 'none';
 
@@ -568,75 +571,132 @@
     btn.innerHTML = '<span>⏹</span> PARAR SCANNER';
     btn.classList.add('scanning');
     state[type].scanning = true;
+    state[type].paused = false;
 
-    let lastCode = '';
-    let lastTime = 0;
+    const container = document.getElementById('scanner-' + type);
 
-    Quagga.init({
-      inputStream: {
-        name: 'Live',
-        type: 'LiveStream',
-        target: document.getElementById('scanner-' + type),
-        constraints: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+    // Create video
+    let video = container.querySelector('video');
+    if (!video) {
+      video = document.createElement('video');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('muted', '');
+      video.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;';
+      container.appendChild(video);
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streams[type] = stream;
+      video.srcObject = stream;
+      await video.play();
+    } catch(e) {
+      showToast('Erro ao acessar câmera', true);
+      stopScan(type);
+      return;
+    }
+
+    // Use native BarcodeDetector if available, else Quagga
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({
+        formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'itf', 'data_matrix', 'pdf417']
+      });
+
+      const loop = async () => {
+        if (!state[type].scanning) return;
+        if (!state[type].paused && video.readyState === video.HAVE_ENOUGH_DATA) {
+          try {
+            const barcodes = await detector.detect(video);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              if (code && code.length >= 5) {
+                state[type].paused = true;
+                addCode(type, code);
+                setTimeout(() => { if (state[type].scanning) state[type].paused = false; }, 1500);
+              }
+            }
+          } catch(e) {}
+        }
+        scanLoops[type] = requestAnimationFrame(loop);
+      };
+      scanLoops[type] = requestAnimationFrame(loop);
+
+    } else {
+      // Fallback: Quagga
+      Quagga.init({
+        inputStream: {
+          name: 'Live', type: 'LiveStream',
+          target: container,
+          constraints: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
         },
-      },
-      decoder: {
-        readers: ['code_128_reader', 'ean_reader', 'code_39_reader', 'i2of5_reader'],
-      },
-      locate: true,
-    }, function(err) {
-      if (err) {
-        showToast('Erro ao acessar câmera', true);
-        stopScan(type);
-        return;
-      }
-      Quagga.start();
-    });
+        decoder: {
+          readers: ['code_128_reader', 'ean_reader', 'code_39_reader', 'i2of5_reader', 'codabar_reader'],
+          multiple: false,
+        },
+        locate: true,
+        frequency: 15,
+      }, function(err) {
+        if (err) { showToast('Erro ao iniciar scanner', true); stopScan(type); return; }
+        Quagga.start();
+      });
 
-    Quagga.onDetected(function(result) {
-      const code = result.codeResult.code;
-      const now = Date.now();
-
-      // Debounce: ignore same code within 2s
-      if (code === lastCode && now - lastTime < 2000) return;
-      lastCode = code;
-      lastTime = now;
-
-      addCode(type, code);
-    });
+      Quagga.onDetected(function(result) {
+        if (state[type].paused) return;
+        const code = result.codeResult.code;
+        if (!code || code.length < 5) return;
+        state[type].paused = true;
+        addCode(type, code);
+        setTimeout(() => { if (state[type].scanning) state[type].paused = false; }, 1500);
+      });
+    }
   }
 
   function stopScan(type) {
-    Quagga.stop();
-    Quagga.offDetected();
+    // Stop native loop
+    if (scanLoops[type]) { cancelAnimationFrame(scanLoops[type]); delete scanLoops[type]; }
+
+    // Stop stream
+    if (streams[type]) { streams[type].getTracks().forEach(t => t.stop()); delete streams[type]; }
+
+    // Stop Quagga if running
+    try { Quagga.stop(); Quagga.offDetected(); } catch(e) {}
 
     const btn = document.getElementById('btn-scan-' + type);
     btn.innerHTML = '<span>▶</span> INICIAR SCANNER';
     btn.classList.remove('scanning');
     state[type].scanning = false;
+    state[type].paused = false;
 
     const ph = document.getElementById('ph-' + type);
     if (ph) ph.style.display = 'flex';
+
+    const container = document.getElementById('scanner-' + type);
+    const video = container.querySelector('video');
+    if (video) { video.srcObject = null; video.remove(); }
   }
 
   // ADD CODE
   function addCode(type, raw) {
     const items = state[type].items;
 
-    // Duplicate check
-    let checkVal = raw;
-    if (type === 'nome') checkVal = raw; // check by IMEI
-
-    if (items.includes(checkVal)) {
+    // Duplicate check — exact match
+    if (items.includes(raw)) {
       showToast('⚠ CÓDIGO JÁ LIDO!', true);
       vibrate([100, 50, 100]);
       return;
     }
 
-    items.push(checkVal);
+    // Partial read check — rejeita se já existe código que contém este como parte
+    const isPartial = items.some(existing => existing.includes(raw) || raw.includes(existing));
+    if (isPartial) {
+      showToast('⚠ LEITURA PARCIAL IGNORADA', true);
+      vibrate([50]);
+      return;
+    }
+
+    items.push(raw);
 
     // Update counter
     document.getElementById('count-' + type).textContent = items.length;
