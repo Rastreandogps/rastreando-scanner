@@ -1006,13 +1006,12 @@ function montarMensagem(d) {
   if (d.gnvVal) msg += '• *GNV:* ' + (d.gnvVal==='sim' ? 'Sim ✅' : 'Não ❌') + '\n';
 
   if (ts === 'instalacao') {
-    msg += '\n🔧 *INSTALAÇÃO*\n';
+    msg += '\n🔧 *INSTALAÇÃO* : ' + (d.status || '') + '\n\n';
     const mensalidadeMap2 = { com: 59.90, sem: 39.90, antigo: 54.90 };
     const tipoTextoMes = { com: 'Com bloqueio — R$ 59,90/mês por veículo', sem: 'Sem bloqueio — R$ 39,90/mês por veículo', antigo: 'Com bloqueio (Contrato Antigo) — R$ 54,90/mês por veículo' };
     if (d.tipoKey) msg += '• *Tipo:* ' + (tipoTextoMes[d.tipoKey] || d.tipo) + '\n';
     if (d.data)   msg += '• *Data:* ' + d.data + '\n';
     if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
-    if (d.status) msg += '• *Status:* ' + d.status + '\n';
     if (d.qtdVeiculos > 0) msg += '• *Qtd. veículos:* ' + d.qtdVeiculos + '\n';
     if (d.valorInst > 0 && d.qtdVeiculos > 0) {
       msg += '• *Taxa de instalação por veículo:* R$ ' + d.valorInst.toFixed(2).replace('.', ',') + '\n';
