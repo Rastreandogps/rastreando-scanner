@@ -726,8 +726,80 @@ function init() {
     if (nums.length) counter = Math.max(...nums) + 1;
   }
   atualizarNumero();
-  // Ocultar seções condicionais no início
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
+  verificarOSHoje();
+}
+
+function verificarOSHoje() {
+  const hoje = new Date();
+  const dd = String(hoje.getDate()).padStart(2,'0');
+  const mm = String(hoje.getMonth()+1).padStart(2,'0');
+  const yyyy = hoje.getFullYear();
+  const hojeStr = dd+'/'+mm+'/'+yyyy;
+
+  const osHoje = osList.filter(o =>
+    o.data === hojeStr &&
+    o.statusKey !== 'cancelado' &&
+    o.statusKey !== 'concluido'
+  );
+
+  if (osHoje.length === 0) return;
+
+  const nomes = osHoje.map(o => o.osNum + ' — ' + (o.nome || 'Cliente') + (o.hora ? ' às ' + o.hora : '')).join('\n');
+  const total = osHoje.length;
+
+  // Tenta notificação nativa primeiro
+  if ('Notification' in window) {
+    const disparar = () => {
+      new Notification('🛰️ Rastreando GPS — OS de Hoje', {
+        body: total === 1
+          ? '📋 ' + nomes
+          : total + ' OS agendadas para hoje:\n' + nomes,
+        icon: 'https://cdn-icons-png.flaticon.com/512/565/565547.png'
+      });
+    };
+    if (Notification.permission === 'granted') {
+      disparar();
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(p => { if (p === 'granted') disparar(); });
+    }
+  }
+
+  // Sempre mostra o banner in-app também
+  mostrarBannerHoje(osHoje);
+}
+
+function mostrarBannerHoje(osHoje) {
+  const existing = document.getElementById('banner-hoje');
+  if (existing) existing.remove();
+
+  const total = osHoje.length;
+  const lista = osHoje.map(o =>
+    `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:13px;">
+      <span style="color:#00e5ff;font-weight:700;">${o.osNum}</span>
+      <span style="color:#f0f0f0;"> — ${o.nome || 'Cliente'}</span>
+      ${o.hora ? `<span style="color:#fbbf24;font-weight:600;"> às ${o.hora}</span>` : ''}
+      <div style="color:#aaa;font-size:12px;">${o.modelo || ''} ${o.gnvVal==='sim'?'· GNV':''}</div>
+    </div>`
+  ).join('');
+
+  const banner = document.createElement('div');
+  banner.id = 'banner-hoje';
+  banner.innerHTML = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#1a1a1a;border:1.5px solid #00e5ff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 0 30px rgba(0,229,255,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#00e5ff;">📅 OS de Hoje</div>
+            <div style="font-size:12px;color:#aaa;margin-top:2px;">${total} serviço${total>1?'s':''} agendado${total>1?'s':''} para hoje</div>
+          </div>
+          <button onclick="document.getElementById('banner-hoje').remove()" style="background:#333;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="border-top:1px solid #2a2a2a;padding-top:10px;">${lista}</div>
+        <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="margin-top:14px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Ver no Painel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(banner);
 }
 
 function atualizarNumero() {
