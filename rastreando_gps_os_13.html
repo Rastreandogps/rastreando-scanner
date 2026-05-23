@@ -70,6 +70,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .gnv-card { border: 1.5px solid #333; border-radius: 12px; padding: 12px; cursor: pointer; background: #111; display: flex; align-items: center; gap: 10px; transition: all 0.15s; }
 .gnv-card.sel-sim { border-color: #00b894; background: #071a14; }
 .gnv-card.sel-nao { border-color: #e31c1c; background: #1f0a0a; }
+.gnv-card.ativo.v-gnv-sim { border-color: #00b894; background: #071a14; }
+.gnv-card.ativo.v-gnv-nao { border-color: #e31c1c; background: #1f0a0a; }
+.gnv-card.ativo.v-gnv-sim .gnv-icon { background: #0a3d2b; }
+.gnv-card.ativo.v-gnv-nao .gnv-icon { background: #3d0a0a; }
 .gnv-icon { width: 32px; height: 32px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 .gnv-card.sel-sim .gnv-icon { background: #0a3d2b; }
 .gnv-card.sel-nao .gnv-icon { background: #3d0a0a; }
@@ -971,6 +975,45 @@ function selTipo(t) {
   document.getElementById('card-antigo').classList.toggle('selected', t==='antigo');
   calcularTotal();
 }
+function renderVeiculosComDados(veicsData) {
+  document.getElementById('qtd-veiculos').value = veicsData.length;
+  const wrap = document.getElementById('veiculos-wrap');
+  wrap.innerHTML = '';
+  veicsData.forEach((v, i) => {
+    const qtd = veicsData.length;
+    const titulo = qtd > 1 ? `<div style="font-size:12px;color:#00e5ff;font-weight:700;margin-bottom:8px;">Veículo ${i+1}</div>` : '';
+    const simAtivo = (v.gnv === 'sim' || v.gnvVal === 'sim') ? 'ativo' : '';
+    const naoAtivo = (v.gnv === 'nao' || v.gnvVal === 'nao') ? 'ativo' : '';
+    const div = document.createElement('div');
+    div.className = 'veiculo-bloco';
+    div.style.cssText = qtd > 1 ? 'border:1px solid #2a2a2a;border-radius:12px;padding:12px;margin-bottom:10px;' : '';
+    div.innerHTML = `
+      ${titulo}
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Modelo</label>
+          <input type="text" class="v-modelo" placeholder="Ex: HB20, Strada" value="${v.modelo||''}" />
+        </div>
+        <div class="field">
+          <label>Ano/modelo</label>
+          <input type="text" class="v-ano" placeholder="Ex: 2022/2023" value="${v.ano||''}" />
+        </div>
+      </div>
+      <div class="gnv-label-section">⛽ Possui GNV?</div>
+      <div class="gnv-grid">
+        <div class="gnv-card v-gnv-sim ${simAtivo}" onclick="selGNVVeiculo(this,'sim')">
+          <div class="gnv-icon">✔️</div>
+          <div><div class="gnv-label">Sim</div><div class="gnv-sub">Possui GNV</div></div>
+        </div>
+        <div class="gnv-card v-gnv-nao ${naoAtivo}" onclick="selGNVVeiculo(this,'nao')">
+          <div class="gnv-icon">❌</div>
+          <div><div class="gnv-label">Não</div><div class="gnv-sub">Sem GNV</div></div>
+        </div>
+      </div>`;
+    wrap.appendChild(div);
+  });
+}
+
 function renderVeiculos() {
   const qtd = parseInt(document.getElementById('qtd-veiculos').value) || 1;
   const wrap = document.getElementById('veiculos-wrap');
@@ -1070,8 +1113,11 @@ function getDados() {
     osNum: document.getElementById('os-number').textContent,
     tipoServico: tipoServico || 'instalacao',
     nome: g('nome'), contato: g('contato'), endereco: g('endereco'),
-    modelo: g('modelo'), ano: g('ano'),
-    gnvVal: gnv, tipo: tipoTexto, tipoKey: tipo,
+    veiculos: getVeiculos(),
+    modelo: getVeiculos()[0]?.modelo || '',
+    ano: getVeiculos()[0]?.ano || '',
+    gnvVal: getVeiculos()[0]?.gnv || null,
+    tipo: tipoTexto, tipoKey: tipo,
     data: dataFmt, dataRaw: dataRaw, hora: g('hora-inst'),
     statusKey: status, status: statusMap[status] || '⏳ Pendente',
     obs: g('obs'), mapsLink: getMapsLink(),
@@ -1172,12 +1218,27 @@ function preencherPreview(d, statusAtivo) {
   const mapsRow = document.getElementById('p-maps-row');
   if (d.mapsLink) { document.getElementById('p-maps-a').href = d.mapsLink; mapsRow.style.display='flex'; }
   else { mapsRow.style.display='none'; }
-  document.getElementById('p-modelo').textContent = d.modelo || '—';
-  document.getElementById('p-ano').textContent = d.ano || '—';
+  // Veículos
+  const veics = d.veiculos && d.veiculos.length > 0 ? d.veiculos : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
+  const modeloEl = document.getElementById('p-modelo');
+  const anoEl = document.getElementById('p-ano');
   const gnvEl = document.getElementById('p-gnv');
-  if (d.gnvVal==='sim') gnvEl.innerHTML = '<span class="badge badge-verde">Sim</span>';
-  else if (d.gnvVal==='nao') gnvEl.innerHTML = '<span class="badge badge-vermelho">Não</span>';
-  else gnvEl.textContent = '—';
+  if (veics.length === 1) {
+    modeloEl.textContent = veics[0].modelo || '—';
+    anoEl.textContent = veics[0].ano || '—';
+    const gv = veics[0].gnv || veics[0].gnvVal;
+    if (gv==='sim') gnvEl.innerHTML = '<span class="badge badge-verde">Sim</span>';
+    else if (gv==='nao') gnvEl.innerHTML = '<span class="badge badge-vermelho">Não</span>';
+    else gnvEl.textContent = '—';
+  } else {
+    modeloEl.textContent = veics.map((v,i) => `${i+1}. ${v.modelo||'—'}`).join(' | ');
+    anoEl.textContent = veics.map((v,i) => `${i+1}. ${v.ano||'—'}`).join(' | ');
+    gnvEl.innerHTML = veics.map((v,i) => {
+      const gv = v.gnv || v.gnvVal;
+      const badge = gv==='sim' ? '<span class="badge badge-verde">Sim</span>' : gv==='nao' ? '<span class="badge badge-vermelho">Não</span>' : '—';
+      return `${i+1}. ${badge}`;
+    }).join(' ');
+  }
 
   // Mostrar/ocultar seções
   document.getElementById('p-sec-instalacao').style.display = ts === 'instalacao' ? 'block' : 'none';
@@ -1281,9 +1342,18 @@ function montarMensagem(d) {
   if (d.endereco) msg += '• *Endereço:* ' + d.endereco + '\n';
   if (d.mapsLink) msg += '• 🗺️ *Localização:* ' + d.mapsLink + '\n';
   msg += '\n🚗 *VEÍCULO*\n';
-  if (d.modelo) msg += '• *Modelo:* ' + d.modelo + '\n';
-  if (d.ano)    msg += '• *Ano/modelo:* ' + d.ano + '\n';
-  if (d.gnvVal) msg += '• *GNV:* ' + (d.gnvVal==='sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+  const veicsWA = d.veiculos && d.veiculos.length > 0 ? d.veiculos : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
+  if (veicsWA.length === 1) {
+    if (veicsWA[0].modelo) msg += '• *Modelo:* ' + veicsWA[0].modelo + '\n';
+    if (veicsWA[0].ano)    msg += '• *Ano/modelo:* ' + veicsWA[0].ano + '\n';
+    const gv = veicsWA[0].gnv || veicsWA[0].gnvVal;
+    if (gv) msg += '• *GNV:* ' + (gv==='sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+  } else {
+    veicsWA.forEach((v, i) => {
+      const gv = v.gnv || v.gnvVal;
+      msg += `🚗 *Veículo ${i+1}:* ${v.modelo||'—'} ${v.ano ? '· '+v.ano : ''} · GNV: ${gv==='sim'?'Sim ✅':'Não ❌'}\n`;
+    });
+  }
 
   if (ts === 'instalacao') {
     msg += '\n🔧 *INSTALAÇÃO* : ' + (d.status || '') + '\n\n';
@@ -1486,8 +1556,6 @@ function limpar(silencioso) {
   document.getElementById('card-sem').classList.remove('selected');
   document.getElementById('card-com').classList.remove('selected');
   document.getElementById('card-antigo').classList.remove('selected');
-  document.getElementById('gv-sim').className='gnv-card';
-  document.getElementById('gv-nao').className='gnv-card';
   document.getElementById('ret-rec-sim').className='yesno-card';
   document.getElementById('ret-rec-nao').className='yesno-card';
   ['instalacao','manutencao','retirada'].forEach(t => {
@@ -1498,6 +1566,8 @@ function limpar(silencioso) {
   });
   document.getElementById('ret-outro-wrap').style.display = 'none';
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
+  document.getElementById('qtd-veiculos').value = 1;
+  renderVeiculos();
   selStatus('pendente');
   fechar();
   atualizarNumero();
@@ -1513,8 +1583,6 @@ function editarOS() {
   document.getElementById('nome').value = o.nome || '';
   document.getElementById('contato').value = o.contato || '';
   document.getElementById('endereco').value = o.endereco || '';
-  document.getElementById('modelo').value = o.modelo || '';
-  document.getElementById('ano').value = o.ano || '';
   document.getElementById('hora-inst').value = o.hora || '';
   document.getElementById('obs').value = o.obs || '';
   if (o.dataRaw) document.getElementById('data-inst').value = o.dataRaw;
@@ -1523,6 +1591,9 @@ function editarOS() {
   if (ts === 'instalacao') {
     document.getElementById('valor-inst').value = o.valorInst || '';
     document.getElementById('qtd-veiculos').value = o.qtdVeiculos || 1;
+    // Restaurar veículos
+    const veicsEdit = o.veiculos && o.veiculos.length > 0 ? o.veiculos : [{ modelo: o.modelo||'', ano: o.ano||'', gnv: o.gnvVal||null }];
+    renderVeiculosComDados(veicsEdit);
     calcularTotal();
     tipo = o.tipoKey || null;
     document.getElementById('card-sem').classList.toggle('selected', tipo === 'sem');
@@ -1539,10 +1610,6 @@ function editarOS() {
     if (o.retRecuperado) selRecuperado(o.retRecuperado);
     document.getElementById('ret-imei').value = o.retImei || '';
   }
-
-  gnv = o.gnvVal || null;
-  document.getElementById('gv-sim').className = 'gnv-card' + (gnv === 'sim' ? ' sel-sim' : '');
-  document.getElementById('gv-nao').className = 'gnv-card' + (gnv === 'nao' ? ' sel-nao' : '');
 
   status = o.statusKey || 'pendente';
   selStatus(status);
