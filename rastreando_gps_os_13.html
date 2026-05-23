@@ -310,27 +310,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="9" width="20" height="9" rx="2"/><path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
         Dados do veículo
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Modelo</label>
-          <input type="text" id="modelo" placeholder="Ex: HB20, Strada" />
-        </div>
-        <div class="field">
-          <label>Ano/modelo</label>
-          <input type="text" id="ano" placeholder="Ex: 2022/2023" />
-        </div>
+
+      <div class="field" style="margin-bottom:12px;">
+        <label>Qtd. de veículos</label>
+        <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" oninput="renderVeiculos(); calcularTotal()" />
       </div>
-      <div class="gnv-label-section">⛽ Possui GNV (Gás Natural Veicular)?</div>
-      <div class="gnv-grid">
-        <div class="gnv-card" id="gv-sim" onclick="selGNV('sim')">
-          <div class="gnv-icon">✔️</div>
-          <div><div class="gnv-label">Sim</div><div class="gnv-sub">Possui GNV</div></div>
-        </div>
-        <div class="gnv-card" id="gv-nao" onclick="selGNV('nao')">
-          <div class="gnv-icon">❌</div>
-          <div><div class="gnv-label">Não</div><div class="gnv-sub">Sem GNV</div></div>
-        </div>
-      </div>
+
+      <div id="veiculos-wrap"></div>
     </div>
 
     <!-- ============ SEÇÃO INSTALAÇÃO ============ -->
@@ -361,15 +347,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           Valor da Instalação
         </div>
-        <div class="valor-grid">
-          <div class="field">
-            <label>Valor da instalação (R$)</label>
-            <input type="number" id="valor-inst" placeholder="0,00" min="0" step="0.01" oninput="calcularTotal()" />
-          </div>
-          <div class="field">
-            <label>Qtd. de veículos</label>
-            <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" oninput="calcularTotal()" />
-          </div>
+        <div class="field">
+          <label>Valor da instalação (R$)</label>
+          <input type="number" id="valor-inst" placeholder="0,00" min="0" step="0.01" oninput="calcularTotal()" />
         </div>
         <div class="valor-total-box" id="valor-total-box" style="display:none">
           <span class="valor-total-label">💰 Total da instalação</span>
@@ -990,10 +970,73 @@ function selTipo(t) {
   document.getElementById('card-antigo').classList.toggle('selected', t==='antigo');
   calcularTotal();
 }
+function renderVeiculos() {
+  const qtd = parseInt(document.getElementById('qtd-veiculos').value) || 1;
+  const wrap = document.getElementById('veiculos-wrap');
+  if (!wrap) return;
+  const antigos = wrap.querySelectorAll('.veiculo-bloco');
+  const vals = [];
+  antigos.forEach((b, i) => {
+    vals[i] = {
+      modelo: b.querySelector('.v-modelo')?.value || '',
+      ano: b.querySelector('.v-ano')?.value || '',
+      gnv: b.querySelector('.v-gnv-sim')?.classList.contains('ativo') ? 'sim' : (b.querySelector('.v-gnv-nao')?.classList.contains('ativo') ? 'nao' : null)
+    };
+  });
+  wrap.innerHTML = '';
+  for (let i = 0; i < qtd; i++) {
+    const v = vals[i] || { modelo: '', ano: '', gnv: null };
+    const titulo = qtd > 1 ? `<div style="font-size:12px;color:#00e5ff;font-weight:700;margin-bottom:8px;">Veículo ${i+1}</div>` : '';
+    const simAtivo = v.gnv === 'sim' ? 'ativo' : '';
+    const naoAtivo = v.gnv === 'nao' ? 'ativo' : '';
+    const div = document.createElement('div');
+    div.className = 'veiculo-bloco';
+    div.style.cssText = qtd > 1 ? 'border:1px solid #2a2a2a;border-radius:12px;padding:12px;margin-bottom:10px;' : '';
+    div.innerHTML = `
+      ${titulo}
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Modelo</label>
+          <input type="text" class="v-modelo" placeholder="Ex: HB20, Strada" value="${v.modelo}" />
+        </div>
+        <div class="field">
+          <label>Ano/modelo</label>
+          <input type="text" class="v-ano" placeholder="Ex: 2022/2023" value="${v.ano}" />
+        </div>
+      </div>
+      <div class="gnv-label-section">⛽ Possui GNV?</div>
+      <div class="gnv-grid">
+        <div class="gnv-card v-gnv-sim ${simAtivo}" onclick="selGNVVeiculo(this,'sim')">
+          <div class="gnv-icon">✔️</div>
+          <div><div class="gnv-label">Sim</div><div class="gnv-sub">Possui GNV</div></div>
+        </div>
+        <div class="gnv-card v-gnv-nao ${naoAtivo}" onclick="selGNVVeiculo(this,'nao')">
+          <div class="gnv-icon">❌</div>
+          <div><div class="gnv-label">Não</div><div class="gnv-sub">Sem GNV</div></div>
+        </div>
+      </div>`;
+    wrap.appendChild(div);
+  }
+}
+
+function selGNVVeiculo(el, val) {
+  const bloco = el.closest('.veiculo-bloco');
+  bloco.querySelectorAll('.gnv-card').forEach(c => c.classList.remove('ativo'));
+  el.classList.add('ativo');
+}
+
+function getVeiculos() {
+  const blocos = document.querySelectorAll('.veiculo-bloco');
+  if (blocos.length === 0) return [{ modelo: '', ano: '', gnv: null }];
+  return Array.from(blocos).map(b => ({
+    modelo: b.querySelector('.v-modelo')?.value || '',
+    ano: b.querySelector('.v-ano')?.value || '',
+    gnv: b.querySelector('.v-gnv-sim')?.classList.contains('ativo') ? 'sim' : (b.querySelector('.v-gnv-nao')?.classList.contains('ativo') ? 'nao' : null)
+  }));
+}
+
 function selGNV(v) {
   gnv = v;
-  document.getElementById('gv-sim').className = 'gnv-card' + (v==='sim' ? ' sel-sim' : '');
-  document.getElementById('gv-nao').className = 'gnv-card' + (v==='nao' ? ' sel-nao' : '');
 }
 function selStatus(s) {
   status = s;
