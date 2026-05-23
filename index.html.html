@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rastreando GPS — Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --red: #e8002d;
+    --red-glow: rgba(232, 0, 45, 0.3);
+    --cyan: #00e5ff;
+    --cyan-glow: rgba(0, 229, 255, 0.25);
+    --white: #ffffff;
+    --muted: #555;
+    --border: #222;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid #1e1e1e;
+    padding: 14px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px var(--red-glow);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo-mark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 40% 40%, rgba(0,229,255,0.15), transparent 70%);
+  }
+
+  .logo-pin {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px var(--cyan));
+  }
+
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .header-text span {
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 3px;
+    font-weight: 600;
+    text-shadow: 0 0 8px var(--cyan-glow);
+  }
+
+  /* TABS */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 12px 4px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .tab-btn .tab-icon { font-size: 16px; }
+
+  .tab-btn.active {
+    color: var(--white);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red-glow);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .tab-btn:nth-child(1).active { color: var(--cyan); }
+  .tab-btn:nth-child(1).active::after { background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow); }
+
+  /* PANELS */
+  .panel { display: none; padding: 16px; }
+  .panel.active { display: block; }
+
+  /* SCANNER AREA */
+  .scanner-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  #scanner-iccid, #scanner-imei, #scanner-nome {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  #scanner-iccid video, #scanner-imei video, #scanner-nome video,
+  #scanner-iccid canvas, #scanner-imei canvas, #scanner-nome canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .scan-frame {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 75%;
+    height: 40%;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 8px;
+  }
+
+  .scan-frame::before, .scan-frame::after,
+  .scan-frame-inner::before, .scan-frame-inner::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--red);
+    border-style: solid;
+  }
+
+  .scan-frame::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+  .scan-frame::after  { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+  .scan-frame-inner::before { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+  .scan-frame-inner::after  { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+
+  .scan-line {
+    position: absolute;
+    left: 12.5%;
+    width: 75%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    box-shadow: 0 0 8px var(--red);
+    animation: scanline 2s ease-in-out infinite;
+    top: 30%;
+  }
+
+  @keyframes scanline {
+    0%, 100% { top: 30%; opacity: 1; }
+    50% { top: 65%; opacity: 0.6; }
+  }
+
+  .scanner-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #050505;
+  }
+
+  .scanner-placeholder .ph-icon { font-size: 40px; opacity: 0.3; }
+  .scanner-placeholder p { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+
+  /* SCAN BUTTON */
+  .btn-scan {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--red), #b00020);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px var(--red-glow);
+    transition: all 0.2s;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-scan:active { transform: scale(0.97); }
+  .btn-scan.scanning {
+    background: linear-gradient(135deg, #333, #222);
+    box-shadow: none;
+  }
+
+  /* COUNTER */
+  .counter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .counter-num {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan-glow);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  /* OUTPUT */
+  .output-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    min-height: 90px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #ccc;
+    word-break: break-all;
+    white-space: pre-wrap;
+    position: relative;
+  }
+
+  .output-box:empty::after {
+    content: 'Nenhum código lido ainda...';
+    color: var(--muted);
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  /* FLASH SUCCESS */
+  .output-box.flash {
+    animation: flashGreen 0.4s ease;
+  }
+
+  @keyframes flashGreen {
+    0%, 100% { border-color: var(--border); }
+    50% { border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+  }
+
+  /* ACTIONS */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn-action {
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-copy {
+    background: var(--surface2);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,229,255,0.1);
+  }
+
+  .btn-copy:active { transform: scale(0.96); background: rgba(0,229,255,0.1); }
+
+  .btn-clear {
+    background: var(--surface2);
+    border: 1px solid #333;
+    color: var(--muted);
+  }
+
+  .btn-clear:active { transform: scale(0.96); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    z-index: 999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px var(--cyan-glow);
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.red { border-color: var(--red); color: var(--red); box-shadow: 0 4px 20px var(--red-glow); }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">
+    <span class="logo-pin">📍</span>
+  </div>
+  <div class="header-text">
+    <h1>RASTREANDO</h1>
+    <span>GPS · SCANNER</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab(0)">
+    <span class="tab-icon">💳</span>
+    ICCID
+  </button>
+  <button class="tab-btn" onclick="switchTab(1)">
+    <span class="tab-icon">📟</span>
+    IMEI
+  </button>
+  <button class="tab-btn" onclick="switchTab(2)">
+    <span class="tab-icon">🏷️</span>
+    NOME
+  </button>
+</div>
+
+<!-- PANEL 1: ICCID -->
+<div class="panel active" id="panel-0">
+  <div class="scanner-wrap">
+    <div id="scanner-iccid">
+      <div class="scanner-placeholder" id="ph-iccid">
+        <span class="ph-icon">💳</span>
+        <p>CÂMERA DESATIVADA</p>
+      </div>
+    </div>
+    <div class="scan-overlay">
+      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+
+  <button class="btn-scan" id="btn-scan-iccid" onclick="toggleScan('iccid')">
+    <span>▶</span> INICIAR SCANNER
+  </button>
+
+  <div class="counter-bar">
+    <div class="counter">CHIPS LIDOS <span class="counter-num" id="count-iccid">0</span></div>
+  </div>
+
+  <div class="section-label">Resultado (separado por vírgula)</div>
+  <div class="output-box" id="out-iccid"></div>
+
+  <div class="actions">
+    <button class="btn-action btn-copy" onclick="copyOutput('iccid')">📋 COPIAR</button>
+    <button class="btn-action btn-clear" onclick="clearOutput('iccid')">🗑 LIMPAR</button>
+  </div>
+</div>
+
+<!-- PANEL 2: IMEI -->
+<div class="panel" id="panel-1">
+  <div class="scanner-wrap">
+    <div id="scanner-imei">
+      <div class="scanner-placeholder" id="ph-imei">
+        <span class="ph-icon">📟</span>
+        <p>CÂMERA DESATIVADA</p>
+      </div>
+    </div>
+    <div class="scan-overlay">
+      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+
+  <button class="btn-scan" id="btn-scan-imei" onclick="toggleScan('imei')">
+    <span>▶</span> INICIAR SCANNER
+  </button>
+
+  <div class="counter-bar">
+    <div class="counter">EQUIPAMENTOS LIDOS <span class="counter-num" id="count-imei">0</span></div>
+  </div>
+
+  <div class="section-label">Resultado (um por linha)</div>
+  <div class="output-box" id="out-imei"></div>
+
+  <div class="actions">
+    <button class="btn-action btn-copy" onclick="copyOutput('imei')">📋 COPIAR</button>
+    <button class="btn-action btn-clear" onclick="clearOutput('imei')">🗑 LIMPAR</button>
+  </div>
+</div>
+
+<!-- PANEL 3: NOME -->
+<div class="panel" id="panel-2">
+  <div class="scanner-wrap">
+    <div id="scanner-nome">
+      <div class="scanner-placeholder" id="ph-nome">
+        <span class="ph-icon">🏷️</span>
+        <p>CÂMERA DESATIVADA</p>
+      </div>
+    </div>
+    <div class="scan-overlay">
+      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
+      <div class="scan-line"></div>
+    </div>
+  </div>
+
+  <button class="btn-scan" id="btn-scan-nome" onclick="toggleScan('nome')">
+    <span>▶</span> INICIAR SCANNER
+  </button>
+
+  <div class="counter-bar">
+    <div class="counter">NOMES GERADOS <span class="counter-num" id="count-nome">0</span></div>
+  </div>
+
+  <div class="section-label">Resultado — formato: A J16 XXX</div>
+  <div class="output-box" id="out-nome"></div>
+
+  <div class="actions">
+    <button class="btn-action btn-copy" onclick="copyOutput('nome')">📋 COPIAR</button>
+    <button class="btn-action btn-clear" onclick="clearOutput('nome')">🗑 LIMPAR</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // STATE
+  const state = {
+    iccid: { items: [], scanning: false },
+    imei:  { items: [], scanning: false },
+    nome:  { items: [], scanning: false },
+  };
+
+  let activeTab = 0;
+  const tabNames = ['iccid', 'imei', 'nome'];
+
+  // SWITCH TAB
+  function switchTab(idx) {
+    // Stop scanning on previous tab
+    const prev = tabNames[activeTab];
+    if (state[prev].scanning) stopScan(prev);
+
+    activeTab = idx;
+    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+    document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  }
+
+  // TOGGLE SCAN
+  function toggleScan(type) {
+    if (state[type].scanning) {
+      stopScan(type);
+    } else {
+      startScan(type);
+    }
+  }
+
+  function startScan(type) {
+    const ph = document.getElementById('ph-' + type);
+    if (ph) ph.style.display = 'none';
+
+    const btn = document.getElementById('btn-scan-' + type);
+    btn.innerHTML = '<span>⏹</span> PARAR SCANNER';
+    btn.classList.add('scanning');
+    state[type].scanning = true;
+    state[type].paused = false;
+
+    Quagga.init({
+      inputStream: {
+        name: 'Live',
+        type: 'LiveStream',
+        target: document.getElementById('scanner-' + type),
+        constraints: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+      },
+      decoder: {
+        readers: ['code_128_reader', 'ean_reader', 'code_39_reader', 'i2of5_reader'],
+        multiple: false,
+      },
+      locate: true,
+      frequency: 15,
+    }, function(err) {
+      if (err) {
+        showToast('Erro ao acessar câmera', true);
+        stopScan(type);
+        return;
+      }
+      Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+      if (state[type].paused) return;
+
+      const code = result.codeResult.code;
+      if (!code || code.length < 5) return;
+
+
+
+      state[type].paused = true;
+      addCode(type, code);
+
+      setTimeout(() => {
+        if (state[type].scanning) state[type].paused = false;
+      }, 1500);
+    });
+  }
+
+  function stopScan(type) {
+    Quagga.stop();
+    Quagga.offDetected();
+
+    const btn = document.getElementById('btn-scan-' + type);
+    btn.innerHTML = '<span>▶</span> INICIAR SCANNER';
+    btn.classList.remove('scanning');
+    state[type].scanning = false;
+    state[type].paused = false;
+
+    const ph = document.getElementById('ph-' + type);
+    if (ph) ph.style.display = 'flex';
+  }
+
+  // ADD CODE
+  function addCode(type, raw) {
+    const items = state[type].items;
+
+    // Duplicate check — exact match
+    if (items.includes(raw)) {
+      showToast('⚠ CÓDIGO JÁ LIDO!', true);
+      vibrate([100, 50, 100]);
+      return;
+    }
+
+    // Partial read check — rejeita se já existe código que contém este como parte
+    const isPartial = items.some(existing => existing.includes(raw) || raw.includes(existing));
+    if (isPartial) {
+      showToast('⚠ LEITURA PARCIAL IGNORADA', true);
+      vibrate([50]);
+      return;
+    }
+
+    items.push(checkVal);
+
+    // Update counter
+    document.getElementById('count-' + type).textContent = items.length;
+
+    // Update output
+    const out = document.getElementById('out-' + type);
+
+    if (type === 'iccid') {
+      out.textContent = items.join(',');
+    } else if (type === 'imei') {
+      out.textContent = items.join('\n');
+    } else if (type === 'nome') {
+      const last3 = raw.slice(-3);
+      const nome = 'A J16 ' + last3;
+      // Store formatted name
+      state.nome.items[items.length - 1] = nome;
+      out.textContent = state.nome.items.join('\n');
+    }
+
+    // Flash
+    out.classList.remove('flash');
+    void out.offsetWidth;
+    out.classList.add('flash');
+
+    // Vibrate
+    vibrate([60]);
+    showToast('✓ LIDO COM SUCESSO');
+  }
+
+  // COPY
+  function copyOutput(type) {
+    const out = document.getElementById('out-' + type);
+    const text = out.textContent;
+    if (!text) { showToast('Nada para copiar', true); return; }
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('📋 COPIADO!'));
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('📋 COPIADO!');
+    }
+  }
+
+  // CLEAR
+  function clearOutput(type) {
+    state[type].items = [];
+    document.getElementById('out-' + type).textContent = '';
+    document.getElementById('count-' + type).textContent = '0';
+    showToast('🗑 LISTA LIMPA');
+  }
+
+  // VIBRATE
+  function vibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  // TOAST
+  let toastTimer;
+  function showToast(msg, isRed = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isRed ? ' red' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2000);
+  }
+</script>
+</body>
+</html>
