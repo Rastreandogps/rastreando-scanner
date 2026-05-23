@@ -787,19 +787,18 @@ function mostrarBannerHoje(osHoje) {
 
   const banner = document.createElement('div');
   banner.id = 'banner-hoje';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   banner.innerHTML = `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:#1a1a1a;border:1.5px solid #00e5ff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 0 30px rgba(0,229,255,0.2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div>
-            <div style="font-size:16px;font-weight:700;color:#00e5ff;">📅 OS de Hoje</div>
-            <div style="font-size:12px;color:#aaa;margin-top:2px;">${total} serviço${total>1?'s':''} agendado${total>1?'s':''} para hoje</div>
-          </div>
-          <button onclick="document.getElementById('banner-hoje').remove()" style="background:#333;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <div style="background:#1a1a1a;border:1.5px solid #00e5ff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#00e5ff;">📅 OS de Hoje</div>
+          <div style="font-size:12px;color:#aaa;margin-top:2px;">${total} serviço${total>1?'s':''} agendado${total>1?'s':''} para hoje</div>
         </div>
-        <div style="border-top:1px solid #2a2a2a;padding-top:10px;">${lista}</div>
-        <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="margin-top:14px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Ver no Painel</button>
+        <button onclick="document.getElementById('banner-hoje').remove()" style="background:#333;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
+      <div style="border-top:1px solid #2a2a2a;padding-top:10px;">${lista}</div>
+      <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="margin-top:14px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Ver no Painel</button>
     </div>`;
   document.body.appendChild(banner);
 }
