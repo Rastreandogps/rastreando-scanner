@@ -568,7 +568,9 @@
     btn.innerHTML = '<span>⏹</span> PARAR SCANNER';
     btn.classList.add('scanning');
     state[type].scanning = true;
-    state[type].paused = false;
+
+    let lastCode = '';
+    let lastTime = 0;
 
     Quagga.init({
       inputStream: {
@@ -577,16 +579,14 @@
         target: document.getElementById('scanner-' + type),
         constraints: {
           facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
       },
       decoder: {
         readers: ['code_128_reader', 'ean_reader', 'code_39_reader', 'i2of5_reader'],
-        multiple: false,
       },
       locate: true,
-      frequency: 15,
     }, function(err) {
       if (err) {
         showToast('Erro ao acessar câmera', true);
@@ -597,19 +597,15 @@
     });
 
     Quagga.onDetected(function(result) {
-      if (state[type].paused) return;
-
       const code = result.codeResult.code;
-      if (!code || code.length < 5) return;
+      const now = Date.now();
 
+      // Debounce: ignore same code within 2s
+      if (code === lastCode && now - lastTime < 2000) return;
+      lastCode = code;
+      lastTime = now;
 
-
-      state[type].paused = true;
       addCode(type, code);
-
-      setTimeout(() => {
-        if (state[type].scanning) state[type].paused = false;
-      }, 1500);
     });
   }
 
@@ -621,7 +617,6 @@
     btn.innerHTML = '<span>▶</span> INICIAR SCANNER';
     btn.classList.remove('scanning');
     state[type].scanning = false;
-    state[type].paused = false;
 
     const ph = document.getElementById('ph-' + type);
     if (ph) ph.style.display = 'flex';
@@ -631,22 +626,17 @@
   function addCode(type, raw) {
     const items = state[type].items;
 
-    // Duplicate check — exact match
-    if (items.includes(raw)) {
+    // Duplicate check
+    let checkVal = raw;
+    if (type === 'nome') checkVal = raw; // check by IMEI
+
+    if (items.includes(checkVal)) {
       showToast('⚠ CÓDIGO JÁ LIDO!', true);
       vibrate([100, 50, 100]);
       return;
     }
 
-    // Partial read check — rejeita se já existe código que contém este como parte
-    const isPartial = items.some(existing => existing.includes(raw) || raw.includes(existing));
-    if (isPartial) {
-      showToast('⚠ LEITURA PARCIAL IGNORADA', true);
-      vibrate([50]);
-      return;
-    }
-
-    items.push(raw);
+    items.push(checkVal);
 
     // Update counter
     document.getElementById('count-' + type).textContent = items.length;
