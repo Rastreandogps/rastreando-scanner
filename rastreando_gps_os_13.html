@@ -890,12 +890,13 @@ function mudarAba(aba) {
 function initRelatorios() {
   const anoSel = document.getElementById('rel-ano');
   if (anoSel.options.length === 0) {
-    const hoje = new Date();
-    for (let a = hoje.getFullYear(); a >= hoje.getFullYear() - 3; a--) {
+    [2026, 2027, 2028, 2029, 2030].forEach(a => {
       const op = document.createElement('option');
       op.value = a; op.textContent = a;
       anoSel.appendChild(op);
-    }
+    });
+    const hoje = new Date();
+    anoSel.value = hoje.getFullYear();
     document.getElementById('rel-mes').value = hoje.getMonth() + 1;
   }
   renderRelatorios();
