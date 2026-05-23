@@ -496,22 +496,14 @@
 
 <!-- PANEL 3: NOME -->
 <div class="panel" id="panel-2">
-  <div class="scanner-wrap">
-    <div id="scanner-nome">
-      <div class="scanner-placeholder" id="ph-nome">
-        <span class="ph-icon">🏷️</span>
-        <p>CÂMERA DESATIVADA</p>
-      </div>
-    </div>
-    <div class="scan-overlay">
-      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
-      <div class="scan-line"></div>
+
+  <div style="background:#111;border:1px solid #222;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:22px;">🏷️</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;letter-spacing:1px;color:#00e5ff;">GERADO AUTOMATICAMENTE</div>
+      <div style="font-size:11px;color:#555;letter-spacing:1px;">A partir dos IMEIs lidos na aba 2</div>
     </div>
   </div>
-
-  <button class="btn-scan" id="btn-scan-nome" onclick="toggleScan('nome')">
-    <span>▶</span> INICIAR SCANNER
-  </button>
 
   <div class="counter-bar">
     <div class="counter">NOMES GERADOS <span class="counter-num" id="count-nome">0</span></div>
@@ -575,7 +567,6 @@
 
     const container = document.getElementById('scanner-' + type);
 
-    // Create video
     let video = container.querySelector('video');
     if (!video) {
       video = document.createElement('video');
@@ -598,7 +589,6 @@
       return;
     }
 
-    // Use native BarcodeDetector if available, else Quagga
     if ('BarcodeDetector' in window) {
       const detector = new BarcodeDetector({
         formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'itf', 'data_matrix', 'pdf417']
@@ -624,7 +614,6 @@
       scanLoops[type] = requestAnimationFrame(loop);
 
     } else {
-      // Fallback: Quagga
       Quagga.init({
         inputStream: {
           name: 'Live', type: 'LiveStream',
@@ -654,13 +643,8 @@
   }
 
   function stopScan(type) {
-    // Stop native loop
     if (scanLoops[type]) { cancelAnimationFrame(scanLoops[type]); delete scanLoops[type]; }
-
-    // Stop stream
     if (streams[type]) { streams[type].getTracks().forEach(t => t.stop()); delete streams[type]; }
-
-    // Stop Quagga if running
     try { Quagga.stop(); Quagga.offDetected(); } catch(e) {}
 
     const btn = document.getElementById('btn-scan-' + type);
@@ -708,11 +692,12 @@
       out.textContent = items.join(',');
     } else if (type === 'imei') {
       out.textContent = items.join('\n');
+      // Auto-update aba NOME
+      const nomes = items.map(imei => 'A J16 ' + imei.slice(-3));
+      state.nome.items = nomes;
+      document.getElementById('out-nome').textContent = nomes.join('\n');
+      document.getElementById('count-nome').textContent = nomes.length;
     } else if (type === 'nome') {
-      const last3 = raw.slice(-3);
-      const nome = 'A J16 ' + last3;
-      // Store formatted name
-      state.nome.items[items.length - 1] = nome;
       out.textContent = state.nome.items.join('\n');
     }
 
