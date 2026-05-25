@@ -522,25 +522,23 @@ function buildDateChips() {
   const rowsEl = document.getElementById('dateRows');
   if (clients.length === 0) { wrap.classList.remove('active'); return; }
 
-  // agrupa por data normalizada, preserva label original mais comum
-  const seen = new Map(); // key normalizada → {count, label}
+  const seen = new Map();
   clients.forEach(c => {
-    const key = normalizarData(c.mes);
-    if (!seen.has(key)) seen.set(key, { count: 0, label: capitalizar(key) });
-    seen.get(key).count++;
+    const key = c.mes.trim();
+    seen.set(key, (seen.get(key) || 0) + 1);
   });
 
   if (seen.size === 0) { wrap.classList.remove('active'); return; }
   wrap.classList.add('active');
 
-  rowsEl.innerHTML = [...seen.entries()].map(([key, {count, label}]) => {
+  rowsEl.innerHTML = [...seen.entries()].map(([key, count]) => {
     const checked = selectedDates.has(key);
     return `<div class="date-row" onclick="toggleDateChip('${key}')">
       <div class="date-checkbox${checked ? ' checked' : ''}" data-mes="${key}">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="date-row-info">
-        <div class="date-row-label">${label}</div>
+        <div class="date-row-label">${key}</div>
         <div class="date-row-count">${count} cliente${count > 1 ? 's' : ''}</div>
       </div>
     </div>`;
@@ -548,45 +546,13 @@ function buildDateChips() {
   updateDateRowsUI();
 }
 
-function normalizarData(str) {
-  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  const s = str.trim();
-
-  // formato: 2026-05-20
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) {
-    const nomeMes = meses[parseInt(m[2],10)-1] || m[2];
-    return nomeMes + '/' + m[1];
-  }
-
-  // formato: 23/04/2025
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) {
-    const nomeMes = meses[parseInt(m[2],10)-1] || m[2];
-    return nomeMes + '/' + m[3];
-  }
-
-  // formato: 20/abril ou 20/abril/2025
-  m = s.match(/^(\d{1,2})\/([\wç]+)(\/(\d{4}))?$/i);
-  if (m) {
-    const key = m[2].toLowerCase();
-    return m[4] ? key + '/' + m[4] : key;
-  }
-
-  // formato: abril ou abril/2025
-  return s.toLowerCase();
-}
-
-function capitalizar(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 // ==================== RENDER ====================
 function renderClients() {
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent') pool = pool.filter(c => c.sent);
-  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(normalizarData(c.mes)));
+  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(c.mes.trim()));
   filteredClients = [...pool];
 
   const list = document.getElementById('clientsList');
