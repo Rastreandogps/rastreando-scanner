@@ -544,16 +544,22 @@ function buildCardHTML(c, i) {
 function deleteClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const card = document.getElementById('card-' + id);
-  if (card) {
-    card.classList.add('removing');
-    setTimeout(() => {
-      clients = clients.filter(x => x.id !== id);
-      saveToStorage();
-      renderClients();
-      showToast(`🗑️ ${c.nome} removido`);
-    }, 250);
-  }
+  openModal(
+    'Remover cliente?',
+    `"${c.nome}" será removido da lista. Esta ação não pode ser desfeita.`,
+    () => {
+      const card = document.getElementById('card-' + id);
+      if (card) {
+        card.classList.add('removing');
+        setTimeout(() => {
+          clients = clients.filter(x => x.id !== id);
+          saveToStorage();
+          renderClients();
+          showToast(`🗑️ ${c.nome} removido`);
+        }, 250);
+      }
+    }
+  );
 }
 
 // ==================== TOGGLE CARD ====================
