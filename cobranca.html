@@ -12,30 +12,14 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
---bg:#0a0a0a;
---bg2:#141414;
---bg3:#1c1c1c;
---card:#1a1a1a;
---border:#2a2a2a;
---border2:#333;
---yellow:#f5c518;
---yellow2:#ffd740;
---yellow-dim:#2a2200;
---red:#e53935;
---red-dim:#2a0a0a;
---white:#f0f0f0;
---muted:#888;
---muted2:#555;
---text:#f0f0f0;
---text2:#bbb;
---green:#25d366;
---green-dim:#0a1f0f;
---radius:14px;
---radius-sm:8px;
---radius-lg:20px;
---font:'Space Grotesk',sans-serif;
---font-display:'Syne',sans-serif;
---shadow:0 4px 24px rgba(0,0,0,.5);
+--bg:#0a0a0a;--bg2:#141414;--bg3:#1c1c1c;--card:#1a1a1a;--border:#2a2a2a;--border2:#333;
+--yellow:#f5c518;--yellow2:#ffd740;--yellow-dim:#2a2200;
+--red:#e53935;--red-dim:#2a0a0a;
+--white:#f0f0f0;--muted:#888;--muted2:#555;--text:#f0f0f0;--text2:#bbb;
+--green:#25d366;--green-dim:#0a1f0f;--green2:#1aad54;
+--sent:#0d3320;--sent-border:#1aad54;
+--radius:14px;--radius-sm:8px;--radius-lg:20px;
+--font:'Space Grotesk',sans-serif;--font-display:'Syne',sans-serif;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;overflow-x:hidden}
 body{display:flex;flex-direction:column;min-height:100vh}
@@ -43,7 +27,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 /* HEADER */
 .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-logo{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--yellow);letter-spacing:-.3px}
-.header-logo span{color:var(--white);font-weight:700;font-size:13px;display:block;margin-top:-2px;font-family:var(--font)}
 .header-right{display:flex;gap:8px;align-items:center}
 .badge{background:var(--yellow);color:#000;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;min-width:24px;text-align:center}
 .badge.hidden{display:none}
@@ -63,7 +46,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
 .section-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .section-head h3{font-size:13px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase}
-.section-head .count{font-size:11px;color:var(--muted);margin-left:auto}
 
 /* TEXTAREAS */
 .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
@@ -102,20 +84,36 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .search-wrap input::placeholder{color:var(--muted2)}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
 
+/* PROGRESS BAR */
+.progress-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:none;flex-direction:column;gap:8px}
+.progress-wrap.active{display:flex}
+.progress-top{display:flex;justify-content:space-between;align-items:center}
+.progress-label{font-size:13px;font-weight:700;color:var(--text2)}
+.progress-count{font-size:18px;font-weight:800;font-family:var(--font-display);color:var(--green)}
+.progress-bar-bg{background:var(--bg3);border-radius:20px;height:8px;overflow:hidden}
+.progress-bar-fill{background:var(--green);height:100%;border-radius:20px;transition:width .4s ease}
+.progress-bottom{display:flex;justify-content:space-between;align-items:center}
+.progress-pct{font-size:12px;color:var(--muted)}
+.btn-reset-sent{background:var(--red-dim);color:var(--red);border:1px solid rgba(229,57,53,.3);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .2s}
+.btn-reset-sent:active{transform:scale(.96)}
+
 /* CLIENT CARDS */
 .clients-list{display:flex;flex-direction:column;gap:10px}
-.client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
-.client-card.selected{border-color:var(--yellow)}
+.client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s}
+.client-card.sent{background:var(--sent);border-color:var(--sent-border)}
 .client-card-head{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.client-avatar{width:40px;height:40px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--yellow);flex-shrink:0}
+.client-avatar{width:40px;height:40px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--yellow);flex-shrink:0;transition:all .3s}
+.client-card.sent .client-avatar{background:var(--green-dim);border-color:var(--green);color:var(--green)}
 .client-info{flex:1;min-width:0}
 .client-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .client-sub{font-size:12px;color:var(--muted)}
 .client-value{font-weight:700;color:var(--yellow);font-size:15px;flex-shrink:0}
-.client-checkbox{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s}
-.client-checkbox.checked{background:var(--yellow);border-color:var(--yellow)}
-.client-checkbox svg{display:none}
-.client-checkbox.checked svg{display:block}
+.client-card.sent .client-value{color:var(--green)}
+
+/* SENT BADGE */
+.sent-badge{display:none;background:var(--green);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.3px;flex-shrink:0}
+.client-card.sent .sent-badge{display:flex;align-items:center;gap:3px}
+
 .client-body{padding:0 14px 14px;display:none;flex-direction:column;gap:10px}
 .client-body.open{display:flex}
 .msg-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -123,12 +121,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .action-row{display:flex;gap:8px}
 .btn-whatsapp{flex:1;background:var(--green);color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;border:none;font-family:var(--font);transition:all .2s}
 .btn-copy{flex:0 0 auto;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .2s}
-.btn-whatsapp:active,.btn-copy:active{transform:scale(.96)}
 
-/* BULK ACTIONS */
-.bulk-bar{background:var(--yellow-dim);border:1px solid rgba(245,197,24,.2);border-radius:var(--radius);padding:12px 14px;display:none;align-items:center;gap:10px}
-.bulk-bar.active{display:flex}
-.bulk-info{font-size:13px;font-weight:600;color:var(--yellow);flex:1}
+/* BOTÃO ENVIADO */
+.btn-mark-sent{flex:0 0 auto;background:var(--green-dim);color:var(--green);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:var(--font);font-weight:700;transition:all .2s}
+.client-card.sent .btn-mark-sent{background:var(--green);color:#000;border-color:var(--green)}
+.btn-whatsapp:active,.btn-copy:active,.btn-mark-sent:active{transform:scale(.96)}
 
 /* STATS ROW */
 .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -153,24 +150,22 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .modal p{color:var(--text2);font-size:14px;margin-bottom:20px}
 .modal-btns{display:flex;gap:10px}
 
-/* WHATSAPP ICON */
 .wa-icon{width:18px;height:18px;flex-shrink:0}
-
-/* DIVIDER */
-.divider{height:1px;background:var(--border);margin:4px 0}
-
-/* SELECT ALL ROW */
-.select-all-row{display:flex;align-items:center;gap:10px;padding:8px 0}
-.select-all-row label{font-size:13px;color:var(--text2);cursor:pointer}
 
 /* FOOTER NAV */
 .footer-nav{background:var(--bg2);border-top:1px solid var(--border);padding:8px 16px;display:flex;justify-content:space-around;align-items:center;position:sticky;bottom:0;z-index:100}
 .fnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);transition:color .2s;background:none;border:none;font-family:var(--font)}
 .fnav-btn.active{color:var(--yellow)}
 
-/* ANIMATIONS */
+/* FILTER TABS */
+.filter-tabs{display:flex;gap:6px}
+.filter-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--muted);font-family:var(--font);transition:all .2s}
+.filter-tab.active{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
+
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .client-card{animation:fadeIn .25s ease both}
+@keyframes sentPulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+.client-card.sent-anim{animation:sentPulse .3s ease}
 </style>
 </head>
 <body>
@@ -178,7 +173,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <div class="header">
   <div>
     <div class="header-logo">⚡ CobrançaRápida</div>
-    <div class="header-logo" style="font-family:var(--font);font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Rastreando GPS</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:1px">Rastreando GPS</div>
   </div>
   <div class="header-right">
     <span class="badge hidden" id="totalBadge">0</span>
@@ -195,7 +190,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
   <!-- ===== SCREEN: DADOS ===== -->
   <div class="screen active" id="screen-dados">
-
     <div class="section-card">
       <div class="section-head">
         <h3>📥 Cole os dados do Google Sheets / Excel</h3>
@@ -220,23 +214,18 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
       <div id="validationMsg" class="validation"></div>
     </div>
-
     <button class="btn btn-primary" onclick="generateClients()" id="btnGerar">
       <span>⚡</span> GERAR CLIENTES
     </button>
     <button class="btn btn-danger" onclick="confirmClear()" style="margin-top:-6px">
       🗑️ Limpar Tudo
     </button>
-
   </div>
 
   <!-- ===== SCREEN: MENSAGEM ===== -->
   <div class="screen" id="screen-mensagem">
-
     <div class="section-card">
-      <div class="section-head">
-        <h3>✏️ Modelo de Mensagem</h3>
-      </div>
+      <div class="section-head"><h3>✏️ Modelo de Mensagem</h3></div>
       <div class="msg-area">
         <textarea id="msgTemplate" placeholder="Olá, {nome}! Consta em nosso sistema um débito referente ao mês {mes}, no valor de R$ {valor}. Pedimos a regularização para evitar o cancelamento do serviço. Entre em contato: (21) 9 8088-6087" oninput="saveTemplate();updatePreviews()" rows="5"></textarea>
         <div class="var-btns">
@@ -247,18 +236,16 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
     </div>
-
     <div class="section-card" id="previewCard" style="display:none">
       <div class="section-head"><h3>👁️ Prévia (1º cliente)</h3></div>
       <div class="msg-area">
         <div class="msg-preview" id="previewText" style="color:var(--text)"></div>
       </div>
     </div>
-
     <div class="section-card">
       <div class="section-head"><h3>ℹ️ Variáveis disponíveis</h3></div>
-      <div class="msg-area" style="gap:6px">
-        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+      <div class="msg-area">
+        <div style="font-size:13px;color:var(--text2);line-height:2">
           <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{nome}</code> — Nome do cliente<br>
           <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{telefone}</code> — Número de telefone<br>
           <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{mes}</code> — Mês em aberto<br>
@@ -266,51 +253,55 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
     </div>
-
   </div>
 
   <!-- ===== SCREEN: CLIENTES ===== -->
   <div class="screen" id="screen-clientes">
 
+    <!-- STATS -->
     <div class="stats-row" id="statsRow" style="display:none">
       <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total</div></div>
-      <div class="stat-box"><div class="stat-val" id="statSelecionados">0</div><div class="stat-label">Selecionados</div></div>
-      <div class="stat-box"><div class="stat-val" id="statValorTotal">R$0</div><div class="stat-label">Em aberto</div></div>
+      <div class="stat-box"><div class="stat-val" id="statEnviados" style="color:var(--green)">0</div><div class="stat-label">Enviados</div></div>
+      <div class="stat-box"><div class="stat-val" id="statPendentes" style="color:var(--red)">0</div><div class="stat-label">Pendentes</div></div>
     </div>
 
+    <!-- PROGRESS -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-top">
+        <span class="progress-label">Progresso de envio</span>
+        <span class="progress-count" id="progressCount">0/0</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-bottom">
+        <span class="progress-pct" id="progressPct">0% concluído</span>
+        <button class="btn-reset-sent" onclick="confirmResetSent()">🔄 Limpar marcações</button>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
     <div class="search-wrap" id="searchWrap" style="display:none">
       <span class="search-icon">🔍</span>
       <input type="search" id="searchInput" placeholder="Buscar cliente..." oninput="filterClients()" autocomplete="off">
     </div>
 
-    <div class="bulk-bar" id="bulkBar">
-      <span class="bulk-info" id="bulkInfo">0 selecionados</span>
-      <button class="btn btn-green btn-sm" onclick="sendAll()">📤 Enviar Todos</button>
-      <button class="btn btn-ghost btn-sm" onclick="copyAll()">📋 Copiar</button>
+    <!-- FILTER TABS -->
+    <div class="filter-tabs" id="filterTabs" style="display:none">
+      <button class="filter-tab active" id="ftAll" onclick="setFilter('all')">Todos</button>
+      <button class="filter-tab" id="ftPending" onclick="setFilter('pending')">⏳ Pendentes</button>
+      <button class="filter-tab" id="ftSent" onclick="setFilter('sent')">✅ Enviados</button>
     </div>
 
-    <div class="select-all-row" id="selectAllRow" style="display:none">
-      <div class="client-checkbox" id="selectAllCheck" onclick="toggleSelectAll()">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <label onclick="toggleSelectAll()">Selecionar todos</label>
-      <span style="margin-left:auto;font-size:12px;color:var(--muted)" id="selectCount"></span>
-    </div>
-
+    <!-- LIST -->
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
-        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/>
-          <line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-          <line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-          <line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
         <p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p>
       </div>
     </div>
 
   </div>
-
 </div>
 
 <!-- FOOTER NAV -->
@@ -323,7 +314,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- MODAL CONFIRM -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 id="modalTitle">Confirmar ação</h3>
@@ -336,22 +327,16 @@ body{display:flex;flex-direction:column;min-height:100vh}
 </div>
 
 <script>
-// ==================== STATE ====================
 let clients = [];
 let filteredClients = [];
-let selectedIds = new Set();
-let currentTab = 'dados';
+let currentFilter = 'all';
 let modalCallback = null;
 
 // ==================== INIT ====================
-window.addEventListener('load', () => {
-  loadFromStorage();
-  validateFields();
-});
+window.addEventListener('load', () => { loadFromStorage(); validateFields(); });
 
 // ==================== TABS ====================
 function switchTab(tab) {
-  currentTab = tab;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.fnav-btn').forEach(t => t.classList.remove('active'));
@@ -362,7 +347,7 @@ function switchTab(tab) {
   if (tab === 'mensagem') updatePreviews();
 }
 
-// ==================== PARSE FIELDS ====================
+// ==================== PARSE ====================
 function parseField(text) {
   return text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 }
@@ -379,15 +364,12 @@ function validateFields() {
   const allSame = counts.every(c => c === counts[0]);
   if (!allSame) {
     el.className = 'validation error';
-    el.innerHTML = `⚠️ Colunas com quantidades diferentes: Nomes(${n.length}), Telefones(${t.length}), Meses(${m.length}), Valores(${v.length})`;
-    el.style.display = 'flex';
-    btn.disabled = true;
-    return;
+    el.innerHTML = `⚠️ Colunas diferentes: Nomes(${n.length}), Tel(${t.length}), Meses(${m.length}), Valores(${v.length})`;
+    el.style.display = 'flex'; btn.disabled = true; return;
   }
   el.className = 'validation success';
-  el.innerHTML = `✅ ${counts[0]} cliente${counts[0] > 1 ? 's' : ''} prontos para gerar`;
-  el.style.display = 'flex';
-  btn.disabled = false;
+  el.innerHTML = `✅ ${counts[0]} cliente${counts[0]>1?'s':''} prontos para gerar`;
+  el.style.display = 'flex'; btn.disabled = false;
 }
 
 // ==================== GENERATE ====================
@@ -397,20 +379,18 @@ function generateClients() {
   const meses = parseField(document.getElementById('fMeses').value);
   const valores = parseField(document.getElementById('fValores').value);
   if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
-  if (![tels, meses, valores].every(a => a.length === nomes.length)) {
-    showToast('Corrija as colunas antes de gerar'); return;
-  }
+  if (![tels,meses,valores].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
   clients = nomes.map((nome, i) => ({
     id: Date.now() + i,
     nome,
     telefone: formatPhone(tels[i]),
     mes: meses[i],
     valor: valores[i],
-    expanded: false
+    expanded: false,
+    sent: false
   }));
-  selectedIds.clear();
   saveToStorage();
-  showToast(`⚡ ${clients.length} cliente${clients.length > 1 ? 's' : ''} gerado${clients.length > 1 ? 's' : ''}!`);
+  showToast(`⚡ ${clients.length} cliente${clients.length>1?'s':''} gerado${clients.length>1?'s':''}!`);
   switchTab('clientes');
 }
 
@@ -423,7 +403,7 @@ function formatPhone(raw) {
 
 // ==================== MESSAGE ====================
 function getTemplate() {
-  return document.getElementById('msgTemplate').value || 
+  return document.getElementById('msgTemplate').value ||
     'Olá, {nome}! Consta em nosso sistema um débito referente ao mês {mes}, no valor de R$ {valor}. Pedimos a regularização para evitar o cancelamento do serviço. Entre em contato: (21) 9 8088-6087';
 }
 
@@ -438,112 +418,122 @@ function buildMsg(client) {
 function insertVar(v) {
   const ta = document.getElementById('msgTemplate');
   const s = ta.selectionStart, e = ta.selectionEnd;
-  ta.value = ta.value.slice(0, s) + v + ta.value.slice(e);
+  ta.value = ta.value.slice(0,s) + v + ta.value.slice(e);
   ta.selectionStart = ta.selectionEnd = s + v.length;
-  ta.focus();
-  saveTemplate();
-  updatePreviews();
+  ta.focus(); saveTemplate(); updatePreviews();
 }
 
 function updatePreviews() {
   saveTemplate();
-  const previewCard = document.getElementById('previewCard');
+  const pc = document.getElementById('previewCard');
   if (clients.length > 0) {
-    previewCard.style.display = 'block';
+    pc.style.display = 'block';
     document.getElementById('previewText').textContent = buildMsg(clients[0]);
   } else {
-    previewCard.style.display = 'none';
+    pc.style.display = 'none';
   }
-  // Update open cards
   document.querySelectorAll('.msg-preview[data-id]').forEach(el => {
-    const id = parseInt(el.dataset.id);
-    const c = clients.find(x => x.id === id);
+    const c = clients.find(x => x.id === parseInt(el.dataset.id));
     if (c) el.textContent = buildMsg(c);
   });
 }
 
-// ==================== RENDER CLIENTS ====================
+// ==================== FILTER ====================
+function setFilter(f) {
+  currentFilter = f;
+  ['All','Pending','Sent'].forEach(x => {
+    const el = document.getElementById('ft'+x);
+    if (el) el.classList.toggle('active', f === x.toLowerCase());
+  });
+  renderClients();
+}
+
+function filterClients() { renderClients(); }
+
+// ==================== RENDER ====================
 function renderClients() {
-  const q = (document.getElementById('searchInput').value || '').toLowerCase();
-  filteredClients = q
-    ? clients.filter(c => c.nome.toLowerCase().includes(q) || c.telefone.includes(q) || c.mes.toLowerCase().includes(q))
-    : [...clients];
+  const q = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase();
+  let pool = [...clients];
+  if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
+  if (currentFilter === 'sent') pool = pool.filter(c => c.sent);
+  filteredClients = q ? pool.filter(c => c.nome.toLowerCase().includes(q) || c.mes.toLowerCase().includes(q) || c.telefone.includes(q)) : pool;
 
   const list = document.getElementById('clientsList');
   const statsRow = document.getElementById('statsRow');
   const searchWrap = document.getElementById('searchWrap');
-  const selectAllRow = document.getElementById('selectAllRow');
+  const filterTabs = document.getElementById('filterTabs');
+  const progressWrap = document.getElementById('progressWrap');
 
   if (clients.length === 0) {
-    list.innerHTML = `<div class="empty-state">
-      <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
-      <p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p>
-    </div>`;
+    list.innerHTML = `<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p></div>`;
     statsRow.style.display = 'none';
     searchWrap.style.display = 'none';
-    selectAllRow.style.display = 'none';
+    filterTabs.style.display = 'none';
+    progressWrap.classList.remove('active');
     document.getElementById('totalBadge').classList.add('hidden');
     return;
   }
 
+  const sentCount = clients.filter(c => c.sent).length;
+  const pendingCount = clients.length - sentCount;
+  const pct = clients.length > 0 ? Math.round((sentCount / clients.length) * 100) : 0;
+
   statsRow.style.display = 'grid';
   searchWrap.style.display = 'block';
-  selectAllRow.style.display = 'flex';
+  filterTabs.style.display = 'flex';
+  progressWrap.classList.add('active');
   document.getElementById('totalBadge').textContent = clients.length;
   document.getElementById('totalBadge').classList.remove('hidden');
-
-  const totalVal = clients.reduce((s, c) => {
-    const n = parseFloat(c.valor.replace('.','').replace(',','.')) || 0;
-    return s + n;
-  }, 0);
   document.getElementById('statTotal').textContent = clients.length;
-  document.getElementById('statSelecionados').textContent = selectedIds.size;
-  document.getElementById('statValorTotal').textContent = 'R$' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('statEnviados').textContent = sentCount;
+  document.getElementById('statPendentes').textContent = pendingCount;
+  document.getElementById('progressCount').textContent = `${sentCount}/${clients.length}`;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '% concluído';
 
   if (filteredClients.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>Nenhum cliente encontrado.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>Nenhum cliente nesta categoria.</p></div>`;
   } else {
     list.innerHTML = filteredClients.map((c, i) => buildCardHTML(c, i)).join('');
   }
-
-  updateBulkBar();
-  updateSelectAll();
 }
 
 function buildCardHTML(c, i) {
   const initials = c.nome.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
-  const sel = selectedIds.has(c.id);
-  const exp = c.expanded;
   const msg = buildMsg(c);
-  const telDisplay = c.telefone.replace('55','').replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
-  return `<div class="client-card${sel ? ' selected' : ''}" id="card-${c.id}" style="animation-delay:${i*0.04}s">
+  const telDisplay = c.telefone.replace('55','').replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
+  const sentClass = c.sent ? ' sent' : '';
+  const bodyOpen = c.expanded ? ' open' : '';
+  return `<div class="client-card${sentClass}" id="card-${c.id}" style="animation-delay:${i*0.04}s">
     <div class="client-card-head" onclick="toggleCard(${c.id})">
-      <div class="client-checkbox${sel ? ' checked' : ''}" onclick="event.stopPropagation();toggleSelect(${c.id})" title="Selecionar">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="client-avatar">${initials}</div>
+      <div class="client-avatar">${c.sent ? '✓' : initials}</div>
       <div class="client-info">
         <div class="client-name">${c.nome}</div>
         <div class="client-sub">${telDisplay} · ${c.mes}</div>
       </div>
+      <div class="sent-badge">✅ Enviado</div>
       <div class="client-value">R$ ${c.valor}</div>
     </div>
-    <div class="client-body${exp ? ' open' : ''}" id="body-${c.id}">
+    <div class="client-body${bodyOpen}" id="body-${c.id}">
       <div>
         <div class="msg-preview-label">Prévia da mensagem</div>
         <div class="msg-preview" data-id="${c.id}">${msg}</div>
       </div>
       <div class="action-row">
         <button class="btn-whatsapp" onclick="sendWhatsApp(${c.id})">
-          <svg class="wa-icon" viewBox="0 0 24 24" fill="#000" xmlns="http://www.w3.org/2000/svg"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>
+          <svg class="wa-icon" viewBox="0 0 24 24" fill="#000"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>
           WhatsApp
         </button>
-        <button class="btn-copy" onclick="copyMsg(${c.id})">📋</button>
+        <button class="btn-copy" onclick="copyMsg(${c.id})" title="Copiar mensagem">📋</button>
+        <button class="btn-mark-sent" onclick="toggleSent(${c.id})" title="${c.sent ? 'Desmarcar' : 'Marcar como enviado'}">
+          ${c.sent ? '✅' : '☑️'}
+        </button>
       </div>
     </div>
   </div>`;
 }
 
+// ==================== TOGGLE CARD ====================
 function toggleCard(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
@@ -552,46 +542,58 @@ function toggleCard(id) {
   if (body) body.classList.toggle('open', c.expanded);
 }
 
-// ==================== SELECT ====================
-function toggleSelect(id) {
-  if (selectedIds.has(id)) selectedIds.delete(id);
-  else selectedIds.add(id);
+// ==================== MARK SENT ====================
+function toggleSent(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  c.sent = !c.sent;
+  saveToStorage();
   const card = document.getElementById('card-' + id);
   if (card) {
-    card.classList.toggle('selected', selectedIds.has(id));
-    const cb = card.querySelector('.client-checkbox');
-    if (cb) cb.classList.toggle('checked', selectedIds.has(id));
+    card.classList.toggle('sent', c.sent);
+    card.classList.add('sent-anim');
+    setTimeout(() => card.classList.remove('sent-anim'), 300);
+    // update avatar
+    const av = card.querySelector('.client-avatar');
+    if (av) av.textContent = c.sent ? '✓' : c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    // update sent badge
+    const badge = card.querySelector('.sent-badge');
+    if (badge) badge.style.display = c.sent ? 'flex' : 'none';
+    // update mark btn
+    const btn = card.querySelector('.btn-mark-sent');
+    if (btn) {
+      btn.textContent = c.sent ? '✅' : '☑️';
+      btn.title = c.sent ? 'Desmarcar' : 'Marcar como enviado';
+    }
+    // update value color
+    const val = card.querySelector('.client-value');
+    if (val) val.style.color = c.sent ? 'var(--green)' : 'var(--yellow)';
   }
-  updateStats();
-  updateBulkBar();
-  updateSelectAll();
+  // update stats & progress without full re-render
+  const sentCount = clients.filter(x => x.sent).length;
+  const pct = Math.round((sentCount / clients.length) * 100);
+  document.getElementById('statEnviados').textContent = sentCount;
+  document.getElementById('statPendentes').textContent = clients.length - sentCount;
+  document.getElementById('progressCount').textContent = `${sentCount}/${clients.length}`;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '% concluído';
+  showToast(c.sent ? '✅ Marcado como enviado!' : '↩️ Marcação removida');
 }
 
-function toggleSelectAll() {
-  if (selectedIds.size === filteredClients.length && filteredClients.length > 0) {
-    filteredClients.forEach(c => selectedIds.delete(c.id));
-  } else {
-    filteredClients.forEach(c => selectedIds.add(c.id));
-  }
-  renderClients();
-}
-
-function updateSelectAll() {
-  const cb = document.getElementById('selectAllCheck');
-  const allSel = filteredClients.length > 0 && filteredClients.every(c => selectedIds.has(c.id));
-  if (cb) cb.classList.toggle('checked', allSel);
-  const el = document.getElementById('selectCount');
-  if (el) el.textContent = selectedIds.size > 0 ? `${selectedIds.size} selecionado${selectedIds.size>1?'s':''}` : '';
-}
-
-function updateStats() {
-  document.getElementById('statSelecionados').textContent = selectedIds.size;
-}
-
-function updateBulkBar() {
-  const bar = document.getElementById('bulkBar');
-  bar.classList.toggle('active', selectedIds.size > 0);
-  document.getElementById('bulkInfo').textContent = `${selectedIds.size} selecionado${selectedIds.size!==1?'s':''}`;
+// ==================== RESET SENT ====================
+function confirmResetSent() {
+  const sentCount = clients.filter(c => c.sent).length;
+  if (sentCount === 0) { showToast('Nenhum cliente marcado como enviado'); return; }
+  openModal(
+    'Limpar marcações?',
+    `${sentCount} cliente${sentCount>1?'s':''} marcado${sentCount>1?'s':''} como enviado${sentCount>1?'s':''} voltarão para pendente. Use isso ao trocar o modelo de mensagem.`,
+    () => {
+      clients.forEach(c => { c.sent = false; c.expanded = false; });
+      saveToStorage();
+      renderClients();
+      showToast('🔄 Marcações limpas! Pronto para novo envio.');
+    }
+  );
 }
 
 // ==================== WHATSAPP ====================
@@ -602,55 +604,23 @@ function sendWhatsApp(id) {
   window.open(`https://wa.me/${c.telefone}?text=${msg}`, '_blank');
 }
 
-function sendAll() {
-  const sel = clients.filter(c => selectedIds.has(c.id));
-  if (sel.length === 0) { showToast('Selecione pelo menos um cliente'); return; }
-  openModal(
-    `Enviar para ${sel.length} cliente${sel.length>1?'s':''}?`,
-    `Serão abertas ${sel.length} janela${sel.length>1?'s':''} do WhatsApp. Certifique-se de permitir pop-ups.`,
-    () => {
-      sel.forEach((c, i) => setTimeout(() => {
-        const msg = encodeURIComponent(buildMsg(c));
-        window.open(`https://wa.me/${c.telefone}?text=${msg}`, '_blank');
-      }, i * 300));
-    }
-  );
-}
-
 // ==================== COPY ====================
 function copyMsg(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  navigator.clipboard.writeText(buildMsg(c)).then(() => showToast('✅ Mensagem copiada!')).catch(() => {
+  const text = buildMsg(c);
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Mensagem copiada!')).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = buildMsg(c); document.body.appendChild(ta);
+    ta.value = text; document.body.appendChild(ta);
     ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     showToast('✅ Mensagem copiada!');
   });
 }
 
-function copyAll() {
-  const sel = clients.filter(c => selectedIds.has(c.id));
-  if (sel.length === 0) { showToast('Selecione clientes primeiro'); return; }
-  const all = sel.map(c => `--- ${c.nome} ---\n${buildMsg(c)}`).join('\n\n');
-  navigator.clipboard.writeText(all).then(() => showToast(`✅ ${sel.length} mensagens copiadas!`)).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = all; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showToast(`✅ ${sel.length} mensagens copiadas!`);
-  });
-}
-
-// ==================== FILTER ====================
-function filterClients() {
-  renderClients();
-}
-
-// ==================== CLEAR ====================
+// ==================== CLEAR ALL ====================
 function confirmClear() {
   openModal('Limpar tudo?', 'Todos os clientes e dados serão apagados. Esta ação não pode ser desfeita.', () => {
     clients = [];
-    selectedIds.clear();
     document.getElementById('fNomes').value = '';
     document.getElementById('fTelefones').value = '';
     document.getElementById('fMeses').value = '';
@@ -666,25 +636,17 @@ function confirmClear() {
 function openModal(title, text, cb) {
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalText').textContent = text;
-  modalCallback = cb;
   document.getElementById('modalOverlay').classList.add('open');
-  document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); if (modalCallback) modalCallback(); };
+  document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); cb(); };
 }
-
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-}
-
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
 
 // ==================== TOAST ====================
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
 }
@@ -693,20 +655,17 @@ function showToast(msg) {
 function saveToStorage() {
   try {
     localStorage.setItem('rg_clients', JSON.stringify(clients));
-    const n = document.getElementById('fNomes').value;
-    const te = document.getElementById('fTelefones').value;
-    const m = document.getElementById('fMeses').value;
-    const v = document.getElementById('fValores').value;
-    localStorage.setItem('rg_fields', JSON.stringify({n, te, m, v}));
+    localStorage.setItem('rg_fields', JSON.stringify({
+      n: document.getElementById('fNomes').value,
+      te: document.getElementById('fTelefones').value,
+      m: document.getElementById('fMeses').value,
+      v: document.getElementById('fValores').value
+    }));
   } catch(e) {}
 }
-
 function saveTemplate() {
-  try {
-    localStorage.setItem('rg_template', document.getElementById('msgTemplate').value);
-  } catch(e) {}
+  try { localStorage.setItem('rg_template', document.getElementById('msgTemplate').value); } catch(e) {}
 }
-
 function loadFromStorage() {
   try {
     const cl = localStorage.getItem('rg_clients');
@@ -728,11 +687,8 @@ function loadFromStorage() {
   } catch(e) {}
 }
 
-// ==================== AUTO RESIZE ====================
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
+// ==================== UTILS ====================
+function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 </script>
 </body>
 </html>
