@@ -162,7 +162,19 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 .wa-icon{width:18px;height:18px;flex-shrink:0}
 
-/* FOOTER NAV */
+/* BANNER DE CONFIRMAÇÃO PÓS-WHATSAPP */
+.confirm-banner{position:fixed;bottom:76px;left:12px;right:12px;background:var(--bg2);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;z-index:300;display:none;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.7)}
+.confirm-banner.show{display:flex;animation:fadeIn .3s ease}
+.confirm-banner-top{display:flex;align-items:center;gap:10px}
+.confirm-banner-avatar{width:36px;height:36px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--yellow);flex-shrink:0}
+.confirm-banner-text{flex:1}
+.confirm-banner-text strong{font-size:14px;font-weight:700;color:var(--text);display:block}
+.confirm-banner-text span{font-size:12px;color:var(--muted)}
+.confirm-banner-btns{display:flex;gap:8px}
+.confirm-banner-yes{flex:1;background:var(--green);color:#000;font-weight:800;font-size:14px;padding:10px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:var(--font);transition:all .2s}
+.confirm-banner-yes:active{transform:scale(.97)}
+.confirm-banner-no{flex:0 0 auto;background:var(--bg3);color:var(--muted);font-size:13px;font-weight:600;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;font-family:var(--font);transition:all .2s}
+.confirm-banner-no:active{transform:scale(.97)}
 .footer-nav{background:var(--bg2);border-top:1px solid var(--border);padding:8px 16px;display:flex;justify-content:space-around;align-items:center;position:sticky;bottom:0;z-index:100}
 .fnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);transition:color .2s;background:none;border:none;font-family:var(--font)}
 .fnav-btn.active{color:var(--yellow)}
@@ -353,6 +365,21 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- BANNER CONFIRMAÇÃO PÓS-WHATSAPP -->
+<div class="confirm-banner" id="confirmBanner">
+  <div class="confirm-banner-top">
+    <div class="confirm-banner-avatar" id="confirmAvatar">?</div>
+    <div class="confirm-banner-text">
+      <strong id="confirmName">Cliente</strong>
+      <span>Você enviou a mensagem?</span>
+    </div>
+  </div>
+  <div class="confirm-banner-btns">
+    <button class="confirm-banner-yes" onclick="confirmSent()">✅ Sim, marcar como enviado</button>
+    <button class="confirm-banner-no" onclick="dismissBanner()">Não</button>
   </div>
 </div>
 
@@ -733,11 +760,40 @@ function confirmResetSent() {
 }
 
 // ==================== WHATSAPP ====================
+let pendingConfirmId = null;
+
 function sendWhatsApp(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
+  pendingConfirmId = id;
   const msg = encodeURIComponent(buildMsg(c));
   window.open(`https://wa.me/${c.telefone}?text=${msg}`, '_blank');
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && pendingConfirmId !== null) {
+    const c = clients.find(x => x.id === pendingConfirmId);
+    if (c && !c.sent) showConfirmBanner(c);
+    else pendingConfirmId = null;
+  }
+});
+
+function showConfirmBanner(c) {
+  const initials = c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  document.getElementById('confirmAvatar').textContent = initials;
+  document.getElementById('confirmName').textContent = c.nome;
+  document.getElementById('confirmBanner').classList.add('show');
+}
+
+function confirmSent() {
+  if (pendingConfirmId === null) return;
+  toggleSent(pendingConfirmId);
+  dismissBanner();
+}
+
+function dismissBanner() {
+  pendingConfirmId = null;
+  document.getElementById('confirmBanner').classList.remove('show');
 }
 
 // ==================== COPY ====================
