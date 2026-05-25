@@ -125,7 +125,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
 /* BOTÃO ENVIADO */
 .btn-mark-sent{flex:0 0 auto;background:var(--green-dim);color:var(--green);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:var(--font);font-weight:700;transition:all .2s}
 .client-card.sent .btn-mark-sent{background:var(--green);color:#000;border-color:var(--green)}
-.btn-whatsapp:active,.btn-copy:active,.btn-mark-sent:active{transform:scale(.96)}
+.btn-whatsapp:active,.btn-copy:active,.btn-mark-sent:active,.btn-trash:active{transform:scale(.96)}
+
+/* BOTÃO LIXEIRA */
+.btn-trash{background:transparent;border:none;color:var(--muted2);display:flex;align-items:center;justify-content:center;padding:6px;border-radius:var(--radius-sm);cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
+.btn-trash:hover{color:var(--red);background:var(--red-dim)}
+@keyframes cardRemove{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
+.client-card.removing{animation:cardRemove .25s ease forwards}
 
 /* STATS ROW */
 .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
