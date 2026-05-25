@@ -198,8 +198,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .client-card{animation:fadeIn .25s ease both}
-@keyframes sentPulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
-.client-card.sent-anim{animation:sentPulse .3s ease}
 </style>
 </head>
 <body>
@@ -694,8 +692,6 @@ function toggleSent(id) {
   const card = document.getElementById('card-' + id);
   if (card) {
     card.classList.toggle('sent', c.sent);
-    card.classList.add('sent-anim');
-    setTimeout(() => card.classList.remove('sent-anim'), 300);
     // avatar
     const av = card.querySelector('.client-avatar');
     if (av) av.textContent = c.sent ? '✓' : c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
