@@ -164,9 +164,24 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .fnav-btn.active{color:var(--yellow)}
 
 /* FILTER TABS */
-.filter-tabs{display:flex;gap:6px}
+.filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .filter-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--muted);font-family:var(--font);transition:all .2s}
 .filter-tab.active{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
+
+/* DATE FILTER */
+.date-filter-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:none}
+.date-filter-wrap.active{display:block}
+.date-filter-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.date-filter-head span{font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase}
+.date-filter-clear{font-size:11px;color:var(--muted);font-weight:600;cursor:pointer;background:none;border:none;font-family:var(--font);padding:2px 8px;border-radius:20px;transition:all .2s}
+.date-filter-clear:hover{color:var(--red)}
+.date-filter-clear.active-clear{color:var(--red)}
+.date-chips{padding:10px 14px;display:flex;flex-wrap:wrap;gap:7px}
+.date-chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);transition:all .2s;display:flex;align-items:center;gap:5px}
+.date-chip:active{transform:scale(.96)}
+.date-chip.selected{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
+.date-chip .chip-count{font-size:10px;background:var(--border2);color:var(--muted);padding:1px 6px;border-radius:20px;font-weight:700}
+.date-chip.selected .chip-count{background:var(--yellow);color:#000}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .client-card{animation:fadeIn .25s ease both}
@@ -210,8 +225,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <textarea id="fTelefones" placeholder="21999999999&#10;21988888888&#10;21977777777" oninput="autoResize(this);validateFields()"></textarea>
         </div>
         <div class="field-wrap">
-          <label>Meses em Aberto</label>
-          <textarea id="fMeses" placeholder="Abril&#10;Maio&#10;Junho" oninput="autoResize(this);validateFields()"></textarea>
+          <label>Datas</label>
+          <textarea id="fMeses" placeholder="23/04/2025&#10;15/05/2025&#10;01/06/2025" oninput="autoResize(this);validateFields()"></textarea>
         </div>
         <div class="field-wrap">
           <label>Valores (R$)</label>
@@ -299,6 +314,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="filter-tab" id="ftSent" onclick="setFilter('sent')">✅ Enviados</button>
     </div>
 
+    <!-- DATE FILTER -->
+    <div class="date-filter-wrap" id="dateFilterWrap">
+      <div class="date-filter-head">
+        <span>📅 Filtrar por data</span>
+        <button class="date-filter-clear" id="dateClearBtn" onclick="clearDateFilter()">Limpar seleção</button>
+      </div>
+      <div class="date-chips" id="dateChips"></div>
+    </div>
+
     <!-- LIST -->
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
@@ -336,6 +360,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 let clients = [];
 let filteredClients = [];
 let currentFilter = 'all';
+let selectedDates = new Set();
 let modalCallback = null;
 
 // ==================== INIT ====================
@@ -454,6 +479,59 @@ function setFilter(f) {
   renderClients();
 }
 
+function toggleDateChip(label) {
+  if (selectedDates.has(label)) selectedDates.delete(label);
+  else selectedDates.add(label);
+  updateDateChipsUI();
+  renderClients();
+}
+
+function clearDateFilter() {
+  selectedDates.clear();
+  updateDateChipsUI();
+  renderClients();
+}
+
+function updateDateChipsUI() {
+  document.querySelectorAll('.date-chip').forEach(el => {
+    el.classList.toggle('selected', selectedDates.has(el.dataset.mes));
+  });
+  const clearBtn = document.getElementById('dateClearBtn');
+  if (clearBtn) clearBtn.classList.toggle('active-clear', selectedDates.size > 0);
+}
+
+function parseMesAno(dataStr) {
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const match = dataStr.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const m = parseInt(match[2], 10);
+    const a = match[3];
+    const nome = meses[m - 1] || match[2];
+    return `${nome}/${a}`;
+  }
+  // fallback: retorna o valor original
+  return dataStr.trim();
+}
+
+function buildDateChips() {
+  const wrap = document.getElementById('dateFilterWrap');
+  const chipsEl = document.getElementById('dateChips');
+  if (clients.length === 0) { wrap.classList.remove('active'); return; }
+  // agrupa por mês/ano detectado
+  const seen = new Map();
+  clients.forEach(c => {
+    const key = parseMesAno(c.mes);
+    seen.set(key, (seen.get(key) || 0) + 1);
+  });
+  if (seen.size <= 1) { wrap.classList.remove('active'); return; }
+  wrap.classList.add('active');
+  chipsEl.innerHTML = [...seen.entries()].map(([label, count]) =>
+    `<button class="date-chip${selectedDates.has(label)?' selected':''}" data-mes="${label}" onclick="toggleDateChip('${label}')">
+      ${label} <span class="chip-count">${count}</span>
+    </button>`
+  ).join('');
+}
+
 function filterClients() { renderClients(); }
 
 // ==================== RENDER ====================
@@ -462,6 +540,7 @@ function renderClients() {
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent') pool = pool.filter(c => c.sent);
+  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(parseMesAno(c.mes)));
   filteredClients = q ? pool.filter(c => c.nome.toLowerCase().includes(q) || c.mes.toLowerCase().includes(q) || c.telefone.includes(q)) : pool;
 
   const list = document.getElementById('clientsList');
@@ -476,6 +555,7 @@ function renderClients() {
     searchWrap.style.display = 'none';
     filterTabs.style.display = 'none';
     progressWrap.classList.remove('active');
+    document.getElementById('dateFilterWrap').classList.remove('active');
     document.getElementById('totalBadge').classList.add('hidden');
     return;
   }
@@ -497,8 +577,11 @@ function renderClients() {
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressPct').textContent = pct + '% concluído';
 
+  buildDateChips();
+
+  const showing = selectedDates.size > 0 ? ` (${filteredClients.length} de ${clients.length})` : '';
   if (filteredClients.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>Nenhum cliente nesta categoria.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>Nenhum cliente nesta seleção.</p></div>`;
   } else {
     list.innerHTML = filteredClients.map((c, i) => buildCardHTML(c, i)).join('');
   }
