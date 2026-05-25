@@ -171,17 +171,26 @@ body{display:flex;flex-direction:column;min-height:100vh}
 /* DATE FILTER */
 .date-filter-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:none}
 .date-filter-wrap.active{display:block}
-.date-filter-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.date-filter-head span{font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase}
-.date-filter-clear{font-size:11px;color:var(--muted);font-weight:600;cursor:pointer;background:none;border:none;font-family:var(--font);padding:2px 8px;border-radius:20px;transition:all .2s}
-.date-filter-clear:hover{color:var(--red)}
-.date-filter-clear.active-clear{color:var(--red)}
-.date-chips{padding:10px 14px;display:flex;flex-wrap:wrap;gap:7px}
-.date-chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);transition:all .2s;display:flex;align-items:center;gap:5px}
-.date-chip:active{transform:scale(.96)}
-.date-chip.selected{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
-.date-chip .chip-count{font-size:10px;background:var(--border2);color:var(--muted);padding:1px 6px;border-radius:20px;font-weight:700}
-.date-chip.selected .chip-count{background:var(--yellow);color:#000}
+.date-filter-head{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.date-filter-head span{font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.date-filter-arrow{font-size:11px;color:var(--muted);transition:transform .2s}
+.date-filter-wrap.open .date-filter-arrow{transform:rotate(180deg)}
+.date-filter-clear{font-size:11px;color:var(--muted);font-weight:600;cursor:pointer;background:none;border:1px solid var(--border2);font-family:var(--font);padding:3px 10px;border-radius:20px;transition:all .2s}
+.date-filter-clear.active-clear{color:var(--red);border-color:rgba(229,57,53,.4)}
+.date-select-body{display:none;padding:8px 0}
+.date-filter-wrap.open .date-select-body{display:block}
+.date-select-info{padding:6px 14px 10px;font-size:11px;color:var(--muted)}
+.date-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.date-row:last-child{border-bottom:none}
+.date-row:active{background:var(--bg3)}
+.date-checkbox{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.date-checkbox.checked{background:var(--yellow);border-color:var(--yellow)}
+.date-checkbox svg{display:none}
+.date-checkbox.checked svg{display:block}
+.date-row-info{flex:1}
+.date-row-label{font-size:14px;font-weight:600;color:var(--text)}
+.date-row-count{font-size:11px;color:var(--muted);margin-top:1px}
+.date-filter-active-badge{background:var(--yellow);color:#000;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;margin-left:4px}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .client-card{animation:fadeIn .25s ease both}
@@ -316,11 +325,18 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
     <!-- DATE FILTER -->
     <div class="date-filter-wrap" id="dateFilterWrap">
-      <div class="date-filter-head">
-        <span>📅 Filtrar por data</span>
-        <button class="date-filter-clear" id="dateClearBtn" onclick="clearDateFilter()">Limpar seleção</button>
+      <div class="date-filter-head" onclick="toggleDateBox()">
+        <span>
+          📅 Filtrar por data
+          <span class="date-filter-active-badge" id="dateActiveBadge" style="display:none">0</span>
+          <span class="date-filter-arrow" id="dateArrow">▼</span>
+        </span>
+        <button class="date-filter-clear" id="dateClearBtn" onclick="event.stopPropagation();clearDateFilter()">Limpar</button>
       </div>
-      <div class="date-chips" id="dateChips"></div>
+      <div class="date-select-body" id="dateSelectBody">
+        <div class="date-select-info">Selecione uma ou mais datas para filtrar:</div>
+        <div id="dateRows"></div>
+      </div>
     </div>
 
     <!-- LIST -->
@@ -482,22 +498,61 @@ function setFilter(f) {
 function toggleDateChip(label) {
   if (selectedDates.has(label)) selectedDates.delete(label);
   else selectedDates.add(label);
-  updateDateChipsUI();
+  updateDateRowsUI();
   renderClients();
 }
 
 function clearDateFilter() {
   selectedDates.clear();
-  updateDateChipsUI();
+  updateDateRowsUI();
   renderClients();
 }
 
-function updateDateChipsUI() {
-  document.querySelectorAll('.date-chip').forEach(el => {
-    el.classList.toggle('selected', selectedDates.has(el.dataset.mes));
+function toggleDateBox() {
+  document.getElementById('dateFilterWrap').classList.toggle('open');
+}
+
+function updateDateRowsUI() {
+  document.querySelectorAll('.date-checkbox').forEach(el => {
+    const checked = selectedDates.has(el.dataset.mes);
+    el.classList.toggle('checked', checked);
   });
+  const badge = document.getElementById('dateActiveBadge');
   const clearBtn = document.getElementById('dateClearBtn');
+  if (badge) {
+    badge.style.display = selectedDates.size > 0 ? 'inline' : 'none';
+    badge.textContent = selectedDates.size;
+  }
   if (clearBtn) clearBtn.classList.toggle('active-clear', selectedDates.size > 0);
+}
+
+function buildDateChips() {
+  const wrap = document.getElementById('dateFilterWrap');
+  const rowsEl = document.getElementById('dateRows');
+  if (clients.length === 0) { wrap.classList.remove('active'); return; }
+
+  // coletar datas únicas preservando ordem
+  const seen = new Map();
+  clients.forEach(c => {
+    const key = c.mes.trim();
+    seen.set(key, (seen.get(key) || 0) + 1);
+  });
+  if (seen.size === 0) { wrap.classList.remove('active'); return; }
+
+  wrap.classList.add('active');
+  rowsEl.innerHTML = [...seen.entries()].map(([data, count]) => {
+    const checked = selectedDates.has(data);
+    return `<div class="date-row" onclick="toggleDateChip('${data}')">
+      <div class="date-checkbox${checked ? ' checked'  : ''}" data-mes="${data}">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="date-row-info">
+        <div class="date-row-label">${data}</div>
+        <div class="date-row-count">${count} cliente${count > 1 ? 's' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateDateRowsUI();
 }
 
 function parseMesAno(dataStr) {
@@ -555,7 +610,7 @@ function renderClients() {
     searchWrap.style.display = 'none';
     filterTabs.style.display = 'none';
     progressWrap.classList.remove('active');
-    document.getElementById('dateFilterWrap').classList.remove('active');
+    document.getElementById('dateFilterWrap').classList.remove('active','open');
     document.getElementById('totalBadge').classList.add('hidden');
     return;
   }
