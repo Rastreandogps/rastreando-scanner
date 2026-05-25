@@ -233,7 +233,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <div class="main">
 
   <!-- ===== SCREEN: DADOS ===== -->
-  <div class="screen active" id="screen-dados">
+  <div class="screen" id="screen-dados">
     <div class="section-card">
       <div class="section-head">
         <h3>📥 Cole os dados do Google Sheets / Excel</h3>
@@ -413,7 +413,7 @@ let selectedDates = new Set();
 let modalCallback = null;
 
 // ==================== INIT ====================
-window.addEventListener('load', () => { loadFromStorage(); validateFields(); });
+window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
 
 // ==================== TABS ====================
 function switchTab(tab) {
