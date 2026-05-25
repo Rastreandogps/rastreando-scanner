@@ -237,6 +237,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <textarea id="fValores" placeholder="59,90&#10;120,00&#10;39,90" oninput="autoResize(this);validateFields()"></textarea>
         </div>
       </div>
+      <div style="border-top:1px solid var(--border)">
+        <div class="field-wrap" style="padding:10px 12px">
+          <label>🔗 Links de Pagamento <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <textarea id="fLinks" placeholder="https://pagamento.link/joao&#10;https://pagamento.link/maria&#10;https://pagamento.link/carlos" oninput="autoResize(this);validateFields()" style="min-height:60px"></textarea>
+        </div>
+      </div>
       <div id="validationMsg" class="validation"></div>
     </div>
     <button class="btn btn-primary" onclick="generateClients()" id="btnGerar">
@@ -256,8 +262,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="var-btns">
           <button class="var-btn" onclick="insertVar('{nome}')">+ Nome</button>
           <button class="var-btn" onclick="insertVar('{telefone}')">+ Telefone</button>
-          <button class="var-btn" onclick="insertVar('{mes}')">+ Mês</button>
+          <button class="var-btn" onclick="insertVar('{mes}')">+ Data</button>
           <button class="var-btn" onclick="insertVar('{valor}')">+ Valor</button>
+          <button class="var-btn" onclick="insertVar('{link}')">+ Link</button>
         </div>
       </div>
     </div>
@@ -273,8 +280,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div style="font-size:13px;color:var(--text2);line-height:2">
           <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{nome}</code> — Nome do cliente<br>
           <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{telefone}</code> — Número de telefone<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{mes}</code> — Mês em aberto<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{valor}</code> — Valor da cobrança
+          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{mes}</code> — Data de vencimento<br>
+          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{valor}</code> — Valor da cobrança<br>
+          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{link}</code> — Link de pagamento
         </div>
       </div>
     </div>
@@ -416,14 +424,19 @@ function generateClients() {
   const tels = parseField(document.getElementById('fTelefones').value);
   const meses = parseField(document.getElementById('fMeses').value);
   const valores = parseField(document.getElementById('fValores').value);
+  const linksRaw = document.getElementById('fLinks').value;
+  const links = parseField(linksRaw);
   if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
   if (![tels,meses,valores].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
+  // links é opcional — se preenchido, deve ter o mesmo número
+  if (links.length > 0 && links.length !== nomes.length) { showToast('Links: quantidade diferente dos outros campos'); return; }
   clients = nomes.map((nome, i) => ({
     id: Date.now() + i,
     nome,
     telefone: formatPhone(tels[i]),
     mes: meses[i],
     valor: valores[i],
+    link: links[i] || '',
     expanded: false,
     sent: false
   }));
@@ -450,7 +463,8 @@ function buildMsg(client) {
     .replace(/{nome}/g, client.nome)
     .replace(/{telefone}/g, client.telefone)
     .replace(/{mes}/g, client.mes)
-    .replace(/{valor}/g, client.valor);
+    .replace(/{valor}/g, client.valor)
+    .replace(/{link}/g, client.link || '');
 }
 
 function insertVar(v) {
@@ -746,6 +760,7 @@ function confirmClear() {
     document.getElementById('fTelefones').value = '';
     document.getElementById('fMeses').value = '';
     document.getElementById('fValores').value = '';
+    document.getElementById('fLinks').value = '';
     document.getElementById('validationMsg').style.display = 'none';
     saveToStorage();
     renderClients();
@@ -780,7 +795,8 @@ function saveToStorage() {
       n: document.getElementById('fNomes').value,
       te: document.getElementById('fTelefones').value,
       m: document.getElementById('fMeses').value,
-      v: document.getElementById('fValores').value
+      v: document.getElementById('fValores').value,
+      l: document.getElementById('fLinks').value
     }));
   } catch(e) {}
 }
@@ -798,6 +814,7 @@ function loadFromStorage() {
       document.getElementById('fTelefones').value = f.te || '';
       document.getElementById('fMeses').value = f.m || '';
       document.getElementById('fValores').value = f.v || '';
+      document.getElementById('fLinks').value = f.l || '';
     }
     const tpl = localStorage.getItem('rg_template');
     if (tpl) document.getElementById('msgTemplate').value = tpl;
