@@ -138,7 +138,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .client-card.removing{animation:cardRemove .25s ease forwards}
 
 /* STATS ROW */
-.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center}
 .stat-val{font-size:20px;font-weight:800;color:var(--yellow);font-family:var(--font-display)}
 .stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
@@ -315,6 +315,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total</div></div>
       <div class="stat-box"><div class="stat-val" id="statEnviados" style="color:var(--green)">0</div><div class="stat-label">Enviados</div></div>
       <div class="stat-box"><div class="stat-val" id="statPendentes" style="color:var(--red)">0</div><div class="stat-label">Pendentes</div></div>
+      <div class="stat-box"><div class="stat-val" id="statValorTotal" style="color:var(--yellow);font-size:15px">R$ 0</div><div class="stat-label">Total em aberto</div></div>
     </div>
 
     <!-- PROGRESS -->
@@ -630,6 +631,11 @@ function renderClients() {
   document.getElementById('statTotal').textContent = clients.length;
   document.getElementById('statEnviados').textContent = sentCount;
   document.getElementById('statPendentes').textContent = pendingCount;
+  const totalVal = clients.reduce((s, c) => {
+    const n = parseFloat(c.valor.replace(/\./g,'').replace(',','.')) || 0;
+    return s + n;
+  }, 0);
+  document.getElementById('statValorTotal').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   document.getElementById('progressCount').textContent = `${sentCount}/${clients.length}`;
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressPct').textContent = pct + '% concluído';
