@@ -123,8 +123,17 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-whatsapp:active,.btn-copy:active,.btn-mark-sent:active,.btn-trash:active{transform:scale(.96)}
 
 /* BOTÃO LIXEIRA */
-.btn-trash{background:transparent;border:none;color:var(--muted2);display:flex;align-items:center;justify-content:center;padding:6px;border-radius:var(--radius-sm);cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
-.btn-trash:hover{color:var(--red);background:var(--red-dim)}
+.btn-trash{background:transparent;border:none;color:var(--muted2);display:flex;align-items:center;justify-content:center;padding:7px;border-radius:var(--radius-sm);cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
+.btn-trash:active{transform:scale(.9)}
+
+/* BOTÕES NO CABEÇALHO DO CARD */
+.card-head-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.btn-head-wa{background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s}
+.btn-head-wa:active{transform:scale(.9);background:var(--green2)}
+.client-card.sent .btn-head-wa{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+.btn-head-sent{background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0;transition:all .2s}
+.btn-head-sent.is-sent{background:var(--green);border-color:var(--green);font-size:16px}
+.btn-head-sent:active{transform:scale(.9)}
 @keyframes cardRemove{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
 .client-card.removing{animation:cardRemove .25s ease forwards}
 
@@ -623,9 +632,15 @@ function buildCardHTML(c, i) {
         <div class="client-name">${c.nome}</div>
         <div class="client-sub">${telDisplay} · ${c.mes}</div>
       </div>
-      <div class="sent-badge">✅ Enviado</div>
-      <div class="client-value">R$ ${c.valor}</div>
-      <button class="btn-trash" onclick="event.stopPropagation();deleteClient(${c.id})" title="Remover cliente">🗑️</button>
+      <div class="card-head-actions" onclick="event.stopPropagation()">
+        <button class="btn-head-wa" onclick="sendWhatsApp(${c.id})" title="Abrir WhatsApp">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>
+        </button>
+        <button class="btn-head-sent${c.sent ? ' is-sent' : ''}" onclick="toggleSent(${c.id})" title="${c.sent ? 'Desmarcar enviado' : 'Marcar como enviado'}">
+          ${c.sent ? '✅' : '☑️'}
+        </button>
+        <button class="btn-trash" onclick="deleteClient(${c.id})" title="Remover cliente">🗑️</button>
+      </div>
     </div>
     <div class="client-body${bodyOpen}" id="body-${c.id}">
       <div>
@@ -633,14 +648,7 @@ function buildCardHTML(c, i) {
         <div class="msg-preview" data-id="${c.id}">${msg}</div>
       </div>
       <div class="action-row">
-        <button class="btn-whatsapp" onclick="sendWhatsApp(${c.id})">
-          <svg class="wa-icon" viewBox="0 0 24 24" fill="#000"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>
-          WhatsApp
-        </button>
-        <button class="btn-copy" onclick="copyMsg(${c.id})" title="Copiar mensagem">📋</button>
-        <button class="btn-mark-sent" onclick="toggleSent(${c.id})" title="${c.sent ? 'Desmarcar' : 'Marcar como enviado'}">
-          ${c.sent ? '✅' : '☑️'}
-        </button>
+        <button class="btn-copy" onclick="copyMsg(${c.id})" title="Copiar mensagem">📋 Copiar mensagem</button>
       </div>
     </div>
   </div>`;
@@ -688,23 +696,20 @@ function toggleSent(id) {
     card.classList.toggle('sent', c.sent);
     card.classList.add('sent-anim');
     setTimeout(() => card.classList.remove('sent-anim'), 300);
-    // update avatar
+    // avatar
     const av = card.querySelector('.client-avatar');
     if (av) av.textContent = c.sent ? '✓' : c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-    // update sent badge
-    const badge = card.querySelector('.sent-badge');
-    if (badge) badge.style.display = c.sent ? 'flex' : 'none';
-    // update mark btn
-    const btn = card.querySelector('.btn-mark-sent');
-    if (btn) {
-      btn.textContent = c.sent ? '✅' : '☑️';
-      btn.title = c.sent ? 'Desmarcar' : 'Marcar como enviado';
+    // botão ✅ no cabeçalho
+    const headSent = card.querySelector('.btn-head-sent');
+    if (headSent) {
+      headSent.classList.toggle('is-sent', c.sent);
+      headSent.textContent = c.sent ? '✅' : '☑️';
+      headSent.title = c.sent ? 'Desmarcar enviado' : 'Marcar como enviado';
     }
-    // update value color
-    const val = card.querySelector('.client-value');
-    if (val) val.style.color = c.sent ? 'var(--green)' : 'var(--yellow)';
+    // botão WhatsApp no cabeçalho — tom diferente quando enviado
+    const headWa = card.querySelector('.btn-head-wa');
+    if (headWa) headWa.style.opacity = c.sent ? '0.5' : '1';
   }
-  // update stats & progress without full re-render
   const sentCount = clients.filter(x => x.sent).length;
   const pct = Math.round((sentCount / clients.length) * 100);
   document.getElementById('statEnviados').textContent = sentCount;
