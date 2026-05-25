@@ -581,27 +581,6 @@ function capitalizar(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function buildDateChips() {
-  const wrap = document.getElementById('dateFilterWrap');
-  const chipsEl = document.getElementById('dateChips');
-  if (clients.length === 0) { wrap.classList.remove('active'); return; }
-  // agrupa por mês/ano detectado
-  const seen = new Map();
-  clients.forEach(c => {
-    const key = parseMesAno(c.mes);
-    seen.set(key, (seen.get(key) || 0) + 1);
-  });
-  if (seen.size <= 1) { wrap.classList.remove('active'); return; }
-  wrap.classList.add('active');
-  chipsEl.innerHTML = [...seen.entries()].map(([label, count]) =>
-    `<button class="date-chip${selectedDates.has(label)?' selected':''}" data-mes="${label}" onclick="toggleDateChip('${label}')">
-      ${label} <span class="chip-count">${count}</span>
-    </button>`
-  ).join('');
-}
-
-
-
 // ==================== RENDER ====================
 function renderClients() {
   let pool = [...clients];
