@@ -77,12 +77,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-green{background:var(--green);color:#000}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:var(--radius-sm);width:auto}
 
-/* SEARCH */
-.search-wrap{position:relative}
-.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:14px;padding:10px 14px 10px 38px;outline:none;transition:border-color .2s}
-.search-wrap input:focus{border-color:var(--yellow)}
-.search-wrap input::placeholder{color:var(--muted2)}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+
 
 /* PROGRESS BAR */
 .progress-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:none;flex-direction:column;gap:8px}
@@ -310,11 +305,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
     </div>
 
-    <!-- SEARCH -->
-    <div class="search-wrap" id="searchWrap" style="display:none">
-      <span class="search-icon">🔍</span>
-      <input type="search" id="searchInput" placeholder="Buscar cliente..." oninput="filterClients()" autocomplete="off">
-    </div>
+
 
     <!-- FILTER TABS -->
     <div class="filter-tabs" id="filterTabs" style="display:none">
@@ -531,23 +522,25 @@ function buildDateChips() {
   const rowsEl = document.getElementById('dateRows');
   if (clients.length === 0) { wrap.classList.remove('active'); return; }
 
-  // coletar datas únicas preservando ordem
-  const seen = new Map();
+  // agrupa por data normalizada, preserva label original mais comum
+  const seen = new Map(); // key normalizada → {count, label}
   clients.forEach(c => {
-    const key = c.mes.trim();
-    seen.set(key, (seen.get(key) || 0) + 1);
+    const key = normalizarData(c.mes);
+    if (!seen.has(key)) seen.set(key, { count: 0, label: capitalizar(key) });
+    seen.get(key).count++;
   });
-  if (seen.size === 0) { wrap.classList.remove('active'); return; }
 
+  if (seen.size === 0) { wrap.classList.remove('active'); return; }
   wrap.classList.add('active');
-  rowsEl.innerHTML = [...seen.entries()].map(([data, count]) => {
-    const checked = selectedDates.has(data);
-    return `<div class="date-row" onclick="toggleDateChip('${data}')">
-      <div class="date-checkbox${checked ? ' checked'  : ''}" data-mes="${data}">
+
+  rowsEl.innerHTML = [...seen.entries()].map(([key, {count, label}]) => {
+    const checked = selectedDates.has(key);
+    return `<div class="date-row" onclick="toggleDateChip('${key}')">
+      <div class="date-checkbox${checked ? ' checked' : ''}" data-mes="${key}">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div class="date-row-info">
-        <div class="date-row-label">${data}</div>
+        <div class="date-row-label">${label}</div>
         <div class="date-row-count">${count} cliente${count > 1 ? 's' : ''}</div>
       </div>
     </div>`;
@@ -555,17 +548,37 @@ function buildDateChips() {
   updateDateRowsUI();
 }
 
-function parseMesAno(dataStr) {
-  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const match = dataStr.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (match) {
-    const m = parseInt(match[2], 10);
-    const a = match[3];
-    const nome = meses[m - 1] || match[2];
-    return `${nome}/${a}`;
+function normalizarData(str) {
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const s = str.trim();
+
+  // formato: 2026-05-20
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const nomeMes = meses[parseInt(m[2],10)-1] || m[2];
+    return nomeMes + '/' + m[1];
   }
-  // fallback: retorna o valor original
-  return dataStr.trim();
+
+  // formato: 23/04/2025
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const nomeMes = meses[parseInt(m[2],10)-1] || m[2];
+    return nomeMes + '/' + m[3];
+  }
+
+  // formato: 20/abril ou 20/abril/2025
+  m = s.match(/^(\d{1,2})\/([\wç]+)(\/(\d{4}))?$/i);
+  if (m) {
+    const key = m[2].toLowerCase();
+    return m[4] ? key + '/' + m[4] : key;
+  }
+
+  // formato: abril ou abril/2025
+  return s.toLowerCase();
+}
+
+function capitalizar(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function buildDateChips() {
@@ -587,27 +600,24 @@ function buildDateChips() {
   ).join('');
 }
 
-function filterClients() { renderClients(); }
+
 
 // ==================== RENDER ====================
 function renderClients() {
-  const q = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase();
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent') pool = pool.filter(c => c.sent);
-  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(parseMesAno(c.mes)));
-  filteredClients = q ? pool.filter(c => c.nome.toLowerCase().includes(q) || c.mes.toLowerCase().includes(q) || c.telefone.includes(q)) : pool;
+  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(normalizarData(c.mes)));
+  filteredClients = [...pool];
 
   const list = document.getElementById('clientsList');
   const statsRow = document.getElementById('statsRow');
-  const searchWrap = document.getElementById('searchWrap');
   const filterTabs = document.getElementById('filterTabs');
   const progressWrap = document.getElementById('progressWrap');
 
   if (clients.length === 0) {
     list.innerHTML = `<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p></div>`;
     statsRow.style.display = 'none';
-    searchWrap.style.display = 'none';
     filterTabs.style.display = 'none';
     progressWrap.classList.remove('active');
     document.getElementById('dateFilterWrap').classList.remove('active','open');
@@ -620,7 +630,6 @@ function renderClients() {
   const pct = clients.length > 0 ? Math.round((sentCount / clients.length) * 100) : 0;
 
   statsRow.style.display = 'grid';
-  searchWrap.style.display = 'block';
   filterTabs.style.display = 'flex';
   progressWrap.classList.add('active');
   document.getElementById('totalBadge').textContent = clients.length;
