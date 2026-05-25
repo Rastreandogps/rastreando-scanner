@@ -519,6 +519,7 @@ function buildCardHTML(c, i) {
       </div>
       <div class="sent-badge">✅ Enviado</div>
       <div class="client-value">R$ ${c.valor}</div>
+      <button class="btn-trash" onclick="event.stopPropagation();deleteClient(${c.id})" title="Remover cliente">🗑️</button>
     </div>
     <div class="client-body${bodyOpen}" id="body-${c.id}">
       <div>
@@ -537,6 +538,22 @@ function buildCardHTML(c, i) {
       </div>
     </div>
   </div>`;
+}
+
+// ==================== DELETE CLIENT ====================
+function deleteClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    card.classList.add('removing');
+    setTimeout(() => {
+      clients = clients.filter(x => x.id !== id);
+      saveToStorage();
+      renderClients();
+      showToast(`🗑️ ${c.nome} removido`);
+    }, 250);
+  }
 }
 
 // ==================== TOGGLE CARD ====================
