@@ -1317,7 +1317,8 @@ function fechar() {
 }
 
 /* ============================================================
-   ✨ NOVA FUNÇÃO MONTAR MENSAGEM — VISUAL ORGANIZADO
+   ✨ MONTAR MENSAGEM — HIERARQUIA POR PRIORIDADE PARA O CLIENTE
+   Ordem: Cabeçalho → Agendamento → Cliente → Veículo → Serviço
    ============================================================ */
 function montarMensagem(d) {
   const ts = d.tipoServico || 'instalacao';
@@ -1331,20 +1332,34 @@ function montarMensagem(d) {
 
   let msg = '';
 
-  /* ===== CABEÇALHO ===== */
+  /* ============================================
+     1️⃣  CABEÇALHO — Identificação da OS
+     ============================================ */
   msg += '🛰️ *RASTREANDO GPS*\n';
   msg += SEP + '\n';
   msg += '📄 *ORDEM DE SERVIÇO ' + d.osNum + '*\n';
   msg += '🔧 *Tipo:* ' + tipoLabels[ts] + '\n';
   msg += SEP + '\n\n';
 
-  /* ===== CLIENTE ===== */
+  /* ============================================
+     2️⃣  AGENDAMENTO — O que o cliente vê primeiro
+     ============================================ */
+  if (d.data || d.hora) {
+    msg += '📅 *AGENDAMENTO CONFIRMADO*\n';
+    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
+    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
+    msg += LIN + '\n\n';
+  }
+
+  /* ============================================
+     3️⃣  DADOS DO CLIENTE + ENDEREÇO + LOCALIZAÇÃO
+     ============================================ */
   msg += '👤 *DADOS DO CLIENTE*\n';
   if (d.nome)    msg += '  • *Nome:* ' + d.nome + '\n';
   if (d.contato) msg += '  • *Contato:* ' + d.contato + '\n';
   msg += '\n';
 
-  /* ===== ENDEREÇO ===== */
   if (d.endereco) {
     let labelEnd = 'Endereço';
     if (ts === 'instalacao') labelEnd = 'Endereço da instalação';
@@ -1357,12 +1372,12 @@ function montarMensagem(d) {
   if (d.mapsLink) {
     msg += '🗺️ *Localização:*\n';
     msg += '  ' + d.mapsLink + '\n';
-    msg += LIN + '\n\n';
-  } else {
-    msg += LIN + '\n\n';
   }
+  msg += LIN + '\n\n';
 
-  /* ===== VEÍCULO ===== */
+  /* ============================================
+     4️⃣  VEÍCULO
+     ============================================ */
   const veicsWA = d.veiculos && d.veiculos.length > 0
     ? d.veiculos
     : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
@@ -1386,7 +1401,9 @@ function montarMensagem(d) {
   }
   msg += '\n' + LIN + '\n\n';
 
-  /* ===== CORPO POR TIPO DE SERVIÇO ===== */
+  /* ============================================
+     5️⃣  SERVIÇO CONTRATADO (varia por tipo)
+     ============================================ */
   if (ts === 'instalacao') {
     const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
     const tipoTextoCurto = {
@@ -1398,24 +1415,15 @@ function montarMensagem(d) {
     const qtd = d.qtdVeiculos || 1;
     const totalMes = d.totalMensalidade || (valorMes * qtd);
 
-    /* Agendamento */
-    msg += '📅 *AGENDAMENTO*\n';
-    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
-    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
-    msg += '\n';
-
-    /* Plano */
+    /* Plano contratado */
     if (d.tipoKey) {
-      msg += '🔧 *Plano contratado:*\n';
-      msg += '  • ' + (tipoTextoCurto[d.tipoKey] || d.tipo) + '\n';
+      msg += '🔧 *SERVIÇO CONTRATADO*\n';
+      msg += '  • *Plano:* ' + (tipoTextoCurto[d.tipoKey] || d.tipo) + '\n';
       if (valorMes > 0) {
         msg += '  💰 R$ ' + valorMes.toFixed(2).replace('.', ',') + '/mês por veículo\n';
       }
-      msg += '\n';
+      msg += '  🚙 Quantidade de veículos: ' + qtd + '\n\n';
     }
-
-    /* Quantidade */
-    msg += '🚙 *Quantidade de veículos:* ' + qtd + '\n\n';
 
     /* Taxa */
     if (d.valorInst > 0) {
@@ -1435,17 +1443,8 @@ function montarMensagem(d) {
       msg += '  *R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês*\n';
     }
 
-    if (d.status) {
-      msg += '\n🚩 *Status:* ' + d.status + '\n';
-    }
-
   } else if (ts === 'manutencao') {
-    /* Agendamento */
-    msg += '📅 *AGENDAMENTO*\n';
-    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
-    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
-    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
-    msg += '\n';
+    msg += '🔧 *SERVIÇO DE MANUTENÇÃO*\n\n';
 
     /* Equipamento */
     if (d.manImei) {
@@ -1461,7 +1460,7 @@ function montarMensagem(d) {
 
     /* Serviço executado */
     if (d.manServico) {
-      msg += '🔧 *Serviço executado:*\n';
+      msg += '🛠️ *Serviço executado:*\n';
       msg += '  ' + d.manServico + '\n\n';
     }
 
@@ -1473,12 +1472,7 @@ function montarMensagem(d) {
     }
 
   } else if (ts === 'retirada') {
-    /* Agendamento */
-    msg += '📅 *AGENDAMENTO*\n';
-    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
-    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
-    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
-    msg += '\n';
+    msg += '📤 *SERVIÇO DE RETIRADA*\n\n';
 
     /* Motivo */
     if (d.retMotivo) {
@@ -1496,14 +1490,18 @@ function montarMensagem(d) {
     }
   }
 
-  /* ===== OBSERVAÇÕES ===== */
+  /* ============================================
+     6️⃣  OBSERVAÇÕES
+     ============================================ */
   if (d.obs) {
     msg += '\n' + LIN + '\n\n';
     msg += '📝 *Observações:*\n';
     msg += '  ' + d.obs + '\n';
   }
 
-  /* ===== RODAPÉ ===== */
+  /* ============================================
+     7️⃣  RODAPÉ
+     ============================================ */
   msg += '\n' + SEP + '\n';
   msg += '🛰️ *Rastreando GPS*\n';
   msg += '📄 *CNPJ:* 29.488.621/0001-48';
