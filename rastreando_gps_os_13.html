@@ -1336,7 +1336,6 @@ function montarMensagem(d) {
   msg += SEP + '\n';
   msg += '📄 *ORDEM DE SERVIÇO ' + d.osNum + '*\n';
   msg += '🔧 *Tipo:* ' + tipoLabels[ts] + '\n';
-  msg += '📅 *Data da emissão:* ' + (d.criadoEm || new Date().toLocaleDateString('pt-BR')) + '\n';
   msg += SEP + '\n\n';
 
   /* ===== CLIENTE ===== */
@@ -1420,7 +1419,7 @@ function montarMensagem(d) {
 
     /* Taxa */
     if (d.valorInst > 0) {
-      msg += '🧾 *Taxa de instalação:*\n';
+      msg += '🧾 *TAXA DE INSTALAÇÃO:*\n';
       msg += '  💵 R$ ' + d.valorInst.toFixed(2).replace('.', ',') + (qtd > 1 ? ' por veículo' : '') + '\n';
       msg += LIN + '\n\n';
     }
@@ -1507,9 +1506,7 @@ function montarMensagem(d) {
   /* ===== RODAPÉ ===== */
   msg += '\n' + SEP + '\n';
   msg += '🛰️ *Rastreando GPS*\n';
-  msg += '📄 *CNPJ:* 29.488.621/0001-48\n';
-  msg += '📲 (21) 9 8088-6087\n';
-  msg += '📲 (21) 9 6931-2625';
+  msg += '📄 *CNPJ:* 29.488.621/0001-48';
 
   return msg;
 }
