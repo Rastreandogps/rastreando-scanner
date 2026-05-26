@@ -720,10 +720,8 @@ function selServico(s) {
   document.querySelectorAll('.secao-instalacao').forEach(el => el.style.display = s === 'instalacao' ? 'block' : 'none');
   document.querySelectorAll('.secao-manutencao').forEach(el => el.style.display = s === 'manutencao' ? 'block' : 'none');
   document.querySelectorAll('.secao-retirada').forEach(el => el.style.display = s === 'retirada' ? 'block' : 'none');
-  // Mostrar/ocultar botão financeiro (só para instalação)
   document.getElementById('btn-financeiro-form').style.display = s === 'instalacao' ? 'flex' : 'none';
   document.getElementById('btn-financeiro').style.display = s === 'instalacao' ? 'block' : 'none';
-  // Atualizar label data
   const labelData = document.getElementById('label-data-servico');
   if (s === 'instalacao') labelData.textContent = 'Data de instalação';
   else if (s === 'manutencao') labelData.textContent = 'Data da manutenção';
@@ -798,7 +796,6 @@ function verificarOSHoje() {
   const nomes = osHoje.map(o => o.osNum + ' — ' + (o.nome || 'Cliente') + (o.hora ? ' às ' + o.hora : '')).join('\n');
   const total = osHoje.length;
 
-  // Tenta notificação nativa primeiro
   if ('Notification' in window) {
     const disparar = () => {
       new Notification('🛰️ Rastreando GPS — OS de Hoje', {
@@ -815,7 +812,6 @@ function verificarOSHoje() {
     }
   }
 
-  // Sempre mostra o banner in-app também
   mostrarBannerHoje(osHoje);
 }
 
@@ -916,7 +912,6 @@ function renderRelatorios() {
   totalEl.textContent = 'R$ ' + Math.abs(total).toFixed(2).replace('.', ',');
   totalEl.style.color = total >= 0 ? '#22c55e' : '#e31c1c';
 
-  // Gráfico últimos 6 meses
   const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const dados = [];
   for (let i = 5; i >= 0; i--) {
@@ -1107,7 +1102,6 @@ function getDados() {
   const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
   const valorMensalidade = mensalidadeMap[tipo] || 0;
   const totalMensalidade = valorMensalidade * qtdVeiculos;
-  // Manutenção
   const manValor = parseFloat(document.getElementById('man-valor').value) || 0;
   return {
     osNum: document.getElementById('os-number').textContent,
@@ -1121,13 +1115,10 @@ function getDados() {
     data: dataFmt, dataRaw: dataRaw, hora: g('hora-inst'),
     statusKey: status, status: statusMap[status] || '⏳ Pendente',
     obs: g('obs'), mapsLink: getMapsLink(),
-    // instalação
     valorInst: valorInst, qtdVeiculos: qtdVeiculos, totalInst: totalInst,
     valorMensalidade: valorMensalidade, totalMensalidade: totalMensalidade,
-    // manutenção
     manProblema: g('man-problema'), manServico: g('man-servico'),
     manImei: g('man-imei'), manValor: manValor,
-    // retirada
     retMotivo: getMotivoRetiradaTexto(), retMotivoKey: motivoRetirada,
     retRecuperado: equipRecuperado, retImei: g('ret-imei'),
     criadoEm: new Date().toLocaleDateString('pt-BR')
@@ -1207,7 +1198,6 @@ function abrirOSdoPainel(idx) {
 
 function preencherPreview(d, statusAtivo) {
   const ts = d.tipoServico || 'instalacao';
-  // Badge tipo serviço
   const badgeLabels = { instalacao: '📡 Instalação', manutencao: '🔧 Manutenção', retirada: '📤 Retirada' };
   document.getElementById('p-tipo-serv-badge').innerHTML = `<span class="tipo-serv-badge ${ts}">${badgeLabels[ts] || ts}</span>`;
   document.getElementById('p-num').textContent = 'OS ' + d.osNum;
@@ -1218,7 +1208,6 @@ function preencherPreview(d, statusAtivo) {
   const mapsRow = document.getElementById('p-maps-row');
   if (d.mapsLink) { document.getElementById('p-maps-a').href = d.mapsLink; mapsRow.style.display='flex'; }
   else { mapsRow.style.display='none'; }
-  // Veículos
   const veics = d.veiculos && d.veiculos.length > 0 ? d.veiculos : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
   const modeloEl = document.getElementById('p-modelo');
   const anoEl = document.getElementById('p-ano');
@@ -1240,7 +1229,6 @@ function preencherPreview(d, statusAtivo) {
     }).join(' ');
   }
 
-  // Mostrar/ocultar seções
   document.getElementById('p-sec-instalacao').style.display = ts === 'instalacao' ? 'block' : 'none';
   document.getElementById('p-sec-manutencao').style.display = ts === 'manutencao' ? 'block' : 'none';
   document.getElementById('p-man-prob-sec').style.display = (ts === 'manutencao' && d.manProblema) ? 'block' : 'none';
@@ -1328,75 +1316,201 @@ function fechar() {
   osAbertaIdx = null;
 }
 
+/* ============================================================
+   ✨ NOVA FUNÇÃO MONTAR MENSAGEM — VISUAL ORGANIZADO
+   ============================================================ */
 function montarMensagem(d) {
   const ts = d.tipoServico || 'instalacao';
-  const tipoLabels = { instalacao: '📡 INSTALAÇÃO', manutencao: '🔧 MANUTENÇÃO', retirada: '📤 RETIRADA' };
-  let msg = '🛰️ *RASTREANDO GPS*\n';
-  msg += '━━━━━━━━━━━━━━━━━━\n';
-  msg += '📋 *Ordem de Serviço ' + d.osNum + '* — ' + tipoLabels[ts] + '\n';
-  msg += '🗓️ *Data:* ' + (d.criadoEm || new Date().toLocaleDateString('pt-BR')) + '\n';
-  msg += '━━━━━━━━━━━━━━━━━━\n\n';
-  msg += '👤 *CLIENTE*\n';
-  if (d.nome)     msg += '• *Nome:* ' + d.nome + '\n';
-  if (d.contato)  msg += '• *Contato:* ' + d.contato + '\n';
-  if (d.endereco) msg += '• *Endereço:* ' + d.endereco + '\n';
-  if (d.mapsLink) msg += '• 🗺️ *Localização:* ' + d.mapsLink + '\n';
-  msg += '\n🚗 *VEÍCULO*\n';
-  const veicsWA = d.veiculos && d.veiculos.length > 0 ? d.veiculos : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
-  if (veicsWA.length === 1) {
-    if (veicsWA[0].modelo) msg += '• *Modelo:* ' + veicsWA[0].modelo + '\n';
-    if (veicsWA[0].ano)    msg += '• *Ano/modelo:* ' + veicsWA[0].ano + '\n';
-    const gv = veicsWA[0].gnv || veicsWA[0].gnvVal;
-    if (gv) msg += '• *GNV:* ' + (gv==='sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+  const tipoLabels = {
+    instalacao: 'Instalação',
+    manutencao: 'Manutenção',
+    retirada:   'Retirada'
+  };
+  const SEP = '━━━━━━━━━━━━━━━━━━━';
+  const LIN = '─────────────────────';
+
+  let msg = '';
+
+  /* ===== CABEÇALHO ===== */
+  msg += '🛰️ *RASTREANDO GPS*\n';
+  msg += SEP + '\n';
+  msg += '📄 *ORDEM DE SERVIÇO ' + d.osNum + '*\n';
+  msg += '🔧 *Tipo:* ' + tipoLabels[ts] + '\n';
+  msg += '📅 *Data da emissão:* ' + (d.criadoEm || new Date().toLocaleDateString('pt-BR')) + '\n';
+  msg += SEP + '\n\n';
+
+  /* ===== CLIENTE ===== */
+  msg += '👤 *DADOS DO CLIENTE*\n';
+  if (d.nome)    msg += '  • *Nome:* ' + d.nome + '\n';
+  if (d.contato) msg += '  • *Contato:* ' + d.contato + '\n';
+  msg += '\n';
+
+  /* ===== ENDEREÇO ===== */
+  if (d.endereco) {
+    let labelEnd = 'Endereço';
+    if (ts === 'instalacao') labelEnd = 'Endereço da instalação';
+    else if (ts === 'manutencao') labelEnd = 'Endereço da manutenção';
+    else if (ts === 'retirada') labelEnd = 'Endereço da retirada';
+    msg += '📍 *' + labelEnd + ':*\n';
+    msg += '  ' + d.endereco + '\n\n';
+  }
+
+  if (d.mapsLink) {
+    msg += '🗺️ *Localização:*\n';
+    msg += '  ' + d.mapsLink + '\n';
+    msg += LIN + '\n\n';
   } else {
+    msg += LIN + '\n\n';
+  }
+
+  /* ===== VEÍCULO ===== */
+  const veicsWA = d.veiculos && d.veiculos.length > 0
+    ? d.veiculos
+    : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
+
+  if (veicsWA.length === 1) {
+    msg += '🚗 *VEÍCULO*\n';
+    const v = veicsWA[0];
+    if (v.modelo) msg += '  • *Modelo:* ' + v.modelo + '\n';
+    if (v.ano)    msg += '  • *Ano/Modelo:* ' + v.ano + '\n';
+    const gv = v.gnv || v.gnvVal;
+    if (gv) msg += '  • *GNV:* ' + (gv === 'sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+  } else {
+    msg += '🚗 *VEÍCULOS (' + veicsWA.length + ')*\n';
     veicsWA.forEach((v, i) => {
       const gv = v.gnv || v.gnvVal;
-      msg += `🚗 *Veículo ${i+1}:* ${v.modelo||'—'} ${v.ano ? '· '+v.ano : ''} · GNV: ${gv==='sim'?'Sim ✅':'Não ❌'}\n`;
+      msg += '\n  *Veículo ' + (i + 1) + ':*\n';
+      if (v.modelo) msg += '    • Modelo: ' + v.modelo + '\n';
+      if (v.ano)    msg += '    • Ano/Modelo: ' + v.ano + '\n';
+      if (gv) msg += '    • GNV: ' + (gv === 'sim' ? 'Sim ✅' : 'Não ❌') + '\n';
     });
   }
+  msg += '\n' + LIN + '\n\n';
 
+  /* ===== CORPO POR TIPO DE SERVIÇO ===== */
   if (ts === 'instalacao') {
-    msg += '\n🔧 *INSTALAÇÃO* : ' + (d.status || '') + '\n\n';
-    const mensalidadeMap2 = { com: 59.90, sem: 39.90, antigo: 54.90 };
-    const tipoTextoMes = { com: 'Com bloqueio — R$ 59,90/mês por veículo', sem: 'Sem bloqueio — R$ 39,90/mês por veículo', antigo: 'Com bloqueio (Contrato Antigo) — R$ 54,90/mês por veículo' };
-    if (d.tipoKey) msg += '• *Tipo:* ' + (tipoTextoMes[d.tipoKey] || d.tipo) + '\n';
-    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
-    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
-    if (d.qtdVeiculos > 0) msg += '• *Qtd. veículos:* ' + d.qtdVeiculos + '\n';
-    if (d.valorInst > 0 && d.qtdVeiculos > 0) {
-      msg += '• *Taxa de instalação por veículo:* R$ ' + d.valorInst.toFixed(2).replace('.', ',') + '\n';
-      msg += '💰 *Total da instalação: R$ ' + d.totalInst.toFixed(2).replace('.', ',') + '*\n';
+    const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
+    const tipoTextoCurto = {
+      com: 'Com bloqueio',
+      sem: 'Sem bloqueio',
+      antigo: 'Com bloqueio (Contrato Antigo)'
+    };
+    const valorMes = d.valorMensalidade || mensalidadeMap[d.tipoKey] || 0;
+    const qtd = d.qtdVeiculos || 1;
+    const totalMes = d.totalMensalidade || (valorMes * qtd);
+
+    /* Agendamento */
+    msg += '📅 *AGENDAMENTO*\n';
+    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
+    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
+    msg += '\n';
+
+    /* Plano */
+    if (d.tipoKey) {
+      msg += '🔧 *Plano contratado:*\n';
+      msg += '  • ' + (tipoTextoCurto[d.tipoKey] || d.tipo) + '\n';
+      if (valorMes > 0) {
+        msg += '  💰 R$ ' + valorMes.toFixed(2).replace('.', ',') + '/mês por veículo\n';
+      }
+      msg += '\n';
     }
-    const valorMes2 = d.valorMensalidade || mensalidadeMap2[d.tipoKey] || 0;
-    const totalMes2 = d.totalMensalidade || (valorMes2 * (d.qtdVeiculos || 1));
-    if (valorMes2 > 0 && (d.qtdVeiculos || 1) > 1) {
-      msg += '📅 *Total mensalidade: R$ ' + totalMes2.toFixed(2).replace('.', ',') + '/mês*\n';
+
+    /* Quantidade */
+    msg += '🚙 *Quantidade de veículos:* ' + qtd + '\n\n';
+
+    /* Taxa */
+    if (d.valorInst > 0) {
+      msg += '🧾 *Taxa de instalação:*\n';
+      msg += '  💵 R$ ' + d.valorInst.toFixed(2).replace('.', ',') + (qtd > 1 ? ' por veículo' : '') + '\n';
+      msg += LIN + '\n\n';
     }
+
+    /* Totais */
+    if (d.valorInst > 0 && qtd > 0) {
+      msg += '💰 *TOTAL DA INSTALAÇÃO:*\n';
+      msg += '  *R$ ' + d.totalInst.toFixed(2).replace('.', ',') + '*\n';
+    }
+
+    if (valorMes > 0 && qtd > 1) {
+      msg += '\n📅 *TOTAL DA MENSALIDADE:*\n';
+      msg += '  *R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês*\n';
+    }
+
+    if (d.status) {
+      msg += '\n🚩 *Status:* ' + d.status + '\n';
+    }
+
   } else if (ts === 'manutencao') {
-    msg += '\n🔧 *MANUTENÇÃO*\n';
-    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
-    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
-    if (d.status) msg += '• *Status:* ' + d.status + '\n';
-    if (d.manImei) msg += '• *IMEI:* ' + d.manImei + '\n';
-    if (d.manProblema) msg += '• *Problema:* ' + d.manProblema + '\n';
-    if (d.manServico)  msg += '• *Serviço:* ' + d.manServico + '\n';
-    if (d.manValor > 0) msg += '💰 *Valor cobrado: R$ ' + d.manValor.toFixed(2).replace('.', ',') + '*\n';
+    /* Agendamento */
+    msg += '📅 *AGENDAMENTO*\n';
+    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
+    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
+    msg += '\n';
+
+    /* Equipamento */
+    if (d.manImei) {
+      msg += '📟 *Equipamento:*\n';
+      msg += '  • *IMEI:* ' + d.manImei + '\n\n';
+    }
+
+    /* Problema relatado */
+    if (d.manProblema) {
+      msg += '⚠️ *Problema relatado:*\n';
+      msg += '  ' + d.manProblema + '\n\n';
+    }
+
+    /* Serviço executado */
+    if (d.manServico) {
+      msg += '🔧 *Serviço executado:*\n';
+      msg += '  ' + d.manServico + '\n\n';
+    }
+
+    /* Valor */
+    if (d.manValor > 0) {
+      msg += LIN + '\n\n';
+      msg += '💰 *VALOR COBRADO:*\n';
+      msg += '  *R$ ' + d.manValor.toFixed(2).replace('.', ',') + '*\n';
+    }
+
   } else if (ts === 'retirada') {
-    msg += '\n📤 *RETIRADA*\n';
-    if (d.data)   msg += '• *Data:* ' + d.data + '\n';
-    if (d.hora)   msg += '• *Horário:* ' + d.hora + '\n';
-    if (d.status) msg += '• *Status:* ' + d.status + '\n';
-    if (d.retMotivo) msg += '• *Motivo:* ' + d.retMotivo + '\n';
-    if (d.retRecuperado) msg += '• *Equipamento:* ' + (d.retRecuperado === 'sim' ? 'Recuperado ✅' : 'Não recuperado ❌') + '\n';
-    if (d.retImei) msg += '• *IMEI:* ' + d.retImei + '\n';
+    /* Agendamento */
+    msg += '📅 *AGENDAMENTO*\n';
+    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
+    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
+    msg += '\n';
+
+    /* Motivo */
+    if (d.retMotivo) {
+      msg += '📝 *Motivo da retirada:*\n';
+      msg += '  • ' + d.retMotivo + '\n\n';
+    }
+
+    /* Equipamento */
+    msg += '📦 *Equipamento:*\n';
+    if (d.retRecuperado) {
+      msg += '  • *Situação:* ' + (d.retRecuperado === 'sim' ? 'Recuperado ✅' : 'Não recuperado ❌') + '\n';
+    }
+    if (d.retImei) {
+      msg += '  • *IMEI:* ' + d.retImei + '\n';
+    }
   }
 
-  if (d.obs) msg += '\n📝 *Obs:* ' + d.obs + '\n';
-  msg += '\n━━━━━━━━━━━━━━━━━━\n';
+  /* ===== OBSERVAÇÕES ===== */
+  if (d.obs) {
+    msg += '\n' + LIN + '\n\n';
+    msg += '📝 *Observações:*\n';
+    msg += '  ' + d.obs + '\n';
+  }
+
+  /* ===== RODAPÉ ===== */
+  msg += '\n' + SEP + '\n';
   msg += '🛰️ *Rastreando GPS*\n';
-  msg += '📄 CNPJ: 29.488.621/0001-48\n';
+  msg += '📄 *CNPJ:* 29.488.621/0001-48\n';
   msg += '📲 (21) 9 8088-6087\n';
   msg += '📲 (21) 9 6931-2625';
+
   return msg;
 }
 
@@ -1418,10 +1532,10 @@ function compartilharFinanceiro() {
   const totalMes = d.totalMensalidade || (valorMes * qtd);
   const tipoNome = tipoNomeMap[d.tipoKey] || d.tipo || '—';
   let msg = '📋 *ADICIONAR VEICULO(s)*\n';
-  msg += '━━━━━━━━━━━━━━━━━━\n';
+  msg += '━━━━━━━━━━━━━━━━━━━\n';
   msg += '👤 *Nome:* ' + (d.nome || '—') + '\n';
   msg += '📲 *Telefone:* ' + (d.contato || '—') + '\n';
-  msg += '━━━━━━━━━━━━━━━━━━\n';
+  msg += '━━━━━━━━━━━━━━━━━━━\n';
   msg += '🔧 *Mensalidade:* ' + tipoNome + '\n';
   msg += '🚗 *Qtd. de veículos:* ' + qtd + '\n';
   if (totalMes > 0) msg += '💰 *Total mensalidade:* R$ ' + totalMes.toFixed(2).replace('.', ',') + '/mês\n';
@@ -1514,13 +1628,11 @@ function renderLista() {
 
     const acoes = (btnWa || btnMaps || btnShare) ? `<div class="os-card-actions">${btnWa}${btnMaps}${btnShare}</div>` : '';
 
-    // Info linha dependendo do tipo
     let infoExtra = '';
     if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
     else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
     else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
 
-    // Badge dia
     const labelData = getLabelData(o.data);
     const badgeDia = labelData
       ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid ${labelData.borda};color:${labelData.cor};background:${labelData.bg};margin-left:6px;">${labelData.texto}</span>`
@@ -1577,7 +1689,6 @@ function editarOS() {
   if (osAbertaIdx === null) return;
   const o = osList[osAbertaIdx];
 
-  // Tipo de serviço
   selServico(o.tipoServico || 'instalacao');
 
   document.getElementById('nome').value = o.nome || '';
@@ -1591,7 +1702,6 @@ function editarOS() {
   if (ts === 'instalacao') {
     document.getElementById('valor-inst').value = o.valorInst || '';
     document.getElementById('qtd-veiculos').value = o.qtdVeiculos || 1;
-    // Restaurar veículos
     const veicsEdit = o.veiculos && o.veiculos.length > 0 ? o.veiculos : [{ modelo: o.modelo||'', ano: o.ano||'', gnv: o.gnvVal||null }];
     renderVeiculosComDados(veicsEdit);
     calcularTotal();
