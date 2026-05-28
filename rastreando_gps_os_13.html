@@ -1677,7 +1677,8 @@ function renderLista() {
           Compartilhar OS
         </a>`;
 
-    const acoes = (btnWa || btnMaps || btnShare) ? `<div class="os-card-actions">${btnWa}${btnMaps}${btnShare}</div>` : '';
+    const btnEditar = `<button class="os-action-btn" onclick="event.stopPropagation(); editarOSdoCard(${idx})" style="background:#0a1a2e;color:#00e5ff;border:1px solid #00e5ff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>`;
+    const acoes = `<div class="os-card-actions">${btnWa}${btnMaps}${btnShare}${btnEditar}</div>`;
 
     let infoExtra = '';
     if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
@@ -1815,6 +1816,11 @@ function mostrarToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function editarOSdoCard(idx) {
+  osAbertaIdx = idx;
+  editarOS();
 }
 
 init();
