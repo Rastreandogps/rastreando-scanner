@@ -43,6 +43,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .saldo-value{font-size:34px;font-weight:700;color:#fff;letter-spacing:-.5px}
 .saldo-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:6px}
 .saldo-refresh{position:absolute;top:18px;right:18px;color:rgba(255,255,255,.45);font-size:20px;cursor:pointer;z-index:1}
+
 /* CLASSE CARD */
 .classe-bloco{border-bottom:1px solid var(--border);padding:11px 0}
 .classe-bloco:last-child{border-bottom:none}
@@ -59,27 +60,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .receber-principal.receber-neg{color:var(--blue)}
 .total-label{font-size:10px;color:var(--txt3);margin-top:5px}
 .total-secundario{font-size:12px;font-weight:500;color:var(--txt2)}
-/* FIM VALORES INVERTIDOS */
 .classe-chevron{font-size:14px;color:var(--txt3);transition:transform .2s;margin-left:6px;flex-shrink:0}
 .classe-chevron.open{transform:rotate(180deg)}
 .pct-row{display:flex;align-items:center;gap:6px;margin-top:5px;margin-bottom:2px}
 .pct-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .pct-fill{height:100%;border-radius:3px}
 .pct-lbl{font-size:11px;font-weight:600;min-width:38px;text-align:right}
-/* SANFONA */
+/* SANFONA CLASSES */
 .classe-devedores{display:none;margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
 .classe-devedores.open{display:block}
 .devedor-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
 .devedor-item:last-child{border-bottom:none}
 .devedor-left{display:flex;align-items:center;gap:8px}
-.devedor-avatar{width:30px;height:30px;border-radius:50%;background:var(--red-bg);border:1.5px solid #E24B4A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--red);flex-shrink:0}
+.devedor-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.devedor-avatar.av-red{background:var(--red-bg);border:1.5px solid #E24B4A;color:var(--red)}
+.devedor-avatar.av-blue{background:var(--blue-bg);border:1.5px solid #4A90D9;color:var(--blue)}
+.devedor-avatar.av-purple{background:#EEEDFE;border:1.5px solid #7B6FDE;color:var(--purple2)}
 .devedor-nome{font-size:13px;font-weight:600;color:var(--txt)}
 .devedor-tel{font-size:11px;color:var(--txt2)}
 .devedor-right{text-align:right}
-.devedor-valor{font-size:13px;font-weight:700;color:var(--red)}
+.devedor-valor{font-size:13px;font-weight:700}
+.devedor-valor.v-red{color:var(--red)}
+.devedor-valor.v-blue{color:var(--blue)}
+.devedor-valor.v-purple{color:var(--purple2)}
 .devedor-venc{font-size:10px;color:var(--txt3);margin-top:2px}
 .devedor-wa{display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#25d366;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;border:none;font-family:inherit}
 .classe-devedores-vazio{font-size:12px;color:var(--txt3);padding:8px 0;font-style:italic}
+
 /* STATUS */
 .tag{font-size:11px;padding:4px 9px;border-radius:20px;font-weight:600}
 .tag.green{background:var(--green-bg);color:var(--green)}
@@ -91,6 +98,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .status-row:last-child{border-bottom:none}
 .status-right p{font-size:14px;font-weight:600;color:var(--txt)}
 .cf-hint{font-size:10px;color:var(--txt3);margin-top:3px;font-style:italic}
+
+/* SANFONA STATUS (CF e IN) */
+.status-sanfona-trigger{cursor:pointer;user-select:none;width:100%}
+.status-sanfona-header{display:flex;justify-content:space-between;align-items:center;width:100%}
+.status-sanfona-left{display:flex;flex-direction:column;gap:2px}
+.status-sanfona-chevron{font-size:14px;color:var(--txt3);transition:transform .2s;flex-shrink:0;margin-left:6px}
+.status-sanfona-chevron.open{transform:rotate(180deg)}
+.status-sanfona-body{display:none;margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
+.status-sanfona-body.open{display:block}
+.status-sanfona-loading{font-size:12px;color:var(--txt3);padding:6px 0;font-style:italic}
+
 .spacer{height:8px}
 /* DESPESAS */
 .seg{display:flex;gap:8px;margin-bottom:14px}
@@ -246,10 +264,75 @@ async function verificarFechamentoMensal() {
   } catch(e){}
 }
 
+// ── CACHE DOS CLIENTES CF/IN ─────────────────
+let cacheStatusClientes = null;
+
+async function garantirStatusClientes() {
+  if (cacheStatusClientes) return cacheStatusClientes;
+  try {
+    const d = await buscar('statusClientes');
+    cacheStatusClientes = d.error ? { cf: [], inn: [] } : { cf: d.cf||[], inn: d.inn||[] };
+  } catch(e) {
+    cacheStatusClientes = { cf: [], inn: [] };
+  }
+  return cacheStatusClientes;
+}
+
+// ── SANFONA CF / IN ──────────────────────────
+async function toggleStatusSanfona(tipo) {
+  const bodyEl = document.getElementById('ssanf-body-' + tipo);
+  const chevEl = document.getElementById('ssanf-chev-' + tipo);
+  const isOpen = bodyEl.classList.contains('open');
+
+  if (isOpen) {
+    bodyEl.classList.remove('open');
+    chevEl.classList.remove('open');
+    return;
+  }
+
+  bodyEl.classList.add('open');
+  chevEl.classList.add('open');
+
+  // Só carrega uma vez (lazy)
+  if (bodyEl.dataset.loaded === '1') return;
+  bodyEl.dataset.loaded = '1';
+  bodyEl.innerHTML = '<div class="status-sanfona-loading"><i class="ti ti-loader" style="animation:spin 1s linear infinite;margin-right:4px"></i>Carregando...</div>';
+
+  const dados = await garantirStatusClientes();
+  const lista = tipo === 'cf' ? dados.cf : dados.inn;
+  const avClass  = tipo === 'cf' ? 'av-blue'   : 'av-purple';
+  const valClass = tipo === 'cf' ? 'v-blue'     : 'v-purple';
+
+  if (!lista || lista.length === 0) {
+    bodyEl.innerHTML = '<div class="classe-devedores-vazio">Nenhum cliente nesta situação 🎉</div>';
+    return;
+  }
+
+  bodyEl.innerHTML = lista.map(d => {
+    const ini = d.nome.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+    const telFmt = d.telefone ? d.telefone.replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3') : '';
+    const waLink = d.telefone ? 'https://wa.me/55' + d.telefone : '#';
+    return '<div class="devedor-item">' +
+      '<div class="devedor-left">' +
+        '<div class="devedor-avatar ' + avClass + '">' + ini + '</div>' +
+        '<div><div class="devedor-nome">' + d.nome + '</div>' +
+        '<div class="devedor-tel">' + telFmt + '</div></div>' +
+      '</div>' +
+      '<div class="devedor-right">' +
+        '<div class="devedor-valor ' + valClass + '">R$ ' + d.valor + '</div>' +
+        '<div class="devedor-venc">' + d.venc + '</div>' +
+        (d.telefone ? '<a href="' + waLink + '" target="_blank"><button class="devedor-wa"><i class="ti ti-brand-whatsapp" style="font-size:11px"></i> WhatsApp</button></a>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
 // ── DASHBOARD ────────────────────────────────
 let dadosInadClasse = null;
 
 async function carregarDashboard() {
+  // Limpa cache ao recarregar
+  cacheStatusClientes = null;
   try {
     const [d, inad] = await Promise.all([buscar('dashboard'), buscar('inadimplentesClasse')]);
     if (d.error) { document.getElementById('dash-content').innerHTML='<div class="erro-msg">'+d.error+'</div>'; return; }
@@ -286,8 +369,8 @@ async function carregarDashboard() {
         statusHtml('green',  '🟢 PG ' + d.status.PG.qnt, brl(d.status.PG.valor)) +
         statusHtml('red',    '🔴 AT ' + d.status.AT.qnt, brl(d.status.AT.valor)) +
         statusCFHtml(d.status.CF) +
-        statusHtml('amber',  '🔘 MP ' + d.status.MP.qnt, brl(d.status.MP.valor)) +
-        statusHtml('purple', '🚫 IN ' + d.status.IN.qnt, brl(d.status.IN.valor)) +
+        statusMPHtml(d.status.MP) +
+        statusINHtml(d.status.IN) +
       '</div>';
   } catch(e) {
     document.getElementById('dash-content').innerHTML='<div class="erro-msg">Erro ao conectar com a planilha.</div>';
@@ -302,14 +385,14 @@ function classeBloco(id, emoji, nome, bgIcon, c, pgPct, barColor, pctColor, deve
         const waLink = d.telefone ? 'https://wa.me/55' + d.telefone : '#';
         return '<div class="devedor-item">' +
           '<div class="devedor-left">' +
-            '<div class="devedor-avatar">' + ini + '</div>' +
+            '<div class="devedor-avatar av-red">' + ini + '</div>' +
             '<div><div class="devedor-nome">' + d.nome + '</div>' +
             '<div class="devedor-tel">' + telFmt + '</div></div>' +
           '</div>' +
           '<div class="devedor-right">' +
-            '<div class="devedor-valor">R$ ' + d.valor + '</div>' +
+            '<div class="devedor-valor v-red">R$ ' + d.valor + '</div>' +
             '<div class="devedor-venc">' + d.venc + '</div>' +
-            (d.telefone ? '<a href="' + waLink + '" target="_blank"><button class="devedor-wa">WhatsApp</button></a>' : '') +
+            (d.telefone ? '<a href="' + waLink + '" target="_blank"><button class="devedor-wa"><i class="ti ti-brand-whatsapp" style="font-size:11px"></i> WhatsApp</button></a>' : '') +
           '</div>' +
         '</div>';
       }).join('')
@@ -320,16 +403,13 @@ function classeBloco(id, emoji, nome, bgIcon, c, pgPct, barColor, pctColor, deve
     ? '<span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:20px;font-weight:700;margin-left:6px">' + qtdInad + ' em atraso</span>'
     : '';
 
-  // ── LÓGICA DO VALOR PRINCIPAL (A RECEBER / SUPERÁVIT) ──────────────────
   const receber = Number(c.receber || 0);
   let valorPrincipalHtml;
   if (receber >= 0) {
-    // Ainda há valor a receber — exibe em verde
     valorPrincipalHtml =
       '<div class="receber-label">A receber</div>' +
       '<div class="receber-principal receber-pos">' + brl(receber) + '</div>';
   } else {
-    // Arrecadou acima do previsto — exibe em azul sem sinal negativo
     valorPrincipalHtml =
       '<div class="receber-label">Superávit de</div>' +
       '<div class="receber-principal receber-neg">' + brl(Math.abs(receber)) + '</div>';
@@ -368,13 +448,46 @@ function toggleClasse(id) {
 function statusHtml(cor, label, valor) {
   return '<div class="status-row"><span class="tag ' + cor + '">' + label + '</span><div class="status-right"><p>' + valor + '</p></div></div>';
 }
+
+// CF com sanfona (azul)
 function statusCFHtml(cf) {
-  return '<div class="status-row" style="flex-direction:column;align-items:flex-start;gap:3px">' +
-    '<div style="display:flex;justify-content:space-between;width:100%">' +
-      '<span class="tag blue">🔵 CF ' + cf.qnt + '</span>' +
-      '<p style="font-size:14px;font-weight:700;color:var(--txt2)">' + brl(cf.valor) + '</p>' +
+  return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0">' +
+    '<div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'cf\')">' +
+      '<div class="status-sanfona-header">' +
+        '<div class="status-sanfona-left">' +
+          '<span class="tag blue">🔵 CF ' + cf.qnt + '</span>' +
+          '<div class="cf-hint" style="margin-top:3px">Pago mas ainda não compensado na conta</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<p style="font-size:14px;font-weight:700;color:var(--txt2)">' + brl(cf.valor) + '</p>' +
+          '<i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-cf"></i>' +
+        '</div>' +
+      '</div>' +
     '</div>' +
-    '<div class="cf-hint">Pago mas ainda não compensado na conta</div>' +
+    '<div class="status-sanfona-body" id="ssanf-body-cf"></div>' +
+  '</div>';
+}
+
+// MP sem sanfona (mantido igual)
+function statusMPHtml(mp) {
+  return statusHtml('amber', '🔘 MP ' + mp.qnt, brl(mp.valor));
+}
+
+// IN com sanfona (roxo)
+function statusINHtml(inn) {
+  return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0">' +
+    '<div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'inn\')">' +
+      '<div class="status-sanfona-header">' +
+        '<div class="status-sanfona-left">' +
+          '<span class="tag purple">🚫 IN ' + inn.qnt + '</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<p style="font-size:14px;font-weight:700;color:var(--txt)">' + brl(inn.valor) + '</p>' +
+          '<i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-inn"></i>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="status-sanfona-body" id="ssanf-body-inn"></div>' +
   '</div>';
 }
 
