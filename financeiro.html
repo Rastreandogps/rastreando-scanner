@@ -51,9 +51,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .classe-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .classe-info p{font-size:14px;font-weight:600;color:var(--txt)}
 .classe-info span{font-size:11px;color:var(--txt2)}
+/* VALORES INVERTIDOS */
 .classe-valor{text-align:right}
-.classe-valor p{font-size:14px;font-weight:600;color:var(--txt)}
-.classe-valor .receber{font-size:12px;font-weight:600;color:var(--green);margin-top:2px}
+.receber-label{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.receber-principal{font-size:15px;font-weight:700;line-height:1.15}
+.receber-principal.receber-pos{color:var(--green)}
+.receber-principal.receber-neg{color:var(--blue)}
+.total-label{font-size:10px;color:var(--txt3);margin-top:5px}
+.total-secundario{font-size:12px;font-weight:500;color:var(--txt2)}
+/* FIM VALORES INVERTIDOS */
 .classe-chevron{font-size:14px;color:var(--txt3);transition:transform .2s;margin-left:6px;flex-shrink:0}
 .classe-chevron.open{transform:rotate(180deg)}
 .pct-row{display:flex;align-items:center;gap:6px;margin-top:5px;margin-bottom:2px}
@@ -314,6 +320,21 @@ function classeBloco(id, emoji, nome, bgIcon, c, pgPct, barColor, pctColor, deve
     ? '<span style="font-size:10px;background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:20px;font-weight:700;margin-left:6px">' + qtdInad + ' em atraso</span>'
     : '';
 
+  // ── LÓGICA DO VALOR PRINCIPAL (A RECEBER / SUPERÁVIT) ──────────────────
+  const receber = Number(c.receber || 0);
+  let valorPrincipalHtml;
+  if (receber >= 0) {
+    // Ainda há valor a receber — exibe em verde
+    valorPrincipalHtml =
+      '<div class="receber-label">A receber</div>' +
+      '<div class="receber-principal receber-pos">' + brl(receber) + '</div>';
+  } else {
+    // Arrecadou acima do previsto — exibe em azul sem sinal negativo
+    valorPrincipalHtml =
+      '<div class="receber-label">Superávit de</div>' +
+      '<div class="receber-principal receber-neg">' + brl(Math.abs(receber)) + '</div>';
+  }
+
   return '<div class="classe-bloco">' +
     '<div class="classe-header" onclick="toggleClasse(\'' + id + '\')">' +
       '<div class="classe-left">' +
@@ -322,8 +343,9 @@ function classeBloco(id, emoji, nome, bgIcon, c, pgPct, barColor, pctColor, deve
       '</div>' +
       '<div style="display:flex;align-items:center">' +
         '<div class="classe-valor">' +
-          '<p>' + brl(c.total) + '</p>' +
-          '<div class="receber">' + brl(c.receber) + '</div>' +
+          valorPrincipalHtml +
+          '<div class="total-label">Total</div>' +
+          '<div class="total-secundario">' + brl(c.total) + '</div>' +
         '</div>' +
         '<i class="ti ti-chevron-down classe-chevron" id="chev-' + id + '"></i>' +
       '</div>' +
