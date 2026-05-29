@@ -23,51 +23,35 @@
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;overflow-x:hidden}
 body{display:flex;flex-direction:column;min-height:100vh}
-
-/* HEADER */
 .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .header-logo{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--yellow);letter-spacing:-.3px}
 .header-right{display:flex;gap:8px;align-items:center}
 .badge{background:var(--yellow);color:#000;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;min-width:24px;text-align:center}
 .badge.hidden{display:none}
-
-/* TABS */
 .tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:99}
 .tab{flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:var(--muted);text-align:center;cursor:pointer;border:none;background:none;transition:all .2s;position:relative}
 .tab.active{color:var(--yellow)}
 .tab.active::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:2px;background:var(--yellow);border-radius:2px}
-
-/* MAIN */
 .main{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px}
 .screen{display:none}
 .screen.active{display:flex;flex-direction:column;gap:16px}
-
-/* SECTION CARD */
 .section-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.section-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.section-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
 .section-head h3{font-size:13px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase}
-
-/* TEXTAREAS */
 .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
 .field-wrap{background:var(--card);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .field-wrap label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
 .field-wrap textarea{background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:13px;resize:none;outline:none;line-height:1.6;min-height:90px;width:100%}
 .field-wrap textarea::placeholder{color:var(--muted2)}
-
-/* MESSAGE TEMPLATE */
 .msg-area{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .msg-area textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:13px;padding:10px 12px;resize:none;outline:none;min-height:100px;width:100%;line-height:1.6;transition:border-color .2s}
 .msg-area textarea:focus{border-color:var(--yellow)}
 .var-btns{display:flex;flex-wrap:wrap;gap:6px}
 .var-btn{background:var(--yellow-dim);color:var(--yellow);border:1px solid var(--yellow);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font)}
 .var-btn:active{background:var(--yellow);color:#000;transform:scale(.96)}
-
-/* VALIDATION */
 .validation{padding:10px 14px;border-radius:var(--radius-sm);margin:0 14px 14px;font-size:12px;font-weight:600;display:none;align-items:center;gap:6px}
 .validation.error{background:var(--red-dim);color:var(--red);border:1px solid rgba(229,57,53,.3);display:flex}
 .validation.success{background:var(--green-dim);color:var(--green);border:1px solid rgba(37,211,102,.3);display:flex}
-
-/* BUTTONS */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;border-radius:var(--radius);font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;border:none;transition:all .2s;width:100%}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--yellow);color:#000}
@@ -77,9 +61,22 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-green{background:var(--green);color:#000}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:var(--radius-sm);width:auto}
 
+/* IMPORTAR BANNER */
+.import-banner{background:var(--yellow-dim);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.import-banner-top{display:flex;align-items:center;gap:10px}
+.import-banner-icon{font-size:28px;flex-shrink:0}
+.import-banner-text strong{font-size:14px;font-weight:700;color:var(--yellow);display:block}
+.import-banner-text span{font-size:12px;color:var(--muted)}
+.import-banner-btns{display:flex;gap:8px}
+.btn-import{flex:1;background:var(--yellow);color:#000;font-weight:800;font-size:14px;padding:11px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.btn-import:active{transform:scale(.97)}
+.btn-import:disabled{opacity:.5;cursor:not-allowed}
+.import-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--yellow);padding:4px 0}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.import-result{background:var(--green-dim);border:1px solid rgba(37,211,102,.3);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--green);font-weight:600;display:none}
+.import-error{background:var(--red-dim);border:1px solid rgba(229,57,53,.3);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--red);font-weight:600;display:none}
 
-
-/* PROGRESS BAR */
 .progress-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:none;flex-direction:column;gap:8px}
 .progress-wrap.active{display:flex}
 .progress-top{display:flex;justify-content:space-between;align-items:center}
@@ -91,8 +88,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .progress-pct{font-size:12px;color:var(--muted)}
 .btn-reset-sent{background:var(--red-dim);color:var(--red);border:1px solid rgba(229,57,53,.3);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .2s}
 .btn-reset-sent:active{transform:scale(.96)}
-
-/* CLIENT CARDS */
 .clients-list{display:flex;flex-direction:column;gap:10px}
 .client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s}
 .client-card.sent{background:var(--sent);border-color:var(--sent-border)}
@@ -104,11 +99,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .client-sub{font-size:12px;color:var(--muted)}
 .client-value{font-weight:700;color:var(--yellow);font-size:15px;flex-shrink:0}
 .client-card.sent .client-value{color:var(--green)}
-
-/* SENT BADGE */
-.sent-badge{display:none;background:var(--green);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.3px;flex-shrink:0}
-.client-card.sent .sent-badge{display:flex;align-items:center;gap:3px}
-
 .client-body{padding:0 14px 14px;display:none;flex-direction:column;gap:10px}
 .client-body.open{display:flex}
 .msg-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -116,17 +106,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .action-row{display:flex;gap:8px}
 .btn-whatsapp{flex:1;background:var(--green);color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;border:none;font-family:var(--font);transition:all .2s}
 .btn-copy{flex:0 0 auto;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .2s}
-
-/* BOTÃO ENVIADO */
 .btn-mark-sent{flex:0 0 auto;background:var(--green-dim);color:var(--green);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:var(--font);font-weight:700;transition:all .2s}
 .client-card.sent .btn-mark-sent{background:var(--green);color:#000;border-color:var(--green)}
 .btn-whatsapp:active,.btn-copy:active,.btn-mark-sent:active,.btn-trash:active{transform:scale(.96)}
-
-/* BOTÃO LIXEIRA */
 .btn-trash{background:transparent;border:none;color:var(--muted2);display:flex;align-items:center;justify-content:center;padding:7px;border-radius:var(--radius-sm);cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
-.btn-trash:active{transform:scale(.9)}
-
-/* BOTÕES NO CABEÇALHO DO CARD */
 .card-head-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
 .btn-head-wa{background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s}
 .btn-head-wa:active{transform:scale(.9);background:var(--green2)}
@@ -136,78 +119,36 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-head-sent:active{transform:scale(.9)}
 @keyframes cardRemove{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
 .client-card.removing{animation:cardRemove .25s ease forwards}
-
-/* STATS ROW */
 .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center}
 .stat-val{font-size:20px;font-weight:800;color:var(--yellow);font-family:var(--font-display)}
 .stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
-
-/* EMPTY STATE */
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
 .empty-state svg{opacity:.3;margin-bottom:12px}
 .empty-state p{font-size:14px;line-height:1.6}
-
-/* TOAST */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--yellow);color:#000;font-weight:700;font-size:13px;padding:10px 20px;border-radius:20px;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:24px 20px;width:100%;max-width:500px}
 .modal h3{font-size:18px;font-weight:800;font-family:var(--font-display);margin-bottom:8px}
 .modal p{color:var(--text2);font-size:14px;margin-bottom:20px}
 .modal-btns{display:flex;gap:10px}
-
-.wa-icon{width:18px;height:18px;flex-shrink:0}
-
-/* BANNER DE CONFIRMAÇÃO PÓS-WHATSAPP */
-.confirm-banner{position:fixed;bottom:76px;left:12px;right:12px;background:var(--bg2);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;z-index:300;display:none;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.7)}
+.confirm-banner{position:fixed;bottom:76px;left:12px;right:12px;background:var(--bg2);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;z-index:300;display:none;flex-direction:column;gap:10px}
 .confirm-banner.show{display:flex;animation:fadeIn .3s ease}
 .confirm-banner-top{display:flex;align-items:center;gap:10px}
 .confirm-banner-avatar{width:36px;height:36px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--yellow);flex-shrink:0}
-.confirm-banner-text{flex:1}
 .confirm-banner-text strong{font-size:14px;font-weight:700;color:var(--text);display:block}
 .confirm-banner-text span{font-size:12px;color:var(--muted)}
 .confirm-banner-btns{display:flex;gap:8px}
 .confirm-banner-yes{flex:1;background:var(--green);color:#000;font-weight:800;font-size:14px;padding:10px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:var(--font);transition:all .2s}
-.confirm-banner-yes:active{transform:scale(.97)}
-.confirm-banner-no{flex:0 0 auto;background:var(--bg3);color:var(--muted);font-size:13px;font-weight:600;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;font-family:var(--font);transition:all .2s}
-.confirm-banner-no:active{transform:scale(.97)}
+.confirm-banner-no{flex:0 0 auto;background:var(--bg3);color:var(--muted);font-size:13px;font-weight:600;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;font-family:var(--font)}
 .footer-nav{background:var(--bg2);border-top:1px solid var(--border);padding:8px 16px;display:flex;justify-content:space-around;align-items:center;position:sticky;bottom:0;z-index:100}
 .fnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);transition:color .2s;background:none;border:none;font-family:var(--font)}
 .fnav-btn.active{color:var(--yellow)}
-
-/* FILTER TABS */
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .filter-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--muted);font-family:var(--font);transition:all .2s}
 .filter-tab.active{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
-
-/* DATE FILTER */
-.date-filter-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:none}
-.date-filter-wrap.active{display:block}
-.date-filter-head{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.date-filter-head span{font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-.date-filter-arrow{font-size:11px;color:var(--muted);transition:transform .2s}
-.date-filter-wrap.open .date-filter-arrow{transform:rotate(180deg)}
-.date-filter-clear{font-size:11px;color:var(--muted);font-weight:600;cursor:pointer;background:none;border:1px solid var(--border2);font-family:var(--font);padding:3px 10px;border-radius:20px;transition:all .2s}
-.date-filter-clear.active-clear{color:var(--red);border-color:rgba(229,57,53,.4)}
-.date-select-body{display:none;padding:8px 0}
-.date-filter-wrap.open .date-select-body{display:block}
-.date-select-info{padding:6px 14px 10px;font-size:11px;color:var(--muted)}
-.date-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
-.date-row:last-child{border-bottom:none}
-.date-row:active{background:var(--bg3)}
-.date-checkbox{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.date-checkbox.checked{background:var(--yellow);border-color:var(--yellow)}
-.date-checkbox svg{display:none}
-.date-checkbox.checked svg{display:block}
-.date-row-info{flex:1}
-.date-row-label{font-size:14px;font-weight:600;color:var(--text)}
-.date-row-count{font-size:11px;color:var(--muted);margin-top:1px}
-.date-filter-active-badge{background:var(--yellow);color:#000;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;margin-left:4px}
-
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .client-card{animation:fadeIn .25s ease both}
 </style>
@@ -232,52 +173,72 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 <div class="main">
 
-  <!-- ===== SCREEN: DADOS ===== -->
+  <!-- DADOS -->
   <div class="screen" id="screen-dados">
+
+    <!-- BANNER IMPORTAR -->
+    <div class="import-banner">
+      <div class="import-banner-top">
+        <div class="import-banner-icon">🔴</div>
+        <div class="import-banner-text">
+          <strong>Importar inadimplentes da planilha</strong>
+          <span>Busca automaticamente todos os clientes com status AT do mês atual</span>
+        </div>
+      </div>
+      <div id="import-status"></div>
+      <div class="import-banner-btns">
+        <button class="btn-import" id="btnImportar" onclick="importarInadimplentes()">
+          ⚡ Importar agora
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:12px;color:var(--muted);font-weight:600">ou cole manualmente</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
     <div class="section-card">
       <div class="section-head">
-        <h3>📥 Cole os dados do Google Sheets / Excel</h3>
+        <h3>📥 Cole os dados</h3>
       </div>
       <div class="fields-grid">
         <div class="field-wrap">
           <label>Nomes</label>
-          <textarea id="fNomes" placeholder="João Silva&#10;Maria Oliveira&#10;Carlos Eduardo" oninput="autoResize(this);validateFields()"></textarea>
+          <textarea id="fNomes" placeholder="João Silva&#10;Maria Oliveira" oninput="autoResize(this);validateFields()"></textarea>
         </div>
         <div class="field-wrap">
           <label>Telefones</label>
-          <textarea id="fTelefones" placeholder="21999999999&#10;21988888888&#10;21977777777" oninput="autoResize(this);validateFields()"></textarea>
+          <textarea id="fTelefones" placeholder="21999999999&#10;21988888888" oninput="autoResize(this);validateFields()"></textarea>
         </div>
         <div class="field-wrap">
           <label>Datas</label>
-          <textarea id="fMeses" placeholder="23/04/2025&#10;15/05/2025&#10;01/06/2025" oninput="autoResize(this);validateFields()"></textarea>
+          <textarea id="fMeses" placeholder="23/04/2025&#10;15/05/2025" oninput="autoResize(this);validateFields()"></textarea>
         </div>
         <div class="field-wrap">
           <label>Valores (R$)</label>
-          <textarea id="fValores" placeholder="59,90&#10;120,00&#10;39,90" oninput="autoResize(this);validateFields()"></textarea>
+          <textarea id="fValores" placeholder="59,90&#10;120,00" oninput="autoResize(this);validateFields()"></textarea>
         </div>
       </div>
       <div style="border-top:1px solid var(--border)">
         <div class="field-wrap" style="padding:10px 12px">
-          <label>🔗 Links de Pagamento <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <textarea id="fLinks" placeholder="https://pagamento.link/joao&#10;https://pagamento.link/maria&#10;https://pagamento.link/carlos" oninput="autoResize(this);validateFields()" style="min-height:60px"></textarea>
+          <label>🔗 Links <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <textarea id="fLinks" placeholder="https://..." oninput="autoResize(this);validateFields()" style="min-height:60px"></textarea>
         </div>
       </div>
       <div id="validationMsg" class="validation"></div>
     </div>
-    <button class="btn btn-primary" onclick="generateClients()" id="btnGerar">
-      <span>⚡</span> GERAR CLIENTES
-    </button>
-    <button class="btn btn-danger" onclick="confirmClear()" style="margin-top:-6px">
-      🗑️ Limpar Tudo
-    </button>
+    <button class="btn btn-primary" onclick="generateClients()" id="btnGerar">⚡ GERAR CLIENTES</button>
+    <button class="btn btn-danger" onclick="confirmClear()" style="margin-top:-6px">🗑️ Limpar Tudo</button>
   </div>
 
-  <!-- ===== SCREEN: MENSAGEM ===== -->
+  <!-- MENSAGEM -->
   <div class="screen" id="screen-mensagem">
     <div class="section-card">
       <div class="section-head"><h3>✏️ Modelo de Mensagem</h3></div>
       <div class="msg-area">
-        <textarea id="msgTemplate" placeholder="Olá, {nome}! Consta em nosso sistema um débito referente ao mês {mes}, no valor de R$ {valor}. Pedimos a regularização para evitar o cancelamento do serviço. Entre em contato: (21) 9 8088-6087" oninput="saveTemplate();updatePreviews()" rows="5"></textarea>
+        <textarea id="msgTemplate" placeholder="Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087" oninput="saveTemplate();updatePreviews()" rows="5"></textarea>
         <div class="var-btns">
           <button class="var-btn" onclick="insertVar('{nome}')">+ Nome</button>
           <button class="var-btn" onclick="insertVar('{telefone}')">+ Telefone</button>
@@ -293,83 +254,41 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="msg-preview" id="previewText" style="color:var(--text)"></div>
       </div>
     </div>
-    <div class="section-card">
-      <div class="section-head"><h3>ℹ️ Variáveis disponíveis</h3></div>
-      <div class="msg-area">
-        <div style="font-size:13px;color:var(--text2);line-height:2">
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{nome}</code> — Nome do cliente<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{telefone}</code> — Número de telefone<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{mes}</code> — Data de vencimento<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{valor}</code> — Valor da cobrança<br>
-          <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;color:var(--yellow)">{link}</code> — Link de pagamento
-        </div>
-      </div>
-    </div>
   </div>
 
-  <!-- ===== SCREEN: CLIENTES ===== -->
+  <!-- CLIENTES -->
   <div class="screen" id="screen-clientes">
-
-    <!-- STATS -->
     <div class="stats-row" id="statsRow" style="display:none">
       <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total</div></div>
       <div class="stat-box"><div class="stat-val" id="statEnviados" style="color:var(--green)">0</div><div class="stat-label">Enviados</div></div>
       <div class="stat-box"><div class="stat-val" id="statPendentes" style="color:var(--red)">0</div><div class="stat-label">Pendentes</div></div>
       <div class="stat-box"><div class="stat-val" id="statValorTotal" style="color:var(--yellow);font-size:15px">R$ 0</div><div class="stat-label">Total em aberto</div></div>
     </div>
-
-    <!-- PROGRESS -->
     <div class="progress-wrap" id="progressWrap">
       <div class="progress-top">
         <span class="progress-label">Progresso de envio</span>
         <span class="progress-count" id="progressCount">0/0</span>
       </div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
       <div class="progress-bottom">
         <span class="progress-pct" id="progressPct">0% concluído</span>
         <button class="btn-reset-sent" onclick="confirmResetSent()">🔄 Limpar marcações</button>
       </div>
     </div>
-
-
-
-    <!-- FILTER TABS -->
     <div class="filter-tabs" id="filterTabs" style="display:none">
       <button class="filter-tab active" id="ftAll" onclick="setFilter('all')">Todos</button>
       <button class="filter-tab" id="ftPending" onclick="setFilter('pending')">⏳ Pendentes</button>
       <button class="filter-tab" id="ftSent" onclick="setFilter('sent')">✅ Enviados</button>
     </div>
-
-    <!-- DATE FILTER -->
-    <div class="date-filter-wrap" id="dateFilterWrap">
-      <div class="date-filter-head" onclick="toggleDateBox()">
-        <span>
-          📅 Filtrar por data
-          <span class="date-filter-active-badge" id="dateActiveBadge" style="display:none">0</span>
-          <span class="date-filter-arrow" id="dateArrow">▼</span>
-        </span>
-        <button class="date-filter-clear" id="dateClearBtn" onclick="event.stopPropagation();clearDateFilter()">Limpar</button>
-      </div>
-      <div class="date-select-body" id="dateSelectBody">
-        <div class="date-select-info">Selecione uma ou mais datas para filtrar:</div>
-        <div id="dateRows"></div>
-      </div>
-    </div>
-
-    <!-- LIST -->
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
-        <p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p>
+        <p>Nenhum cliente ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- BANNER CONFIRMAÇÃO PÓS-WHATSAPP -->
 <div class="confirm-banner" id="confirmBanner">
   <div class="confirm-banner-top">
     <div class="confirm-banner-avatar" id="confirmAvatar">?</div>
@@ -384,17 +303,14 @@ body{display:flex;flex-direction:column;min-height:100vh}
   </div>
 </div>
 
-<!-- FOOTER NAV -->
 <div class="footer-nav">
   <button class="fnav-btn active" id="fnav-dados" onclick="switchTab('dados')">📋<span>Dados</span></button>
   <button class="fnav-btn" id="fnav-mensagem" onclick="switchTab('mensagem')">✏️<span>Mensagem</span></button>
   <button class="fnav-btn" id="fnav-clientes" onclick="switchTab('clientes')">👥<span>Clientes</span></button>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <h3 id="modalTitle">Confirmar ação</h3>
@@ -407,16 +323,71 @@ body{display:flex;flex-direction:column;min-height:100vh}
 </div>
 
 <script>
+const API_URL    = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7emSqMBCKmaPSKDnoxfhZWFKI6If0I_EVoDtVdeT5gaVCGnwda/exec';
+const API_SECRET = 'rastreandogps2025';
+
 let clients = [];
-let filteredClients = [];
 let currentFilter = 'all';
-let selectedDates = new Set();
 let modalCallback = null;
 
-// ==================== INIT ====================
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
 
-// ==================== TABS ====================
+// ── IMPORTAR INADIMPLENTES ──────────────────
+async function importarInadimplentes() {
+  const btn = document.getElementById('btnImportar');
+  const statusEl = document.getElementById('import-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⏳</span> Buscando...';
+  statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Conectando com a planilha...</div>';
+
+  try {
+    const url = API_URL + '?secret=' + API_SECRET + '&action=inadimplentes';
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (json.error) {
+      statusEl.innerHTML = '<div class="import-error" style="display:block">❌ ' + json.error + '</div>';
+      btn.disabled = false;
+      btn.innerHTML = '⚡ Tentar novamente';
+      return;
+    }
+
+    if (!json.inadimplentes || json.inadimplentes.length === 0) {
+      statusEl.innerHTML = '<div class="import-result" style="display:block">✅ Nenhum cliente inadimplente no momento!</div>';
+      btn.disabled = false;
+      btn.innerHTML = '⚡ Importar novamente';
+      return;
+    }
+
+    const novos = json.inadimplentes.map((c, i) => ({
+      id: Date.now() + i,
+      nome: c.nome,
+      telefone: formatPhone(c.telefone),
+      mes: c.mes,
+      valor: c.valor,
+      link: c.link || '',
+      expanded: false,
+      sent: false
+    }));
+
+    clients = novos;
+    saveToStorage();
+
+    statusEl.innerHTML = '<div class="import-result" style="display:block">✅ ' + novos.length + ' cliente' + (novos.length > 1 ? 's' : '') + ' importado' + (novos.length > 1 ? 's' : '') + ' com sucesso!</div>';
+    btn.disabled = false;
+    btn.innerHTML = '🔄 Reimportar';
+
+    showToast('🔴 ' + novos.length + ' inadimplente' + (novos.length > 1 ? 's' : '') + ' importado' + (novos.length > 1 ? 's' : '') + '!');
+    setTimeout(() => switchTab('clientes'), 1200);
+
+  } catch(e) {
+    statusEl.innerHTML = '<div class="import-error" style="display:block">❌ Erro de conexão. Verifique sua internet.</div>';
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Tentar novamente';
+  }
+}
+
+// ── TABS ────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -428,10 +399,8 @@ function switchTab(tab) {
   if (tab === 'mensagem') updatePreviews();
 }
 
-// ==================== PARSE ====================
-function parseField(text) {
-  return text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-}
+// ── PARSE ───────────────────────────────────
+function parseField(text) { return text.split('\n').map(l => l.trim()).filter(l => l.length > 0); }
 
 function validateFields() {
   const n = parseField(document.getElementById('fNomes').value);
@@ -440,68 +409,57 @@ function validateFields() {
   const v = parseField(document.getElementById('fValores').value);
   const el = document.getElementById('validationMsg');
   const btn = document.getElementById('btnGerar');
-  const counts = [n, t, m, v].map(a => a.length).filter(c => c > 0);
-  if (counts.length === 0) { el.style.display = 'none'; btn.disabled = false; return; }
+  const counts = [n,t,m,v].map(a => a.length).filter(c => c > 0);
+  if (counts.length === 0) { el.style.display='none'; btn.disabled=false; return; }
   const allSame = counts.every(c => c === counts[0]);
   if (!allSame) {
-    el.className = 'validation error';
-    el.innerHTML = `⚠️ Colunas diferentes: Nomes(${n.length}), Tel(${t.length}), Meses(${m.length}), Valores(${v.length})`;
-    el.style.display = 'flex'; btn.disabled = true; return;
+    el.className='validation error';
+    el.innerHTML='⚠️ Colunas diferentes: Nomes('+n.length+'), Tel('+t.length+'), Datas('+m.length+'), Valores('+v.length+')';
+    el.style.display='flex'; btn.disabled=true; return;
   }
-  el.className = 'validation success';
-  el.innerHTML = `✅ ${counts[0]} cliente${counts[0]>1?'s':''} prontos para gerar`;
-  el.style.display = 'flex'; btn.disabled = false;
+  el.className='validation success';
+  el.innerHTML='✅ '+counts[0]+' cliente'+(counts[0]>1?'s':'')+' prontos';
+  el.style.display='flex'; btn.disabled=false;
 }
 
-// ==================== GENERATE ====================
 function generateClients() {
   const nomes = parseField(document.getElementById('fNomes').value);
-  const tels = parseField(document.getElementById('fTelefones').value);
+  const tels  = parseField(document.getElementById('fTelefones').value);
   const meses = parseField(document.getElementById('fMeses').value);
-  const valores = parseField(document.getElementById('fValores').value);
-  const linksRaw = document.getElementById('fLinks').value;
-  const links = parseField(linksRaw);
+  const vals  = parseField(document.getElementById('fValores').value);
+  const links = parseField(document.getElementById('fLinks').value);
   if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
-  if (![tels,meses,valores].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
-  // links é opcional — se preenchido, deve ter o mesmo número
-  if (links.length > 0 && links.length !== nomes.length) { showToast('Links: quantidade diferente dos outros campos'); return; }
+  if (![tels,meses,vals].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
   clients = nomes.map((nome, i) => ({
-    id: Date.now() + i,
-    nome,
+    id: Date.now() + i, nome,
     telefone: formatPhone(tels[i]),
-    mes: meses[i],
-    valor: valores[i],
-    link: links[i] || '',
-    expanded: false,
-    sent: false
+    mes: meses[i], valor: vals[i],
+    link: links[i] || '', expanded: false, sent: false
   }));
   saveToStorage();
-  showToast(`⚡ ${clients.length} cliente${clients.length>1?'s':''} gerado${clients.length>1?'s':''}!`);
+  showToast('⚡ ' + clients.length + ' cliente' + (clients.length>1?'s':'') + ' gerado' + (clients.length>1?'s':'') + '!');
   switchTab('clientes');
 }
 
-// ==================== PHONE ====================
 function formatPhone(raw) {
-  let p = raw.replace(/\D/g, '');
+  let p = raw.replace(/\D/g,'');
   if (!p.startsWith('55')) p = '55' + p;
   return p;
 }
 
-// ==================== MESSAGE ====================
+// ── MENSAGEM ────────────────────────────────
 function getTemplate() {
   return document.getElementById('msgTemplate').value ||
-    'Olá, {nome}! Consta em nosso sistema um débito referente ao mês {mes}, no valor de R$ {valor}. Pedimos a regularização para evitar o cancelamento do serviço. Entre em contato: (21) 9 8088-6087';
+    'Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087';
 }
-
-function buildMsg(client) {
+function buildMsg(c) {
   return getTemplate()
-    .replace(/{nome}/g, client.nome)
-    .replace(/{telefone}/g, client.telefone)
-    .replace(/{mes}/g, client.mes)
-    .replace(/{valor}/g, client.valor)
-    .replace(/{link}/g, client.link || '');
+    .replace(/{nome}/g, c.nome)
+    .replace(/{telefone}/g, c.telefone)
+    .replace(/{mes}/g, c.mes)
+    .replace(/{valor}/g, c.valor)
+    .replace(/{link}/g, c.link || '');
 }
-
 function insertVar(v) {
   const ta = document.getElementById('msgTemplate');
   const s = ta.selectionStart, e = ta.selectionEnd;
@@ -509,23 +467,16 @@ function insertVar(v) {
   ta.selectionStart = ta.selectionEnd = s + v.length;
   ta.focus(); saveTemplate(); updatePreviews();
 }
-
 function updatePreviews() {
   saveTemplate();
   const pc = document.getElementById('previewCard');
   if (clients.length > 0) {
-    pc.style.display = 'block';
+    pc.style.display='block';
     document.getElementById('previewText').textContent = buildMsg(clients[0]);
-  } else {
-    pc.style.display = 'none';
-  }
-  document.querySelectorAll('.msg-preview[data-id]').forEach(el => {
-    const c = clients.find(x => x.id === parseInt(el.dataset.id));
-    if (c) el.textContent = buildMsg(c);
-  });
+  } else { pc.style.display='none'; }
 }
 
-// ==================== FILTER ====================
+// ── FILTER ──────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
   ['All','Pending','Sent'].forEach(x => {
@@ -535,361 +486,206 @@ function setFilter(f) {
   renderClients();
 }
 
-function toggleDateChip(label) {
-  if (selectedDates.has(label)) selectedDates.delete(label);
-  else selectedDates.add(label);
-  updateDateRowsUI();
-  renderClients();
-}
-
-function clearDateFilter() {
-  selectedDates.clear();
-  updateDateRowsUI();
-  renderClients();
-}
-
-function toggleDateBox() {
-  document.getElementById('dateFilterWrap').classList.toggle('open');
-}
-
-function updateDateRowsUI() {
-  document.querySelectorAll('.date-checkbox').forEach(el => {
-    const checked = selectedDates.has(el.dataset.mes);
-    el.classList.toggle('checked', checked);
-  });
-  const badge = document.getElementById('dateActiveBadge');
-  const clearBtn = document.getElementById('dateClearBtn');
-  if (badge) {
-    badge.style.display = selectedDates.size > 0 ? 'inline' : 'none';
-    badge.textContent = selectedDates.size;
-  }
-  if (clearBtn) clearBtn.classList.toggle('active-clear', selectedDates.size > 0);
-}
-
-function buildDateChips() {
-  const wrap = document.getElementById('dateFilterWrap');
-  const rowsEl = document.getElementById('dateRows');
-  if (clients.length === 0) { wrap.classList.remove('active'); return; }
-
-  const seen = new Map();
-  clients.forEach(c => {
-    const key = c.mes.trim();
-    seen.set(key, (seen.get(key) || 0) + 1);
-  });
-
-  if (seen.size === 0) { wrap.classList.remove('active'); return; }
-  wrap.classList.add('active');
-
-  rowsEl.innerHTML = [...seen.entries()].map(([key, count]) => {
-    const checked = selectedDates.has(key);
-    return `<div class="date-row" onclick="toggleDateChip('${key}')">
-      <div class="date-checkbox${checked ? ' checked' : ''}" data-mes="${key}">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="date-row-info">
-        <div class="date-row-label">${key}</div>
-        <div class="date-row-count">${count} cliente${count > 1 ? 's' : ''}</div>
-      </div>
-    </div>`;
-  }).join('');
-  updateDateRowsUI();
-}
-
-
-// ==================== RENDER ====================
+// ── RENDER ──────────────────────────────────
 function renderClients() {
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
-  if (currentFilter === 'sent') pool = pool.filter(c => c.sent);
-  if (selectedDates.size > 0) pool = pool.filter(c => selectedDates.has(c.mes.trim()));
-  filteredClients = [...pool];
+  if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
 
-  const list = document.getElementById('clientsList');
-  const statsRow = document.getElementById('statsRow');
-  const filterTabs = document.getElementById('filterTabs');
-  const progressWrap = document.getElementById('progressWrap');
+  const list        = document.getElementById('clientsList');
+  const statsRow    = document.getElementById('statsRow');
+  const filterTabs  = document.getElementById('filterTabs');
+  const progressWrap= document.getElementById('progressWrap');
 
   if (clients.length === 0) {
-    list.innerHTML = `<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente gerado ainda.<br>Vá em <strong style="color:var(--yellow)">Dados</strong> e cole os dados.</p></div>`;
-    statsRow.style.display = 'none';
-    filterTabs.style.display = 'none';
+    list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p></div>';
+    statsRow.style.display='none'; filterTabs.style.display='none';
     progressWrap.classList.remove('active');
-    document.getElementById('dateFilterWrap').classList.remove('active','open');
-    document.getElementById('totalBadge').classList.add('hidden');
-    return;
+    document.getElementById('totalBadge').classList.add('hidden'); return;
   }
 
   const sentCount = clients.filter(c => c.sent).length;
-  const pendingCount = clients.length - sentCount;
-  const pct = clients.length > 0 ? Math.round((sentCount / clients.length) * 100) : 0;
-
-  statsRow.style.display = 'grid';
-  filterTabs.style.display = 'flex';
+  const pct = Math.round((sentCount/clients.length)*100);
+  statsRow.style.display='grid'; filterTabs.style.display='flex';
   progressWrap.classList.add('active');
   document.getElementById('totalBadge').textContent = clients.length;
   document.getElementById('totalBadge').classList.remove('hidden');
   document.getElementById('statTotal').textContent = clients.length;
   document.getElementById('statEnviados').textContent = sentCount;
-  document.getElementById('statPendentes').textContent = pendingCount;
-  const totalVal = clients.reduce((s, c) => {
-    const n = parseFloat(c.valor.replace(/\./g,'').replace(',','.')) || 0;
-    return s + n;
-  }, 0);
-  document.getElementById('statValorTotal').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-  document.getElementById('progressCount').textContent = `${sentCount}/${clients.length}`;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressPct').textContent = pct + '% concluído';
+  document.getElementById('statPendentes').textContent = clients.length - sentCount;
+  const totalVal = clients.reduce((s,c) => s + (parseFloat(c.valor.replace(/\./g,'').replace(',','.')) || 0), 0);
+  document.getElementById('statValorTotal').textContent = 'R$ ' + totalVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('progressCount').textContent = sentCount+'/'+clients.length;
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressPct').textContent = pct+'% concluído';
 
-  buildDateChips();
-
-  const showing = selectedDates.size > 0 ? ` (${filteredClients.length} de ${clients.length})` : '';
-  if (filteredClients.length === 0) {
-    list.innerHTML = `<div class="empty-state"><p>Nenhum cliente nesta seleção.</p></div>`;
-  } else {
-    list.innerHTML = filteredClients.map((c, i) => buildCardHTML(c, i)).join('');
-  }
+  list.innerHTML = pool.length === 0
+    ? '<div class="empty-state"><p>Nenhum cliente nesta seleção.</p></div>'
+    : pool.map((c,i) => buildCardHTML(c,i)).join('');
 }
 
 function buildCardHTML(c, i) {
-  const initials = c.nome.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+  const initials = c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const msg = buildMsg(c);
-  const telDisplay = c.telefone.replace('55','').replace(/(\d{2})(\d{4,5})(\d{4})/, '($1) $2-$3');
-  const sentClass = c.sent ? ' sent' : '';
-  const bodyOpen = c.expanded ? ' open' : '';
-  return `<div class="client-card${sentClass}" id="card-${c.id}" style="animation-delay:${i*0.04}s">
-    <div class="client-card-head" onclick="toggleCard(${c.id})">
-      <div class="client-avatar">${c.sent ? '✓' : initials}</div>
-      <div class="client-info">
-        <div class="client-name">${c.nome}</div>
-        <div class="client-sub">${telDisplay} · ${c.mes}</div>
-      </div>
-      <div class="card-head-actions" onclick="event.stopPropagation()">
-        <button class="btn-head-wa" onclick="sendWhatsApp(${c.id})" title="Abrir WhatsApp">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>
-        </button>
-        <button class="btn-head-sent${c.sent ? ' is-sent' : ''}" onclick="toggleSent(${c.id})" title="${c.sent ? 'Desmarcar enviado' : 'Marcar como enviado'}">
-          ${c.sent ? '✅' : '☑️'}
-        </button>
-        <button class="btn-trash" onclick="deleteClient(${c.id})" title="Remover cliente">🗑️</button>
-      </div>
-    </div>
-    <div class="client-body${bodyOpen}" id="body-${c.id}">
-      <div>
-        <div class="msg-preview-label">Prévia da mensagem</div>
-        <div class="msg-preview" data-id="${c.id}">${msg}</div>
-      </div>
-      <div class="action-row">
-        <button class="btn-copy" onclick="copyMsg(${c.id})" title="Copiar mensagem">📋 Copiar mensagem</button>
-      </div>
-    </div>
-  </div>`;
+  const telDisplay = c.telefone.replace('55','').replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3');
+  const sentClass = c.sent?' sent':'';
+  const bodyOpen  = c.expanded?' open':'';
+  return '<div class="client-card'+sentClass+'" id="card-'+c.id+'" style="animation-delay:'+i*.04+'s">'+
+    '<div class="client-card-head" onclick="toggleCard('+c.id+')">'+
+      '<div class="client-avatar">'+(c.sent?'✓':initials)+'</div>'+
+      '<div class="client-info">'+
+        '<div class="client-name">'+c.nome+'</div>'+
+        '<div class="client-sub">'+telDisplay+' · '+c.mes+'</div>'+
+      '</div>'+
+      '<div class="card-head-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn-head-wa" onclick="sendWhatsApp('+c.id+')" title="Abrir WhatsApp">'+
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.472 3.528A11.92 11.92 0 0 0 12.025 0C5.441 0 .085 5.354.083 11.938c0 2.103.548 4.155 1.593 5.963L0 24l6.256-1.641a11.95 11.95 0 0 0 5.763 1.469h.005c6.582 0 11.938-5.354 11.94-11.938a11.87 11.87 0 0 0-3.492-8.362zm-8.447 18.372h-.004a9.91 9.91 0 0 1-5.054-1.38l-.363-.215-3.761.986 1.003-3.663-.236-.375a9.888 9.888 0 0 1-1.516-5.275c.001-5.468 4.454-9.919 9.926-9.919a9.861 9.861 0 0 1 7.013 2.907 9.864 9.864 0 0 1 2.903 7.014c-.002 5.469-4.455 9.92-9.911 9.92zm5.44-7.43c-.298-.149-1.765-.87-2.038-.969-.273-.099-.472-.149-.671.149-.199.298-.771.969-.945 1.168-.174.199-.348.224-.646.075-.298-.149-1.259-.464-2.399-1.48-.886-.79-1.484-1.765-1.658-2.063-.174-.298-.018-.459.131-.607.134-.134.298-.348.447-.522.149-.174.199-.298.298-.497.099-.199.05-.373-.025-.522-.075-.149-.671-1.617-.919-2.213-.242-.581-.488-.502-.671-.511L7.57 8.79c-.199 0-.522.075-.795.373-.273.298-1.044 1.02-1.044 2.487s1.069 2.885 1.218 3.083c.149.199 2.104 3.21 5.097 4.502.712.307 1.268.491 1.702.629.715.228 1.366.196 1.88.119.573-.085 1.765-.721 2.014-1.418.248-.696.248-1.293.174-1.418-.075-.125-.273-.199-.572-.348z"/></svg>'+
+        '</button>'+
+        '<button class="btn-head-sent'+(c.sent?' is-sent':'')+'" onclick="toggleSent('+c.id+')" title="'+(c.sent?'Desmarcar':'Marcar como enviado')+'">'+
+          (c.sent?'✅':'☑️')+
+        '</button>'+
+        '<button class="btn-trash" onclick="deleteClient('+c.id+')" title="Remover">🗑️</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="client-body'+bodyOpen+'" id="body-'+c.id+'">'+
+      '<div>'+
+        '<div class="msg-preview-label">Prévia da mensagem</div>'+
+        '<div class="msg-preview" data-id="'+c.id+'">'+msg+'</div>'+
+      '</div>'+
+      '<div class="action-row">'+
+        '<button class="btn-copy" onclick="copyMsg('+c.id+')" title="Copiar">📋 Copiar mensagem</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
 }
 
-// ==================== DELETE CLIENT ====================
-function deleteClient(id) {
-  const c = clients.find(x => x.id === id);
-  if (!c) return;
-  openModal(
-    'Remover cliente?',
-    `"${c.nome}" será removido da lista. Esta ação não pode ser desfeita.`,
-    () => {
-      const card = document.getElementById('card-' + id);
-      if (card) {
-        card.classList.add('removing');
-        setTimeout(() => {
-          clients = clients.filter(x => x.id !== id);
-          saveToStorage();
-          renderClients();
-          showToast(`🗑️ ${c.nome} removido`);
-        }, 250);
-      }
-    }
-  );
-}
-
-// ==================== TOGGLE CARD ====================
+// ── AÇÕES ───────────────────────────────────
 function toggleCard(id) {
-  const c = clients.find(x => x.id === id);
-  if (!c) return;
+  const c = clients.find(x => x.id===id); if(!c) return;
   c.expanded = !c.expanded;
-  const body = document.getElementById('body-' + id);
+  const body = document.getElementById('body-'+id);
   if (body) body.classList.toggle('open', c.expanded);
 }
 
-// ==================== MARK SENT ====================
 function toggleSent(id) {
-  const c = clients.find(x => x.id === id);
-  if (!c) return;
-  c.sent = !c.sent;
-  saveToStorage();
-  const card = document.getElementById('card-' + id);
+  const c = clients.find(x => x.id===id); if(!c) return;
+  c.sent = !c.sent; saveToStorage();
+  const card = document.getElementById('card-'+id);
   if (card) {
     card.classList.toggle('sent', c.sent);
-    // avatar
     const av = card.querySelector('.client-avatar');
     if (av) av.textContent = c.sent ? '✓' : c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-    // botão ✅ no cabeçalho
-    const headSent = card.querySelector('.btn-head-sent');
-    if (headSent) {
-      headSent.classList.toggle('is-sent', c.sent);
-      headSent.textContent = c.sent ? '✅' : '☑️';
-      headSent.title = c.sent ? 'Desmarcar enviado' : 'Marcar como enviado';
-    }
-    // botão WhatsApp no cabeçalho — tom diferente quando enviado
-    const headWa = card.querySelector('.btn-head-wa');
-    if (headWa) headWa.style.opacity = c.sent ? '0.5' : '1';
+    const hs = card.querySelector('.btn-head-sent');
+    if (hs) { hs.classList.toggle('is-sent',c.sent); hs.textContent=c.sent?'✅':'☑️'; }
+    const hw = card.querySelector('.btn-head-wa');
+    if (hw) hw.style.opacity = c.sent?'0.5':'1';
   }
-  const sentCount = clients.filter(x => x.sent).length;
-  const pct = Math.round((sentCount / clients.length) * 100);
-  document.getElementById('statEnviados').textContent = sentCount;
-  document.getElementById('statPendentes').textContent = clients.length - sentCount;
-  document.getElementById('progressCount').textContent = `${sentCount}/${clients.length}`;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressPct').textContent = pct + '% concluído';
-  showToast(c.sent ? '✅ Marcado como enviado!' : '↩️ Marcação removida');
+  const s = clients.filter(x=>x.sent).length;
+  const p = Math.round((s/clients.length)*100);
+  document.getElementById('statEnviados').textContent = s;
+  document.getElementById('statPendentes').textContent = clients.length - s;
+  document.getElementById('progressCount').textContent = s+'/'+clients.length;
+  document.getElementById('progressFill').style.width = p+'%';
+  document.getElementById('progressPct').textContent = p+'% concluído';
+  showToast(c.sent?'✅ Marcado como enviado!':'↩️ Marcação removida');
 }
 
-// ==================== RESET SENT ====================
+function deleteClient(id) {
+  const c = clients.find(x=>x.id===id); if(!c) return;
+  openModal('Remover cliente?','"'+c.nome+'" será removido da lista.',() => {
+    const card = document.getElementById('card-'+id);
+    if (card) { card.classList.add('removing'); setTimeout(()=>{ clients=clients.filter(x=>x.id!==id); saveToStorage(); renderClients(); showToast('🗑️ '+c.nome+' removido'); },250); }
+  });
+}
+
 function confirmResetSent() {
-  const sentCount = clients.filter(c => c.sent).length;
-  if (sentCount === 0) { showToast('Nenhum cliente marcado como enviado'); return; }
-  openModal(
-    'Limpar marcações?',
-    `${sentCount} cliente${sentCount>1?'s':''} marcado${sentCount>1?'s':''} como enviado${sentCount>1?'s':''} voltarão para pendente. Use isso ao trocar o modelo de mensagem.`,
-    () => {
-      clients.forEach(c => { c.sent = false; c.expanded = false; });
-      saveToStorage();
-      renderClients();
-      showToast('🔄 Marcações limpas! Pronto para novo envio.');
-    }
-  );
+  const s = clients.filter(c=>c.sent).length;
+  if (s===0) { showToast('Nenhum marcado como enviado'); return; }
+  openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
+    clients.forEach(c=>{c.sent=false;c.expanded=false;}); saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
+  });
 }
 
-// ==================== WHATSAPP ====================
 let pendingConfirmId = null;
-
 function sendWhatsApp(id) {
-  const c = clients.find(x => x.id === id);
-  if (!c) return;
+  const c = clients.find(x=>x.id===id); if(!c) return;
   pendingConfirmId = id;
-  const msg = encodeURIComponent(buildMsg(c));
-  window.open(`https://wa.me/${c.telefone}?text=${msg}`, '_blank');
+  window.open('https://wa.me/'+c.telefone+'?text='+encodeURIComponent(buildMsg(c)),'_blank');
 }
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && pendingConfirmId !== null) {
-    const c = clients.find(x => x.id === pendingConfirmId);
-    if (c && !c.sent) showConfirmBanner(c);
-    else pendingConfirmId = null;
+document.addEventListener('visibilitychange',()=>{
+  if (document.visibilityState==='visible' && pendingConfirmId!==null) {
+    const c = clients.find(x=>x.id===pendingConfirmId);
+    if (c && !c.sent) showConfirmBanner(c); else pendingConfirmId=null;
   }
 });
-
 function showConfirmBanner(c) {
-  const initials = c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  document.getElementById('confirmAvatar').textContent = initials;
-  document.getElementById('confirmName').textContent = c.nome;
+  const i = c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  document.getElementById('confirmAvatar').textContent=i;
+  document.getElementById('confirmName').textContent=c.nome;
   document.getElementById('confirmBanner').classList.add('show');
 }
+function confirmSent() { if(pendingConfirmId===null) return; toggleSent(pendingConfirmId); dismissBanner(); }
+function dismissBanner() { pendingConfirmId=null; document.getElementById('confirmBanner').classList.remove('show'); }
 
-function confirmSent() {
-  if (pendingConfirmId === null) return;
-  toggleSent(pendingConfirmId);
-  dismissBanner();
-}
-
-function dismissBanner() {
-  pendingConfirmId = null;
-  document.getElementById('confirmBanner').classList.remove('show');
-}
-
-// ==================== COPY ====================
 function copyMsg(id) {
-  const c = clients.find(x => x.id === id);
-  if (!c) return;
+  const c = clients.find(x=>x.id===id); if(!c) return;
   const text = buildMsg(c);
-  navigator.clipboard.writeText(text).then(() => showToast('✅ Mensagem copiada!')).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('✅ Mensagem copiada!');
+  navigator.clipboard.writeText(text).then(()=>showToast('✅ Mensagem copiada!')).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('✅ Mensagem copiada!');
   });
 }
 
-// ==================== CLEAR ALL ====================
 function confirmClear() {
-  openModal('Limpar tudo?', 'Todos os clientes e dados serão apagados. Esta ação não pode ser desfeita.', () => {
-    clients = [];
-    document.getElementById('fNomes').value = '';
-    document.getElementById('fTelefones').value = '';
-    document.getElementById('fMeses').value = '';
-    document.getElementById('fValores').value = '';
-    document.getElementById('fLinks').value = '';
-    document.getElementById('validationMsg').style.display = 'none';
-    saveToStorage();
-    renderClients();
-    showToast('🗑️ Dados apagados');
+  openModal('Limpar tudo?','Todos os clientes serão apagados.',()=>{
+    clients=[];
+    ['fNomes','fTelefones','fMeses','fValores','fLinks'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('validationMsg').style.display='none';
+    document.getElementById('import-status').innerHTML='';
+    document.getElementById('btnImportar').innerHTML='⚡ Importar agora';
+    document.getElementById('btnImportar').disabled=false;
+    saveToStorage(); renderClients(); showToast('🗑️ Dados apagados');
   });
 }
 
-// ==================== MODAL ====================
-function openModal(title, text, cb) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalText').textContent = text;
+function openModal(title,text,cb) {
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalText').textContent=text;
   document.getElementById('modalOverlay').classList.add('open');
-  document.getElementById('modalConfirmBtn').onclick = () => { closeModal(); cb(); };
+  document.getElementById('modalConfirmBtn').onclick=()=>{closeModal();cb();};
 }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-document.getElementById('modalOverlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
-// ==================== TOAST ====================
 let toastTimer;
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ==================== STORAGE ====================
 function saveToStorage() {
   try {
-    localStorage.setItem('rg_clients', JSON.stringify(clients));
-    localStorage.setItem('rg_fields', JSON.stringify({
-      n: document.getElementById('fNomes').value,
-      te: document.getElementById('fTelefones').value,
-      m: document.getElementById('fMeses').value,
-      v: document.getElementById('fValores').value,
-      l: document.getElementById('fLinks').value
+    localStorage.setItem('rg_clients',JSON.stringify(clients));
+    localStorage.setItem('rg_fields',JSON.stringify({
+      n:document.getElementById('fNomes').value,
+      te:document.getElementById('fTelefones').value,
+      m:document.getElementById('fMeses').value,
+      v:document.getElementById('fValores').value,
+      l:document.getElementById('fLinks').value
     }));
-  } catch(e) {}
+  } catch(e){}
 }
-function saveTemplate() {
-  try { localStorage.setItem('rg_template', document.getElementById('msgTemplate').value); } catch(e) {}
-}
+function saveTemplate() { try{localStorage.setItem('rg_template',document.getElementById('msgTemplate').value);}catch(e){} }
 function loadFromStorage() {
   try {
-    const cl = localStorage.getItem('rg_clients');
-    if (cl) clients = JSON.parse(cl);
-    const fl = localStorage.getItem('rg_fields');
-    if (fl) {
-      const f = JSON.parse(fl);
-      document.getElementById('fNomes').value = f.n || '';
-      document.getElementById('fTelefones').value = f.te || '';
-      document.getElementById('fMeses').value = f.m || '';
-      document.getElementById('fValores').value = f.v || '';
-      document.getElementById('fLinks').value = f.l || '';
-    }
-    const tpl = localStorage.getItem('rg_template');
-    if (tpl) document.getElementById('msgTemplate').value = tpl;
-    if (clients.length > 0) {
-      document.getElementById('totalBadge').textContent = clients.length;
-      document.getElementById('totalBadge').classList.remove('hidden');
-    }
-  } catch(e) {}
+    const cl=localStorage.getItem('rg_clients'); if(cl) clients=JSON.parse(cl);
+    const fl=localStorage.getItem('rg_fields');
+    if(fl){const f=JSON.parse(fl);document.getElementById('fNomes').value=f.n||'';document.getElementById('fTelefones').value=f.te||'';document.getElementById('fMeses').value=f.m||'';document.getElementById('fValores').value=f.v||'';document.getElementById('fLinks').value=f.l||'';}
+    const tpl=localStorage.getItem('rg_template'); if(tpl) document.getElementById('msgTemplate').value=tpl;
+    if(clients.length>0){document.getElementById('totalBadge').textContent=clients.length;document.getElementById('totalBadge').classList.remove('hidden');}
+  } catch(e){}
 }
-
-// ==================== UTILS ====================
-function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 </script>
 </body>
 </html>
