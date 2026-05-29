@@ -17,29 +17,24 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);min-height:100vh;color:var(--txt)}
 .app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:80px}
-/* TOPBAR */
 .topbar{background:var(--purple);padding:20px 20px 16px;position:sticky;top:0;z-index:10}
 .topbar-row{display:flex;align-items:center;justify-content:space-between}
 .topbar h1{font-size:17px;font-weight:600;color:#fff}
 .topbar p{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px}
 .badge-sync{font-size:11px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px}
-/* TABS */
 .tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:68px;z-index:9}
-.tab{flex:1;padding:12px 4px;text-align:center;font-size:11px;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
 .tab.active{color:var(--purple);border-bottom:2px solid var(--purple);font-weight:600}
-.tab i{display:block;font-size:20px;margin-bottom:2px}
-/* SCREENS */
+.tab i{display:block;font-size:18px;margin-bottom:2px}
 .screen{display:none;padding:16px}
 .screen.active{display:block}
 .section-label{font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.07em;text-transform:uppercase;margin:0 0 10px 2px}
-/* SALDO */
 .saldo-card{background:linear-gradient(135deg,#26215C 0%,#3C3489 100%);border-radius:var(--radius);padding:22px;margin-bottom:14px;position:relative;overflow:hidden}
 .saldo-card::after{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:rgba(255,255,255,.05);border-radius:50%}
 .saldo-label{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px}
 .saldo-value{font-size:34px;font-weight:700;color:#fff;letter-spacing:-.5px}
 .saldo-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:6px}
 .saldo-refresh{position:absolute;top:18px;right:18px;color:rgba(255,255,255,.45);font-size:20px;cursor:pointer;z-index:1}
-/* METRICS */
 .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:var(--bg2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
 .metric-label{font-size:11px;color:var(--txt2);margin-bottom:5px}
@@ -47,9 +42,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .metric-value.green{color:var(--green)}
 .metric-value.red{color:var(--red)}
 .metric-value.amber{color:var(--amber)}
-/* CARD */
 .card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:14px}
-/* CLASSES */
 .classe-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
 .classe-row:last-child{border-bottom:none}
 .classe-left{display:flex;align-items:center;gap:10px}
@@ -59,25 +52,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .classe-valor{text-align:right}
 .classe-valor p{font-size:14px;font-weight:600;color:var(--txt)}
 .classe-valor .receber{font-size:12px;font-weight:600;color:var(--green);margin-top:2px}
-.progress-bar{height:5px;background:var(--bg3);border-radius:3px;margin-top:7px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;transition:width .5s}
-.spacer{height:10px}
-/* TAGS */
+.pct-row{display:flex;align-items:center;gap:6px;margin-top:5px;margin-bottom:4px}
+.pct-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.pct-fill{height:100%;border-radius:3px}
+.pct-lbl{font-size:11px;font-weight:600;min-width:38px;text-align:right}
+.spacer{height:8px}
 .tag{font-size:11px;padding:4px 9px;border-radius:20px;font-weight:600}
 .tag.green{background:var(--green-bg);color:var(--green)}
 .tag.red{background:var(--red-bg);color:var(--red)}
 .tag.amber{background:var(--amber-bg);color:var(--amber)}
 .tag.blue{background:var(--blue-bg);color:var(--blue)}
 .tag.purple{background:#EEEDFE;color:var(--purple2)}
-.tag.gray{background:var(--bg3);color:var(--txt2)}
-/* STATUS ROW */
 .status-row{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
 .status-row:last-child{border-bottom:none}
-.status-right{text-align:right}
 .status-right p{font-size:14px;font-weight:600;color:var(--txt)}
-.status-right span{font-size:11px;color:var(--txt2)}
 .cf-hint{font-size:10px;color:var(--txt3);margin-top:3px;font-style:italic}
-/* DESPESAS */
 .seg{display:flex;gap:8px;margin-bottom:14px}
 .seg-btn{flex:1;padding:9px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--txt2);transition:all .15s}
 .seg-btn.active{background:var(--purple);color:#fff;border-color:var(--purple)}
@@ -94,7 +83,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .desp-valor{font-size:14px;font-weight:700;color:var(--txt)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
 .dot.g{background:#1D9E75}.dot.r{background:#E24B4A}
-/* PROJEÇÃO */
 .proj-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
 .proj-row:last-child{border-bottom:none}
 .proj-label{font-size:13px;font-weight:500;color:var(--txt)}
@@ -105,11 +93,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-track{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
 .bar-fill{height:100%;border-radius:4px}
 .tip{font-size:12px;color:var(--txt2);background:var(--bg3);padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:14px;line-height:1.6}
-/* FAB */
-.fab{position:fixed;bottom:88px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--purple);color:#fff;display:none;align-items:center;justify-content:center;font-size:24px;cursor:pointer;z-index:20;box-shadow:0 4px 16px rgba(38,33,92,.35)}
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:10;max-width:430px;margin:0 auto}
-/* MODAL */
+.fab{position:fixed;bottom:88px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--purple);color:#fff;display:none;align-items:center;justify-content:center;font-size:24px;cursor:pointer;z-index:20}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-end;justify-content:center}
 .overlay.open{display:flex}
 .modal{background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:430px}
@@ -117,18 +101,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fg{margin-bottom:14px}
 .fg label{font-size:12px;color:var(--txt2);display:block;margin-bottom:5px;font-weight:500}
 .fg input,.fg select{width:100%;padding:11px 13px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:14px;background:var(--bg);color:var(--txt);outline:none}
-.fg input:focus,.fg select:focus{border-color:var(--purple)}
 .form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .btn-save{width:100%;padding:14px;background:var(--purple);color:#fff;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;border:none;margin-top:6px}
 .btn-cancel{width:100%;padding:12px;background:transparent;color:var(--txt2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;border:1px solid var(--border);margin-top:8px}
-/* LOADING */
 .loading{text-align:center;padding:40px 20px;color:var(--txt2)}
 .loading i{font-size:32px;color:var(--purple2);animation:spin 1s linear infinite;display:block;margin-bottom:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .erro-msg{background:var(--red-bg);color:var(--red);padding:12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;line-height:1.5}
+.hist-mes-card{background:var(--bg2);border-radius:var(--radius);border:1px solid var(--border);padding:16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s}
+.hist-mes-card:hover{border-color:var(--purple2)}
+.hist-mes-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.hist-mes-titulo{font-size:15px;font-weight:700;color:var(--txt)}
+.hist-mes-data{font-size:11px;color:var(--txt3)}
+.hist-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.hist-metric{background:var(--bg3);border-radius:var(--radius-sm);padding:10px}
+.hist-metric-label{font-size:10px;color:var(--txt2);margin-bottom:3px}
+.hist-metric-value{font-size:14px;font-weight:700;color:var(--txt)}
+.hist-detalhe{display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+.hist-detalhe.open{display:block}
+.hist-section{font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin:10px 0 6px}
+.hist-linha{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)}
+.hist-linha:last-child{border-bottom:none}
+.empty-hist{text-align:center;padding:40px 20px;color:var(--txt3)}
+.empty-hist i{font-size:40px;display:block;margin-bottom:10px;color:var(--txt3)}
 </style>
-</head>
-<body>
+
 <div class="app">
   <div class="topbar">
     <div class="topbar-row">
@@ -141,72 +138,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="tab-bar">
-    <div class="tab active" onclick="showTab('dashboard',this)">
-      <i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard
-    </div>
-    <div class="tab" onclick="showTab('despesas',this)">
-      <i class="ti ti-wallet" aria-hidden="true"></i>Despesas
-    </div>
-    <div class="tab" onclick="showTab('projecao',this)">
-      <i class="ti ti-chart-line" aria-hidden="true"></i>Projeção
-    </div>
+    <div class="tab active" onclick="showTab('dashboard',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Dashboard</div>
+    <div class="tab" onclick="showTab('despesas',this)"><i class="ti ti-wallet" aria-hidden="true"></i>Despesas</div>
+    <div class="tab" onclick="showTab('projecao',this)"><i class="ti ti-chart-line" aria-hidden="true"></i>Projeção</div>
+    <div class="tab" onclick="showTab('historico',this)"><i class="ti ti-clock-hour-4" aria-hidden="true"></i>Histórico</div>
   </div>
 
-  <!-- DASHBOARD -->
   <div class="screen active" id="screen-dashboard">
-    <div id="dash-content">
-      <div class="loading"><i class="ti ti-loader"></i>Buscando dados...</div>
-    </div>
+    <div id="dash-content"><div class="loading"><i class="ti ti-loader"></i>Buscando dados...</div></div>
   </div>
 
-  <!-- DESPESAS -->
   <div class="screen" id="screen-despesas">
     <div style="height:14px"></div>
     <div class="seg">
       <button class="seg-btn active" onclick="switchDesp('empresa',this)">Empresa</button>
       <button class="seg-btn" onclick="switchDesp('pessoal',this)">Pessoal</button>
     </div>
-    <div id="desp-empresa">
-      <div class="loading"><i class="ti ti-loader"></i>Carregando...</div>
-    </div>
-    <div id="desp-pessoal" style="display:none">
-      <div class="loading"><i class="ti ti-loader"></i>Carregando...</div>
-    </div>
+    <div id="desp-empresa"><div class="loading"><i class="ti ti-loader"></i>Carregando...</div></div>
+    <div id="desp-pessoal" style="display:none"><div class="loading"><i class="ti ti-loader"></i>Carregando...</div></div>
   </div>
 
-  <!-- PROJEÇÃO -->
   <div class="screen" id="screen-projecao">
-    <div id="proj-content">
-      <div class="loading"><i class="ti ti-loader"></i>Calculando...</div>
-    </div>
+    <div id="proj-content"><div class="loading"><i class="ti ti-loader"></i>Calculando...</div></div>
+  </div>
+
+  <div class="screen" id="screen-historico">
+    <div style="height:14px"></div>
+    <div id="hist-content"><div class="loading"><i class="ti ti-loader"></i>Carregando histórico...</div></div>
   </div>
 </div>
 
-<div class="fab" id="fab" onclick="abrirModal()" aria-label="Nova despesa">
-  <i class="ti ti-plus" aria-hidden="true"></i>
-</div>
+<div class="fab" id="fab" onclick="abrirModal()" aria-label="Nova despesa"><i class="ti ti-plus" aria-hidden="true"></i></div>
 
 <div class="overlay" id="modal" onclick="fecharModalFora(event)">
   <div class="modal">
     <h2>Nova despesa</h2>
     <div class="form-row">
-      <div class="fg"><label>Tipo</label>
-        <select id="f-tipo"><option>Empresa</option><option>Pessoal</option></select>
-      </div>
-      <div class="fg"><label>Categoria</label>
-        <select id="f-cat"><option>Fixa</option><option>Variável</option></select>
-      </div>
+      <div class="fg"><label>Tipo</label><select id="f-tipo"><option>Empresa</option><option>Pessoal</option></select></div>
+      <div class="fg"><label>Categoria</label><select id="f-cat"><option>Fixa</option><option>Variável</option></select></div>
     </div>
-    <div class="fg"><label>Nome da despesa</label>
-      <input type="text" id="f-nome" placeholder="Ex: Aluguel, Fornecedor...">
-    </div>
+    <div class="fg"><label>Nome</label><input type="text" id="f-nome" placeholder="Ex: Aluguel, Fornecedor..."></div>
     <div class="form-row">
-      <div class="fg"><label>Valor (R$)</label>
-        <input type="number" id="f-valor" placeholder="0,00" step="0.01">
-      </div>
-      <div class="fg"><label>Status</label>
-        <select id="f-status"><option value="PG">Pago</option><option value="AB">Em aberto</option></select>
-      </div>
+      <div class="fg"><label>Valor (R$)</label><input type="number" id="f-valor" placeholder="0,00" step="0.01"></div>
+      <div class="fg"><label>Status</label><select id="f-status"><option value="PG">Pago</option><option value="AB">Em aberto</option></select></div>
     </div>
     <div id="modal-erro" style="display:none" class="erro-msg"></div>
     <button class="btn-save" onclick="salvarDespesa()">Salvar despesa</button>
@@ -215,317 +189,332 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-// ─── CONFIGURAÇÃO ───────────────────────────
 const API_URL    = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7emSqMBCKmaPSKDnoxfhZWFKI6If0I_EVoDtVdeT5gaVCGnwda/exec';
-const API_SECRET = 'rastreandogps2025'; // troque se alterou no script
+const API_SECRET = 'rastreandogps2025';
+const STORAGE_KEY = 'rgps_historico';
 
-// ─── UTILITÁRIOS ────────────────────────────
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
 
 async function buscar(action) {
-  const url = `${API_URL}?secret=${API_SECRET}&action=${action}`;
+  const url = API_URL + '?secret=' + API_SECRET + '&action=' + action;
   const res = await fetch(url);
   return res.json();
 }
 
-// ─── DASHBOARD ──────────────────────────────
-async function carregarDashboard() {
+// ─── FECHAMENTO AUTOMÁTICO ───────────────────
+async function verificarFechamentoMensal() {
+  const hoje = new Date();
+  if (hoje.getDate() !== 1) return;
+
+  const chave = 'rgps_fechado_' + hoje.getFullYear() + '_' + hoje.getMonth();
+  if (localStorage.getItem(chave)) return;
+
   try {
-    const d = await buscar('dashboard');
-    if(d.error){ document.getElementById('dash-content').innerHTML=`<div class="erro-msg">${d.error}</div>`; return; }
+    const [dash, desp, proj] = await Promise.all([
+      buscar('dashboard'), buscar('despesas'), buscar('projecao')
+    ]);
 
-    document.getElementById('sub-data').textContent = `Atualizado às ${d.atualizadoAs} · ${d.mes}`;
+    if (dash.error || desp.error || proj.error) return;
 
-    const pgPct = d.classes.ouro.clientes > 0
-      ? Math.round((d.classes.ouro.pg / d.classes.ouro.clientes)*100) : 0;
-    const prPct = d.classes.prata.clientes > 0
-      ? Math.round((d.classes.prata.pg / d.classes.prata.clientes)*100) : 0;
-    const ltPct = d.classes.latao.clientes > 0
-      ? Math.round((d.classes.latao.pg / d.classes.latao.clientes)*100) : 0;
+    const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    const nomeMes = mesAnterior.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
 
-    document.getElementById('dash-content').innerHTML = `
-      <div style="height:14px"></div>
-      <div class="saldo-card">
-        <div class="saldo-label">Saldo Asaas</div>
-        <div class="saldo-value">${brl(d.saldo)}</div>
-        <div class="saldo-sub">Atualizado às ${d.atualizadoAs}</div>
-        <i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()" aria-label="Atualizar"></i>
-      </div>
+    const snapshot = {
+      mes: nomeMes,
+      fechadoEm: new Date().toISOString(),
+      dashboard: dash,
+      despesas: desp,
+      projecao: proj
+    };
 
-      <div class="metric-grid">
-        <div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">${brl(d.fatEsperado)}</div></div>
-        <div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">${brl(d.recebido)}</div></div>
-        <div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">${pct(d.inadimplencia)}</div></div>
-        <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value amber">${brl(d.ticketMedio)}</div></div>
-      </div>
+    const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    historico.unshift(snapshot);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(historico));
+    localStorage.setItem(chave, '1');
 
-      <p class="section-label">A receber por classe</p>
-      <div class="card">
-        <div class="classe-row">
-          <div class="classe-left">
-            <div class="classe-icon" style="background:#FAEEDA">🥇</div>
-            <div class="classe-info"><p>Ouro</p><span>${d.classes.ouro.clientes} clientes · ${d.classes.ouro.faltam} faltam</span></div>
-          </div>
-          <div class="classe-valor">
-            <p>${brl(d.classes.ouro.total)}</p>
-            <div class="receber">${brl(d.classes.ouro.receber)}</div>
-          </div>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pgPct}%;background:#EF9F27"></div></div>
-        <div class="spacer"></div>
-
-        <div class="classe-row">
-          <div class="classe-left">
-            <div class="classe-icon" style="background:#E6F1FB">🥈</div>
-            <div class="classe-info"><p>Prata</p><span>${d.classes.prata.clientes} clientes · ${d.classes.prata.faltam} faltam</span></div>
-          </div>
-          <div class="classe-valor">
-            <p>${brl(d.classes.prata.total)}</p>
-            <div class="receber">${brl(d.classes.prata.receber)}</div>
-          </div>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${prPct}%;background:#378ADD"></div></div>
-        <div class="spacer"></div>
-
-        <div class="classe-row">
-          <div class="classe-left">
-            <div class="classe-icon" style="background:#FCEBEB">🚩</div>
-            <div class="classe-info"><p>Latão</p><span>${d.classes.latao.clientes} clientes · ${d.classes.latao.faltam} faltam</span></div>
-          </div>
-          <div class="classe-valor">
-            <p>${brl(d.classes.latao.total)}</p>
-            <div class="receber">${brl(d.classes.latao.receber)}</div>
-          </div>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${ltPct}%;background:#E24B4A"></div></div>
-      </div>
-
-      <p class="section-label">Status do mês</p>
-      <div class="card">
-        <div class="status-row">
-          <span class="tag green">🟢 PG ${d.status.PG.qnt}</span>
-          <div class="status-right"><p>${brl(d.status.PG.valor)}</p></div>
-        </div>
-        <div class="status-row">
-          <span class="tag red">🔴 AT ${d.status.AT.qnt}</span>
-          <div class="status-right"><p style="color:var(--red)">${brl(d.status.AT.valor)}</p></div>
-        </div>
-        <div class="status-row" style="flex-direction:column;align-items:flex-start;gap:3px">
-          <div style="display:flex;justify-content:space-between;width:100%">
-            <span class="tag blue">🔵 CF ${d.status.CF.qnt}</span>
-            <p style="font-size:14px;font-weight:700;color:var(--txt2)">${brl(d.status.CF.valor)}</p>
-          </div>
-          <div class="cf-hint">Pago mas ainda não compensado na conta</div>
-        </div>
-        <div class="status-row">
-          <span class="tag amber">🔘 MP ${d.status.MP.qnt}</span>
-          <div class="status-right"><p>${brl(d.status.MP.valor)}</p></div>
-        </div>
-        <div class="status-row">
-          <span class="tag purple">🚫 IN ${d.status.IN.qnt}</span>
-          <div class="status-right"><p>${brl(d.status.IN.valor)}</p></div>
-        </div>
-      </div>`;
+    console.log('Mês fechado: ' + nomeMes);
   } catch(e) {
-    document.getElementById('dash-content').innerHTML=`<div class="erro-msg">Erro ao conectar com a planilha. Verifique sua conexão.</div>`;
+    console.log('Erro ao fechar mês: ' + e);
   }
 }
 
-// ─── DESPESAS ───────────────────────────────
+// ─── DASHBOARD ───────────────────────────────
+async function carregarDashboard() {
+  try {
+    const d = await buscar('dashboard');
+    if(d.error){ document.getElementById('dash-content').innerHTML='<div class="erro-msg">'+d.error+'</div>'; return; }
+
+    document.getElementById('sub-data').textContent = 'Atualizado às ' + d.atualizadoAs + ' · ' + d.mes;
+
+    const pgPct = d.classes.ouro.clientes  > 0 ? (d.classes.ouro.pg  / d.classes.ouro.clientes  * 100) : 0;
+    const prPct = d.classes.prata.clientes > 0 ? (d.classes.prata.pg / d.classes.prata.clientes * 100) : 0;
+    const ltPct = d.classes.latao.clientes > 0 ? (d.classes.latao.pg / d.classes.latao.clientes * 100) : 0;
+
+    document.getElementById('dash-content').innerHTML =
+      '<div style="height:14px"></div>' +
+      '<div class="saldo-card">' +
+        '<div class="saldo-label">Saldo Asaas</div>' +
+        '<div class="saldo-value">' + brl(d.saldo) + '</div>' +
+        '<div class="saldo-sub">Atualizado às ' + d.atualizadoAs + '</div>' +
+        '<i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()" aria-label="Atualizar"></i>' +
+      '</div>' +
+      '<div class="metric-grid">' +
+        '<div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">' + brl(d.fatEsperado) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">' + brl(d.recebido) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">' + pct(d.inadimplencia) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value amber">' + brl(d.ticketMedio) + '</div></div>' +
+      '</div>' +
+      '<p class="section-label">A receber por classe</p>' +
+      '<div class="card">' +
+        classeHtml('🥇', 'Ouro', '#FAEEDA', d.classes.ouro, pgPct, '#EF9F27', '#854F0B') +
+        '<div class="spacer"></div>' +
+        classeHtml('🥈', 'Prata', '#E6F1FB', d.classes.prata, prPct, '#378ADD', '#185FA5') +
+        '<div class="spacer"></div>' +
+        classeHtml('🚩', 'Latão', '#FCEBEB', d.classes.latao, ltPct, '#E24B4A', '#A32D2D') +
+      '</div>' +
+      '<p class="section-label">Status do mês</p>' +
+      '<div class="card">' +
+        statusHtml('green', '🟢 PG ' + d.status.PG.qnt, brl(d.status.PG.valor), '') +
+        statusHtml('red',   '🔴 AT ' + d.status.AT.qnt, brl(d.status.AT.valor), '') +
+        statusCFHtml(d.status.CF) +
+        statusHtml('amber', '🔘 MP ' + d.status.MP.qnt, brl(d.status.MP.valor), '') +
+        statusHtml('purple','🚫 IN ' + d.status.IN.qnt, brl(d.status.IN.valor), '') +
+      '</div>';
+  } catch(e) {
+    document.getElementById('dash-content').innerHTML='<div class="erro-msg">Erro ao conectar com a planilha.</div>';
+  }
+}
+
+function classeHtml(emoji, nome, bgIcon, c, pgPct, barColor, pctColor) {
+  return '<div class="classe-row">' +
+    '<div class="classe-left">' +
+      '<div class="classe-icon" style="background:' + bgIcon + '">' + emoji + '</div>' +
+      '<div class="classe-info"><p>' + nome + '</p><span>' + c.clientes + ' clientes · ' + c.faltam + ' faltam</span></div>' +
+    '</div>' +
+    '<div class="classe-valor"><p>' + brl(c.total) + '</p><div class="receber">' + brl(c.receber) + '</div></div>' +
+  '</div>' +
+  '<div class="pct-row">' +
+    '<div class="pct-track"><div class="pct-fill" style="width:' + pgPct.toFixed(1) + '%;background:' + barColor + '"></div></div>' +
+    '<span class="pct-lbl" style="color:' + pctColor + '">' + pgPct.toFixed(1) + '%</span>' +
+  '</div>';
+}
+
+function statusHtml(cor, label, valor, extra) {
+  return '<div class="status-row"><span class="tag ' + cor + '">' + label + '</span><div class="status-right"><p>' + valor + '</p>' + extra + '</div></div>';
+}
+
+function statusCFHtml(cf) {
+  return '<div class="status-row" style="flex-direction:column;align-items:flex-start;gap:3px">' +
+    '<div style="display:flex;justify-content:space-between;width:100%">' +
+      '<span class="tag blue">🔵 CF ' + cf.qnt + '</span>' +
+      '<p style="font-size:14px;font-weight:700;color:var(--txt2)">' + brl(cf.valor) + '</p>' +
+    '</div>' +
+    '<div class="cf-hint">Pago mas ainda não compensado na conta</div>' +
+  '</div>';
+}
+
+// ─── DESPESAS ────────────────────────────────
 const iconMap = {
-  default:{icon:'ti-circle-dot',cor:'#EEEDFE',txt:'#534AB7'},
-  aluguel:{icon:'ti-home',cor:'#E1F5EE',txt:'#0F6E56'},
-  seguro:{icon:'ti-shield',cor:'#E6F1FB',txt:'#185FA5'},
-  luz:{icon:'ti-bolt',cor:'#FAEEDA',txt:'#854F0B'},
-  internet:{icon:'ti-wifi',cor:'#EEEDFE',txt:'#534AB7'},
-  academia:{icon:'ti-barbell',cor:'#FAECE7',txt:'#993C1D'},
-  telefone:{icon:'ti-phone',cor:'#E6F1FB',txt:'#185FA5'},
-  contador:{icon:'ti-calculator',cor:'#E6F1FB',txt:'#185FA5'},
-  imposto:{icon:'ti-file-invoice',cor:'#FAEEDA',txt:'#854F0B'},
-  ipva:{icon:'ti-car',cor:'#E1F5EE',txt:'#0F6E56'},
-  das:{icon:'ti-receipt-tax',cor:'#FAECE7',txt:'#993C1D'},
-  plataforma:{icon:'ti-server',cor:'#FAECE7',txt:'#993C1D'},
-  beatriz:{icon:'ti-user-circle',cor:'#FBEAF0',txt:'#993556'},
-  mercado:{icon:'ti-credit-card',cor:'#E6F1FB',txt:'#185FA5'},
-  arquia:{icon:'ti-building-bank',cor:'#EEEDFE',txt:'#534AB7'},
-  smart:{icon:'ti-sim',cor:'#E1F5EE',txt:'#0F6E56'},
-  transmeet:{icon:'ti-video',cor:'#E6F1FB',txt:'#185FA5'},
-  click:{icon:'ti-pen',cor:'#EEEDFE',txt:'#534AB7'},
-  zap:{icon:'ti-brand-whatsapp',cor:'#E1F5EE',txt:'#0F6E56'},
-  prolabore:{icon:'ti-user',cor:'#EEEDFE',txt:'#534AB7'},
-  casas:{icon:'ti-shopping-cart',cor:'#FBEAF0',txt:'#993556'},
+  default:{i:'ti-circle-dot',c:'#EEEDFE',t:'#534AB7'},
+  aluguel:{i:'ti-home',c:'#E1F5EE',t:'#0F6E56'},
+  seguro:{i:'ti-shield',c:'#E6F1FB',t:'#185FA5'},
+  luz:{i:'ti-bolt',c:'#FAEEDA',t:'#854F0B'},
+  internet:{i:'ti-wifi',c:'#EEEDFE',t:'#534AB7'},
+  academia:{i:'ti-barbell',c:'#FAECE7',t:'#993C1D'},
+  telefone:{i:'ti-phone',c:'#E6F1FB',t:'#185FA5'},
+  contador:{i:'ti-calculator',c:'#E6F1FB',t:'#185FA5'},
+  imposto:{i:'ti-file-invoice',c:'#FAEEDA',t:'#854F0B'},
+  ipva:{i:'ti-car',c:'#E1F5EE',t:'#0F6E56'},
+  das:{i:'ti-receipt-tax',c:'#FAECE7',t:'#993C1D'},
+  plataforma:{i:'ti-server',c:'#FAECE7',t:'#993C1D'},
+  beatriz:{i:'ti-user-circle',c:'#FBEAF0',t:'#993556'},
+  mercado:{i:'ti-credit-card',c:'#E6F1FB',t:'#185FA5'},
+  arquia:{i:'ti-building-bank',c:'#EEEDFE',t:'#534AB7'},
+  smart:{i:'ti-sim',c:'#E1F5EE',t:'#0F6E56'},
+  transmeet:{i:'ti-video',c:'#E6F1FB',t:'#185FA5'},
+  click:{i:'ti-pen',c:'#EEEDFE',t:'#534AB7'},
+  zap:{i:'ti-brand-whatsapp',c:'#E1F5EE',t:'#0F6E56'},
+  prolabore:{i:'ti-user',c:'#EEEDFE',t:'#534AB7'},
+  casas:{i:'ti-shopping-cart',c:'#FBEAF0',t:'#993556'},
 };
 
-function getIcone(nome){
+function getIcone(nome) {
   const n = nome.toLowerCase();
-  for(const [k,v] of Object.entries(iconMap)){
-    if(n.includes(k)) return v;
-  }
+  for(const [k,v] of Object.entries(iconMap)) { if(n.includes(k)) return v; }
   return iconMap.default;
 }
 
 function renderDespesas(itens, containerId, total, pago) {
   const aberto = total - pago;
-  document.getElementById(containerId).innerHTML = `
-    <div class="summary-row"><span>Total fixo</span><strong>${brl(total)}</strong></div>
-    <div class="summary-row" style="margin-bottom:16px"><span>Pago</span><strong style="color:var(--green)">${brl(pago)}</strong></div>
-    ${aberto > 0 ? `<div class="summary-row" style="margin-bottom:16px"><span>Em aberto</span><strong style="color:var(--red)">${brl(aberto)}</strong></div>` : ''}
-    <p class="section-label">Itens</p>
-    <div class="card" style="padding:4px 16px">
-      ${itens.map(d => {
-        const ic = getIcone(d.nome);
-        return `<div class="desp-item">
-          <div class="desp-left">
-            <div class="desp-icon" style="background:${ic.cor}"><i class="ti ${ic.icon}" style="font-size:17px;color:${ic.txt}" aria-hidden="true"></i></div>
-            <div><div class="desp-name">${d.nome}</div><div class="desp-sub">${d.status==='AB'?'Em aberto':''}</div></div>
-          </div>
-          <div class="desp-right">
-            <div class="desp-valor">${brl(d.valor)}</div>
-            <div style="font-size:11px;color:var(--txt2)"><span class="dot ${d.status==='PG'?'g':'r'}"></span>${d.status==='PG'?'Pago':'Em aberto'}</div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
+  document.getElementById(containerId).innerHTML =
+    '<div class="summary-row"><span>Total fixo</span><strong>' + brl(total) + '</strong></div>' +
+    '<div class="summary-row" style="margin-bottom:16px"><span>Pago</span><strong style="color:var(--green)">' + brl(pago) + '</strong></div>' +
+    (aberto > 0 ? '<div class="summary-row" style="margin-bottom:16px"><span>Em aberto</span><strong style="color:var(--red)">' + brl(aberto) + '</strong></div>' : '') +
+    '<p class="section-label">Itens</p>' +
+    '<div class="card" style="padding:4px 16px">' +
+    itens.map(d => {
+      const ic = getIcone(d.nome);
+      return '<div class="desp-item">' +
+        '<div class="desp-left">' +
+          '<div class="desp-icon" style="background:' + ic.c + '"><i class="ti ' + ic.i + '" style="font-size:17px;color:' + ic.t + '" aria-hidden="true"></i></div>' +
+          '<div><div class="desp-name">' + d.nome + '</div><div class="desp-sub">' + (d.status==='AB'?'Em aberto':'') + '</div></div>' +
+        '</div>' +
+        '<div class="desp-right">' +
+          '<div class="desp-valor">' + brl(d.valor) + '</div>' +
+          '<div style="font-size:11px;color:var(--txt2)"><span class="dot ' + (d.status==='PG'?'g':'r') + '"></span>' + (d.status==='PG'?'Pago':'Em aberto') + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+    '</div>';
 }
 
 async function carregarDespesas() {
   try {
     const d = await buscar('despesas');
-    if(d.error){ document.getElementById('desp-empresa').innerHTML=`<div class="erro-msg">${d.error}</div>`; return; }
+    if(d.error){ document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">'+d.error+'</div>'; return; }
     renderDespesas(d.empresa.itens,'desp-empresa',d.empresa.total,d.empresa.pago);
     renderDespesas(d.pessoal.itens,'desp-pessoal',d.pessoal.total,d.pessoal.pago);
   } catch(e) {
-    document.getElementById('desp-empresa').innerHTML=`<div class="erro-msg">Erro ao carregar despesas.</div>`;
+    document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';
   }
 }
 
-// ─── PROJEÇÃO ───────────────────────────────
+// ─── PROJEÇÃO ────────────────────────────────
 async function carregarProjecao() {
   try {
     const d = await buscar('projecao');
-    if(d.error){ document.getElementById('proj-content').innerHTML=`<div class="erro-msg">${d.error}</div>`; return; }
-
+    if(d.error){ document.getElementById('proj-content').innerHTML='<div class="erro-msg">'+d.error+'</div>'; return; }
     const maxRec = Math.max(d.classes.ouro.esperado, d.classes.prata.esperado, d.classes.latao.esperado);
-
-    document.getElementById('proj-content').innerHTML = `
-      <div style="height:14px"></div>
-      <div class="tip">Projeção baseada na confiabilidade histórica de cada classe de cliente.</div>
-      <div class="metric-grid">
-        <div class="metric"><div class="metric-label">Receita provável</div><div class="metric-value green">${brl(d.receitaProvavel)}</div></div>
-        <div class="metric"><div class="metric-label">Despesas totais</div><div class="metric-value red">${brl(d.totalDespesas)}</div></div>
-        <div class="metric"><div class="metric-label">Margem estimada</div><div class="metric-value ${d.margemEstimada>=0?'green':'red'}">${brl(d.margemEstimada)}</div></div>
-        <div class="metric"><div class="metric-label">Pró-labore</div><div class="metric-value amber">${brl(d.prolabore)}</div></div>
-      </div>
-
-      <p class="section-label">Receita esperada por classe</p>
-      <div class="card">
-        <div class="bar-item">
-          <div class="bar-header"><span>🥇 Ouro (${d.classes.ouro.percentual}%)</span><span>${brl(d.classes.ouro.esperado)}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.classes.ouro.esperado/maxRec)*100)}%;background:#EF9F27"></div></div>
-        </div>
-        <div class="bar-item">
-          <div class="bar-header"><span>🥈 Prata (${d.classes.prata.percentual}%)</span><span>${brl(d.classes.prata.esperado)}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.classes.prata.esperado/maxRec)*100)}%;background:#378ADD"></div></div>
-        </div>
-        <div class="bar-item">
-          <div class="bar-header"><span>🚩 Latão (${d.classes.latao.percentual}%)</span><span>${brl(d.classes.latao.esperado)}</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.classes.latao.esperado/maxRec)*100)}%;background:#E24B4A"></div></div>
-        </div>
-      </div>
-
-      <p class="section-label">Fluxo estimado do mês</p>
-      <div class="card">
-        <div class="proj-row">
-          <div><div class="proj-label">Receita confirmada</div><div class="proj-sub">Clientes PG + CF</div></div>
-          <div class="proj-value" style="color:var(--green)">+${brl(d.receitaConfirmada)}</div>
-        </div>
-        <div class="proj-row">
-          <div><div class="proj-label">Despesas empresa</div><div class="proj-sub">Fixas + variáveis</div></div>
-          <div class="proj-value" style="color:var(--red)">-${brl(d.despesasEmpresa)}</div>
-        </div>
-        <div class="proj-row">
-          <div><div class="proj-label">Despesas pessoais</div><div class="proj-sub">Fixas + variáveis</div></div>
-          <div class="proj-value" style="color:var(--red)">-${brl(d.despesasPessoal)}</div>
-        </div>
-        <div class="proj-row">
-          <div><div class="proj-label">Pró-labore</div></div>
-          <div class="proj-value" style="color:var(--red)">-${brl(d.prolabore)}</div>
-        </div>
-        <div class="proj-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:14px">
-          <div><div class="proj-label" style="font-weight:700;font-size:15px">Resultado líquido</div></div>
-          <div class="proj-value" style="color:${d.margemEstimada>=0?'var(--green)':'var(--red)'};font-size:17px">${d.margemEstimada>=0?'+':''}${brl(d.margemEstimada)}</div>
-        </div>
-      </div>`;
+    document.getElementById('proj-content').innerHTML =
+      '<div style="height:14px"></div>' +
+      '<div class="tip">Projeção baseada na confiabilidade histórica de cada classe de cliente.</div>' +
+      '<div class="metric-grid">' +
+        '<div class="metric"><div class="metric-label">Receita provável</div><div class="metric-value green">' + brl(d.receitaProvavel) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Despesas totais</div><div class="metric-value red">' + brl(d.totalDespesas) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Margem estimada</div><div class="metric-value ' + (d.margemEstimada>=0?'green':'red') + '">' + brl(d.margemEstimada) + '</div></div>' +
+        '<div class="metric"><div class="metric-label">Pró-labore</div><div class="metric-value amber">' + brl(d.prolabore) + '</div></div>' +
+      '</div>' +
+      '<p class="section-label">Receita esperada por classe</p>' +
+      '<div class="card">' +
+        barProj('🥇 Ouro (' + d.classes.ouro.percentual + '%)', d.classes.ouro.esperado, maxRec, '#EF9F27') +
+        barProj('🥈 Prata (' + d.classes.prata.percentual + '%)', d.classes.prata.esperado, maxRec, '#378ADD') +
+        barProj('🚩 Latão (' + d.classes.latao.percentual + '%)', d.classes.latao.esperado, maxRec, '#E24B4A') +
+      '</div>' +
+      '<p class="section-label">Fluxo estimado do mês</p>' +
+      '<div class="card">' +
+        '<div class="proj-row"><div><div class="proj-label">Receita confirmada</div><div class="proj-sub">Clientes PG + CF</div></div><div class="proj-value" style="color:var(--green)">+' + brl(d.receitaConfirmada) + '</div></div>' +
+        '<div class="proj-row"><div><div class="proj-label">Despesas empresa</div><div class="proj-sub">Fixas + variáveis</div></div><div class="proj-value" style="color:var(--red)">-' + brl(d.despesasEmpresa) + '</div></div>' +
+        '<div class="proj-row"><div><div class="proj-label">Despesas pessoais</div><div class="proj-sub">Fixas + variáveis</div></div><div class="proj-value" style="color:var(--red)">-' + brl(d.despesasPessoal) + '</div></div>' +
+        '<div class="proj-row"><div><div class="proj-label">Pró-labore</div></div><div class="proj-value" style="color:var(--red)">-' + brl(d.prolabore) + '</div></div>' +
+        '<div class="proj-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:14px"><div><div class="proj-label" style="font-weight:700;font-size:15px">Resultado líquido</div></div><div class="proj-value" style="color:' + (d.margemEstimada>=0?'var(--green)':'var(--red)') + ';font-size:17px">' + (d.margemEstimada>=0?'+':'') + brl(d.margemEstimada) + '</div></div>' +
+      '</div>';
   } catch(e) {
-    document.getElementById('proj-content').innerHTML=`<div class="erro-msg">Erro ao calcular projeção.</div>`;
+    document.getElementById('proj-content').innerHTML='<div class="erro-msg">Erro ao calcular projeção.</div>';
   }
 }
 
-// ─── SALVAR DESPESA ─────────────────────────
+function barProj(label, val, max, cor) {
+  const w = max > 0 ? Math.round((val/max)*100) : 0;
+  return '<div class="bar-item"><div class="bar-header"><span>' + label + '</span><span>' + brl(val) + '</span></div><div class="bar-track"><div class="bar-fill" style="width:' + w + '%;background:' + cor + '"></div></div></div>';
+}
+
+// ─── HISTÓRICO ───────────────────────────────
+function carregarHistorico() {
+  const historico = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  const el = document.getElementById('hist-content');
+
+  if (historico.length === 0) {
+    el.innerHTML = '<div class="empty-hist"><i class="ti ti-calendar-off" aria-hidden="true"></i><p>Nenhum mês fechado ainda.</p><p style="font-size:12px;margin-top:6px">No dia 1 de cada mês o app salva automaticamente o mês anterior aqui.</p></div>';
+    return;
+  }
+
+  el.innerHTML = historico.map((snap, idx) => {
+    const d = snap.dashboard;
+    const p = snap.projecao;
+    const dataFecho = new Date(snap.fechadoEm).toLocaleDateString('pt-BR');
+    return '<div class="hist-mes-card" onclick="toggleDetalhe(' + idx + ')">' +
+      '<div class="hist-mes-header">' +
+        '<div class="hist-mes-titulo">' + snap.mes.charAt(0).toUpperCase() + snap.mes.slice(1) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span class="hist-mes-data">Fechado em ' + dataFecho + '</span>' +
+          '<i class="ti ti-chevron-down" id="chevron-' + idx + '" style="font-size:16px;color:var(--txt3);transition:transform .2s" aria-hidden="true"></i>' +
+        '</div>' +
+      '</div>' +
+      '<div class="hist-metrics">' +
+        '<div class="hist-metric"><div class="hist-metric-label">Recebido</div><div class="hist-metric-value" style="color:var(--green)">' + brl(d.recebido) + '</div></div>' +
+        '<div class="hist-metric"><div class="hist-metric-label">Fat. esperado</div><div class="hist-metric-value">' + brl(d.fatEsperado) + '</div></div>' +
+        '<div class="hist-metric"><div class="hist-metric-label">Inadimplência</div><div class="hist-metric-value" style="color:var(--red)">' + pct(d.inadimplencia) + '</div></div>' +
+        '<div class="hist-metric"><div class="hist-metric-label">Resultado líquido</div><div class="hist-metric-value" style="color:' + (p.margemEstimada>=0?'var(--green)':'var(--red)') + '">' + brl(p.margemEstimada) + '</div></div>' +
+      '</div>' +
+      '<div class="hist-detalhe" id="detalhe-' + idx + '">' +
+        '<div class="hist-section">Classes</div>' +
+        '<div class="hist-linha"><span>🥇 Ouro</span><span>' + brl(d.classes.ouro.total) + '</span></div>' +
+        '<div class="hist-linha"><span>🥈 Prata</span><span>' + brl(d.classes.prata.total) + '</span></div>' +
+        '<div class="hist-linha"><span>🚩 Latão</span><span>' + brl(d.classes.latao.total) + '</span></div>' +
+        '<div class="hist-section">Despesas</div>' +
+        '<div class="hist-linha"><span>Empresa</span><span style="color:var(--red)">' + brl(p.despesasEmpresa) + '</span></div>' +
+        '<div class="hist-linha"><span>Pessoal</span><span style="color:var(--red)">' + brl(p.despesasPessoal) + '</span></div>' +
+        '<div class="hist-linha"><span>Pró-labore</span><span style="color:var(--red)">' + brl(p.prolabore) + '</span></div>' +
+        '<div class="hist-section">Status</div>' +
+        '<div class="hist-linha"><span>🟢 PG</span><span>' + brl(d.status.PG.valor) + '</span></div>' +
+        '<div class="hist-linha"><span>🔴 AT</span><span>' + brl(d.status.AT.valor) + '</span></div>' +
+        '<div class="hist-linha"><span>🔘 MP</span><span>' + brl(d.status.MP.valor) + '</span></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleDetalhe(idx) {
+  const el = document.getElementById('detalhe-' + idx);
+  const ch = document.getElementById('chevron-' + idx);
+  el.classList.toggle('open');
+  ch.style.transform = el.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// ─── SALVAR DESPESA ──────────────────────────
 async function salvarDespesa() {
   const nome   = document.getElementById('f-nome').value.trim();
   const valor  = parseFloat(document.getElementById('f-valor').value);
   const status = document.getElementById('f-status').value;
   const tipo   = document.getElementById('f-tipo').value;
   const erroEl = document.getElementById('modal-erro');
-
-  if(!nome || isNaN(valor) || valor <= 0) {
-    erroEl.textContent = 'Preencha o nome e o valor corretamente.';
-    erroEl.style.display = 'block';
-    return;
-  }
-  erroEl.style.display = 'none';
-
+  if(!nome || isNaN(valor) || valor <= 0) { erroEl.textContent='Preencha o nome e o valor.'; erroEl.style.display='block'; return; }
+  erroEl.style.display='none';
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ secret: API_SECRET, action: 'salvarDespesa', tipo, nome, valor, status })
-    });
+    const res = await fetch(API_URL, { method:'POST', body: JSON.stringify({ secret: API_SECRET, action:'salvarDespesa', tipo, nome, valor, status }) });
     const json = await res.json();
-    if(json.ok) {
-      fecharModal();
-      document.getElementById('f-nome').value = '';
-      document.getElementById('f-valor').value = '';
-      carregarDespesas();
-    } else {
-      erroEl.textContent = json.error || 'Erro ao salvar.';
-      erroEl.style.display = 'block';
-    }
-  } catch(e) {
-    erroEl.textContent = 'Erro de conexão. Tente novamente.';
-    erroEl.style.display = 'block';
-  }
+    if(json.ok) { fecharModal(); document.getElementById('f-nome').value=''; document.getElementById('f-valor').value=''; carregarDespesas(); }
+    else { erroEl.textContent = json.error||'Erro ao salvar.'; erroEl.style.display='block'; }
+  } catch(e) { erroEl.textContent='Erro de conexão.'; erroEl.style.display='block'; }
 }
 
-// ─── NAVEGAÇÃO ──────────────────────────────
-let despesasCarregadas = false;
-let projecaoCarregada  = false;
+// ─── NAVEGAÇÃO ───────────────────────────────
+let despCarregada=false, projCarregada=false, histCarregada=false;
 
 function showTab(id, el) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
   el.classList.add('active');
-  document.getElementById('fab').style.display = id === 'despesas' ? 'flex' : 'none';
-
-  if(id === 'despesas' && !despesasCarregadas) { carregarDespesas(); despesasCarregadas = true; }
-  if(id === 'projecao' && !projecaoCarregada) { carregarProjecao(); projecaoCarregada = true; }
+  document.getElementById('fab').style.display = id==='despesas'?'flex':'none';
+  if(id==='despesas' && !despCarregada) { carregarDespesas(); despCarregada=true; }
+  if(id==='projecao' && !projCarregada) { carregarProjecao(); projCarregada=true; }
+  if(id==='historico' && !histCarregada) { carregarHistorico(); histCarregada=true; }
 }
 
 function switchDesp(tipo, btn) {
-  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('desp-empresa').style.display = tipo === 'empresa' ? 'block' : 'none';
-  document.getElementById('desp-pessoal').style.display = tipo === 'pessoal' ? 'block' : 'none';
+  document.getElementById('desp-empresa').style.display=tipo==='empresa'?'block':'none';
+  document.getElementById('desp-pessoal').style.display=tipo==='pessoal'?'block':'none';
 }
 
 function abrirModal()  { document.getElementById('modal').classList.add('open') }
 function fecharModal() { document.getElementById('modal').classList.remove('open') }
-function fecharModalFora(e) { if(e.target === document.getElementById('modal')) fecharModal() }
+function fecharModalFora(e) { if(e.target===document.getElementById('modal')) fecharModal() }
 
 // ─── INIT ────────────────────────────────────
+verificarFechamentoMensal();
 carregarDashboard();
 </script>
-</body>
-</html>
