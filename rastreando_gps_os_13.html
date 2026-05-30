@@ -781,8 +781,11 @@ async function syncSalvar(osObj) {
   setSyncDot('busy');
   try {
     const r = await apiPost({ action: 'save', os: JSON.stringify(osObj) });
-    if (r && r.ok) { setSyncDot('ok'); await carregarDoServidor(true); }
-    else { setSyncDot('err'); }
+    if (r && r.ok) {
+      setSyncDot('ok');
+      // Aguarda 2s para a planilha confirmar a gravação antes de recarregar
+      setTimeout(() => carregarDoServidor(true), 2000);
+    } else { setSyncDot('err'); }
   } catch (e) { setSyncDot('err'); }
 }
 async function syncExcluir(osNum) {
