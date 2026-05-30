@@ -20,6 +20,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .topbar-num span { font-size: 11px; color: #aaa; display: block; }
 .topbar-num strong { font-size: 15px; font-weight: 700; color: #00e5ff; }
 
+/* indicador de sincronização */
+.sync-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#666; margin-left:6px; vertical-align:middle; transition:background 0.3s; }
+.sync-dot.ok { background:#22c55e; }
+.sync-dot.busy { background:#fbbf24; animation:pulse 1s infinite; }
+.sync-dot.err { background:#e31c1c; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
 .tabs { display: flex; background: #111; padding: 0 16px; border-bottom: 1px solid #2a2a2a; }
 .tab { padding: 11px 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.45); cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.15s; }
 .tab.active { color: #00e5ff; border-bottom-color: #e31c1c; }
@@ -173,12 +180,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .stat-card.s-cancelado .stat-num { color: #e31c1c; }
 .stat-card.s-cancelado.ativo { border-color: #e31c1c; background: #1f0a0a; }
 
-.painel-tipo-filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.painel-tipo-filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items:center; }
 .tipo-filtro-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #333; background: #111; color: #666; font-family: inherit; transition: all 0.15s; }
 .tipo-filtro-btn.ativo-inst { border-color: #00e5ff; background: #001a2e; color: #00e5ff; }
 .tipo-filtro-btn.ativo-man { border-color: #f59e0b; background: #1a1000; color: #f59e0b; }
 .tipo-filtro-btn.ativo-ret { border-color: #e31c1c; background: #1f0a0a; color: #e31c1c; }
 .tipo-filtro-btn.ativo-todas { border-color: #f0f0f0; background: #222; color: #f0f0f0; }
+.btn-refresh { margin-left:auto; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid #00e5ff; background:#001a2e; color:#00e5ff; font-family:inherit; display:flex; align-items:center; gap:5px; }
+.btn-refresh:active { transform: scale(0.96); }
 
 /* OVERLAY */
 .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; overflow-y: auto; padding: 20px 16px; }
@@ -258,7 +267,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div class="topbar-logo-text">R</div>
   <div>
     <div class="topbar-title">Rastreando GPS</div>
-    <div class="topbar-sub">Ordem de Serviço</div>
+    <div class="topbar-sub">Ordem de Serviço <span class="sync-dot" id="sync-dot" title="Status da sincronização"></span></div>
   </div>
   <div class="topbar-num">
     <span>Nº da OS</span>
@@ -549,6 +558,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <button class="tipo-filtro-btn" id="tf-instalacao" onclick="filtrarTipo('instalacao')">📡 Instalações</button>
       <button class="tipo-filtro-btn" id="tf-manutencao" onclick="filtrarTipo('manutencao')">🔧 Manutenções</button>
       <button class="tipo-filtro-btn" id="tf-retirada" onclick="filtrarTipo('retirada')">📤 Retiradas</button>
+      <button class="btn-refresh" onclick="carregarDoServidor(false)">🔄 Atualizar</button>
     </div>
 
     <div id="lista-os"></div>
@@ -604,14 +614,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span class="valor-total-num" id="rel-total-mes">R$ 0,00</span>
     </div>
 
-    <!-- ===== SEÇÃO COBRANÇAS (NOVA) ===== -->
+    <!-- ===== SEÇÃO COBRANÇAS ===== -->
     <div class="section" style="margin-bottom:14px;">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
         Cobranças de instalação
       </div>
 
-      <!-- Cards resumo pago/não pago -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
         <div style="background:#001a0a;border:1.5px solid #22c55e;border-radius:12px;padding:14px;text-align:center;">
           <div style="font-size:11px;color:#22c55e;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">✅ Pagas</div>
@@ -625,7 +634,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         </div>
       </div>
 
-      <!-- Filtro de cobranças -->
       <div class="rel-cobranca-tabs">
         <button class="rel-ctab ativo-todas" id="rct-todas" onclick="filtrarCobranca('todas')">Todas</button>
         <button class="rel-ctab" id="rct-naopago" onclick="filtrarCobranca('naopago')">❌ A receber</button>
@@ -635,7 +643,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <div id="rel-lista-cobrancas"></div>
     </div>
 
-    <!-- Gráfico últimos 6 meses -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -752,6 +759,77 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="toast" id="toast"></div>
 
 <script>
+// ====================================================================
+// ===== INTEGRAÇÃO COM GOOGLE SHEETS (Apps Script Web App) ===========
+// ====================================================================
+const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
+
+function setSyncDot(estado) {
+  const d = document.getElementById('sync-dot');
+  if (!d) return;
+  d.className = 'sync-dot ' + (estado || '');
+}
+
+async function apiPost(params) {
+  const body = new URLSearchParams(params);
+  const res = await fetch(API_URL, { method: 'POST', body });
+  return await res.json();
+}
+
+// Salva no servidor em segundo plano (a UI já foi atualizada localmente)
+async function syncSalvar(osObj) {
+  setSyncDot('busy');
+  try {
+    const r = await apiPost({ action: 'save', os: JSON.stringify(osObj) });
+    if (r && r.ok) { setSyncDot('ok'); await carregarDoServidor(true); }
+    else { setSyncDot('err'); }
+  } catch (e) { setSyncDot('err'); }
+}
+async function syncExcluir(osNum) {
+  setSyncDot('busy');
+  try { const r = await apiPost({ action: 'delete', osNum }); setSyncDot(r && r.ok ? 'ok' : 'err'); }
+  catch (e) { setSyncDot('err'); }
+}
+async function syncStatus(osNum, statusKey) {
+  setSyncDot('busy');
+  try { const r = await apiPost({ action: 'updateStatus', osNum, statusKey }); setSyncDot(r && r.ok ? 'ok' : 'err'); }
+  catch (e) { setSyncDot('err'); }
+}
+async function syncPago(osNum, pago) {
+  setSyncDot('busy');
+  try { const r = await apiPost({ action: 'updatePago', osNum, pago: pago ? 'true' : 'false' }); setSyncDot(r && r.ok ? 'ok' : 'err'); }
+  catch (e) { setSyncDot('err'); }
+}
+
+let carregando = false;
+async function carregarDoServidor(silencioso) {
+  if (carregando) return;
+  carregando = true;
+  setSyncDot('busy');
+  try {
+    const res = await fetch(API_URL + '?action=getAll&t=' + Date.now());
+    const r = await res.json();
+    if (r && r.ok) {
+      osList = Array.isArray(r.data) ? r.data : [];
+      localStorage.setItem('rastreando_os', JSON.stringify(osList));
+      if (r.counter && editandoIdx === null) { counter = r.counter; atualizarNumero(); }
+      if (document.getElementById('page-painel').classList.contains('active')) renderPainel();
+      if (document.getElementById('page-relatorios').classList.contains('active')) renderRelatorios();
+      setSyncDot('ok');
+      if (!silencioso) mostrarToast('🔄 Dados atualizados da planilha!');
+    } else {
+      setSyncDot('err');
+      if (!silencioso) mostrarToast('⚠️ Erro ao ler a planilha');
+    }
+  } catch (e) {
+    setSyncDot('err');
+    if (!silencioso) mostrarToast('⚠️ Sem conexão — usando dados locais');
+  } finally {
+    carregando = false;
+  }
+}
+// ====================================================================
+
 let tipo = null, gnv = null, status = 'pendente', counter = 1, editandoIdx = null;
 let tipoServico = null;
 let motivoRetirada = null;
@@ -813,6 +891,7 @@ function togglePagamentoCard(e, idx) {
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderLista();
   mostrarToast(novo ? '✅ Marcado como pago!' : '❌ Marcado como não pago');
+  syncPago(osList[idx].osNum, novo);
 }
 
 function alterarStatusCard(idx, novoStatus) {
@@ -822,6 +901,7 @@ function alterarStatusCard(idx, novoStatus) {
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderPainel();
   mostrarToast('Status atualizado!');
+  syncStatus(osList[idx].osNum, novoStatus);
 }
 
 function selServico(s) {
@@ -880,14 +960,18 @@ function calcularTotal() {
 }
 
 function init() {
+  // 1. Mostra cache local imediatamente
   if (osList.length > 0) {
-    const nums = osList.map(o => parseInt(o.osNum.replace('#',''))).filter(n => !isNaN(n));
+    const nums = osList.map(o => parseInt(String(o.osNum).replace('#',''))).filter(n => !isNaN(n));
     if (nums.length) counter = Math.max(...nums) + 1;
   }
   atualizarNumero();
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
   renderVeiculos();
-  verificarOSHoje();
+  // 2. Busca dados reais da planilha
+  carregarDoServidor(true).then(() => verificarOSHoje());
+  // 3. Sincronização automática a cada 25 segundos
+  setInterval(() => { if (!carregando) carregarDoServidor(true); }, 25000);
 }
 
 function verificarOSHoje() {
@@ -957,10 +1041,12 @@ function mudarAba(aba) {
     document.querySelectorAll('.tab')[1].classList.add('active');
     document.getElementById('page-painel').classList.add('active');
     renderPainel();
+    carregarDoServidor(true);
   } else if (aba === 'relatorios') {
     document.querySelectorAll('.tab')[2].classList.add('active');
     document.getElementById('page-relatorios').classList.add('active');
     initRelatorios();
+    carregarDoServidor(true);
   }
 }
 
@@ -993,11 +1079,9 @@ function renderCobrancas() {
   const ano = parseInt(document.getElementById('rel-ano').value);
   const lista = document.getElementById('rel-lista-cobrancas');
 
-  // Instalações com valor de instalação no período (concluídas ou não, mas com valor)
   let inst = osList.filter(o => {
     if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
     if (!o.totalInst || o.totalInst <= 0) return false;
-    // Filtra pelo mês/ano da data, ou criadoEm se sem data
     const dataRef = o.data || o.criadoEm || '';
     if (!dataRef) return true;
     const partes = dataRef.split('/');
@@ -1036,6 +1120,7 @@ function alterarPagamentoRel(idx) {
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderRelatorios();
   mostrarToast(osList[idx].pago ? '✅ Marcado como pago!' : '❌ Marcado como não pago');
+  syncPago(osList[idx].osNum, osList[idx].pago);
 }
 
 function renderRelatorios() {
@@ -1067,7 +1152,6 @@ function renderRelatorios() {
   totalEl.textContent = 'R$ ' + Math.abs(total).toFixed(2).replace('.', ',');
   totalEl.style.color = total >= 0 ? '#22c55e' : '#e31c1c';
 
-  // ===== COBRANÇAS RESUMO =====
   const instAll = osList.filter(o => {
     if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
     if (!o.totalInst || o.totalInst <= 0) return false;
@@ -1326,9 +1410,11 @@ function salvarOS() {
   if (!d.nome) { mostrarToast('⚠️ Informe o nome do cliente!'); return; }
   if (editandoIdx !== null) {
     const pagAnterior = osList[editandoIdx].pago;
-    osList[editandoIdx] = { ...d, pago: pagAnterior };
+    const atualizado = { ...d, pago: pagAnterior };
+    osList[editandoIdx] = atualizado;
     localStorage.setItem('rastreando_os', JSON.stringify(osList));
     mostrarToast('✅ OS ' + d.osNum + ' atualizada!');
+    syncSalvar(atualizado);
     editandoIdx = null;
     counter++;
     atualizarNumero();
@@ -1336,7 +1422,8 @@ function salvarOS() {
   } else {
     osList.unshift(d);
     localStorage.setItem('rastreando_os', JSON.stringify(osList));
-    mostrarToast('✅ OS ' + d.osNum + ' salva no painel!');
+    mostrarToast('✅ OS ' + d.osNum + ' salva na planilha!');
+    syncSalvar(d);
     counter++;
     atualizarNumero();
     limpar(true);
@@ -1478,6 +1565,7 @@ function alterarStatus(novoStatus) {
   });
   renderPainel();
   mostrarToast('Status atualizado!');
+  syncStatus(osList[osAbertaIdx].osNum, novoStatus);
 }
 
 function fechar() {
@@ -1690,7 +1778,6 @@ function renderLista() {
       ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid ${labelData.borda};color:${labelData.cor};background:${labelData.bg};margin-left:6px;">${labelData.texto}</span>`
       : '';
 
-    // Badge de pagamento (somente para instalações com valor)
     const pagBadge = (ts === 'instalacao' && o.totalInst > 0)
       ? `<button class="pag-badge ${o.pago ? 'pago' : 'nao-pago'}" onclick="togglePagamentoCard(event, ${idx})" title="Clique para ${o.pago ? 'desmarcar' : 'marcar'} como pago">
           ${o.pago ? '✅ Pago' : '❌ A receber'}
@@ -1804,11 +1891,13 @@ function excluirOS() {
   if (osAbertaIdx === null) return;
   const os = osList[osAbertaIdx];
   if (!confirm('Excluir a OS ' + os.osNum + ' de ' + (os.nome || 'cliente') + '? Esta ação não pode ser desfeita.')) return;
+  const osNum = os.osNum;
   osList.splice(osAbertaIdx, 1);
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   fechar();
   renderPainel();
   mostrarToast('🗑️ OS excluída!');
+  syncExcluir(osNum);
 }
 
 function mostrarToast(msg) {
