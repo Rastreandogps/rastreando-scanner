@@ -804,6 +804,25 @@ async function syncPago(osNum, pago) {
   catch (e) { setSyncDot('err'); }
 }
 
+// Normaliza campos que o Google Sheets pode retornar como objetos de data (ISO string)
+function normalizarOS(o) {
+  if (o.data && String(o.data).includes('T')) {
+    const parts = String(o.data).split('T')[0].split('-');
+    o.data = parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : '';
+  }
+  if (o.dataRaw && String(o.dataRaw).includes('T')) {
+    o.dataRaw = String(o.dataRaw).split('T')[0];
+  }
+  if (o.hora && String(o.hora).includes('T')) {
+    const t = String(o.hora).split('T')[1] || '';
+    const p = t.split(':');
+    o.hora = p.length >= 2 ? p[0]+':'+p[1] : '';
+  }
+  o.contato = String(o.contato || '');
+  o.modelo  = String(o.modelo  || '');
+  return o;
+}
+
 let carregando = false;
 async function carregarDoServidor(silencioso) {
   if (carregando) return;
@@ -813,7 +832,7 @@ async function carregarDoServidor(silencioso) {
     const res = await fetch(API_URL + '?action=getAll&t=' + Date.now());
     const r = await res.json();
     if (r && r.ok) {
-      osList = Array.isArray(r.data) ? r.data : [];
+      osList = (Array.isArray(r.data) ? r.data : []).map(normalizarOS);
       localStorage.setItem('rastreando_os', JSON.stringify(osList));
       if (r.counter && editandoIdx === null) { counter = r.counter; atualizarNumero(); }
       if (document.getElementById('page-painel').classList.contains('active')) renderPainel();
@@ -1142,7 +1161,17 @@ function renderRelatorios() {
   const man   = osMes.filter(o => o.tipoServico === 'manutencao');
   const ret   = osMes.filter(o => o.tipoServico === 'retirada');
 
-  const receitaInstPaga = inst.filter(o => o.pago).reduce((s, o) => s + (o.totalInst || 0), 0);
+  // Receita: todas instalações pagas no mês (independente do status)
+  const instPagasMes = osList.filter(o => {
+    if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
+    if (!o.pago || !o.totalInst || o.totalInst <= 0) return false;
+    const dataRef = o.data || '';
+    if (!dataRef) return false;
+    const partes = dataRef.split('/');
+    if (partes.length < 3) return false;
+    return parseInt(partes[1]) === mes && parseInt(partes[2]) === ano;
+  });
+  const receitaInstPaga = instPagasMes.reduce((s, o) => s + (o.totalInst || 0), 0);
   const custoMan        = man.reduce((s, o) => s + (o.manValor || 0), 0);
   const total           = receitaInstPaga - custoMan;
 
