@@ -1747,7 +1747,7 @@ function renderLista() {
     try {
     const idx = osList.indexOf(o);
     const ts = o.tipoServico || 'instalacao';
-    const telLimpo = (o.contato || '').replace(/\D/g,'');
+    const telLimpo = String(o.contato || '').replace(/\D/g,'');
     const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : '';
     const mapsUrl = o.mapsLink || (o.endereco ? 'https://maps.google.com/?q=' + encodeURIComponent(o.endereco) : '');
 
