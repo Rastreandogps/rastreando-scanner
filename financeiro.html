@@ -101,7 +101,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .status-sanfona-body{display:none;margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
 .status-sanfona-body.open{display:block}
 .status-sanfona-loading{font-size:12px;color:var(--txt3);padding:6px 0;font-style:italic}
-.spacer{height:8px}
 .seg{display:flex;gap:8px;margin-bottom:14px}
 .seg-btn{flex:1;padding:9px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--txt2);transition:all .15s}
 .seg-btn.active{background:var(--purple);color:#fff;border-color:var(--purple)}
@@ -159,8 +158,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hist-linha:last-child{border-bottom:none}
 .empty-hist{text-align:center;padding:40px 20px;color:var(--txt3)}
 .empty-hist i{font-size:40px;display:block;margin-bottom:10px}
-
-/* ── ÍCONE PICKER ─────────────────────────── */
 .icon-picker-label{font-size:12px;color:var(--txt2);display:block;margin-bottom:8px;font-weight:500}
 .icon-picker-preview{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .icon-preview-box{width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--purple2);color:#fff;flex-shrink:0;transition:background .2s}
@@ -178,48 +175,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .icon-search{width:100%;padding:8px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;background:var(--bg);color:var(--txt);outline:none;margin-bottom:6px}
 
 /* ── PRÓ-LABORE ─────────────────────────────── */
-.prolabore-hero{background:linear-gradient(135deg,#26215C 0%,#3C3489 100%);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
-.prolabore-hero::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;background:rgba(255,255,255,.05);border-radius:50%}
-.pl-label{font-size:11px;color:rgba(255,255,255,.55);margin-bottom:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.pl-input-wrap{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border-radius:var(--radius-sm);padding:10px 14px;position:relative;z-index:1}
-.pl-prefix{font-size:16px;font-weight:700;color:rgba(255,255,255,.6)}
-.pl-input{background:transparent;border:none;outline:none;font-size:24px;font-weight:700;color:#fff;width:100%;font-family:inherit}
-.pl-input::placeholder{color:rgba(255,255,255,.3)}
-.pl-hint{font-size:11px;color:rgba(255,255,255,.35);margin-top:8px;position:relative;z-index:1}
-.pl-btn-salvar{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;margin-top:10px;font-family:inherit;position:relative;z-index:1;transition:background .15s}
-.pl-btn-salvar:hover{background:rgba(255,255,255,.3)}
-.pl-breakdown{margin-bottom:14px}
-.pl-linha{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.pl-topo{background:linear-gradient(135deg,#26215C 0%,#3C3489 100%);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.pl-topo::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;background:rgba(255,255,255,.05);border-radius:50%}
+.pl-liq-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;position:relative;z-index:1}
+.pl-liq-box{flex:1}
+.pl-liq-label{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.pl-liq-valor{font-size:22px;font-weight:700;color:#fff}
+.pl-liq-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:3px}
+.pl-arrow{font-size:20px;color:rgba(255,255,255,.2);align-self:center;margin:0 8px}
+.pl-input-label{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.pl-input-wrap{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border-radius:var(--radius-sm);padding:8px 12px;border:1px solid rgba(255,255,255,.15)}
+.pl-prefix{font-size:14px;font-weight:700;color:rgba(255,255,255,.55)}
+.pl-input{background:transparent;border:none;outline:none;font-size:22px;font-weight:700;color:#fff;width:100%;font-family:inherit;min-width:0}
+.pl-input::placeholder{color:rgba(255,255,255,.25)}
+.pl-sobra-empresa{position:relative;z-index:1;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
+.pl-sobra-row{display:flex;justify-content:space-between;align-items:center}
+.pl-sobra-label{font-size:11px;color:rgba(255,255,255,.5)}
+.pl-sobra-valor{font-size:14px;font-weight:700}
+.pl-sobra-valor.pos{color:#5DCAA5}
+.pl-sobra-valor.neg{color:#F09595}
+.pl-btn-salvar{background:rgba(255,255,255,.18);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;font-family:inherit;transition:background .15s;position:relative;z-index:1;margin-top:10px}
+.pl-btn-salvar:hover{background:rgba(255,255,255,.28)}
+.pl-linha{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
 .pl-linha:last-child{border-bottom:none}
 .pl-linha-left{display:flex;align-items:center;gap:10px}
 .pl-linha-icon{width:36px;height:36px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .pl-linha-nome{font-size:13px;font-weight:600;color:var(--txt)}
 .pl-linha-sub{font-size:11px;color:var(--txt3)}
-.pl-linha-valor{font-size:13px;font-weight:700}
-.pl-linha-valor.neg{color:var(--red)}
-.pl-linha-valor.pos{color:var(--green)}
+.pl-linha-valor{font-size:13px;font-weight:700;color:var(--red)}
+.pl-subtotal{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg3);border-radius:var(--radius-sm);margin:8px 0 4px}
+.pl-subtotal span{font-size:12px;color:var(--txt2);font-weight:600}
+.pl-subtotal strong{font-size:14px;font-weight:700;color:var(--red)}
 .pl-resultado{border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
-.pl-resultado.positivo{background:var(--green-bg);border:1.5px solid #1D9E75}
-.pl-resultado.negativo{background:var(--red-bg);border:1.5px solid #E24B4A}
-.pl-resultado-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.pl-resultado.positivo .pl-resultado-label{color:var(--green)}
-.pl-resultado.negativo .pl-resultado-label{color:var(--red)}
+.pl-resultado.pos{background:var(--green-bg);border:1.5px solid #1D9E75}
+.pl-resultado.neg{background:var(--red-bg);border:1.5px solid #E24B4A}
+.pl-resultado-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.pl-resultado.pos .pl-resultado-label{color:var(--green)}
+.pl-resultado.neg .pl-resultado-label{color:var(--red)}
 .pl-resultado-valor{font-size:28px;font-weight:700;line-height:1}
-.pl-resultado.positivo .pl-resultado-valor{color:var(--green)}
-.pl-resultado.negativo .pl-resultado-valor{color:var(--red)}
-.pl-resultado-emoji{font-size:32px}
+.pl-resultado.pos .pl-resultado-valor{color:var(--green)}
+.pl-resultado.neg .pl-resultado-valor{color:var(--red)}
+.pl-resultado-sub{font-size:11px;margin-top:5px;opacity:.65}
+.pl-resultado.pos .pl-resultado-sub{color:var(--green)}
+.pl-resultado.neg .pl-resultado-sub{color:var(--red)}
 .pl-pct-bloco{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
-.pl-pct-titulo{font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
 .pl-pct-item{margin-bottom:10px}
+.pl-pct-item:last-child{margin-bottom:0}
 .pl-pct-header{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:4px}
 .pl-pct-track{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
 .pl-pct-fill{height:100%;border-radius:4px;transition:width .4s ease}
 .pl-loading{text-align:center;padding:40px 20px;color:var(--txt2)}
 .pl-loading i{font-size:32px;color:var(--purple2);animation:spin 1s linear infinite;display:block;margin-bottom:10px}
-.pl-vazio{font-size:13px;color:var(--txt3);text-align:center;padding:20px;font-style:italic}
-.pl-subtotal{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg3);border-radius:var(--radius-sm);margin:8px 0 4px}
-.pl-subtotal span{font-size:12px;color:var(--txt2);font-weight:600}
-.pl-subtotal strong{font-size:14px;font-weight:700;color:var(--red)}
+.pl-aguarda{text-align:center;padding:30px 20px;color:var(--txt3);font-size:13px;font-style:italic}
 </style>
 </head>
 <body>
@@ -252,20 +259,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="desp-pessoal" style="display:none"><div class="loading"><i class="ti ti-loader"></i>Carregando...</div></div>
   </div>
 
-  <!-- ── PRÓ-LABORE ────────────────────────────────────── -->
+  <!-- ── PRÓ-LABORE ──────────────────────────────── -->
   <div class="screen" id="screen-prolabore">
     <div style="height:14px"></div>
-    <div class="prolabore-hero">
-      <div class="pl-label">Pró-labore bruto</div>
-      <div class="pl-input-wrap">
-        <span class="pl-prefix">R$</span>
-        <input class="pl-input" type="number" id="pl-valor" placeholder="0,00" step="0.01" inputmode="decimal">
-      </div>
-      <div class="pl-hint">Digite seu pró-labore e veja quanto sobra após suas despesas pessoais</div>
-      <button class="pl-btn-salvar" onclick="salvarProlabore()"><i class="ti ti-device-floppy" style="font-size:12px;margin-right:4px"></i>Salvar valor</button>
-    </div>
-
-    <div id="pl-content"><div class="pl-loading"><i class="ti ti-loader"></i>Carregando despesas...</div></div>
+    <div id="pl-content"><div class="pl-loading"><i class="ti ti-loader"></i>Carregando...</div></div>
   </div>
 
   <div class="screen" id="screen-projecao">
@@ -309,17 +306,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-const API_URL    = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7emSqMBCKmaPSKDnoxfhZWFKI6If0I_EVoDtVdeT5gaVCGnwda/exec';
-const API_SECRET = 'rastreandogps2025';
-const STORAGE_KEY    = 'rgps_historico';
-const ICON_STORAGE   = 'rgps_icones';
-const PROLABORE_KEY  = 'rgps_prolabore';
+const API_URL   = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7emSqMBCKmaPSKDnoxfhZWFKI6If0I_EVoDtVdeT5gaVCGnwda/exec';
+const API_SECRET= 'rastreandogps2025';
+const STORAGE_KEY   = 'rgps_historico';
+const ICON_STORAGE  = 'rgps_icones';
+const PROLABORE_KEY = 'rgps_prolabore';
 
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
 
-/* ── ÍCONES ────────────────────────────────────────────────────────────── */
-const ICONES = [
+/* ── ÍCONES ─────────────────────────────────────────────────────────── */
+const ICONES=[
   {i:'ti-home',n:'Casa',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-building',n:'Prédio',c:'#E6F1FB',t:'#185FA5'},{i:'ti-key',n:'Chave',c:'#FAEEDA',t:'#854F0B'},{i:'ti-sofa',n:'Móveis',c:'#EEEDFE',t:'#534AB7'},{i:'ti-tools',n:'Obras',c:'#FAECE7',t:'#993C1D'},
   {i:'ti-bolt',n:'Luz',c:'#FAEEDA',t:'#854F0B'},{i:'ti-droplet',n:'Água',c:'#E6F1FB',t:'#185FA5'},{i:'ti-flame',n:'Gás',c:'#FCEBEB',t:'#A32D2D'},{i:'ti-wifi',n:'Internet',c:'#EEEDFE',t:'#534AB7'},{i:'ti-phone',n:'Telefone',c:'#E6F1FB',t:'#185FA5'},{i:'ti-device-mobile',n:'Celular',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-sim',n:'Chip',c:'#E1F5EE',t:'#0F6E56'},
   {i:'ti-building-bank',n:'Banco',c:'#EEEDFE',t:'#534AB7'},{i:'ti-credit-card',n:'Cartão',c:'#E6F1FB',t:'#185FA5'},{i:'ti-cash',n:'Dinheiro',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-receipt-tax',n:'Imposto',c:'#FAECE7',t:'#993C1D'},{i:'ti-file-invoice',n:'Nota Fisc.',c:'#FAEEDA',t:'#854F0B'},{i:'ti-coins',n:'Moedas',c:'#FAEEDA',t:'#854F0B'},{i:'ti-pig-money',n:'Poupança',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-trending-up',n:'Investim.',c:'#E1F5EE',t:'#0F6E56'},
@@ -332,96 +329,95 @@ const ICONES = [
   {i:'ti-music',n:'Música',c:'#EEEDFE',t:'#534AB7'},{i:'ti-device-tv',n:'TV/Stream',c:'#EEEDFE',t:'#534AB7'},{i:'ti-book',n:'Livro',c:'#FAEEDA',t:'#854F0B'},{i:'ti-school',n:'Escola',c:'#E6F1FB',t:'#185FA5'},{i:'ti-beach',n:'Lazer',c:'#FAEEDA',t:'#854F0B'},{i:'ti-paw',n:'Pet',c:'#FBEAF0',t:'#993556'},
   {i:'ti-circle-dot',n:'Padrão',c:'#EEEDFE',t:'#534AB7'},{i:'ti-star',n:'Destaque',c:'#FAEEDA',t:'#854F0B'},{i:'ti-tag',n:'Categoria',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-package',n:'Produto',c:'#FAEEDA',t:'#854F0B'},{i:'ti-gift',n:'Presente',c:'#FBEAF0',t:'#993556'},{i:'ti-world',n:'Online',c:'#E6F1FB',t:'#185FA5'},
 ];
-let iconeSelecionado = ICONES.find(x=>x.i==='ti-circle-dot') || ICONES[0];
-let iconesUsuario = JSON.parse(localStorage.getItem(ICON_STORAGE)||'{}');
-function salvarIconesUsuario(){ localStorage.setItem(ICON_STORAGE,JSON.stringify(iconesUsuario)); }
-
+let iconeSelecionado=ICONES.find(x=>x.i==='ti-circle-dot')||ICONES[0];
+let iconesUsuario=JSON.parse(localStorage.getItem(ICON_STORAGE)||'{}');
+function salvarIconesUsuario(){localStorage.setItem(ICON_STORAGE,JSON.stringify(iconesUsuario));}
 const iconMap={aluguel:'ti-home',seguro:'ti-shield',luz:'ti-bolt',internet:'ti-wifi',academia:'ti-barbell',telefone:'ti-phone',contador:'ti-calculator',imposto:'ti-file-invoice',ipva:'ti-car',das:'ti-receipt-tax',plataforma:'ti-server',beatriz:'ti-user-circle',mercado:'ti-shopping-cart',arquia:'ti-building-bank',smart:'ti-sim',transmeet:'ti-video',click:'ti-pen',zap:'ti-brand-whatsapp',prolabore:'ti-user',casas:'ti-shopping-cart',gasolina:'ti-gas-station',farmacia:'ti-pill',medico:'ti-stethoscope',escola:'ti-school',pet:'ti-paw',musica:'ti-music',netflix:'ti-device-tv',streaming:'ti-device-tv',laptop:'ti-device-laptop',celular:'ti-device-mobile',onibus:'ti-bus',moto:'ti-motorbike',estacion:'ti-parking',aviao:'ti-plane',carro:'ti-car',agua:'ti-droplet',gas:'ti-flame',pizza:'ti-pizza',cafe:'ti-coffee',banco:'ti-building-bank',cartao:'ti-credit-card',investim:'ti-trending-up',poupanca:'ti-pig-money',marketing:'ti-ad',equipe:'ti-users',whatsapp:'ti-brand-whatsapp'};
-function getIcone(nome) {
-  const nl=nome.toLowerCase();
-  if(iconesUsuario[nome]) return iconesUsuario[nome];
-  for(const [kw,ic] of Object.entries(iconMap)){if(nl.includes(kw)){const f=ICONES.find(x=>x.i===ic);if(f)return f;}}
-  return ICONES.find(x=>x.i==='ti-circle-dot')||ICONES[0];
-}
-function buildIconGrid(){
-  const grid=document.getElementById('icon-grid');grid.innerHTML='';
-  const busca=(document.getElementById('icon-search').value||'').toLowerCase();
-  const lista=busca?ICONES.filter(ic=>ic.n.toLowerCase().includes(busca)):ICONES;
-  lista.forEach(ic=>{const div=document.createElement('div');div.className='icon-cell'+(iconeSelecionado.i===ic.i?' selected':'');div.innerHTML=`<i class="ti ${ic.i}"></i><span>${ic.n}</span>`;div.onclick=()=>selecionarIcone(ic);grid.appendChild(div);});
-}
+function getIcone(nome){const nl=nome.toLowerCase();if(iconesUsuario[nome])return iconesUsuario[nome];for(const[kw,ic]of Object.entries(iconMap)){if(nl.includes(kw)){const f=ICONES.find(x=>x.i===ic);if(f)return f;}}return ICONES.find(x=>x.i==='ti-circle-dot')||ICONES[0];}
+function buildIconGrid(){const grid=document.getElementById('icon-grid');grid.innerHTML='';const busca=(document.getElementById('icon-search').value||'').toLowerCase();const lista=busca?ICONES.filter(ic=>ic.n.toLowerCase().includes(busca)):ICONES;lista.forEach(ic=>{const div=document.createElement('div');div.className='icon-cell'+(iconeSelecionado.i===ic.i?' selected':'');div.innerHTML=`<i class="ti ${ic.i}"></i><span>${ic.n}</span>`;div.onclick=()=>selecionarIcone(ic);grid.appendChild(div);});}
 function selecionarIcone(ic){iconeSelecionado=ic;document.getElementById('icon-preview-i').className='ti '+ic.i;document.getElementById('icon-preview-box').style.background=ic.t;document.getElementById('icon-preview-name').textContent=ic.n;buildIconGrid();}
 function toggleIconGrid(){const grid=document.getElementById('icon-grid'),search=document.getElementById('icon-search'),toggle=document.querySelector('.icon-grid-toggle'),open=grid.classList.toggle('open');search.style.display=open?'block':'none';toggle.textContent=open?'▲ Fechar':'▼ Escolher ícone';if(open){buildIconGrid();search.focus();}}
 function filtrarIcones(){buildIconGrid();}
 
-/* ── API ────────────────────────────────────────────────────────────── */
+/* ── API ─────────────────────────────────────────────────────────────── */
 async function buscar(action){const res=await fetch(API_URL+'?secret='+API_SECRET+'&action='+action);return res.json();}
 
-/* ── PRÓ-LABORE ─────────────────────────────────────────────────────── */
-let plDespesasPessoal = null;
+/* ── CACHE GLOBAL ────────────────────────────────────────────────────── */
+let cacheDash=null, cacheDespesas=null;
 
-function salvarProlabore(){
-  const v=parseFloat(document.getElementById('pl-valor').value);
-  if(isNaN(v)||v<=0)return;
-  localStorage.setItem(PROLABORE_KEY, v.toString());
-  renderProlabore();
-}
-
-function renderProlabore(){
-  const plValorSalvo = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
-  if(plValorSalvo > 0){
-    document.getElementById('pl-valor').value = plValorSalvo;
-  }
-  if(!plDespesasPessoal){
-    document.getElementById('pl-content').innerHTML='<div class="pl-loading"><i class="ti ti-loader"></i>Carregando despesas...</div>';
-    buscar('despesas').then(d=>{
-      if(d.error){document.getElementById('pl-content').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
-      plDespesasPessoal=d.pessoal;
-      _desenharProlabore(plValorSalvo);
-    }).catch(()=>{document.getElementById('pl-content').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';});
-  } else {
-    _desenharProlabore(plValorSalvo);
-  }
-}
-
-document.getElementById('pl-valor').addEventListener('input', function(){
-  const v=parseFloat(this.value);
-  if(!isNaN(v)&&v>0&&plDespesasPessoal){_desenharProlabore(v);}
-});
-
-function _desenharProlabore(prolabore){
+/* ── PRÓ-LABORE ──────────────────────────────────────────────────────── */
+async function carregarProlabore(){
   const el=document.getElementById('pl-content');
-  const pessoal=plDespesasPessoal;
+  el.innerHTML='<div class="pl-loading"><i class="ti ti-loader"></i>Carregando dados...</div>';
+  try{
+    // Garante que temos dashboard e despesas
+    if(!cacheDash)    cacheDash    = await buscar('dashboard');
+    if(!cacheDespesas)cacheDespesas= await buscar('despesas');
+    if(cacheDash.error||cacheDespesas.error){el.innerHTML='<div class="erro-msg">Erro ao carregar dados.</div>';return;}
+    const liqEsperado = Number(cacheDash.liqEsperado||0);
+    const pessoal     = cacheDespesas.pessoal;
+    const plSalvo     = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
+    _renderProlabore(liqEsperado, pessoal, plSalvo);
+  }catch(e){el.innerHTML='<div class="erro-msg">Erro ao conectar.</div>';}
+}
 
-  if(!pessoal||!pessoal.itens||pessoal.itens.length===0){
-    el.innerHTML='<div class="pl-vazio">Nenhuma despesa pessoal cadastrada ainda.</div>';
-    return;
-  }
-
-  const fixas  = pessoal.itens.filter(d=>d.tipo==='Fixa');
-  const varrs  = pessoal.itens.filter(d=>d.tipo==='Variável'||d.tipo==='Variavel');
+function _renderProlabore(liqEsperado, pessoal, prolabore){
+  const fixas = pessoal.itens.filter(d=>d.tipo==='Fixa');
+  const varrs = pessoal.itens.filter(d=>d.tipo==='Variável'||d.tipo==='Variavel');
   const somaFixas = fixas.reduce((a,d)=>a+Number(d.valor||0),0);
   const somaVarrs = varrs.reduce((a,d)=>a+Number(d.valor||0),0);
-  const somaTotal = somaFixas+somaVarrs;
-  const saldo     = prolabore-somaTotal;
-  const saldoPos  = saldo>=0;
+  const somaPessoal = somaFixas+somaVarrs;
 
-  const itemHtml = (d) => {
+  // Sobra na empresa após retirar pró-labore
+  const sobraEmpresa = liqEsperado - prolabore;
+  // Saldo pessoal após descontar despesas
+  const saldoPessoal = prolabore - somaPessoal;
+  const sobraPos  = sobraEmpresa>=0;
+  const saldoPos  = saldoPessoal>=0;
+
+  // Barras de distribuição do pró-labore
+  const pctFixas = prolabore>0?Math.min((somaFixas/prolabore)*100,100):0;
+  const pctVarrs = prolabore>0?Math.min((somaVarrs/prolabore)*100,100):0;
+  const pctSaldo = prolabore>0?Math.max(Math.min((saldoPessoal/prolabore)*100,100),0):0;
+
+  const itemHtml = d=>{
     const ic=getIcone(d.nome);
     return `<div class="pl-linha">
       <div class="pl-linha-left">
         <div class="pl-linha-icon" style="background:${ic.c}"><i class="ti ${ic.i}" style="color:${ic.t}"></i></div>
-        <div><div class="pl-linha-nome">${d.nome}</div><div class="pl-linha-sub">${d.status==='AB'?'Em aberto':'Pago'}</div></div>
+        <div><div class="pl-linha-nome">${d.nome}</div><div class="pl-linha-sub">${d.tipo} · ${d.status==='AB'?'Em aberto':'Pago'}</div></div>
       </div>
-      <div class="pl-linha-valor neg">− ${brl(d.valor)}</div>
+      <div class="pl-linha-valor">− ${brl(d.valor)}</div>
     </div>`;
   };
 
-  const pctFixas  = prolabore>0?Math.min((somaFixas/prolabore)*100,100):0;
-  const pctVarrs  = prolabore>0?Math.min((somaVarrs/prolabore)*100,100):0;
-  const pctTotal  = prolabore>0?Math.min((somaTotal/prolabore)*100,100):0;
-  const pctSaldo  = prolabore>0?Math.max(Math.min((saldo/prolabore)*100,100),0):0;
+  document.getElementById('pl-content').innerHTML=`
+    <div class="pl-topo">
+      <div class="pl-liq-row">
+        <div class="pl-liq-box">
+          <div class="pl-liq-label">Líquido esperado</div>
+          <div class="pl-liq-valor">${brl(liqEsperado)}</div>
+          <div class="pl-liq-sub">Disponível na empresa este mês</div>
+        </div>
+        <div class="pl-arrow"><i class="ti ti-arrow-right"></i></div>
+        <div class="pl-liq-box">
+          <div class="pl-input-label">Seu pró-labore</div>
+          <div class="pl-input-wrap">
+            <span class="pl-prefix">R$</span>
+            <input class="pl-input" type="number" id="pl-valor" placeholder="0,00" step="0.01" inputmode="decimal" value="${prolabore>0?prolabore:''}">
+          </div>
+        </div>
+      </div>
+      <div class="pl-sobra-empresa">
+        <div class="pl-sobra-row">
+          <span class="pl-sobra-label">Sobra na empresa após pró-labore</span>
+          <span class="pl-sobra-valor ${sobraPos?'pos':'neg'}">${brl(sobraEmpresa)}</span>
+        </div>
+      </div>
+      <button class="pl-btn-salvar" onclick="salvarProlabore()"><i class="ti ti-device-floppy" style="font-size:12px;margin-right:4px"></i>Salvar valor</button>
+    </div>
 
-  el.innerHTML=`
+    ${prolabore>0?`
     <p class="section-label">Distribuição do pró-labore</p>
     <div class="pl-pct-bloco">
       <div class="pl-pct-item">
@@ -432,7 +428,7 @@ function _desenharProlabore(prolabore){
         <div class="pl-pct-header"><span>Despesas variáveis</span><span style="color:var(--amber);font-weight:700">${pct(pctVarrs)}</span></div>
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${pctVarrs.toFixed(1)}%;background:#EF9F27"></div></div>
       </div>
-      <div class="pl-pct-item" style="margin-bottom:0">
+      <div class="pl-pct-item">
         <div class="pl-pct-header"><span>${saldoPos?'Saldo disponível':'Déficit'}</span><span style="color:${saldoPos?'var(--green)':'var(--red)'};font-weight:700">${pct(Math.abs(pctSaldo))}</span></div>
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${Math.abs(pctSaldo).toFixed(1)}%;background:${saldoPos?'#1D9E75':'#E24B4A'}"></div></div>
       </div>
@@ -440,34 +436,55 @@ function _desenharProlabore(prolabore){
 
     ${fixas.length>0?`
     <p class="section-label">Despesas fixas pessoais</p>
-    <div class="card" style="padding:4px 16px;margin-bottom:8px">
-      ${fixas.map(itemHtml).join('')}
-    </div>
-    <div class="pl-subtotal"><span>Subtotal fixas</span><strong>− ${brl(somaFixas)}</strong></div>
-    `:''}
+    <div class="card" style="padding:4px 16px;margin-bottom:8px">${fixas.map(itemHtml).join('')}</div>
+    <div class="pl-subtotal"><span>Subtotal fixas</span><strong>− ${brl(somaFixas)}</strong></div>`:''}
 
     ${varrs.length>0?`
     <p class="section-label" style="margin-top:10px">Despesas variáveis pessoais</p>
-    <div class="card" style="padding:4px 16px;margin-bottom:8px">
-      ${varrs.map(itemHtml).join('')}
-    </div>
-    <div class="pl-subtotal"><span>Subtotal variáveis</span><strong>− ${brl(somaVarrs)}</strong></div>
-    `:''}
+    <div class="card" style="padding:4px 16px;margin-bottom:8px">${varrs.map(itemHtml).join('')}</div>
+    <div class="pl-subtotal"><span>Subtotal variáveis</span><strong>− ${brl(somaVarrs)}</strong></div>`:''}
 
     <div style="height:16px"></div>
     <p class="section-label">Resultado pessoal</p>
-    <div class="pl-resultado ${saldoPos?'positivo':'negativo'}">
+    <div class="pl-resultado ${saldoPos?'pos':'neg'}">
       <div>
-        <div class="pl-resultado-label">${saldoPos?'Saldo pessoal':'Déficit pessoal'}</div>
-        <div class="pl-resultado-valor">${brl(Math.abs(saldo))}</div>
-        <div style="font-size:11px;margin-top:6px;opacity:.7">${brl(prolabore)} − ${brl(somaTotal)} despesas</div>
+        <div class="pl-resultado-label">${saldoPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
+        <div class="pl-resultado-valor">${brl(Math.abs(saldoPessoal))}</div>
+        <div class="pl-resultado-sub">${brl(prolabore)} − ${brl(somaPessoal)} em despesas</div>
       </div>
-      <div class="pl-resultado-emoji">${saldoPos?'✅':'⚠️'}</div>
+      <div style="font-size:32px">${saldoPos?'✅':'⚠️'}</div>
     </div>
+    `:'<div class="pl-aguarda">Digite seu pró-labore acima para ver o breakdown completo.</div>'}
   `;
+
+  // Listener do input ao vivo
+  const inp=document.getElementById('pl-valor');
+  if(inp){
+    inp.addEventListener('input',function(){
+      const v=parseFloat(this.value);
+      const val=isNaN(v)||v<0?0:v;
+      // Atualiza sobra empresa ao vivo
+      const sobraEl=document.querySelector('.pl-sobra-valor');
+      if(sobraEl){
+        const s=liqEsperado-val;
+        sobraEl.textContent=brl(s);
+        sobraEl.className='pl-sobra-valor '+(s>=0?'pos':'neg');
+      }
+    });
+  }
 }
 
-/* ── FECHAMENTO MENSAL ──────────────────────────────────────────────── */
+function salvarProlabore(){
+  const v=parseFloat(document.getElementById('pl-valor').value);
+  if(isNaN(v)||v<=0)return;
+  localStorage.setItem(PROLABORE_KEY,v.toString());
+  // Re-renderiza com novo valor salvo
+  if(cacheDash&&cacheDespesas){
+    _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
+  }
+}
+
+/* ── FECHAMENTO MENSAL ───────────────────────────────────────────────── */
 async function verificarFechamentoMensal(){
   const hoje=new Date();if(hoje.getDate()!==1)return;
   const chave='rgps_fechado_'+hoje.getFullYear()+'_'+hoje.getMonth();
@@ -483,7 +500,7 @@ async function verificarFechamentoMensal(){
   }catch(e){}
 }
 
-/* ── STATUS CLIENTES ────────────────────────────────────────────────── */
+/* ── STATUS CLIENTES ─────────────────────────────────────────────────── */
 let cacheStatusClientes=null;
 async function garantirStatusClientes(){
   if(cacheStatusClientes)return cacheStatusClientes;
@@ -506,13 +523,14 @@ async function toggleStatusSanfona(tipo){
   bodyEl.innerHTML=lista.map(d=>{const ini=d.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();const telFmt=d.telefone?d.telefone.replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3'):'';const waLink=d.telefone?'https://wa.me/55'+d.telefone:'#';return '<div class="devedor-item"><div class="devedor-left"><div class="devedor-avatar '+avClass+'">'+ini+'</div><div><div class="devedor-nome">'+d.nome+'</div><div class="devedor-tel">'+telFmt+'</div></div></div><div class="devedor-right"><div class="devedor-valor '+valClass+'">R$ '+d.valor+'</div><div class="devedor-venc">'+d.venc+'</div>'+(d.telefone?'<a href="'+waLink+'" target="_blank"><button class="devedor-wa"><i class="ti ti-brand-whatsapp" style="font-size:11px"></i> WhatsApp</button></a>':'')+'</div></div>';}).join('');
 }
 
-/* ── DASHBOARD ──────────────────────────────────────────────────────── */
+/* ── DASHBOARD ───────────────────────────────────────────────────────── */
 let dadosInadClasse=null;
 async function carregarDashboard(){
   cacheStatusClientes=null;
   try{
     const[d,inad]=await Promise.all([buscar('dashboard'),buscar('inadimplentesClasse')]);
     if(d.error){document.getElementById('dash-content').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
+    cacheDash=d;
     dadosInadClasse=inad.error?{ouro:[],prata:[],latao:[]}:inad;
     document.getElementById('sub-data').textContent='Atualizado às '+d.atualizadoAs+' · '+d.mes;
     const pgPct=d.classes.ouro.clientes>0?(d.classes.ouro.pg/d.classes.ouro.clientes*100):0;
@@ -543,7 +561,7 @@ function statusCFHtml(cf){return '<div class="status-row" style="flex-direction:
 function statusMPHtml(mp){return statusHtml('amber','🔘 MP '+mp.qnt,brl(mp.valor));}
 function statusINHtml(inn){return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'inn\')"><div class="status-sanfona-header"><div class="status-sanfona-left"><span class="tag purple">🚫 IN '+inn.qnt+'</span></div><div style="display:flex;align-items:center;gap:6px"><p style="font-size:14px;font-weight:700;color:var(--txt)">'+brl(inn.valor)+'</p><i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-inn"></i></div></div></div><div class="status-sanfona-body" id="ssanf-body-inn"></div></div>';}
 
-/* ── DESPESAS ───────────────────────────────────────────────────────── */
+/* ── DESPESAS ────────────────────────────────────────────────────────── */
 function renderDespesas(itens,containerId,total,pago){
   const aberto=total-pago;
   document.getElementById(containerId).innerHTML=
@@ -559,14 +577,13 @@ async function carregarDespesas(){
   try{
     const d=await buscar('despesas');
     if(d.error){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
+    cacheDespesas=d;
     renderDespesas(d.empresa.itens,'desp-empresa',d.empresa.total,d.empresa.pago);
     renderDespesas(d.pessoal.itens,'desp-pessoal',d.pessoal.total,d.pessoal.pago);
-    // Atualiza cache do pró-labore também
-    plDespesasPessoal=d.pessoal;
   }catch(e){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';}
 }
 
-/* ── PROJEÇÃO ───────────────────────────────────────────────────────── */
+/* ── PROJEÇÃO ────────────────────────────────────────────────────────── */
 async function carregarProjecao(){
   try{
     const d=await buscar('projecao');
@@ -584,7 +601,7 @@ async function carregarProjecao(){
   }catch(e){document.getElementById('proj-content').innerHTML='<div class="erro-msg">Erro ao calcular projeção.</div>';}
 }
 
-/* ── HISTÓRICO ──────────────────────────────────────────────────────── */
+/* ── HISTÓRICO ───────────────────────────────────────────────────────── */
 function carregarHistorico(){
   const hist=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   const el=document.getElementById('hist-content');
@@ -593,7 +610,7 @@ function carregarHistorico(){
 }
 function toggleDetalhe(idx){const el=document.getElementById('detalhe-'+idx),ch=document.getElementById('chevron-'+idx);el.classList.toggle('open');ch.style.transform=el.classList.contains('open')?'rotate(180deg)':'';}
 
-/* ── SALVAR DESPESA ─────────────────────────────────────────────────── */
+/* ── SALVAR DESPESA ──────────────────────────────────────────────────── */
 async function salvarDespesa(){
   const nome=document.getElementById('f-nome').value.trim();
   const valor=parseFloat(document.getElementById('f-valor').value);
@@ -606,12 +623,15 @@ async function salvarDespesa(){
   try{
     const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({secret:API_SECRET,action:'salvarDespesa',tipo,nome,valor,status})});
     const json=await res.json();
-    if(json.ok){fecharModal();document.getElementById('f-nome').value='';document.getElementById('f-valor').value='';carregarDespesas();plDespesasPessoal=null;}
-    else{erroEl.textContent=json.error||'Erro ao salvar.';erroEl.style.display='block';}
+    if(json.ok){
+      fecharModal();document.getElementById('f-nome').value='';document.getElementById('f-valor').value='';
+      cacheDespesas=null; // invalida cache para recarregar
+      carregarDespesas();
+    } else {erroEl.textContent=json.error||'Erro ao salvar.';erroEl.style.display='block';}
   }catch(e){erroEl.textContent='Erro de conexão.';erroEl.style.display='block';}
 }
 
-/* ── TABS ───────────────────────────────────────────────────────────── */
+/* ── TABS ────────────────────────────────────────────────────────────── */
 let despCarregada=false,projCarregada=false,histCarregada=false,plCarregado=false;
 function showTab(id,el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -620,7 +640,7 @@ function showTab(id,el){
   el.classList.add('active');
   document.getElementById('fab').style.display=id==='despesas'?'flex':'none';
   if(id==='despesas'&&!despCarregada){carregarDespesas();despCarregada=true;}
-  if(id==='prolabore'&&!plCarregado){renderProlabore();plCarregado=true;}
+  if(id==='prolabore'&&!plCarregado){carregarProlabore();plCarregado=true;}
   if(id==='projecao'&&!projCarregada){carregarProjecao();projCarregada=true;}
   if(id==='historico'&&!histCarregada){carregarHistorico();histCarregada=true;}
 }
