@@ -227,6 +227,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pl-loading{text-align:center;padding:40px 20px;color:var(--txt2)}
 .pl-loading i{font-size:32px;color:var(--purple2);animation:spin 1s linear infinite;display:block;margin-bottom:10px}
 .pl-aguarda{text-align:center;padding:30px 20px;color:var(--txt3);font-size:13px;font-style:italic}
+.pl-saldo-inline{border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.pl-saldo-inline.pos{background:var(--green-bg);border:1.5px solid #1D9E75}
+.pl-saldo-inline.neg{background:var(--red-bg);border:1.5px solid #E24B4A}
+.pl-saldo-inline-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.pl-saldo-inline.pos .pl-saldo-inline-label{color:var(--green)}
+.pl-saldo-inline.neg .pl-saldo-inline-label{color:var(--red)}
+.pl-saldo-inline-valor{font-size:24px;font-weight:700;line-height:1}
+.pl-saldo-inline.pos .pl-saldo-inline-valor{color:var(--green)}
+.pl-saldo-inline.neg .pl-saldo-inline-valor{color:var(--red)}
+.pl-saldo-inline-sub{font-size:11px;margin-top:4px;opacity:.7}
+.pl-saldo-inline.pos .pl-saldo-inline-sub{color:var(--green)}
+.pl-saldo-inline.neg .pl-saldo-inline-sub{color:var(--red)}
+.metric-pl-badge{font-size:10px;color:var(--amber);background:var(--amber-bg);padding:2px 7px;border-radius:20px;font-weight:600;margin-top:5px;display:inline-block}
 </style>
 </head>
 <body>
@@ -418,6 +431,15 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
     </div>
 
     ${prolabore>0?`
+    <div class="pl-saldo-inline ${saldoPos?'pos':'neg'}">
+      <div>
+        <div class="pl-saldo-inline-label">${saldoPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
+        <div class="pl-saldo-inline-valor">${brl(Math.abs(saldoPessoal))}</div>
+        <div class="pl-saldo-inline-sub">${brl(prolabore)} − ${brl(somaPessoal)} em despesas pessoais</div>
+      </div>
+      <div style="font-size:28px">${saldoPos?'✅':'⚠️'}</div>
+    </div>
+
     <p class="section-label">Distribuição do pró-labore</p>
     <div class="pl-pct-bloco">
       <div class="pl-pct-item">
@@ -444,16 +466,6 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
     <div class="card" style="padding:4px 16px;margin-bottom:8px">${varrs.map(itemHtml).join('')}</div>
     <div class="pl-subtotal"><span>Subtotal variáveis</span><strong>− ${brl(somaVarrs)}</strong></div>`:''}
 
-    <div style="height:16px"></div>
-    <p class="section-label">Resultado pessoal</p>
-    <div class="pl-resultado ${saldoPos?'pos':'neg'}">
-      <div>
-        <div class="pl-resultado-label">${saldoPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
-        <div class="pl-resultado-valor">${brl(Math.abs(saldoPessoal))}</div>
-        <div class="pl-resultado-sub">${brl(prolabore)} − ${brl(somaPessoal)} em despesas</div>
-      </div>
-      <div style="font-size:32px">${saldoPos?'✅':'⚠️'}</div>
-    </div>
     `:'<div class="pl-aguarda">Digite seu pró-labore acima para ver o breakdown completo.</div>'}
   `;
 
@@ -463,12 +475,23 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
     inp.addEventListener('input',function(){
       const v=parseFloat(this.value);
       const val=isNaN(v)||v<0?0:v;
-      // Atualiza sobra empresa ao vivo
+      // Atualiza sobra empresa
       const sobraEl=document.querySelector('.pl-sobra-valor');
       if(sobraEl){
         const s=liqEsperado-val;
         sobraEl.textContent=brl(s);
         sobraEl.className='pl-sobra-valor '+(s>=0?'pos':'neg');
+      }
+      // Atualiza saldo pessoal inline
+      const saldoBloco=document.querySelector('.pl-saldo-inline');
+      if(saldoBloco){
+        const sp=val-somaPessoal;
+        const spPos=sp>=0;
+        saldoBloco.className='pl-saldo-inline '+(spPos?'pos':'neg');
+        saldoBloco.querySelector('.pl-saldo-inline-label').textContent=spPos?'Saldo no seu bolso':'Déficit pessoal';
+        saldoBloco.querySelector('.pl-saldo-inline-valor').textContent=brl(Math.abs(sp));
+        saldoBloco.querySelector('.pl-saldo-inline-sub').textContent=brl(val)+' − '+brl(somaPessoal)+' em despesas pessoais';
+        saldoBloco.querySelector('div:last-child').textContent=spPos?'✅':'⚠️';
       }
     });
   }
@@ -539,7 +562,7 @@ async function carregarDashboard(){
     document.getElementById('dash-content').innerHTML=
       '<div style="height:14px"></div>'+
       '<div class="saldo-card"><div class="saldo-label">Saldo Asaas</div><div class="saldo-value">'+brl(d.saldo)+'</div><div class="saldo-sub">Atualizado às '+d.atualizadoAs+'</div><i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()"></i></div>'+
-      '<div class="metric-grid"><div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div><div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div><div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div><div class="metric"><div class="metric-label">Liq. esperado</div><div class="metric-value amber">'+brl(d.liqEsperado)+'</div></div></div>'+
+      (()=>{const pl=parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');const liqLiq=d.liqEsperado-pl;const liqCor=liqLiq>=0?'amber':'red';const badgeHtml=pl>0?'<div class="metric-pl-badge">− '+brl(pl)+' pró-labore</div>':'';return '<div class="metric-grid"><div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div><div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div><div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div><div class="metric"><div class="metric-label">Liq. após pró-labore</div><div class="metric-value '+liqCor+'">'+brl(liqLiq)+'</div>'+badgeHtml+'</div></div>';})() +
       '<p class="section-label">A receber por classe</p>'+
       '<div class="card" style="padding:4px 16px">'+classeBloco('ouro','🥇','Ouro','#FAEEDA',d.classes.ouro,pgPct,'#EF9F27','#854F0B',dadosInadClasse.ouro)+classeBloco('prata','🥈','Prata','#E6F1FB',d.classes.prata,prPct,'#378ADD','#185FA5',dadosInadClasse.prata)+classeBloco('latao','🚩','Latão','#FCEBEB',d.classes.latao,ltPct,'#E24B4A','#A32D2D',dadosInadClasse.latao)+'</div>'+
       '<p class="section-label">Status do mês</p>'+
