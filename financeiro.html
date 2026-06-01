@@ -129,6 +129,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-lixeira{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--txt3);cursor:pointer;transition:all .15s;flex-shrink:0}
 .btn-lixeira:hover{background:var(--red-bg);color:var(--red)}
 .btn-lixeira:disabled{opacity:.4;pointer-events:none}
+/* ── RESUMO FIXAS / VARIÁVEIS ── */
+.desp-resumo-bloco{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
+.desp-resumo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.desp-resumo-label{font-size:12px;font-weight:700;color:var(--txt2)}
+.desp-resumo-total{font-size:15px;font-weight:700;color:var(--txt)}
+.desp-resumo-sub{display:flex;gap:8px;flex-wrap:wrap}
+.desp-resumo-pill{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.desp-resumo-pill.pg{background:var(--green-bg);color:var(--green)}
+.desp-resumo-pill.ab{background:var(--red-bg);color:var(--red)}
+/* ── TOTAL GERAL ── */
+.desp-total-geral{background:var(--purple);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px}
+.desp-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.desp-total-row span{font-size:12px;font-weight:600;color:rgba(255,255,255,.6)}
+.desp-total-row strong{font-size:18px;font-weight:700;color:#fff}
+.desp-total-sub{display:flex;gap:10px;flex-wrap:wrap}
+.desp-total-sub span{font-size:11px;font-weight:600}
 
 /* ── PICKER POPUP ── */
 #venc-picker-popup{position:absolute;left:0;top:calc(100% + 4px);z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px}
@@ -802,7 +818,17 @@ function statusINHtml(inn){return '<div class="status-row" style="flex-direction
 
 /* ── DESPESAS ────────────────────────────────────────────────────────── */
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
-  const aberto=total-pago;
+  // Separação fixas x variáveis
+  const fixas = itens.filter(d => d.tipo === 'Fixa');
+  const varrs = itens.filter(d => d.tipo !== 'Fixa');
+  const tFix  = fixas.reduce((s,d)=>s+d.valor,0);
+  const pFix  = fixas.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
+  const aFix  = tFix - pFix;
+  const tVar  = varrs.reduce((s,d)=>s+d.valor,0);
+  const pVar  = varrs.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
+  const aVar  = tVar - pVar;
+  const aberto = total - pago;
+
   const itemHtml = d => {
     const ic = getIcone(d.nome);
     const isPG = d.status === 'PG';
@@ -834,15 +860,33 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
       </div>
     </div>`;
   };
-  document.getElementById(containerId).innerHTML=
-    '<div class="summary-row"><span>Total</span><strong>'+brl(total)+'</strong></div>'+
-    '<div class="summary-row" style="margin-bottom:16px"><span>Pago</span><strong style="color:var(--green)">'+brl(pago)+'</strong></div>'+
-    (aberto>0?'<div class="summary-row" style="margin-bottom:16px"><span>Em aberto</span><strong style="color:var(--red)">'+brl(aberto)+'</strong></div>':'')+
-    '<p class="section-label">Itens</p>'+
-    '<div class="card" style="padding:4px 16px">'+
-    itens.map(itemHtml).join('')+
-    '</div>';
+
+  const blocoResumo = (label, icon, t, p, a) => t <= 0 ? '' :
+    `<div class="desp-resumo-bloco">
+      <div class="desp-resumo-header">
+        <span class="desp-resumo-label"><i class="ti ${icon}" style="font-size:11px;margin-right:3px"></i>${label}</span>
+        <span class="desp-resumo-total">${brl(t)}</span>
+      </div>
+      <div class="desp-resumo-sub">
+        <span class="desp-resumo-pill pg"><i class="ti ti-check" style="font-size:9px"></i> ${brl(p)}</span>
+        ${a > 0 ? `<span class="desp-resumo-pill ab"><i class="ti ti-clock" style="font-size:9px"></i> ${brl(a)}</span>` : ''}
+      </div>
+    </div>`;
+
+  document.getElementById(containerId).innerHTML =
+    blocoResumo('Fixas', 'ti-pin', tFix, pFix, aFix) +
+    blocoResumo('Variáveis', 'ti-arrows-shuffle', tVar, pVar, aVar) +
+    `<div class="desp-total-geral">
+      <div class="desp-total-row"><span>Total geral</span><strong>${brl(total)}</strong></div>
+      <div class="desp-total-sub">
+        <span style="color:var(--green)"><i class="ti ti-check" style="font-size:10px"></i> Pago ${brl(pago)}</span>
+        ${aberto>0?`<span style="color:var(--red)"><i class="ti ti-clock" style="font-size:10px"></i> Em aberto ${brl(aberto)}</span>`:''}
+      </div>
+    </div>` +
+    (fixas.length > 0 ? '<p class="section-label" style="margin-top:4px">📌 Fixas</p><div class="card" style="padding:4px 16px;margin-bottom:8px">'+fixas.map(itemHtml).join('')+'</div>' : '') +
+    (varrs.length > 0 ? '<p class="section-label">⚡ Variáveis</p><div class="card" style="padding:4px 16px">'+varrs.map(itemHtml).join('')+'</div>' : '');
 }
+
 async function carregarDespesas(){
   try{
     const d=await buscar('despesas');
