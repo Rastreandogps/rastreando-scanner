@@ -595,18 +595,38 @@ async function excluirDespesa(btn, nome, tipo, categoria){
 Isso também removerá da planilha.`)) return;
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader" style="font-size:12px;animation:spin .8s linear infinite"></i>';
+
+  // Tenta excluir da planilha — primeiro como Fixa, depois como Parcelada (fallback),
+  // pois dependendo de quando foi cadastrada pode ter entrado com qualquer um dos dois nomes
+  const limparLocal = () => {
+    setVencimento(nome, null);
+    setParcelamento(nome, null);
+    cacheDespesas = null;
+    carregarDespesas();
+  };
+
   try{
-    const res = await postar({action:'deletarDespesa', nome, tipo, categoria});
-    if(res.ok){
-      // Remove vencimento local se existir
-      setVencimento(nome, null);
-      cacheDespesas = null;
-      carregarDespesas();
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
-      alert('Erro ao excluir: ' + (res.error||'tente novamente'));
+    // Tentativa 1: categoria real (ou Fixa se for Parcelada — padrão atual)
+    const cat1 = categoria === 'Parcelada' ? 'Fixa' : categoria;
+    const res1 = await postar({action:'deletarDespesa', nome, tipo, categoria:cat1});
+    if(res1.ok){ limparLocal(); return; }
+
+    // Tentativa 2: se não achou, tenta com 'Parcelada' (cadastros antigos)
+    if(categoria === 'Parcelada'){
+      const res2 = await postar({action:'deletarDespesa', nome, tipo, categoria:'Parcelada'});
+      if(res2.ok){ limparLocal(); return; }
     }
+
+    // Se ainda não achou na planilha mas é parcelada (pode ter sido criada só localmente)
+    // remove só do app sem mostrar erro
+    if(categoria === 'Parcelada'){
+      limparLocal();
+      return;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
+    alert('Erro ao excluir: ' + (res1.error||'tente novamente'));
   } catch(e){
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
@@ -664,8 +684,10 @@ async function toggleStatusDesp(btn, nome, tipo, categoria){
   const statusAtual = btn.dataset.status;
   const novoStatus  = statusAtual === 'PG' ? 'AB' : 'PG';
   btn.classList.add('saving');
+  // Parcelada é salva como Fixa no GAS
+  const categoriaGAS = categoria === 'Parcelada' ? 'Fixa' : categoria;
   try{
-    const res = await postar({action:'atualizarStatusDespesa', nome, tipo, categoria, status: novoStatus});
+    const res = await postar({action:'atualizarStatusDespesa', nome, tipo, categoria:categoriaGAS, status: novoStatus});
     if(res.ok){
       btn.dataset.status = novoStatus;
       btn.className = 'status-toggle ' + (novoStatus==='PG'?'pg':'ab');
