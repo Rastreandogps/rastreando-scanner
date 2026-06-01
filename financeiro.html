@@ -113,10 +113,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .desp-icon{width:38px;height:38px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .desp-name{font-size:14px;font-weight:600;color:var(--txt)}
 .desp-sub{font-size:11px;color:var(--txt2)}
-.desp-right{text-align:right}
+.desp-right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .desp-valor{font-size:14px;font-weight:700;color:var(--txt)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
 .dot.g{background:#1D9E75}.dot.r{background:#E24B4A}
+/* ── TOGGLE STATUS DESPESA ── */
+.status-toggle{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;user-select:none}
+.status-toggle.pg{background:var(--green-bg);color:var(--green);border:1.5px solid #1D9E75}
+.status-toggle.ab{background:var(--red-bg);color:var(--red);border:1.5px solid #E24B4A}
+.status-toggle.saving{opacity:.5;pointer-events:none}
 .proj-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
 .proj-row:last-child{border-bottom:none}
 .proj-label{font-size:13px;font-weight:500;color:var(--txt)}
@@ -173,7 +178,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .icon-cell span{font-size:8px;color:var(--txt3);text-align:center;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .icon-cell.selected span{color:rgba(255,255,255,.7)}
 .icon-search{width:100%;padding:8px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;background:var(--bg);color:var(--txt);outline:none;margin-bottom:6px}
-
 /* ── PRÓ-LABORE ─────────────────────────────── */
 .pl-topo{background:linear-gradient(135deg,#26215C 0%,#3C3489 100%);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
 .pl-topo::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;background:rgba(255,255,255,.05);border-radius:50%}
@@ -272,7 +276,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="desp-pessoal" style="display:none"><div class="loading"><i class="ti ti-loader"></i>Carregando...</div></div>
   </div>
 
-  <!-- ── PRÓ-LABORE ──────────────────────────────── -->
   <div class="screen" id="screen-prolabore">
     <div style="height:14px"></div>
     <div id="pl-content"><div class="pl-loading"><i class="ti ti-loader"></i>Carregando...</div></div>
@@ -354,9 +357,39 @@ function filtrarIcones(){buildIconGrid();}
 
 /* ── API ─────────────────────────────────────────────────────────────── */
 async function buscar(action){const res=await fetch(API_URL+'?secret='+API_SECRET+'&action='+action);return res.json();}
+async function postar(payload){const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({secret:API_SECRET,...payload})});return res.json();}
 
 /* ── CACHE GLOBAL ────────────────────────────────────────────────────── */
 let cacheDash=null, cacheDespesas=null;
+
+/* ── TOGGLE STATUS DESPESA ───────────────────────────────────────────── */
+async function toggleStatusDesp(btn, nome, tipo, categoria){
+  const statusAtual = btn.dataset.status;
+  const novoStatus  = statusAtual === 'PG' ? 'AB' : 'PG';
+  btn.classList.add('saving');
+  try{
+    const res = await postar({action:'atualizarStatusDespesa', nome, tipo, categoria, status: novoStatus});
+    if(res.ok){
+      btn.dataset.status = novoStatus;
+      btn.className = 'status-toggle ' + (novoStatus==='PG'?'pg':'ab');
+      btn.innerHTML = novoStatus==='PG'
+        ? '<i class="ti ti-check" style="font-size:10px"></i> Pago'
+        : '<i class="ti ti-clock" style="font-size:10px"></i> Em aberto';
+      // Atualiza o dot ao lado
+      const dot = btn.previousElementSibling;
+      if(dot && dot.classList.contains('dot')){
+        dot.className = 'dot ' + (novoStatus==='PG'?'g':'r');
+      }
+      // Invalida cache para recalcular totais na próxima visita
+      cacheDespesas = null;
+    } else {
+      alert('Erro ao atualizar: ' + (res.error||'tente novamente'));
+    }
+  } catch(e){
+    alert('Erro de conexão.');
+  }
+  btn.classList.remove('saving');
+}
 
 /* ── PRÓ-LABORE ──────────────────────────────────────────────────────── */
 async function carregarProlabore(){
@@ -379,16 +412,13 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
   const somaFixas = fixas.reduce((a,d)=>a+Number(d.valor||0),0);
   const somaVarrs = varrs.reduce((a,d)=>a+Number(d.valor||0),0);
   const somaPessoal = somaFixas+somaVarrs;
-
   const sobraEmpresa = liqEsperado - prolabore;
   const saldoPessoal = prolabore - somaPessoal;
   const sobraPos  = sobraEmpresa>=0;
   const saldoPos  = saldoPessoal>=0;
-
   const pctFixas = prolabore>0?Math.min((somaFixas/prolabore)*100,100):0;
   const pctVarrs = prolabore>0?Math.min((somaVarrs/prolabore)*100,100):0;
   const pctSaldo = prolabore>0?Math.max(Math.min((saldoPessoal/prolabore)*100,100),0):0;
-
   const itemHtml = d=>{
     const ic=getIcone(d.nome);
     return `<div class="pl-linha">
@@ -399,7 +429,8 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
       <div class="pl-linha-valor">− ${brl(d.valor)}</div>
     </div>`;
   };
-
+  // Mostra breakdown só se prolabore > 0; se for 0 mostra mensagem neutra
+  const temProlabore = prolabore > 0;
   document.getElementById('pl-content').innerHTML=`
     <div class="pl-topo">
       <div class="pl-liq-row">
@@ -413,7 +444,7 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
           <div class="pl-input-label">Seu pró-labore</div>
           <div class="pl-input-wrap">
             <span class="pl-prefix">R$</span>
-            <input class="pl-input" type="number" id="pl-valor" placeholder="0,00" step="0.01" inputmode="decimal" value="${prolabore>0?prolabore:''}">
+            <input class="pl-input" type="number" id="pl-valor" placeholder="0,00" step="0.01" inputmode="decimal" value="${prolabore>=0&&prolabore!==null?prolabore:''}">
           </div>
         </div>
       </div>
@@ -426,7 +457,7 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
       <button class="pl-btn-salvar" onclick="salvarProlabore()"><i class="ti ti-device-floppy" style="font-size:12px;margin-right:4px"></i>Salvar valor</button>
     </div>
 
-    ${prolabore>0?`
+    ${temProlabore?`
     <div class="pl-saldo-inline ${saldoPos?'pos':'neg'}">
       <div>
         <div class="pl-saldo-inline-label">${saldoPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
@@ -435,7 +466,6 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
       </div>
       <div style="font-size:28px">${saldoPos?'✅':'⚠️'}</div>
     </div>
-
     <p class="section-label">Distribuição do pró-labore</p>
     <div class="pl-pct-bloco">
       <div class="pl-pct-item">
@@ -451,35 +481,20 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${Math.abs(pctSaldo).toFixed(1)}%;background:${saldoPos?'#1D9E75':'#E24B4A'}"></div></div>
       </div>
     </div>
-
-    ${fixas.length>0?`
-    <p class="section-label">Despesas fixas pessoais</p>
-    <div class="card" style="padding:4px 16px;margin-bottom:8px">${fixas.map(itemHtml).join('')}</div>
-    <div class="pl-subtotal"><span>Subtotal fixas</span><strong>− ${brl(somaFixas)}</strong></div>`:''}
-
-    ${varrs.length>0?`
-    <p class="section-label" style="margin-top:10px">Despesas variáveis pessoais</p>
-    <div class="card" style="padding:4px 16px;margin-bottom:8px">${varrs.map(itemHtml).join('')}</div>
-    <div class="pl-subtotal"><span>Subtotal variáveis</span><strong>− ${brl(somaVarrs)}</strong></div>`:''}
-
+    ${fixas.length>0?`<p class="section-label">Despesas fixas pessoais</p><div class="card" style="padding:4px 16px;margin-bottom:8px">${fixas.map(itemHtml).join('')}</div><div class="pl-subtotal"><span>Subtotal fixas</span><strong>− ${brl(somaFixas)}</strong></div>`:''}
+    ${varrs.length>0?`<p class="section-label" style="margin-top:10px">Despesas variáveis pessoais</p><div class="card" style="padding:4px 16px;margin-bottom:8px">${varrs.map(itemHtml).join('')}</div><div class="pl-subtotal"><span>Subtotal variáveis</span><strong>− ${brl(somaVarrs)}</strong></div>`:''}
     `:'<div class="pl-aguarda">Digite seu pró-labore acima para ver o breakdown completo.</div>'}
   `;
-
   const inp=document.getElementById('pl-valor');
   if(inp){
     inp.addEventListener('input',function(){
       const v=parseFloat(this.value);
       const val=isNaN(v)||v<0?0:v;
       const sobraEl=document.querySelector('.pl-sobra-valor');
-      if(sobraEl){
-        const s=liqEsperado-val;
-        sobraEl.textContent=brl(s);
-        sobraEl.className='pl-sobra-valor '+(s>=0?'pos':'neg');
-      }
+      if(sobraEl){const s=liqEsperado-val;sobraEl.textContent=brl(s);sobraEl.className='pl-sobra-valor '+(s>=0?'pos':'neg');}
       const saldoBloco=document.querySelector('.pl-saldo-inline');
       if(saldoBloco){
-        const sp=val-somaPessoal;
-        const spPos=sp>=0;
+        const sp=val-somaPessoal;const spPos=sp>=0;
         saldoBloco.className='pl-saldo-inline '+(spPos?'pos':'neg');
         saldoBloco.querySelector('.pl-saldo-inline-label').textContent=spPos?'Saldo no seu bolso':'Déficit pessoal';
         saldoBloco.querySelector('.pl-saldo-inline-valor').textContent=brl(Math.abs(sp));
@@ -491,10 +506,12 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
 }
 
 function salvarProlabore(){
-  const v=parseFloat(document.getElementById('pl-valor').value);
-  if(isNaN(v)||v<=0)return;
-  localStorage.setItem(PROLABORE_KEY,v.toString());
-  if(cacheDash&&cacheDespesas){
+  const raw = document.getElementById('pl-valor').value;
+  // ✅ CORRIGIDO: permite zero — só bloqueia se campo vazio ou inválido
+  const v = raw === '' ? null : parseFloat(raw);
+  if(v === null || isNaN(v) || v < 0) return;
+  localStorage.setItem(PROLABORE_KEY, v.toString());
+  if(cacheDash && cacheDespesas){
     _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
   }
 }
@@ -577,15 +594,41 @@ function statusMPHtml(mp){return statusHtml('amber','🔘 MP '+mp.qnt,brl(mp.val
 function statusINHtml(inn){return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'inn\')"><div class="status-sanfona-header"><div class="status-sanfona-left"><span class="tag purple">🚫 IN '+inn.qnt+'</span></div><div style="display:flex;align-items:center;gap:6px"><p style="font-size:14px;font-weight:700;color:var(--txt)">'+brl(inn.valor)+'</p><i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-inn"></i></div></div></div><div class="status-sanfona-body" id="ssanf-body-inn"></div></div>';}
 
 /* ── DESPESAS ────────────────────────────────────────────────────────── */
-function renderDespesas(itens,containerId,total,pago){
+function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const aberto=total-pago;
+  // ✅ NOVO: cada item tem toggle de status
+  const itemHtml = d => {
+    const ic = getIcone(d.nome);
+    const isPG = d.status === 'PG';
+    const nomeEsc = d.nome.replace(/'/g,"\\'");
+    return `<div class="desp-item">
+      <div class="desp-left">
+        <div class="desp-icon" style="background:${ic.c}"><i class="ti ${ic.i}" style="font-size:17px;color:${ic.t}"></i></div>
+        <div>
+          <div class="desp-name">${d.nome}</div>
+          <div class="desp-sub">${d.tipo||''}</div>
+        </div>
+      </div>
+      <div class="desp-right">
+        <div class="desp-valor">${brl(d.valor)}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="dot ${isPG?'g':'r'}"></span>
+          <button class="status-toggle ${isPG?'pg':'ab'}" data-status="${d.status}"
+            onclick="toggleStatusDesp(this,'${nomeEsc}','${tipoDesp}','${d.tipo}')">
+            <i class="ti ${isPG?'ti-check':'ti-clock'}" style="font-size:10px"></i>
+            ${isPG?'Pago':'Em aberto'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  };
   document.getElementById(containerId).innerHTML=
     '<div class="summary-row"><span>Total</span><strong>'+brl(total)+'</strong></div>'+
     '<div class="summary-row" style="margin-bottom:16px"><span>Pago</span><strong style="color:var(--green)">'+brl(pago)+'</strong></div>'+
     (aberto>0?'<div class="summary-row" style="margin-bottom:16px"><span>Em aberto</span><strong style="color:var(--red)">'+brl(aberto)+'</strong></div>':'')+
     '<p class="section-label">Itens</p>'+
     '<div class="card" style="padding:4px 16px">'+
-    itens.map(d=>{const ic=getIcone(d.nome);return '<div class="desp-item"><div class="desp-left"><div class="desp-icon" style="background:'+ic.c+'"><i class="ti '+ic.i+'" style="font-size:17px;color:'+ic.t+'"></i></div><div><div class="desp-name">'+d.nome+'</div><div class="desp-sub">'+(d.tipo?d.tipo:'')+(d.status==='AB'?' · Em aberto':'')+'</div></div></div><div class="desp-right"><div class="desp-valor">'+brl(d.valor)+'</div><div style="font-size:11px;color:var(--txt2)"><span class="dot '+(d.status==='PG'?'g':'r')+'"></span>'+(d.status==='PG'?'Pago':'Em aberto')+'</div></div></div>';}).join('')+
+    itens.map(itemHtml).join('')+
     '</div>';
 }
 async function carregarDespesas(){
@@ -593,8 +636,8 @@ async function carregarDespesas(){
     const d=await buscar('despesas');
     if(d.error){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
     cacheDespesas=d;
-    renderDespesas(d.empresa.itens,'desp-empresa',d.empresa.total,d.empresa.pago);
-    renderDespesas(d.pessoal.itens,'desp-pessoal',d.pessoal.total,d.pessoal.pago);
+    renderDespesas(d.empresa.itens,'desp-empresa',d.empresa.total,d.empresa.pago,'Empresa');
+    renderDespesas(d.pessoal.itens,'desp-pessoal',d.pessoal.total,d.pessoal.pago,'Pessoal');
   }catch(e){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';}
 }
 
@@ -625,28 +668,19 @@ function carregarHistorico(){
 }
 function toggleDetalhe(idx){const el=document.getElementById('detalhe-'+idx),ch=document.getElementById('chevron-'+idx);el.classList.toggle('open');ch.style.transform=el.classList.contains('open')?'rotate(180deg)':'';}
 
-/* ── SALVAR DESPESA — CORRIGIDO ──────────────────────────────────────── */
+/* ── SALVAR DESPESA ──────────────────────────────────────────────────── */
 async function salvarDespesa(){
   const nome      = document.getElementById('f-nome').value.trim();
   const valor     = parseFloat(document.getElementById('f-valor').value);
   const status    = document.getElementById('f-status').value;
   const tipo      = document.getElementById('f-tipo').value;
-  const categoria = document.getElementById('f-cat').value;   // ✅ CORRIGIDO: lê Fixa/Variável
+  const categoria = document.getElementById('f-cat').value;
   const erroEl    = document.getElementById('modal-erro');
   if(!nome||isNaN(valor)||valor<=0){erroEl.textContent='Preencha o nome e o valor.';erroEl.style.display='block';return;}
   erroEl.style.display='none';
   iconesUsuario[nome]=iconeSelecionado;salvarIconesUsuario();
   try{
-    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({
-      secret:API_SECRET,
-      action:'salvarDespesa',
-      tipo,
-      categoria,   // ✅ CORRIGIDO: envia categoria para o Apps Script
-      nome,
-      valor,
-      status
-    })});
-    const json=await res.json();
+    const json = await postar({action:'salvarDespesa',tipo,categoria,nome,valor,status});
     if(json.ok){
       fecharModal();document.getElementById('f-nome').value='';document.getElementById('f-valor').value='';
       cacheDespesas=null;
