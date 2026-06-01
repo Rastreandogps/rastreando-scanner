@@ -363,7 +363,6 @@ async function carregarProlabore(){
   const el=document.getElementById('pl-content');
   el.innerHTML='<div class="pl-loading"><i class="ti ti-loader"></i>Carregando dados...</div>';
   try{
-    // Garante que temos dashboard e despesas
     if(!cacheDash)    cacheDash    = await buscar('dashboard');
     if(!cacheDespesas)cacheDespesas= await buscar('despesas');
     if(cacheDash.error||cacheDespesas.error){el.innerHTML='<div class="erro-msg">Erro ao carregar dados.</div>';return;}
@@ -381,14 +380,11 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
   const somaVarrs = varrs.reduce((a,d)=>a+Number(d.valor||0),0);
   const somaPessoal = somaFixas+somaVarrs;
 
-  // Sobra na empresa após retirar pró-labore
   const sobraEmpresa = liqEsperado - prolabore;
-  // Saldo pessoal após descontar despesas
   const saldoPessoal = prolabore - somaPessoal;
   const sobraPos  = sobraEmpresa>=0;
   const saldoPos  = saldoPessoal>=0;
 
-  // Barras de distribuição do pró-labore
   const pctFixas = prolabore>0?Math.min((somaFixas/prolabore)*100,100):0;
   const pctVarrs = prolabore>0?Math.min((somaVarrs/prolabore)*100,100):0;
   const pctSaldo = prolabore>0?Math.max(Math.min((saldoPessoal/prolabore)*100,100),0):0;
@@ -469,20 +465,17 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
     `:'<div class="pl-aguarda">Digite seu pró-labore acima para ver o breakdown completo.</div>'}
   `;
 
-  // Listener do input ao vivo
   const inp=document.getElementById('pl-valor');
   if(inp){
     inp.addEventListener('input',function(){
       const v=parseFloat(this.value);
       const val=isNaN(v)||v<0?0:v;
-      // Atualiza sobra empresa
       const sobraEl=document.querySelector('.pl-sobra-valor');
       if(sobraEl){
         const s=liqEsperado-val;
         sobraEl.textContent=brl(s);
         sobraEl.className='pl-sobra-valor '+(s>=0?'pos':'neg');
       }
-      // Atualiza saldo pessoal inline
       const saldoBloco=document.querySelector('.pl-saldo-inline');
       if(saldoBloco){
         const sp=val-somaPessoal;
@@ -501,7 +494,6 @@ function salvarProlabore(){
   const v=parseFloat(document.getElementById('pl-valor').value);
   if(isNaN(v)||v<=0)return;
   localStorage.setItem(PROLABORE_KEY,v.toString());
-  // Re-renderiza com novo valor salvo
   if(cacheDash&&cacheDespesas){
     _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
   }
@@ -633,22 +625,31 @@ function carregarHistorico(){
 }
 function toggleDetalhe(idx){const el=document.getElementById('detalhe-'+idx),ch=document.getElementById('chevron-'+idx);el.classList.toggle('open');ch.style.transform=el.classList.contains('open')?'rotate(180deg)':'';}
 
-/* ── SALVAR DESPESA ──────────────────────────────────────────────────── */
+/* ── SALVAR DESPESA — CORRIGIDO ──────────────────────────────────────── */
 async function salvarDespesa(){
-  const nome=document.getElementById('f-nome').value.trim();
-  const valor=parseFloat(document.getElementById('f-valor').value);
-  const status=document.getElementById('f-status').value;
-  const tipo=document.getElementById('f-tipo').value;
-  const erroEl=document.getElementById('modal-erro');
+  const nome      = document.getElementById('f-nome').value.trim();
+  const valor     = parseFloat(document.getElementById('f-valor').value);
+  const status    = document.getElementById('f-status').value;
+  const tipo      = document.getElementById('f-tipo').value;
+  const categoria = document.getElementById('f-cat').value;   // ✅ CORRIGIDO: lê Fixa/Variável
+  const erroEl    = document.getElementById('modal-erro');
   if(!nome||isNaN(valor)||valor<=0){erroEl.textContent='Preencha o nome e o valor.';erroEl.style.display='block';return;}
   erroEl.style.display='none';
   iconesUsuario[nome]=iconeSelecionado;salvarIconesUsuario();
   try{
-    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({secret:API_SECRET,action:'salvarDespesa',tipo,nome,valor,status})});
+    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({
+      secret:API_SECRET,
+      action:'salvarDespesa',
+      tipo,
+      categoria,   // ✅ CORRIGIDO: envia categoria para o Apps Script
+      nome,
+      valor,
+      status
+    })});
     const json=await res.json();
     if(json.ok){
       fecharModal();document.getElementById('f-nome').value='';document.getElementById('f-valor').value='';
-      cacheDespesas=null; // invalida cache para recarregar
+      cacheDespesas=null;
       carregarDespesas();
     } else {erroEl.textContent=json.error||'Erro ao salvar.';erroEl.style.display='block';}
   }catch(e){erroEl.textContent='Erro de conexão.';erroEl.style.display='block';}
