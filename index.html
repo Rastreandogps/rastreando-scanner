@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Rastreando GPS — Scanner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<!-- jsQR para QR Code nativo (fallback quando BarcodeDetector indisponível) -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -64,10 +66,7 @@
     background: radial-gradient(circle at 40% 40%, rgba(0,229,255,0.15), transparent 70%);
   }
 
-  .logo-pin {
-    font-size: 20px;
-    filter: drop-shadow(0 0 6px var(--cyan));
-  }
+  .logo-pin { font-size: 20px; filter: drop-shadow(0 0 6px var(--cyan)); }
 
   .header-text h1 {
     font-size: 18px;
@@ -114,9 +113,7 @@
 
   .tab-btn .tab-icon { font-size: 16px; }
 
-  .tab-btn.active {
-    color: var(--white);
-  }
+  .tab-btn.active { color: var(--white); }
 
   .tab-btn.active::after {
     content: '';
@@ -164,6 +161,11 @@
     top: 0; left: 0;
   }
 
+  /* Canvas oculto para processamento jsQR */
+  canvas.hidden-canvas {
+    display: none !important;
+  }
+
   .scan-overlay {
     position: absolute;
     inset: 0;
@@ -171,15 +173,18 @@
     z-index: 10;
   }
 
+  /* Frame adaptativo: QR = quadrado, Barcode = retângulo */
   .scan-frame {
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 75%;
-    height: 40%;
     border: 2px solid rgba(255,255,255,0.6);
     border-radius: 8px;
+    transition: width 0.3s, height 0.3s;
   }
+
+  .scan-frame.mode-barcode { width: 75%; height: 40%; }
+  .scan-frame.mode-qr      { width: 55%; height: 55%; }
 
   .scan-frame::before, .scan-frame::after,
   .scan-frame-inner::before, .scan-frame-inner::after {
@@ -198,13 +203,19 @@
 
   .scan-line {
     position: absolute;
-    left: 12.5%;
-    width: 75%;
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--red), transparent);
     box-shadow: 0 0 8px var(--red);
     animation: scanline 2s ease-in-out infinite;
-    top: 30%;
+  }
+
+  .scan-frame.mode-barcode ~ .scan-line,
+  .scan-line.mode-barcode {
+    left: 12.5%; width: 75%; top: 30%;
+  }
+
+  .scan-line.mode-qr {
+    left: 22.5%; width: 55%; top: 27%;
   }
 
   @keyframes scanline {
@@ -225,6 +236,40 @@
 
   .scanner-placeholder .ph-icon { font-size: 40px; opacity: 0.3; }
   .scanner-placeholder p { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+
+  /* MODE TOGGLE */
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .mode-btn.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,229,255,0.07);
+    box-shadow: 0 0 10px rgba(0,229,255,0.1);
+  }
 
   /* SCAN BUTTON */
   .btn-scan {
@@ -310,10 +355,7 @@
     font-size: 12px;
   }
 
-  /* FLASH SUCCESS */
-  .output-box.flash {
-    animation: flashGreen 0.4s ease;
-  }
+  .output-box.flash { animation: flashGreen 0.4s ease; }
 
   @keyframes flashGreen {
     0%, 100% { border-color: var(--border); }
@@ -394,12 +436,7 @@
     padding-left: 2px;
   }
 
-  /* DIVIDER */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 16px 0;
-  }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
 </style>
 </head>
 <body>
@@ -440,9 +477,19 @@
       </div>
     </div>
     <div class="scan-overlay">
-      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
-      <div class="scan-line"></div>
+      <div class="scan-frame mode-barcode" id="frame-iccid"><div class="scan-frame-inner"></div></div>
+      <div class="scan-line mode-barcode" id="line-iccid"></div>
     </div>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="mode-iccid-bar" onclick="setMode('iccid','barcode')">
+      ▮▮▮ CÓDIGO DE BARRAS
+    </button>
+    <button class="mode-btn" id="mode-iccid-qr" onclick="setMode('iccid','qr')">
+      ▦ QR CODE
+    </button>
   </div>
 
   <button class="btn-scan" id="btn-scan-iccid" onclick="toggleScan('iccid')">
@@ -472,9 +519,19 @@
       </div>
     </div>
     <div class="scan-overlay">
-      <div class="scan-frame"><div class="scan-frame-inner"></div></div>
-      <div class="scan-line"></div>
+      <div class="scan-frame mode-barcode" id="frame-imei"><div class="scan-frame-inner"></div></div>
+      <div class="scan-line mode-barcode" id="line-imei"></div>
     </div>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="mode-imei-bar" onclick="setMode('imei','barcode')">
+      ▮▮▮ CÓDIGO DE BARRAS
+    </button>
+    <button class="mode-btn" id="mode-imei-qr" onclick="setMode('imei','qr')">
+      ▦ QR CODE
+    </button>
   </div>
 
   <button class="btn-scan" id="btn-scan-imei" onclick="toggleScan('imei')">
@@ -536,9 +593,9 @@
 <script>
   // STATE
   const state = {
-    iccid: { items: [], scanning: false },
-    imei:  { items: [], scanning: false },
-    nome:  { items: [], scanning: false },
+    iccid: { items: [], scanning: false, mode: 'barcode' },
+    imei:  { items: [], scanning: false, mode: 'barcode' },
+    nome:  { items: [], scanning: false, mode: 'barcode' },
   };
 
   let activeTab = 0;
@@ -546,25 +603,42 @@
 
   // SWITCH TAB
   function switchTab(idx) {
-    // Stop scanning on previous tab
     const prev = tabNames[activeTab];
     if (state[prev].scanning) stopScan(prev);
-
     activeTab = idx;
     document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
     document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
   }
 
-  // TOGGLE SCAN
-  function toggleScan(type) {
-    if (state[type].scanning) {
-      stopScan(type);
-    } else {
-      startScan(type);
+  // SET MODE (barcode / qr)
+  function setMode(type, mode) {
+    if (state[type].scanning) stopScan(type);
+    state[type].mode = mode;
+
+    // Update toggle buttons
+    document.getElementById('mode-' + type + '-bar').classList.toggle('active', mode === 'barcode');
+    document.getElementById('mode-' + type + '-qr').classList.toggle('active', mode === 'qr');
+
+    // Update frame shape
+    const frame = document.getElementById('frame-' + type);
+    const line  = document.getElementById('line-' + type);
+    if (frame) {
+      frame.classList.toggle('mode-barcode', mode === 'barcode');
+      frame.classList.toggle('mode-qr',      mode === 'qr');
+    }
+    if (line) {
+      line.classList.toggle('mode-barcode', mode === 'barcode');
+      line.classList.toggle('mode-qr',      mode === 'qr');
     }
   }
 
-  const streams = {};
+  // TOGGLE SCAN
+  function toggleScan(type) {
+    if (state[type].scanning) stopScan(type);
+    else startScan(type);
+  }
+
+  const streams   = {};
   const scanLoops = {};
 
   async function startScan(type) {
@@ -575,10 +649,9 @@
     btn.innerHTML = '<span>⏹</span> PARAR SCANNER';
     btn.classList.add('scanning');
     state[type].scanning = true;
-    state[type].paused = false;
+    state[type].paused   = false;
 
     const container = document.getElementById('scanner-' + type);
-
     let video = container.querySelector('video');
     if (!video) {
       video = document.createElement('video');
@@ -601,9 +674,86 @@
       return;
     }
 
+    const mode = state[type].mode;
+
+    if (mode === 'qr') {
+      // ── QR CODE: tenta BarcodeDetector nativo, fallback para jsQR ──
+      startQrLoop(type, video);
+    } else {
+      // ── CÓDIGO DE BARRAS: tenta BarcodeDetector nativo, fallback para Quagga ──
+      startBarcodeLoop(type, video, container);
+    }
+  }
+
+  // ─── QR LOOP ──────────────────────────────────────────────────────────────
+  function startQrLoop(type, video) {
+    const container = document.getElementById('scanner-' + type);
+
+    if ('BarcodeDetector' in window) {
+      // Verifica se suporta qr_code
+      BarcodeDetector.getSupportedFormats().then(formats => {
+        const supportsQR = formats.includes('qr_code');
+        if (supportsQR) {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const loop = async () => {
+            if (!state[type].scanning) return;
+            if (!state[type].paused && video.readyState === video.HAVE_ENOUGH_DATA) {
+              try {
+                const barcodes = await detector.detect(video);
+                if (barcodes.length > 0) {
+                  const code = barcodes[0].rawValue;
+                  if (code && code.length >= 3) {
+                    state[type].paused = true;
+                    addCode(type, code);
+                    setTimeout(() => { if (state[type].scanning) state[type].paused = false; }, 1500);
+                  }
+                }
+              } catch(e) {}
+            }
+            scanLoops[type] = requestAnimationFrame(loop);
+          };
+          scanLoops[type] = requestAnimationFrame(loop);
+        } else {
+          // BarcodeDetector não suporta QR — usa jsQR
+          startJsQrLoop(type, video);
+        }
+      });
+    } else {
+      // Sem BarcodeDetector — usa jsQR
+      startJsQrLoop(type, video);
+    }
+  }
+
+  // jsQR fallback
+  function startJsQrLoop(type, video) {
+    const offscreen = document.createElement('canvas');
+    offscreen.className = 'hidden-canvas';
+
+    const loop = () => {
+      if (!state[type].scanning) return;
+      if (!state[type].paused && video.readyState === video.HAVE_ENOUGH_DATA) {
+        offscreen.width  = video.videoWidth;
+        offscreen.height = video.videoHeight;
+        const ctx = offscreen.getContext('2d');
+        ctx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
+        const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+        if (code && code.data && code.data.length >= 3) {
+          state[type].paused = true;
+          addCode(type, code.data);
+          setTimeout(() => { if (state[type].scanning) state[type].paused = false; }, 1500);
+        }
+      }
+      scanLoops[type] = requestAnimationFrame(loop);
+    };
+    scanLoops[type] = requestAnimationFrame(loop);
+  }
+
+  // ─── BARCODE LOOP ─────────────────────────────────────────────────────────
+  function startBarcodeLoop(type, video, container) {
     if ('BarcodeDetector' in window) {
       const detector = new BarcodeDetector({
-        formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'itf', 'data_matrix', 'pdf417']
+        formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'itf', 'data_matrix', 'pdf417', 'qr_code']
       });
 
       const loop = async () => {
@@ -626,6 +776,7 @@
       scanLoops[type] = requestAnimationFrame(loop);
 
     } else {
+      // Quagga fallback
       Quagga.init({
         inputStream: {
           name: 'Live', type: 'LiveStream',
@@ -654,16 +805,17 @@
     }
   }
 
+  // ─── STOP ─────────────────────────────────────────────────────────────────
   function stopScan(type) {
     if (scanLoops[type]) { cancelAnimationFrame(scanLoops[type]); delete scanLoops[type]; }
-    if (streams[type]) { streams[type].getTracks().forEach(t => t.stop()); delete streams[type]; }
+    if (streams[type])   { streams[type].getTracks().forEach(t => t.stop()); delete streams[type]; }
     try { Quagga.stop(); Quagga.offDetected(); } catch(e) {}
 
     const btn = document.getElementById('btn-scan-' + type);
     btn.innerHTML = '<span>▶</span> INICIAR SCANNER';
     btn.classList.remove('scanning');
     state[type].scanning = false;
-    state[type].paused = false;
+    state[type].paused   = false;
 
     const ph = document.getElementById('ph-' + type);
     if (ph) ph.style.display = 'flex';
@@ -673,18 +825,16 @@
     if (video) { video.srcObject = null; video.remove(); }
   }
 
-  // ADD CODE
+  // ─── ADD CODE ─────────────────────────────────────────────────────────────
   function addCode(type, raw) {
     const items = state[type].items;
 
-    // Duplicate check — exact match
     if (items.includes(raw)) {
       showToast('⚠ CÓDIGO JÁ LIDO!', true);
       vibrate([100, 50, 100]);
       return;
     }
 
-    // Partial read check — rejeita se já existe código que contém este como parte
     const isPartial = items.some(existing => existing.includes(raw) || raw.includes(existing));
     if (isPartial) {
       showToast('⚠ LEITURA PARCIAL IGNORADA', true);
@@ -693,50 +843,42 @@
     }
 
     items.push(raw);
-
-    // Update counter
     document.getElementById('count-' + type).textContent = items.length;
 
-    // Update output
     const out = document.getElementById('out-' + type);
 
     if (type === 'iccid') {
       out.textContent = items.join(',');
     } else if (type === 'imei') {
       out.textContent = items.join('\n');
-      // Auto-update aba NOME
       atualizarNomes();
     } else if (type === 'nome') {
       out.textContent = state.nome.items.join('\n');
     }
 
-    // Flash
     out.classList.remove('flash');
     void out.offsetWidth;
     out.classList.add('flash');
 
-    // Vibrate
     vibrate([60]);
     showToast('✓ LIDO COM SUCESSO');
   }
 
-  // ATUALIZAR NOMES com prefixo editável
+  // ─── NOMES ────────────────────────────────────────────────────────────────
   function atualizarNomes() {
     const prefixo = document.getElementById('prefixo-input').value.trim() || 'A J16';
-    const imeis = state.imei.items;
-    const nomes = imeis.map(imei => prefixo + ' ' + imei.slice(-3));
+    const imeis   = state.imei.items;
+    const nomes   = imeis.map(imei => prefixo + ' ' + imei.slice(-3));
     state.nome.items = nomes;
     document.getElementById('out-nome').textContent = nomes.join('\n');
     document.getElementById('count-nome').textContent = nomes.length;
     document.getElementById('label-formato').textContent = 'Resultado — formato: ' + prefixo + ' XXX';
   }
 
-  // COPY
+  // ─── COPY / CLEAR ─────────────────────────────────────────────────────────
   function copyOutput(type) {
-    const out = document.getElementById('out-' + type);
-    const text = out.textContent;
+    const text = document.getElementById('out-' + type).textContent;
     if (!text) { showToast('Nada para copiar', true); return; }
-
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => showToast('📋 COPIADO!'));
     } else {
@@ -750,7 +892,6 @@
     }
   }
 
-  // CLEAR
   function clearOutput(type) {
     state[type].items = [];
     document.getElementById('out-' + type).textContent = '';
@@ -758,12 +899,9 @@
     showToast('🗑 LISTA LIMPA');
   }
 
-  // VIBRATE
-  function vibrate(pattern) {
-    if (navigator.vibrate) navigator.vibrate(pattern);
-  }
+  // ─── UTILS ────────────────────────────────────────────────────────────────
+  function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
 
-  // TOAST
   let toastTimer;
   function showToast(msg, isRed = false) {
     const t = document.getElementById('toast');
