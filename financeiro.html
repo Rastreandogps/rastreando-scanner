@@ -124,6 +124,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .venc-badge.venc-prox{background:var(--amber-bg);color:var(--amber)}
 .venc-badge.venc-venceu{background:var(--red-bg);color:var(--red)}
 .venc-badge.venc-registro{background:var(--bg3);color:var(--txt3)}
+.venc-add-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--txt3);cursor:pointer;margin-top:2px;padding:2px 0}
+.venc-add-btn:hover{color:var(--purple2)}
+
+/* ── PICKER POPUP ── */
+#venc-picker-popup{position:absolute;left:0;top:calc(100% + 4px);z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px}
 
 /* ── CAMPO VENCIMENTO NO MODAL ── */
 .venc-field{transition:all .2s}
@@ -353,6 +358,23 @@ const API_SECRET= 'rastreandogps2025';
 const STORAGE_KEY   = 'rgps_historico';
 const ICON_STORAGE  = 'rgps_icones';
 const PROLABORE_KEY = 'rgps_prolabore';
+const VENC_KEY      = 'rgps_vencimentos'; // { "Nome Despesa": 15, "Aluguel": 5, ... }
+
+// Carrega/salva mapa de vencimentos local
+function getVencimentos(){ return JSON.parse(localStorage.getItem(VENC_KEY)||'{}'); }
+function setVencimento(nome, dia){
+  const v = getVencimentos();
+  if(dia === null || dia === undefined) delete v[nome];
+  else v[nome] = dia;
+  localStorage.setItem(VENC_KEY, JSON.stringify(v));
+}
+// Retorna o dia de vencimento de uma despesa (local tem prioridade sobre o que viria do servidor)
+function getDia(d){
+  const local = getVencimentos();
+  if(local[d.nome] !== undefined) return local[d.nome];
+  if(d.vencimento) return parseInt(d.vencimento);
+  return null;
+}
 
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
@@ -396,38 +418,84 @@ function onCatChange(){
 
 /* ── BADGE DE VENCIMENTO ─────────────────────────────────────────────── */
 function vencBadge(d){
-  // d = item de despesa com campos: tipo (Fixa/Variável), vencimento (dia ou null), dataRegistro (string data)
   const hoje = new Date();
   const diaHoje = hoje.getDate();
 
-  if(d.tipo === 'Fixa' || d.tipo === 'Fixa'){
-    const dia = parseInt(d.vencimento);
+  if(d.tipo === 'Fixa'){
+    const dia = getDia(d);
     if(!dia || isNaN(dia)){
-      return ''; // sem vencimento definido — sem badge
+      const nomeEsc = d.nome.replace(/'/g,"\\'");
+      return `<span class="venc-add-btn" onclick="abrirPickerVenc(event,'${nomeEsc}')"><i class="ti ti-calendar-plus" style="font-size:10px"></i> Adicionar vencimento</span>`;
     }
     const diasRestantes = dia - diaHoje;
     let cls, texto;
     if(diasRestantes < 0){
-      cls = 'venc-venceu';
-      texto = `⚠️ Venceu dia ${dia}`;
+      cls = 'venc-venceu'; texto = `Venceu dia ${dia}`;
+    } else if(diasRestantes === 0){
+      cls = 'venc-prox'; texto = `Vence hoje (dia ${dia})`;
     } else if(diasRestantes <= 5){
-      cls = 'venc-prox';
-      texto = diasRestantes === 0 ? `🔔 Vence hoje (dia ${dia})` : `🕐 Vence em ${diasRestantes}d (dia ${dia})`;
+      cls = 'venc-prox'; texto = `Vence em ${diasRestantes}d (dia ${dia})`;
     } else {
-      cls = 'venc-ok';
-      texto = `📅 Dia ${dia}`;
+      cls = 'venc-ok'; texto = `Dia ${dia}`;
     }
-    return `<div class="venc-badge ${cls}"><span>${texto}</span></div>`;
+    const nomeEsc = d.nome.replace(/'/g,"\\'");
+    return `<span class="venc-badge ${cls}" onclick="abrirPickerVenc(event,'${nomeEsc}',${dia})" style="cursor:pointer">${texto} <i class="ti ti-pencil" style="font-size:9px;opacity:.6"></i></span>`;
   }
 
-  // Variável: mostra data de registro
   if(d.dataRegistro){
     const dr = new Date(d.dataRegistro);
     const fmt = isNaN(dr.getTime()) ? d.dataRegistro : dr.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-    return `<div class="venc-badge venc-registro"><i class="ti ti-calendar" style="font-size:9px"></i> Registrado ${fmt}</div>`;
+    return `<span class="venc-badge venc-registro"><i class="ti ti-calendar" style="font-size:9px"></i> Registrado ${fmt}</span>`;
   }
   return '';
 }
+
+/* ── MINI PICKER DE VENCIMENTO ───────────────────────────────────────── */
+let _pickerNome = null;
+function abrirPickerVenc(evt, nome, diaAtual){
+  evt.stopPropagation();
+  fecharPickerVenc();
+  _pickerNome = nome;
+  const trigger = evt.currentTarget;
+  const picker = document.createElement('div');
+  picker.id = 'venc-picker-popup';
+  picker.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px;line-height:1.4">📅 Vencimento<br><em style="font-weight:400;color:var(--txt3)">${nome}</em></div>
+    <div class="venc-day-grid" id="venc-picker-grid"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;align-items:center">
+      <span class="venc-day-none" onclick="salvarPickerVenc(null)">✕ Remover</span>
+      <button onclick="fecharPickerVenc()" style="font-size:11px;background:none;border:1px solid var(--border);padding:4px 10px;border-radius:20px;cursor:pointer;color:var(--txt2);font-family:inherit">Fechar</button>
+    </div>`;
+  trigger.style.position = 'relative';
+  trigger.appendChild(picker);
+  const grid = picker.querySelector('#venc-picker-grid');
+  for(let d = 1; d <= 31; d++){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'venc-day-btn' + (diaAtual === d ? ' sel' : '');
+    btn.textContent = d;
+    btn.onclick = () => salvarPickerVenc(d);
+    grid.appendChild(btn);
+  }
+}
+function fecharPickerVenc(){
+  const p = document.getElementById('venc-picker-popup');
+  if(p) p.remove();
+  _pickerNome = null;
+}
+function salvarPickerVenc(dia){
+  if(!_pickerNome) return;
+  setVencimento(_pickerNome, dia);
+  fecharPickerVenc();
+  if(cacheDespesas){
+    renderDespesas(cacheDespesas.empresa.itens,'desp-empresa',cacheDespesas.empresa.total,cacheDespesas.empresa.pago,'Empresa');
+    renderDespesas(cacheDespesas.pessoal.itens,'desp-pessoal',cacheDespesas.pessoal.total,cacheDespesas.pessoal.pago,'Pessoal');
+  }
+}
+document.addEventListener('click', function(e){
+  const p = document.getElementById('venc-picker-popup');
+  if(p && !p.contains(e.target)) fecharPickerVenc();
+});
 
 /* ── ÍCONES ─────────────────────────────────────────────────────────── */
 const ICONES=[
