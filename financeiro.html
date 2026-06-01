@@ -417,6 +417,13 @@ function onCatChange(){
 }
 
 /* ── BADGE DE VENCIMENTO ─────────────────────────────────────────────── */
+const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+function diaSemanaDoMes(dia){
+  const hoje = new Date();
+  const d = new Date(hoje.getFullYear(), hoje.getMonth(), dia);
+  return DIAS_SEMANA[d.getDay()];
+}
+
 function vencBadge(d){
   const hoje = new Date();
   const diaHoje = hoje.getDate();
@@ -428,15 +435,16 @@ function vencBadge(d){
       return `<span class="venc-add-btn" onclick="abrirPickerVenc(event,'${nomeEsc}')"><i class="ti ti-calendar-plus" style="font-size:10px"></i> Adicionar vencimento</span>`;
     }
     const diasRestantes = dia - diaHoje;
+    const semana = diaSemanaDoMes(dia);
     let cls, texto;
     if(diasRestantes < 0){
-      cls = 'venc-venceu'; texto = `Venceu dia ${dia}`;
+      cls = 'venc-venceu'; texto = `Venceu dia ${dia} (${semana})`;
     } else if(diasRestantes === 0){
-      cls = 'venc-prox'; texto = `Vence hoje (dia ${dia})`;
+      cls = 'venc-prox'; texto = `Vence hoje, dia ${dia} (${semana})`;
     } else if(diasRestantes <= 5){
-      cls = 'venc-prox'; texto = `Vence em ${diasRestantes}d (dia ${dia})`;
+      cls = 'venc-prox'; texto = `${semana}, dia ${dia} · ${diasRestantes}d`;
     } else {
-      cls = 'venc-ok'; texto = `Dia ${dia}`;
+      cls = 'venc-ok'; texto = `${semana}, dia ${dia}`;
     }
     const nomeEsc = d.nome.replace(/'/g,"\\'");
     return `<span class="venc-badge ${cls}" onclick="abrirPickerVenc(event,'${nomeEsc}',${dia})" style="cursor:pointer">${texto} <i class="ti ti-pencil" style="font-size:9px;opacity:.6"></i></span>`;
@@ -469,11 +477,19 @@ function abrirPickerVenc(evt, nome, diaAtual){
   trigger.style.position = 'relative';
   trigger.appendChild(picker);
   const grid = picker.querySelector('#venc-picker-grid');
+  // Label de dia da semana ao passar o mouse / selecionar
+  const semLabel = document.createElement('div');
+  semLabel.id = 'venc-sem-label';
+  semLabel.style.cssText = 'font-size:11px;color:var(--purple2);font-weight:600;min-height:16px;margin-bottom:6px;text-align:center';
+  if(diaAtual) semLabel.textContent = diaSemanaDoMes(diaAtual) + ', dia ' + diaAtual;
+  picker.insertBefore(semLabel, grid);
   for(let d = 1; d <= 31; d++){
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'venc-day-btn' + (diaAtual === d ? ' sel' : '');
     btn.textContent = d;
+    btn.onmouseenter = () => { semLabel.textContent = diaSemanaDoMes(d) + ', dia ' + d; };
+    btn.onmouseleave = () => { const sel = grid.querySelector('.sel'); semLabel.textContent = sel ? diaSemanaDoMes(parseInt(sel.textContent)) + ', dia ' + sel.textContent : ''; };
     btn.onclick = () => salvarPickerVenc(d);
     grid.appendChild(btn);
   }
