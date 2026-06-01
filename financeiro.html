@@ -117,6 +117,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .desp-valor{font-size:14px;font-weight:700;color:var(--txt)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
 .dot.g{background:#1D9E75}.dot.r{background:#E24B4A}
+
+/* ── VENCIMENTO BADGE ── */
+.venc-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;margin-top:2px}
+.venc-badge.venc-ok{background:var(--green-bg);color:var(--green)}
+.venc-badge.venc-prox{background:var(--amber-bg);color:var(--amber)}
+.venc-badge.venc-venceu{background:var(--red-bg);color:var(--red)}
+.venc-badge.venc-registro{background:var(--bg3);color:var(--txt3)}
+
+/* ── CAMPO VENCIMENTO NO MODAL ── */
+.venc-field{transition:all .2s}
+.venc-hint{font-size:11px;color:var(--txt3);margin-top:4px;font-style:italic}
+.venc-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+.venc-day-btn{padding:6px 2px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg);color:var(--txt2);text-align:center;transition:all .12s;font-family:inherit}
+.venc-day-btn:hover{border-color:var(--purple2);color:var(--purple2);background:var(--blue-bg)}
+.venc-day-btn.sel{background:var(--purple);color:#fff;border-color:var(--purple)}
+.venc-day-none{font-size:11px;color:var(--purple2);font-weight:600;cursor:pointer;text-decoration:underline;margin-top:5px;display:inline-block}
+
 /* ── TOGGLE STATUS DESPESA ── */
 .status-toggle{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;user-select:none}
 .status-toggle.pg{background:var(--green-bg);color:var(--green);border:1.5px solid #1D9E75}
@@ -298,7 +315,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <h2>Nova despesa</h2>
     <div class="form-row">
       <div class="fg"><label>Tipo</label><select id="f-tipo"><option>Empresa</option><option>Pessoal</option></select></div>
-      <div class="fg"><label>Categoria</label><select id="f-cat"><option>Fixa</option><option>Variável</option></select></div>
+      <div class="fg"><label>Categoria</label><select id="f-cat" onchange="onCatChange()"><option>Fixa</option><option>Variável</option></select></div>
     </div>
     <div class="fg"><label>Nome</label><input type="text" id="f-nome" placeholder="Ex: Aluguel, Fornecedor..."></div>
     <div class="fg">
@@ -315,6 +332,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="fg"><label>Valor (R$)</label><input type="number" id="f-valor" placeholder="0,00" step="0.01"></div>
       <div class="fg"><label>Status</label><select id="f-status"><option value="PG">Pago</option><option value="AB">Em aberto</option></select></div>
     </div>
+
+    <!-- ── CAMPO VENCIMENTO (só aparece para Fixa) ── -->
+    <div class="fg venc-field" id="venc-field">
+      <label>📅 Dia do vencimento <span style="color:var(--txt3);font-weight:400">(opcional)</span></label>
+      <div class="venc-day-grid" id="venc-day-grid"></div>
+      <span class="venc-day-none" id="venc-none-btn" onclick="limparDiaVenc()">✕ Sem vencimento definido</span>
+      <div class="venc-hint">Selecione o dia do mês em que essa despesa vence.</div>
+    </div>
+
     <div id="modal-erro" style="display:none" class="erro-msg"></div>
     <button class="btn-save" onclick="salvarDespesa()">Salvar despesa</button>
     <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
@@ -330,6 +356,78 @@ const PROLABORE_KEY = 'rgps_prolabore';
 
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
+
+/* ── DIA DE VENCIMENTO ───────────────────────────────────────────────── */
+let diaSelecionado = null; // null = sem vencimento definido
+
+function buildDayGrid(){
+  const grid = document.getElementById('venc-day-grid');
+  grid.innerHTML = '';
+  for(let d = 1; d <= 31; d++){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'venc-day-btn' + (diaSelecionado === d ? ' sel' : '');
+    btn.textContent = d;
+    btn.onclick = () => selecionarDia(d);
+    grid.appendChild(btn);
+  }
+}
+
+function selecionarDia(d){
+  diaSelecionado = (diaSelecionado === d) ? null : d; // toggle: clica de novo limpa
+  buildDayGrid();
+}
+
+function limparDiaVenc(){
+  diaSelecionado = null;
+  buildDayGrid();
+}
+
+function onCatChange(){
+  const cat = document.getElementById('f-cat').value;
+  const field = document.getElementById('venc-field');
+  if(cat === 'Fixa'){
+    field.style.display = 'block';
+  } else {
+    field.style.display = 'none';
+    diaSelecionado = null;
+  }
+}
+
+/* ── BADGE DE VENCIMENTO ─────────────────────────────────────────────── */
+function vencBadge(d){
+  // d = item de despesa com campos: tipo (Fixa/Variável), vencimento (dia ou null), dataRegistro (string data)
+  const hoje = new Date();
+  const diaHoje = hoje.getDate();
+
+  if(d.tipo === 'Fixa' || d.tipo === 'Fixa'){
+    const dia = parseInt(d.vencimento);
+    if(!dia || isNaN(dia)){
+      return ''; // sem vencimento definido — sem badge
+    }
+    const diasRestantes = dia - diaHoje;
+    let cls, texto;
+    if(diasRestantes < 0){
+      cls = 'venc-venceu';
+      texto = `⚠️ Venceu dia ${dia}`;
+    } else if(diasRestantes <= 5){
+      cls = 'venc-prox';
+      texto = diasRestantes === 0 ? `🔔 Vence hoje (dia ${dia})` : `🕐 Vence em ${diasRestantes}d (dia ${dia})`;
+    } else {
+      cls = 'venc-ok';
+      texto = `📅 Dia ${dia}`;
+    }
+    return `<div class="venc-badge ${cls}"><span>${texto}</span></div>`;
+  }
+
+  // Variável: mostra data de registro
+  if(d.dataRegistro){
+    const dr = new Date(d.dataRegistro);
+    const fmt = isNaN(dr.getTime()) ? d.dataRegistro : dr.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    return `<div class="venc-badge venc-registro"><i class="ti ti-calendar" style="font-size:9px"></i> Registrado ${fmt}</div>`;
+  }
+  return '';
+}
 
 /* ── ÍCONES ─────────────────────────────────────────────────────────── */
 const ICONES=[
@@ -375,12 +473,10 @@ async function toggleStatusDesp(btn, nome, tipo, categoria){
       btn.innerHTML = novoStatus==='PG'
         ? '<i class="ti ti-check" style="font-size:10px"></i> Pago'
         : '<i class="ti ti-clock" style="font-size:10px"></i> Em aberto';
-      // Atualiza o dot ao lado
       const dot = btn.previousElementSibling;
       if(dot && dot.classList.contains('dot')){
         dot.className = 'dot ' + (novoStatus==='PG'?'g':'r');
       }
-      // Invalida cache para recalcular totais na próxima visita
       cacheDespesas = null;
     } else {
       alert('Erro ao atualizar: ' + (res.error||'tente novamente'));
@@ -429,7 +525,6 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
       <div class="pl-linha-valor">− ${brl(d.valor)}</div>
     </div>`;
   };
-  // Mostra breakdown só se prolabore > 0; se for 0 mostra mensagem neutra
   const temProlabore = prolabore > 0;
   document.getElementById('pl-content').innerHTML=`
     <div class="pl-topo">
@@ -507,7 +602,6 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
 
 function salvarProlabore(){
   const raw = document.getElementById('pl-valor').value;
-  // ✅ CORRIGIDO: permite zero — só bloqueia se campo vazio ou inválido
   const v = raw === '' ? null : parseFloat(raw);
   if(v === null || isNaN(v) || v < 0) return;
   localStorage.setItem(PROLABORE_KEY, v.toString());
@@ -596,17 +690,18 @@ function statusINHtml(inn){return '<div class="status-row" style="flex-direction
 /* ── DESPESAS ────────────────────────────────────────────────────────── */
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const aberto=total-pago;
-  // ✅ NOVO: cada item tem toggle de status
   const itemHtml = d => {
     const ic = getIcone(d.nome);
     const isPG = d.status === 'PG';
     const nomeEsc = d.nome.replace(/'/g,"\\'");
+    const badgeVenc = vencBadge(d);
     return `<div class="desp-item">
       <div class="desp-left">
         <div class="desp-icon" style="background:${ic.c}"><i class="ti ${ic.i}" style="font-size:17px;color:${ic.t}"></i></div>
         <div>
           <div class="desp-name">${d.nome}</div>
           <div class="desp-sub">${d.tipo||''}</div>
+          ${badgeVenc}
         </div>
       </div>
       <div class="desp-right">
@@ -679,8 +774,20 @@ async function salvarDespesa(){
   if(!nome||isNaN(valor)||valor<=0){erroEl.textContent='Preencha o nome e o valor.';erroEl.style.display='block';return;}
   erroEl.style.display='none';
   iconesUsuario[nome]=iconeSelecionado;salvarIconesUsuario();
+
+  // ── Monta dados de data conforme categoria ──
+  const hoje = new Date();
+  const dataRegistro = hoje.toISOString().split('T')[0]; // YYYY-MM-DD
+  const payload = {
+    action:'salvarDespesa', tipo, categoria, nome, valor, status,
+    // Fixa: envia dia do vencimento (pode ser null se não selecionado)
+    // Variável: envia data de registro automática
+    vencimento:  categoria === 'Fixa' ? (diaSelecionado || null) : null,
+    dataRegistro: categoria !== 'Fixa' ? dataRegistro : null,
+  };
+
   try{
-    const json = await postar({action:'salvarDespesa',tipo,categoria,nome,valor,status});
+    const json = await postar(payload);
     if(json.ok){
       fecharModal();document.getElementById('f-nome').value='';document.getElementById('f-valor').value='';
       cacheDespesas=null;
@@ -715,6 +822,11 @@ function abrirModal(){
   document.getElementById('icon-grid').classList.remove('open');
   document.getElementById('icon-search').style.display='none';
   document.querySelector('.icon-grid-toggle').textContent='▼ Escolher ícone';
+  // Reset vencimento
+  diaSelecionado = null;
+  document.getElementById('venc-field').style.display = 'block'; // padrão Fixa
+  document.getElementById('f-cat').value = 'Fixa';
+  buildDayGrid();
   document.getElementById('modal').classList.add('open');
 }
 function fecharModal(){document.getElementById('modal').classList.remove('open');}
