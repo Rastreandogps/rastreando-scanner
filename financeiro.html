@@ -126,6 +126,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .venc-badge.venc-registro{background:var(--bg3);color:var(--txt3)}
 .venc-add-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--txt3);cursor:pointer;margin-top:2px;padding:2px 0}
 .venc-add-btn:hover{color:var(--purple2)}
+.btn-lixeira{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--txt3);cursor:pointer;transition:all .15s;flex-shrink:0}
+.btn-lixeira:hover{background:var(--red-bg);color:var(--red)}
+.btn-lixeira:disabled{opacity:.4;pointer-events:none}
 
 /* ── PICKER POPUP ── */
 #venc-picker-popup{position:absolute;left:0;top:calc(100% + 4px);z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px}
@@ -499,6 +502,32 @@ function fecharPickerVenc(){
   if(p) p.remove();
   _pickerNome = null;
 }
+/* ── EXCLUIR DESPESA ─────────────────────────────────────────────────── */
+async function excluirDespesa(btn, nome, tipo, categoria){
+  if(!confirm(`Excluir "${nome}"?
+
+Isso também removerá da planilha.`)) return;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" style="font-size:12px;animation:spin .8s linear infinite"></i>';
+  try{
+    const res = await postar({action:'deletarDespesa', nome, tipo, categoria});
+    if(res.ok){
+      // Remove vencimento local se existir
+      setVencimento(nome, null);
+      cacheDespesas = null;
+      carregarDespesas();
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
+      alert('Erro ao excluir: ' + (res.error||'tente novamente'));
+    }
+  } catch(e){
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
+    alert('Erro de conexão.');
+  }
+}
+
 function salvarPickerVenc(dia){
   if(!_pickerNome) return;
   setVencimento(_pickerNome, dia);
@@ -796,6 +825,10 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
             onclick="toggleStatusDesp(this,'${nomeEsc}','${tipoDesp}','${d.tipo}')">
             <i class="ti ${isPG?'ti-check':'ti-clock'}" style="font-size:10px"></i>
             ${isPG?'Pago':'Em aberto'}
+          </button>
+          <button class="btn-lixeira" title="Excluir despesa"
+            onclick="excluirDespesa(this,'${nomeEsc}','${tipoDesp}','${d.tipo}')">
+            <i class="ti ti-trash" style="font-size:13px"></i>
           </button>
         </div>
       </div>
