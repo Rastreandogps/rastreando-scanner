@@ -124,6 +124,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .venc-badge.venc-prox{background:var(--amber-bg);color:var(--amber)}
 .venc-badge.venc-venceu{background:var(--red-bg);color:var(--red)}
 .venc-badge.venc-registro{background:var(--bg3);color:var(--txt3)}
+.venc-badge.venc-parc{background:#EEEDFE;color:var(--purple2);display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.parc-bar-wrap{display:inline-block;width:36px;height:5px;background:rgba(83,74,183,.2);border-radius:3px;overflow:hidden;vertical-align:middle;margin-left:2px}
+.parc-bar-fill{display:block;height:100%;background:var(--purple2);border-radius:3px;transition:width .4s ease}
 .venc-add-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--txt3);cursor:pointer;margin-top:2px;padding:2px 0}
 .venc-add-btn:hover{color:var(--purple2)}
 .btn-lixeira{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--txt3);cursor:pointer;transition:all .15s;flex-shrink:0}
@@ -339,7 +342,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <h2>Nova despesa</h2>
     <div class="form-row">
       <div class="fg"><label>Tipo</label><select id="f-tipo"><option>Empresa</option><option>Pessoal</option></select></div>
-      <div class="fg"><label>Categoria</label><select id="f-cat" onchange="onCatChange()"><option>Fixa</option><option>Variável</option></select></div>
+      <div class="fg"><label>Categoria</label><select id="f-cat" onchange="onCatChange()"><option>Fixa</option><option>Variável</option><option>Parcelada</option></select></div>
     </div>
     <div class="fg"><label>Nome</label><input type="text" id="f-nome" placeholder="Ex: Aluguel, Fornecedor..."></div>
     <div class="fg">
@@ -365,6 +368,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="venc-hint">Selecione o dia do mês em que essa despesa vence.</div>
     </div>
 
+    <!-- ── CAMPO PARCELADA (só aparece para Parcelada) ── -->
+    <div class="fg" id="parc-field" style="display:none">
+      <label>🗓️ Parcelamento</label>
+      <div class="form-row">
+        <div class="fg" style="margin-bottom:0">
+          <label>Parcela atual</label>
+          <input type="number" id="f-parc-atual" min="1" placeholder="Ex: 1" style="text-align:center">
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label>Total de parcelas</label>
+          <input type="number" id="f-parc-total" min="1" placeholder="Ex: 6" style="text-align:center">
+        </div>
+      </div>
+      <div class="venc-hint" style="margin-top:6px">A parcela avança automaticamente no dia 1 de cada mês.</div>
+    </div>
+
     <div id="modal-erro" style="display:none" class="erro-msg"></div>
     <button class="btn-save" onclick="salvarDespesa()">Salvar despesa</button>
     <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
@@ -378,6 +397,32 @@ const STORAGE_KEY   = 'rgps_historico';
 const ICON_STORAGE  = 'rgps_icones';
 const PROLABORE_KEY = 'rgps_prolabore';
 const VENC_KEY      = 'rgps_vencimentos'; // { "Nome Despesa": 15, "Aluguel": 5, ... }
+const PARC_KEY      = 'rgps_parcelamentos'; // { "Casas Bahia": { total:6, anoMesInicio:"2025-06" } }
+
+// ── PARCELAMENTOS ─────────────────────────────────────────────────────
+function getParcelamentos(){ return JSON.parse(localStorage.getItem(PARC_KEY)||'{}'); }
+function setParcelamento(nome, dados){
+  const p = getParcelamentos();
+  if(dados === null) delete p[nome];
+  else p[nome] = dados;
+  localStorage.setItem(PARC_KEY, JSON.stringify(p));
+}
+// Retorna { parcAtual, total } ou null se não for parcelada
+function getParc(nome){
+  const p = getParcelamentos();
+  if(!p[nome]) return null;
+  const { total, anoMesInicio } = p[nome];
+  const [anoI, mesI] = anoMesInicio.split('-').map(Number);
+  const hoje = new Date();
+  const mesesDecorridos = (hoje.getFullYear() - anoI) * 12 + (hoje.getMonth() + 1 - mesI);
+  const parcAtual = Math.min(mesesDecorridos + 1, total); // começa na parcela 1
+  return { parcAtual, total };
+}
+// Mês/ano no formato "YYYY-MM"
+function anoMesAtual(){
+  const h = new Date();
+  return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0');
+}
 
 // Carrega/salva mapa de vencimentos local
 function getVencimentos(){ return JSON.parse(localStorage.getItem(VENC_KEY)||'{}'); }
@@ -426,11 +471,18 @@ function limparDiaVenc(){
 
 function onCatChange(){
   const cat = document.getElementById('f-cat').value;
-  const field = document.getElementById('venc-field');
+  const vencField = document.getElementById('venc-field');
+  const parcField = document.getElementById('parc-field');
+  // Vencimento: só para Fixa e Parcelada
   if(cat === 'Fixa'){
-    field.style.display = 'block';
+    vencField.style.display = 'block';
+    parcField.style.display = 'none';
+  } else if(cat === 'Parcelada'){
+    vencField.style.display = 'block';
+    parcField.style.display = 'block';
   } else {
-    field.style.display = 'none';
+    vencField.style.display = 'none';
+    parcField.style.display = 'none';
     diaSelecionado = null;
   }
 }
@@ -446,6 +498,24 @@ function diaSemanaDoMes(dia){
 function vencBadge(d){
   const hoje = new Date();
   const diaHoje = hoje.getDate();
+
+  if(d.tipo === 'Parcelada'){
+    const parc = getParc(d.nome);
+    if(!parc) return `<span class="venc-badge venc-registro"><i class="ti ti-packages" style="font-size:9px"></i> Parcelada</span>`;
+    const { parcAtual, total } = parc;
+    if(parcAtual > total){
+      return `<span class="venc-badge venc-ok"><i class="ti ti-check" style="font-size:9px"></i> Quitada!</span>`;
+    }
+    const pct = Math.round((parcAtual / total) * 100);
+    const dia = getDia(d);
+    const semana = dia ? diaSemanaDoMes(dia) : null;
+    const vencTxt = dia ? ` · ${semana} dia ${dia}` : '';
+    return `<span class="venc-badge venc-parc">
+      <i class="ti ti-credit-card" style="font-size:9px"></i>
+      ${parcAtual}/${total}${vencTxt}
+      <span class="parc-bar-wrap"><span class="parc-bar-fill" style="width:${pct}%"></span></span>
+    </span>`;
+  }
 
   if(d.tipo === 'Fixa'){
     const dia = getDia(d);
@@ -818,12 +888,20 @@ function statusINHtml(inn){return '<div class="status-row" style="flex-direction
 
 /* ── DESPESAS ────────────────────────────────────────────────────────── */
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
-  // Separação fixas x variáveis
-  const fixas = itens.filter(d => d.tipo === 'Fixa');
-  const varrs = itens.filter(d => d.tipo !== 'Fixa');
+  // Separação fixas / parceladas / variáveis
+  // Na planilha, Parcelada vem como "Fixa" — identificamos pelo localStorage
+  const parcs  = itens.filter(d => getParc(d.nome) !== null);
+  const parcNomes = new Set(parcs.map(d=>d.nome));
+  const fixas  = itens.filter(d => d.tipo === 'Fixa' && !parcNomes.has(d.nome));
+  const varrs  = itens.filter(d => d.tipo !== 'Fixa');
+  // Injeta tipo visual nas parceladas
+  parcs.forEach(d => d.tipo = 'Parcelada');
   const tFix  = fixas.reduce((s,d)=>s+d.valor,0);
   const pFix  = fixas.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
   const aFix  = tFix - pFix;
+  const tParc = parcs.reduce((s,d)=>s+d.valor,0);
+  const pParc = parcs.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
+  const aParc = tParc - pParc;
   const tVar  = varrs.reduce((s,d)=>s+d.valor,0);
   const pVar  = varrs.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
   const aVar  = tVar - pVar;
@@ -875,6 +953,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
 
   document.getElementById(containerId).innerHTML =
     blocoResumo('Fixas', 'ti-pin', tFix, pFix, aFix) +
+    blocoResumo('Parceladas', 'ti-credit-card', tParc, pParc, aParc) +
     blocoResumo('Variáveis', 'ti-arrows-shuffle', tVar, pVar, aVar) +
     `<div class="desp-total-geral">
       <div class="desp-total-row"><span>Total geral</span><strong>${brl(total)}</strong></div>
@@ -884,6 +963,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
       </div>
     </div>` +
     (fixas.length > 0 ? '<p class="section-label" style="margin-top:4px">📌 Fixas</p><div class="card" style="padding:4px 16px;margin-bottom:8px">'+fixas.map(itemHtml).join('')+'</div>' : '') +
+    (parcs.length > 0 ? '<p class="section-label">💳 Parceladas</p><div class="card" style="padding:4px 16px;margin-bottom:8px">'+parcs.map(itemHtml).join('')+'</div>' : '') +
     (varrs.length > 0 ? '<p class="section-label">⚡ Variáveis</p><div class="card" style="padding:4px 16px">'+varrs.map(itemHtml).join('')+'</div>' : '');
 }
 
@@ -936,15 +1016,33 @@ async function salvarDespesa(){
   erroEl.style.display='none';
   iconesUsuario[nome]=iconeSelecionado;salvarIconesUsuario();
 
+  // ── Parcelada: valida e salva localmente ──
+  if(categoria === 'Parcelada'){
+    const parcAtual = parseInt(document.getElementById('f-parc-atual').value);
+    const parcTotal = parseInt(document.getElementById('f-parc-total').value);
+    if(isNaN(parcAtual)||isNaN(parcTotal)||parcAtual<1||parcTotal<1||parcAtual>parcTotal){
+      erroEl.textContent='Informe a parcela atual e o total corretamente.';erroEl.style.display='block';return;
+    }
+    // Calcula o anoMes de início baseado na parcela atual
+    const hoje2 = new Date();
+    const anoInicio = hoje2.getFullYear() - Math.floor((parcAtual-1)/12);
+    const mesInicio = ((hoje2.getMonth() + 1 - ((parcAtual-1)%12) - 1 + 120) % 12) + 1;
+    const mesInicioAdj = hoje2.getMonth() + 1 - (parcAtual - 1);
+    const dataInicio = new Date(hoje2.getFullYear(), hoje2.getMonth() - (parcAtual - 1), 1);
+    const anoMesInicio = dataInicio.getFullYear() + '-' + String(dataInicio.getMonth()+1).padStart(2,'0');
+    setParcelamento(nome, { total: parcTotal, anoMesInicio });
+    if(diaSelecionado) setVencimento(nome, diaSelecionado);
+  }
+
   // ── Monta dados de data conforme categoria ──
   const hoje = new Date();
   const dataRegistro = hoje.toISOString().split('T')[0]; // YYYY-MM-DD
+  // Para a planilha, Parcelada vai como "Fixa" (mesma seção)
+  const categoriaGAS = categoria === 'Parcelada' ? 'Fixa' : categoria;
   const payload = {
-    action:'salvarDespesa', tipo, categoria, nome, valor, status,
-    // Fixa: envia dia do vencimento (pode ser null se não selecionado)
-    // Variável: envia data de registro automática
-    vencimento:  categoria === 'Fixa' ? (diaSelecionado || null) : null,
-    dataRegistro: categoria !== 'Fixa' ? dataRegistro : null,
+    action:'salvarDespesa', tipo, categoria:categoriaGAS, nome, valor, status,
+    vencimento:  (categoria === 'Fixa'||categoria==='Parcelada') ? (diaSelecionado || null) : null,
+    dataRegistro: categoria === 'Variável' ? dataRegistro : null,
   };
 
   try{
@@ -983,10 +1081,13 @@ function abrirModal(){
   document.getElementById('icon-grid').classList.remove('open');
   document.getElementById('icon-search').style.display='none';
   document.querySelector('.icon-grid-toggle').textContent='▼ Escolher ícone';
-  // Reset vencimento
+  // Reset vencimento e parcela
   diaSelecionado = null;
   document.getElementById('venc-field').style.display = 'block'; // padrão Fixa
+  document.getElementById('parc-field').style.display = 'none';
   document.getElementById('f-cat').value = 'Fixa';
+  document.getElementById('f-parc-atual').value = '';
+  document.getElementById('f-parc-total').value = '';
   buildDayGrid();
   document.getElementById('modal').classList.add('open');
 }
