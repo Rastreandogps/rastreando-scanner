@@ -674,12 +674,23 @@ async function carregarProlabore(){
   }catch(e){el.innerHTML='<div class="erro-msg">Erro ao conectar.</div>';}
 }
 
+// ============================================================
+// BUG FIX: somaPessoal agora usa pessoal.total (mesmo valor
+// exibido na aba Despesas > Pessoal), garantindo que o
+// "Saldo no seu bolso" seja idêntico nas duas abas.
+// As variáveis somaFixas / somaVarrs são mantidas apenas para
+// o breakdown de distribuição percentual do pró-labore.
+// ============================================================
 function _renderProlabore(liqEsperado, pessoal, prolabore){
-  const fixas = pessoal.itens.filter(d=>d.tipo==='Fixa');
-  const varrs = pessoal.itens.filter(d=>d.tipo==='Variável'||d.tipo==='Variavel');
+  // CORRIGIDO: usa pessoal.total para garantir consistência com aba Despesas
+  const somaPessoal = Number(pessoal.total || 0);
+
+  // Breakdown visual (exclui parceladas do filtro de fixas, igual ao renderDespesas)
+  const fixas = pessoal.itens.filter(d => d.tipo === 'Fixa' && getParc(d.nome) === null);
+  const varrs = pessoal.itens.filter(d => d.tipo === 'Variável' || d.tipo === 'Variavel');
   const somaFixas = fixas.reduce((a,d)=>a+Number(d.valor||0),0);
   const somaVarrs = varrs.reduce((a,d)=>a+Number(d.valor||0),0);
-  const somaPessoal = somaFixas+somaVarrs;
+
   const sobraEmpresa = liqEsperado - prolabore;
   const saldoPessoal = prolabore - somaPessoal;
   const sobraPos  = sobraEmpresa>=0;
