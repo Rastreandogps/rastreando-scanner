@@ -117,8 +117,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .desp-valor{font-size:14px;font-weight:700;color:var(--txt)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
 .dot.g{background:#1D9E75}.dot.r{background:#E24B4A}
-
-/* ── VENCIMENTO BADGE ── */
 .venc-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;margin-top:2px}
 .venc-badge.venc-ok{background:var(--green-bg);color:var(--green)}
 .venc-badge.venc-prox{background:var(--amber-bg);color:var(--amber)}
@@ -132,7 +130,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-lixeira{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--txt3);cursor:pointer;transition:all .15s;flex-shrink:0}
 .btn-lixeira:hover{background:var(--red-bg);color:var(--red)}
 .btn-lixeira:disabled{opacity:.4;pointer-events:none}
-/* ── RESUMO FIXAS / VARIÁVEIS ── */
 .desp-resumo-bloco{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px}
 .desp-resumo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .desp-resumo-label{font-size:12px;font-weight:700;color:var(--txt2)}
@@ -141,18 +138,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .desp-resumo-pill{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
 .desp-resumo-pill.pg{background:var(--green-bg);color:var(--green)}
 .desp-resumo-pill.ab{background:var(--red-bg);color:var(--red)}
-/* ── TOTAL GERAL ── */
 .desp-total-geral{background:var(--purple);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px}
 .desp-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .desp-total-row span{font-size:12px;font-weight:600;color:rgba(255,255,255,.6)}
 .desp-total-row strong{font-size:18px;font-weight:700;color:#fff}
 .desp-total-sub{display:flex;gap:10px;flex-wrap:wrap}
 .desp-total-sub span{font-size:11px;font-weight:600}
-
-/* ── PICKER POPUP ── */
 #venc-picker-popup{position:absolute;left:0;top:calc(100% + 4px);z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px}
-
-/* ── CAMPO VENCIMENTO NO MODAL ── */
 .venc-field{transition:all .2s}
 .venc-hint{font-size:11px;color:var(--txt3);margin-top:4px;font-style:italic}
 .venc-day-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
@@ -160,8 +152,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .venc-day-btn:hover{border-color:var(--purple2);color:var(--purple2);background:var(--blue-bg)}
 .venc-day-btn.sel{background:var(--purple);color:#fff;border-color:var(--purple)}
 .venc-day-none{font-size:11px;color:var(--purple2);font-weight:600;cursor:pointer;text-decoration:underline;margin-top:5px;display:inline-block}
-
-/* ── TOGGLE STATUS DESPESA ── */
 .status-toggle{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;user-select:none}
 .status-toggle.pg{background:var(--green-bg);color:var(--green);border:1.5px solid #1D9E75}
 .status-toggle.ab{background:var(--red-bg);color:var(--red);border:1.5px solid #E24B4A}
@@ -222,7 +212,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .icon-cell span{font-size:8px;color:var(--txt3);text-align:center;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .icon-cell.selected span{color:rgba(255,255,255,.7)}
 .icon-search{width:100%;padding:8px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;background:var(--bg);color:var(--txt);outline:none;margin-bottom:6px}
-/* ── PRÓ-LABORE ─────────────────────────────── */
 .pl-topo{background:linear-gradient(135deg,#26215C 0%,#3C3489 100%);border-radius:var(--radius);padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
 .pl-topo::after{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;background:rgba(255,255,255,.05);border-radius:50%}
 .pl-liq-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;position:relative;z-index:1}
@@ -269,7 +258,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pl-pct-bloco{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
 .pl-pct-item{margin-bottom:10px}
 .pl-pct-item:last-child{margin-bottom:0}
-.pl-pct-header{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:4px}
+.pl-pct-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--txt2);margin-bottom:4px;gap:6px}
+.pl-pct-header span:first-child{flex:1}
+.pl-pct-header .pl-pct-valor{font-size:11px;color:var(--txt3);font-weight:500;white-space:nowrap}
+.pl-pct-header .pl-pct-pct{font-weight:700;min-width:44px;text-align:right;white-space:nowrap}
 .pl-pct-track{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
 .pl-pct-fill{height:100%;border-radius:4px;transition:width .4s ease}
 .pl-loading{text-align:center;padding:40px 20px;color:var(--txt2)}
@@ -359,16 +351,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="fg"><label>Valor (R$)</label><input type="number" id="f-valor" placeholder="0,00" step="0.01"></div>
       <div class="fg"><label>Status</label><select id="f-status"><option value="PG">Pago</option><option value="AB">Em aberto</option></select></div>
     </div>
-
-    <!-- ── CAMPO VENCIMENTO (só aparece para Fixa) ── -->
     <div class="fg venc-field" id="venc-field">
       <label>📅 Dia do vencimento <span style="color:var(--txt3);font-weight:400">(opcional)</span></label>
       <div class="venc-day-grid" id="venc-day-grid"></div>
       <span class="venc-day-none" id="venc-none-btn" onclick="limparDiaVenc()">✕ Sem vencimento definido</span>
       <div class="venc-hint">Selecione o dia do mês em que essa despesa vence.</div>
     </div>
-
-    <!-- ── CAMPO PARCELADA (só aparece para Parcelada) ── -->
     <div class="fg" id="parc-field" style="display:none">
       <label>🗓️ Parcelamento</label>
       <div class="form-row">
@@ -383,7 +371,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div class="venc-hint" style="margin-top:6px">A parcela avança automaticamente no dia 1 de cada mês.</div>
     </div>
-
     <div id="modal-erro" style="display:none" class="erro-msg"></div>
     <button class="btn-save" onclick="salvarDespesa()">Salvar despesa</button>
     <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
@@ -396,10 +383,9 @@ const API_SECRET= 'rastreandogps2025';
 const STORAGE_KEY   = 'rgps_historico';
 const ICON_STORAGE  = 'rgps_icones';
 const PROLABORE_KEY = 'rgps_prolabore';
-const VENC_KEY      = 'rgps_vencimentos'; // { "Nome Despesa": 15, "Aluguel": 5, ... }
-const PARC_KEY      = 'rgps_parcelamentos'; // { "Casas Bahia": { total:6, anoMesInicio:"2025-06" } }
+const VENC_KEY      = 'rgps_vencimentos';
+const PARC_KEY      = 'rgps_parcelamentos';
 
-// ── PARCELAMENTOS ─────────────────────────────────────────────────────
 function getParcelamentos(){ return JSON.parse(localStorage.getItem(PARC_KEY)||'{}'); }
 function setParcelamento(nome, dados){
   const p = getParcelamentos();
@@ -407,7 +393,6 @@ function setParcelamento(nome, dados){
   else p[nome] = dados;
   localStorage.setItem(PARC_KEY, JSON.stringify(p));
 }
-// Retorna { parcAtual, total } ou null se não for parcelada
 function getParc(nome){
   const p = getParcelamentos();
   if(!p[nome]) return null;
@@ -415,16 +400,13 @@ function getParc(nome){
   const [anoI, mesI] = anoMesInicio.split('-').map(Number);
   const hoje = new Date();
   const mesesDecorridos = (hoje.getFullYear() - anoI) * 12 + (hoje.getMonth() + 1 - mesI);
-  const parcAtual = Math.min(mesesDecorridos + 1, total); // começa na parcela 1
+  const parcAtual = Math.min(mesesDecorridos + 1, total);
   return { parcAtual, total };
 }
-// Mês/ano no formato "YYYY-MM"
 function anoMesAtual(){
   const h = new Date();
   return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0');
 }
-
-// Carrega/salva mapa de vencimentos local
 function getVencimentos(){ return JSON.parse(localStorage.getItem(VENC_KEY)||'{}'); }
 function setVencimento(nome, dia){
   const v = getVencimentos();
@@ -432,7 +414,6 @@ function setVencimento(nome, dia){
   else v[nome] = dia;
   localStorage.setItem(VENC_KEY, JSON.stringify(v));
 }
-// Retorna o dia de vencimento de uma despesa (local tem prioridade sobre o que viria do servidor)
 function getDia(d){
   const local = getVencimentos();
   if(local[d.nome] !== undefined) return local[d.nome];
@@ -443,8 +424,7 @@ function getDia(d){
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
 
-/* ── DIA DE VENCIMENTO ───────────────────────────────────────────────── */
-let diaSelecionado = null; // null = sem vencimento definido
+let diaSelecionado = null;
 
 function buildDayGrid(){
   const grid = document.getElementById('venc-day-grid');
@@ -458,22 +438,18 @@ function buildDayGrid(){
     grid.appendChild(btn);
   }
 }
-
 function selecionarDia(d){
-  diaSelecionado = (diaSelecionado === d) ? null : d; // toggle: clica de novo limpa
+  diaSelecionado = (diaSelecionado === d) ? null : d;
   buildDayGrid();
 }
-
 function limparDiaVenc(){
   diaSelecionado = null;
   buildDayGrid();
 }
-
 function onCatChange(){
   const cat = document.getElementById('f-cat').value;
   const vencField = document.getElementById('venc-field');
   const parcField = document.getElementById('parc-field');
-  // Vencimento: só para Fixa e Parcelada
   if(cat === 'Fixa'){
     vencField.style.display = 'block';
     parcField.style.display = 'none';
@@ -487,7 +463,6 @@ function onCatChange(){
   }
 }
 
-/* ── BADGE DE VENCIMENTO ─────────────────────────────────────────────── */
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 function diaSemanaDoMes(dia){
   const hoje = new Date();
@@ -506,14 +481,14 @@ function vencBadge(d){
     if(parcAtual > total){
       return `<span class="venc-badge venc-ok"><i class="ti ti-check" style="font-size:9px"></i> Quitada!</span>`;
     }
-    const pct = Math.round((parcAtual / total) * 100);
+    const pctV = Math.round((parcAtual / total) * 100);
     const dia = getDia(d);
     const semana = dia ? diaSemanaDoMes(dia) : null;
     const vencTxt = dia ? ` · ${semana} dia ${dia}` : '';
     return `<span class="venc-badge venc-parc">
       <i class="ti ti-credit-card" style="font-size:9px"></i>
       ${parcAtual}/${total}${vencTxt}
-      <span class="parc-bar-wrap"><span class="parc-bar-fill" style="width:${pct}%"></span></span>
+      <span class="parc-bar-wrap"><span class="parc-bar-fill" style="width:${pctV}%"></span></span>
     </span>`;
   }
 
@@ -547,7 +522,6 @@ function vencBadge(d){
   return '';
 }
 
-/* ── MINI PICKER DE VENCIMENTO ───────────────────────────────────────── */
 let _pickerNome = null;
 function abrirPickerVenc(evt, nome, diaAtual){
   evt.stopPropagation();
@@ -566,7 +540,6 @@ function abrirPickerVenc(evt, nome, diaAtual){
   trigger.style.position = 'relative';
   trigger.appendChild(picker);
   const grid = picker.querySelector('#venc-picker-grid');
-  // Label de dia da semana ao passar o mouse / selecionar
   const semLabel = document.createElement('div');
   semLabel.id = 'venc-sem-label';
   semLabel.style.cssText = 'font-size:11px;color:var(--purple2);font-weight:600;min-height:16px;margin-bottom:6px;text-align:center';
@@ -588,42 +561,26 @@ function fecharPickerVenc(){
   if(p) p.remove();
   _pickerNome = null;
 }
-/* ── EXCLUIR DESPESA ─────────────────────────────────────────────────── */
-async function excluirDespesa(btn, nome, tipo, categoria){
-  if(!confirm(`Excluir "${nome}"?
 
-Isso também removerá da planilha.`)) return;
+async function excluirDespesa(btn, nome, tipo, categoria){
+  if(!confirm(`Excluir "${nome}"?\n\nIsso também removerá da planilha.`)) return;
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader" style="font-size:12px;animation:spin .8s linear infinite"></i>';
-
-  // Tenta excluir da planilha — primeiro como Fixa, depois como Parcelada (fallback),
-  // pois dependendo de quando foi cadastrada pode ter entrado com qualquer um dos dois nomes
   const limparLocal = () => {
     setVencimento(nome, null);
     setParcelamento(nome, null);
     cacheDespesas = null;
     carregarDespesas();
   };
-
   try{
-    // Tentativa 1: categoria real (ou Fixa se for Parcelada — padrão atual)
     const cat1 = categoria === 'Parcelada' ? 'Fixa' : categoria;
     const res1 = await postar({action:'deletarDespesa', nome, tipo, categoria:cat1});
     if(res1.ok){ limparLocal(); return; }
-
-    // Tentativa 2: se não achou, tenta com 'Parcelada' (cadastros antigos)
     if(categoria === 'Parcelada'){
       const res2 = await postar({action:'deletarDespesa', nome, tipo, categoria:'Parcelada'});
       if(res2.ok){ limparLocal(); return; }
     }
-
-    // Se ainda não achou na planilha mas é parcelada (pode ter sido criada só localmente)
-    // remove só do app sem mostrar erro
-    if(categoria === 'Parcelada'){
-      limparLocal();
-      return;
-    }
-
+    if(categoria === 'Parcelada'){ limparLocal(); return; }
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-trash" style="font-size:13px"></i>';
     alert('Erro ao excluir: ' + (res1.error||'tente novamente'));
@@ -648,7 +605,6 @@ document.addEventListener('click', function(e){
   if(p && !p.contains(e.target)) fecharPickerVenc();
 });
 
-/* ── ÍCONES ─────────────────────────────────────────────────────────── */
 const ICONES=[
   {i:'ti-home',n:'Casa',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-building',n:'Prédio',c:'#E6F1FB',t:'#185FA5'},{i:'ti-key',n:'Chave',c:'#FAEEDA',t:'#854F0B'},{i:'ti-sofa',n:'Móveis',c:'#EEEDFE',t:'#534AB7'},{i:'ti-tools',n:'Obras',c:'#FAECE7',t:'#993C1D'},
   {i:'ti-bolt',n:'Luz',c:'#FAEEDA',t:'#854F0B'},{i:'ti-droplet',n:'Água',c:'#E6F1FB',t:'#185FA5'},{i:'ti-flame',n:'Gás',c:'#FCEBEB',t:'#A32D2D'},{i:'ti-wifi',n:'Internet',c:'#EEEDFE',t:'#534AB7'},{i:'ti-phone',n:'Telefone',c:'#E6F1FB',t:'#185FA5'},{i:'ti-device-mobile',n:'Celular',c:'#E1F5EE',t:'#0F6E56'},{i:'ti-sim',n:'Chip',c:'#E1F5EE',t:'#0F6E56'},
@@ -672,19 +628,15 @@ function selecionarIcone(ic){iconeSelecionado=ic;document.getElementById('icon-p
 function toggleIconGrid(){const grid=document.getElementById('icon-grid'),search=document.getElementById('icon-search'),toggle=document.querySelector('.icon-grid-toggle'),open=grid.classList.toggle('open');search.style.display=open?'block':'none';toggle.textContent=open?'▲ Fechar':'▼ Escolher ícone';if(open){buildIconGrid();search.focus();}}
 function filtrarIcones(){buildIconGrid();}
 
-/* ── API ─────────────────────────────────────────────────────────────── */
 async function buscar(action){const res=await fetch(API_URL+'?secret='+API_SECRET+'&action='+action);return res.json();}
 async function postar(payload){const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({secret:API_SECRET,...payload})});return res.json();}
 
-/* ── CACHE GLOBAL ────────────────────────────────────────────────────── */
 let cacheDash=null, cacheDespesas=null;
 
-/* ── TOGGLE STATUS DESPESA ───────────────────────────────────────────── */
 async function toggleStatusDesp(btn, nome, tipo, categoria){
   const statusAtual = btn.dataset.status;
   const novoStatus  = statusAtual === 'PG' ? 'AB' : 'PG';
   btn.classList.add('saving');
-  // Parcelada é salva como Fixa no GAS
   const categoriaGAS = categoria === 'Parcelada' ? 'Fixa' : categoria;
   try{
     const res = await postar({action:'atualizarStatusDespesa', nome, tipo, categoria:categoriaGAS, status: novoStatus});
@@ -708,7 +660,6 @@ async function toggleStatusDesp(btn, nome, tipo, categoria){
   btn.classList.remove('saving');
 }
 
-/* ── PRÓ-LABORE ──────────────────────────────────────────────────────── */
 async function carregarProlabore(){
   const el=document.getElementById('pl-content');
   el.innerHTML='<div class="pl-loading"><i class="ti ti-loader"></i>Carregando dados...</div>';
@@ -785,15 +736,27 @@ function _renderProlabore(liqEsperado, pessoal, prolabore){
     <p class="section-label">Distribuição do pró-labore</p>
     <div class="pl-pct-bloco">
       <div class="pl-pct-item">
-        <div class="pl-pct-header"><span>Despesas fixas</span><span style="color:var(--red);font-weight:700">${pct(pctFixas)}</span></div>
+        <div class="pl-pct-header">
+          <span>Despesas fixas</span>
+          <span class="pl-pct-valor">${brl(somaFixas)}</span>
+          <span class="pl-pct-pct" style="color:var(--red)">${pct(pctFixas)}</span>
+        </div>
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${pctFixas.toFixed(1)}%;background:#E24B4A"></div></div>
       </div>
       <div class="pl-pct-item">
-        <div class="pl-pct-header"><span>Despesas variáveis</span><span style="color:var(--amber);font-weight:700">${pct(pctVarrs)}</span></div>
+        <div class="pl-pct-header">
+          <span>Despesas variáveis</span>
+          <span class="pl-pct-valor">${brl(somaVarrs)}</span>
+          <span class="pl-pct-pct" style="color:var(--amber)">${pct(pctVarrs)}</span>
+        </div>
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${pctVarrs.toFixed(1)}%;background:#EF9F27"></div></div>
       </div>
       <div class="pl-pct-item">
-        <div class="pl-pct-header"><span>${saldoPos?'Saldo disponível':'Déficit'}</span><span style="color:${saldoPos?'var(--green)':'var(--red)'};font-weight:700">${pct(Math.abs(pctSaldo))}</span></div>
+        <div class="pl-pct-header">
+          <span>${saldoPos?'Saldo disponível':'Déficit'}</span>
+          <span class="pl-pct-valor">${brl(Math.abs(saldoPessoal))}</span>
+          <span class="pl-pct-pct" style="color:${saldoPos?'var(--green)':'var(--red)'}">${pct(Math.abs(pctSaldo))}</span>
+        </div>
         <div class="pl-pct-track"><div class="pl-pct-fill" style="width:${Math.abs(pctSaldo).toFixed(1)}%;background:${saldoPos?'#1D9E75':'#E24B4A'}"></div></div>
       </div>
     </div>
@@ -831,7 +794,6 @@ function salvarProlabore(){
   }
 }
 
-/* ── FECHAMENTO MENSAL ───────────────────────────────────────────────── */
 async function verificarFechamentoMensal(){
   const hoje=new Date();if(hoje.getDate()!==1)return;
   const chave='rgps_fechado_'+hoje.getFullYear()+'_'+hoje.getMonth();
@@ -847,7 +809,6 @@ async function verificarFechamentoMensal(){
   }catch(e){}
 }
 
-/* ── STATUS CLIENTES ─────────────────────────────────────────────────── */
 let cacheStatusClientes=null;
 async function garantirStatusClientes(){
   if(cacheStatusClientes)return cacheStatusClientes;
@@ -870,7 +831,6 @@ async function toggleStatusSanfona(tipo){
   bodyEl.innerHTML=lista.map(d=>{const ini=d.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();const telFmt=d.telefone?d.telefone.replace(/(\d{2})(\d{4,5})(\d{4})/,'($1) $2-$3'):'';const waLink=d.telefone?'https://wa.me/55'+d.telefone:'#';return '<div class="devedor-item"><div class="devedor-left"><div class="devedor-avatar '+avClass+'">'+ini+'</div><div><div class="devedor-nome">'+d.nome+'</div><div class="devedor-tel">'+telFmt+'</div></div></div><div class="devedor-right"><div class="devedor-valor '+valClass+'">R$ '+d.valor+'</div><div class="devedor-venc">'+d.venc+'</div>'+(d.telefone?'<a href="'+waLink+'" target="_blank"><button class="devedor-wa"><i class="ti ti-brand-whatsapp" style="font-size:11px"></i> WhatsApp</button></a>':'')+'</div></div>';}).join('');
 }
 
-/* ── DASHBOARD ───────────────────────────────────────────────────────── */
 let dadosInadClasse=null;
 async function carregarDashboard(){
   cacheStatusClientes=null;
@@ -908,15 +868,11 @@ function statusCFHtml(cf){return '<div class="status-row" style="flex-direction:
 function statusMPHtml(mp){return statusHtml('amber','🔘 MP '+mp.qnt,brl(mp.valor));}
 function statusINHtml(inn){return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'inn\')"><div class="status-sanfona-header"><div class="status-sanfona-left"><span class="tag purple">🚫 IN '+inn.qnt+'</span></div><div style="display:flex;align-items:center;gap:6px"><p style="font-size:14px;font-weight:700;color:var(--txt)">'+brl(inn.valor)+'</p><i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-inn"></i></div></div></div><div class="status-sanfona-body" id="ssanf-body-inn"></div></div>';}
 
-/* ── DESPESAS ────────────────────────────────────────────────────────── */
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
-  // Separação fixas / parceladas / variáveis
-  // Na planilha, Parcelada vem como "Fixa" — identificamos pelo localStorage
   const parcs  = itens.filter(d => getParc(d.nome) !== null);
   const parcNomes = new Set(parcs.map(d=>d.nome));
   const fixas  = itens.filter(d => d.tipo === 'Fixa' && !parcNomes.has(d.nome));
   const varrs  = itens.filter(d => d.tipo !== 'Fixa');
-  // Injeta tipo visual nas parceladas
   parcs.forEach(d => d.tipo = 'Parcelada');
   const tFix  = fixas.reduce((s,d)=>s+d.valor,0);
   const pFix  = fixas.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
@@ -928,6 +884,31 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const pVar  = varrs.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
   const aVar  = tVar - pVar;
   const aberto = total - pago;
+
+  // ── Saldo pessoal (só para aba Pessoal) ──
+  let saldoPessoalHtml = '';
+  if(containerId === 'desp-pessoal'){
+    const plSalvo = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
+    if(plSalvo > 0){
+      const saldoP = plSalvo - total;
+      const saldoPPos = saldoP >= 0;
+      saldoPessoalHtml = `
+        <div class="pl-saldo-inline ${saldoPPos?'pos':'neg'}" style="margin-bottom:14px">
+          <div>
+            <div class="pl-saldo-inline-label">${saldoPPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
+            <div class="pl-saldo-inline-valor">${brl(Math.abs(saldoP))}</div>
+            <div class="pl-saldo-inline-sub">${brl(plSalvo)} pró-labore − ${brl(total)} em despesas</div>
+          </div>
+          <div style="font-size:28px">${saldoPPos?'✅':'⚠️'}</div>
+        </div>`;
+    } else {
+      saldoPessoalHtml = `
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:14px;font-size:12px;color:var(--txt3);font-style:italic">
+          <i class="ti ti-info-circle" style="font-size:13px;margin-right:4px"></i>
+          Defina seu pró-labore na aba <strong style="color:var(--purple2)">Pró-labore</strong> para ver o saldo no bolso.
+        </div>`;
+    }
+  }
 
   const itemHtml = d => {
     const ic = getIcone(d.nome);
@@ -974,6 +955,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
     </div>`;
 
   document.getElementById(containerId).innerHTML =
+    saldoPessoalHtml +
     blocoResumo('Fixas', 'ti-pin', tFix, pFix, aFix) +
     blocoResumo('Parceladas', 'ti-credit-card', tParc, pParc, aParc) +
     blocoResumo('Variáveis', 'ti-arrows-shuffle', tVar, pVar, aVar) +
@@ -999,7 +981,6 @@ async function carregarDespesas(){
   }catch(e){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';}
 }
 
-/* ── PROJEÇÃO ────────────────────────────────────────────────────────── */
 async function carregarProjecao(){
   try{
     const d=await buscar('projecao');
@@ -1017,7 +998,6 @@ async function carregarProjecao(){
   }catch(e){document.getElementById('proj-content').innerHTML='<div class="erro-msg">Erro ao calcular projeção.</div>';}
 }
 
-/* ── HISTÓRICO ───────────────────────────────────────────────────────── */
 function carregarHistorico(){
   const hist=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
   const el=document.getElementById('hist-content');
@@ -1026,7 +1006,6 @@ function carregarHistorico(){
 }
 function toggleDetalhe(idx){const el=document.getElementById('detalhe-'+idx),ch=document.getElementById('chevron-'+idx);el.classList.toggle('open');ch.style.transform=el.classList.contains('open')?'rotate(180deg)':'';}
 
-/* ── SALVAR DESPESA ──────────────────────────────────────────────────── */
 async function salvarDespesa(){
   const nome      = document.getElementById('f-nome').value.trim();
   const valor     = parseFloat(document.getElementById('f-valor').value);
@@ -1038,28 +1017,20 @@ async function salvarDespesa(){
   erroEl.style.display='none';
   iconesUsuario[nome]=iconeSelecionado;salvarIconesUsuario();
 
-  // ── Parcelada: valida e salva localmente ──
   if(categoria === 'Parcelada'){
     const parcAtual = parseInt(document.getElementById('f-parc-atual').value);
     const parcTotal = parseInt(document.getElementById('f-parc-total').value);
     if(isNaN(parcAtual)||isNaN(parcTotal)||parcAtual<1||parcTotal<1||parcAtual>parcTotal){
       erroEl.textContent='Informe a parcela atual e o total corretamente.';erroEl.style.display='block';return;
     }
-    // Calcula o anoMes de início baseado na parcela atual
-    const hoje2 = new Date();
-    const anoInicio = hoje2.getFullYear() - Math.floor((parcAtual-1)/12);
-    const mesInicio = ((hoje2.getMonth() + 1 - ((parcAtual-1)%12) - 1 + 120) % 12) + 1;
-    const mesInicioAdj = hoje2.getMonth() + 1 - (parcAtual - 1);
-    const dataInicio = new Date(hoje2.getFullYear(), hoje2.getMonth() - (parcAtual - 1), 1);
+    const dataInicio = new Date(new Date().getFullYear(), new Date().getMonth() - (parcAtual - 1), 1);
     const anoMesInicio = dataInicio.getFullYear() + '-' + String(dataInicio.getMonth()+1).padStart(2,'0');
     setParcelamento(nome, { total: parcTotal, anoMesInicio });
     if(diaSelecionado) setVencimento(nome, diaSelecionado);
   }
 
-  // ── Monta dados de data conforme categoria ──
   const hoje = new Date();
-  const dataRegistro = hoje.toISOString().split('T')[0]; // YYYY-MM-DD
-  // Para a planilha, Parcelada vai como "Fixa" (mesma seção)
+  const dataRegistro = hoje.toISOString().split('T')[0];
   const categoriaGAS = categoria === 'Parcelada' ? 'Fixa' : categoria;
   const payload = {
     action:'salvarDespesa', tipo, categoria:categoriaGAS, nome, valor, status,
@@ -1077,7 +1048,6 @@ async function salvarDespesa(){
   }catch(e){erroEl.textContent='Erro de conexão.';erroEl.style.display='block';}
 }
 
-/* ── TABS ────────────────────────────────────────────────────────────── */
 let despCarregada=false,projCarregada=false,histCarregada=false,plCarregado=false;
 function showTab(id,el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1103,9 +1073,8 @@ function abrirModal(){
   document.getElementById('icon-grid').classList.remove('open');
   document.getElementById('icon-search').style.display='none';
   document.querySelector('.icon-grid-toggle').textContent='▼ Escolher ícone';
-  // Reset vencimento e parcela
   diaSelecionado = null;
-  document.getElementById('venc-field').style.display = 'block'; // padrão Fixa
+  document.getElementById('venc-field').style.display = 'block';
   document.getElementById('parc-field').style.display = 'none';
   document.getElementById('f-cat').value = 'Fixa';
   document.getElementById('f-parc-atual').value = '';
