@@ -354,7 +354,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
       <div class="field" style="margin-bottom:12px;">
         <label>Qtd. de veículos</label>
-        <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" oninput="renderVeiculos(); calcularTotal()" />
+        <input type="number" id="qtd-veiculos" placeholder="1" min="1" value="1" onchange="renderVeiculos(); calcularTotal()" />
       </div>
       <div id="veiculos-wrap"></div>
     </div>
@@ -820,6 +820,19 @@ function normalizarOS(o) {
   }
   o.contato = String(o.contato || '');
   o.modelo  = String(o.modelo  || '');
+  // ✅ CORREÇÃO: parsear array de veículos se vier como string do Sheets
+  if (o.veiculos && typeof o.veiculos === 'string') {
+    try { o.veiculos = JSON.parse(o.veiculos); } catch(e) { o.veiculos = []; }
+  }
+  if (!Array.isArray(o.veiculos) || o.veiculos.length === 0) {
+    o.veiculos = [{ modelo: o.modelo || '', ano: o.ano || '', gnv: o.gnvVal || null }];
+  }
+  // ✅ CORREÇÃO: normalizar gnv de cada veículo (string "null" → null real)
+  o.veiculos = o.veiculos.map(v => ({
+    ...v,
+    gnv: (v.gnv === 'null' || v.gnv === '' || v.gnv === undefined) ? null : v.gnv,
+    gnvVal: (v.gnvVal === 'null' || v.gnvVal === '' || v.gnvVal === undefined) ? null : v.gnvVal
+  }));
   return o;
 }
 
@@ -1270,8 +1283,9 @@ function renderVeiculosComDados(veicsData) {
   veicsData.forEach((v, i) => {
     const qtd = veicsData.length;
     const titulo = qtd > 1 ? `<div style="font-size:12px;color:#00e5ff;font-weight:700;margin-bottom:8px;">Veículo ${i+1}</div>` : '';
-    const simAtivo = (v.gnv === 'sim' || v.gnvVal === 'sim') ? 'ativo' : '';
-    const naoAtivo = (v.gnv === 'nao' || v.gnvVal === 'nao') ? 'ativo' : '';
+    const gnvVal = (v.gnv && v.gnv !== 'null') ? v.gnv : ((v.gnvVal && v.gnvVal !== 'null') ? v.gnvVal : null);
+    const simAtivo = gnvVal === 'sim' ? 'ativo' : '';
+    const naoAtivo = gnvVal === 'nao' ? 'ativo' : '';
     const div = document.createElement('div');
     div.className = 'veiculo-bloco';
     div.style.cssText = qtd > 1 ? 'border:1px solid #2a2a2a;border-radius:12px;padding:12px;margin-bottom:10px;' : '';
@@ -1348,11 +1362,19 @@ function selGNVVeiculo(el, val) {
 function getVeiculos() {
   const blocos = document.querySelectorAll('.veiculo-bloco');
   if (blocos.length === 0) return [{ modelo: '', ano: '', gnv: null }];
-  return Array.from(blocos).map(b => ({
-    modelo: b.querySelector('.v-modelo')?.value || '',
-    ano: b.querySelector('.v-ano')?.value || '',
-    gnv: b.querySelector('.v-gnv-sim')?.classList.contains('ativo') ? 'sim' : (b.querySelector('.v-gnv-nao')?.classList.contains('ativo') ? 'nao' : null)
-  }));
+  return Array.from(blocos).map(b => {
+    const simCard = b.querySelector('.v-gnv-sim');
+    const naoCard = b.querySelector('.v-gnv-nao');
+    let gnvSel = null;
+    if (simCard && simCard.classList.contains('ativo')) gnvSel = 'sim';
+    else if (naoCard && naoCard.classList.contains('ativo')) gnvSel = 'nao';
+    // ✅ retorna null explicitamente (não string "null") quando não selecionado
+    return {
+      modelo: b.querySelector('.v-modelo')?.value?.trim() || '',
+      ano:    b.querySelector('.v-ano')?.value?.trim()    || '',
+      gnv:    gnvSel
+    };
+  });
 }
 
 function selGNV(v) { gnv = v; }
