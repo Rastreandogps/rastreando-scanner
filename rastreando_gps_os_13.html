@@ -154,6 +154,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-action-btn:active { opacity: 0.8; }
 .os-action-wa { background: #1a3d26; color: #25d366; border: 1px solid #25d366; }
 .os-action-maps { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
+.os-action-confirmar { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
 .os-action-share { background: #1a0f00; color: #f97316; border: 1px solid #f97316; }
 .os-action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
@@ -1080,6 +1081,23 @@ function initRelatorios() {
   renderRelatorios();
 }
 
+  function msgConfirmacao(o) {
+  const ts = o.tipoServico || 'instalacao';
+  const tipoLabel = ts === 'instalacao' ? 'instalação do rastreador' : ts === 'manutencao' ? 'manutenção do rastreador' : 'retirada do rastreador';
+  const veics = o.veiculos && o.veiculos.length > 0 ? o.veiculos : [{ modelo: o.modelo }];
+  const modelos = veics.map(v => v.modelo).filter(Boolean).join(', ');
+  let msg = `Olá, ${o.nome || 'cliente'}! 👋\n\n`;
+  msg += `Passando para *confirmar seu agendamento* com a *Rastreando GPS*:\n\n`;
+  msg += `📋 *Serviço:* ${tipoLabel.charAt(0).toUpperCase() + tipoLabel.slice(1)}\n`;
+  if (modelos) msg += `🚗 *Veículo:* ${modelos}\n`;
+  if (o.data) msg += `📅 *Data:* ${o.data}\n`;
+  if (o.hora) msg += `🕐 *Horário:* ${o.hora}\n`;
+  if (o.endereco) msg += `📍 *Local:* ${o.endereco}\n`;
+  msg += `\nPor favor, *confirme sua presença* respondendo esta mensagem. 😊\n\n`;
+  msg += `_Rastreando GPS — (21) 9 8088-6087_`;
+  return msg;
+}
+
 function filtrarCobranca(f) {
   filtroCobranca = f;
   document.querySelectorAll('.rel-ctab').forEach(b => b.className = 'rel-ctab');
@@ -1841,7 +1859,14 @@ function renderLista() {
         </a>`;
 
     const btnEditar = `<button class="os-action-btn" onclick="event.stopPropagation(); editarOSdoCard(${idx})" style="background:#0a1a2e;color:#00e5ff;border:1px solid #00e5ff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>`;
-    const acoes = `<div class="os-card-actions">${btnWa}${btnMaps}${btnShare}${btnEditar}</div>`;
+    const telLimpo2 = String(o.contato || '').replace(/\D/g,'');
+const btnConfirmar = telLimpo2.length >= 10
+  ? `<a class="os-action-btn os-action-confirmar" href="https://wa.me/55${telLimpo2}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Confirmar agendamento
+    </a>` : '';
+
+const acoes = `<div class="os-card-actions">${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnEditar}</div>`;
 
     let infoExtra = '';
     if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
