@@ -632,6 +632,7 @@ async function buscar(action){const res=await fetch(API_URL+'?secret='+API_SECRE
 async function postar(payload){const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({secret:API_SECRET,...payload})});return res.json();}
 
 let cacheDash=null, cacheDespesas=null;
+let despCarregada=false,projCarregada=false,histCarregada=false,plCarregado=false;
 
 async function toggleStatusDesp(btn, nome, tipo, categoria){
   const statusAtual = btn.dataset.status;
@@ -802,6 +803,7 @@ function salvarProlabore(){
   localStorage.setItem(PROLABORE_KEY, v.toString());
   if(cacheDash && cacheDespesas){
     _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
+    redesenharDashboard();
   }
 }
 
@@ -846,23 +848,51 @@ let dadosInadClasse=null;
 async function carregarDashboard(){
   cacheStatusClientes=null;
   try{
-    const[d,inad]=await Promise.all([buscar('dashboard'),buscar('inadimplentesClasse')]);
+    const[d,inad,desp]=await Promise.all([buscar('dashboard'),buscar('inadimplentesClasse'),buscar('despesas')]);
     if(d.error){document.getElementById('dash-content').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
     cacheDash=d;
+    if(!desp.error){ cacheDespesas=desp; despCarregada=true; }
     dadosInadClasse=inad.error?{ouro:[],prata:[],latao:[]}:inad;
-    document.getElementById('sub-data').textContent='Atualizado às '+d.atualizadoAs+' · '+d.mes;
-    const pgPct=d.classes.ouro.clientes>0?(d.classes.ouro.pg/d.classes.ouro.clientes*100):0;
-    const prPct=d.classes.prata.clientes>0?(d.classes.prata.pg/d.classes.prata.clientes*100):0;
-    const ltPct=d.classes.latao.clientes>0?(d.classes.latao.pg/d.classes.latao.clientes*100):0;
-    document.getElementById('dash-content').innerHTML=
-      '<div style="height:14px"></div>'+
-      '<div class="saldo-card"><div class="saldo-label">Saldo Asaas</div><div class="saldo-value">'+brl(d.saldo)+'</div><div class="saldo-sub">Atualizado às '+d.atualizadoAs+'</div><i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()"></i></div>'+
-      (()=>{const pl=parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');const liqLiq=d.liqEsperado-pl;const liqCor=liqLiq>=0?'amber':'red';const badgeHtml=pl>0?'<div class="metric-pl-badge">− '+brl(pl)+' pró-labore</div>':'';return '<div class="metric-grid"><div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div><div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div><div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div><div class="metric"><div class="metric-label">Liq. após pró-labore</div><div class="metric-value '+liqCor+'">'+brl(liqLiq)+'</div>'+badgeHtml+'</div></div>';})() +
-      '<p class="section-label">A receber por classe</p>'+
-      '<div class="card" style="padding:4px 16px">'+classeBloco('ouro','🥇','Ouro','#FAEEDA',d.classes.ouro,pgPct,'#EF9F27','#854F0B',dadosInadClasse.ouro)+classeBloco('prata','🥈','Prata','#E6F1FB',d.classes.prata,prPct,'#378ADD','#185FA5',dadosInadClasse.prata)+classeBloco('latao','🚩','Latão','#FCEBEB',d.classes.latao,ltPct,'#E24B4A','#A32D2D',dadosInadClasse.latao)+'</div>'+
-      '<p class="section-label">Status do mês</p>'+
-      '<div class="card">'+statusHtml('green','🟢 PG '+d.status.PG.qnt,brl(d.status.PG.valor))+statusHtml('red','🔴 AT '+d.status.AT.qnt,brl(d.status.AT.valor))+statusCFHtml(d.status.CF)+statusMPHtml(d.status.MP)+statusINHtml(d.status.IN)+'</div>';
+    renderDashboard();
   }catch(e){document.getElementById('dash-content').innerHTML='<div class="erro-msg">Erro ao conectar com a planilha.</div>';}
+}
+
+// Redesenha o dashboard usando os caches existentes, sem refazer fetch.
+// Usado quando o pró-labore ou despesas mudam em outra aba.
+function redesenharDashboard(){
+  if(cacheDash && document.getElementById('dash-content')){
+    renderDashboard();
+  }
+}
+
+function renderDashboard(){
+  const d=cacheDash;
+  if(!d||d.error)return;
+  document.getElementById('sub-data').textContent='Atualizado às '+d.atualizadoAs+' · '+d.mes;
+  const pgPct=d.classes.ouro.clientes>0?(d.classes.ouro.pg/d.classes.ouro.clientes*100):0;
+  const prPct=d.classes.prata.clientes>0?(d.classes.prata.pg/d.classes.prata.clientes*100):0;
+  const ltPct=d.classes.latao.clientes>0?(d.classes.latao.pg/d.classes.latao.clientes*100):0;
+  document.getElementById('dash-content').innerHTML=
+    '<div style="height:14px"></div>'+
+    '<div class="saldo-card"><div class="saldo-label">Saldo Asaas</div><div class="saldo-value">'+brl(d.saldo)+'</div><div class="saldo-sub">Atualizado às '+d.atualizadoAs+'</div><i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()"></i></div>'+
+    (()=>{
+      const pl=parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
+      const despEmp=cacheDespesas?Number(cacheDespesas.empresa.total||0):0;
+      const despPess=cacheDespesas?Number(cacheDespesas.pessoal.total||0):0;
+      // Déficit pessoal: só conta o que ESTOUROU o pró-labore (sobra fica no bolso, não vira crédito)
+      const deficitPessoal=pl>0?Math.max(despPess-pl,0):0;
+      const liqLiq=d.liqEsperado-pl-despEmp-deficitPessoal;
+      const liqCor=liqLiq>=0?'amber':'red';
+      const badgePl=pl>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3);margin-top:3px">− '+brl(pl)+' pró-labore</span><br>':'';
+      const badgeDesp=despEmp>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(despEmp)+' despesas empresa</span>'+(deficitPessoal>0?'<br>':''):'';
+      const badgeDef=deficitPessoal>0?'<span style="display:inline-block;font-size:10px;color:var(--red)">− '+brl(deficitPessoal)+' déficit pessoal</span>':'';
+      const badgeHtml=(badgePl||badgeDesp||badgeDef)?'<div class="metric-pl-badge" style="background:transparent;padding:0;margin-top:4px;display:block;line-height:1.6">'+badgePl+badgeDesp+badgeDef+'</div>':'';
+      return '<div class="metric-grid"><div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div><div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div><div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div><div class="metric"><div class="metric-label">Liq. após pró-labore</div><div class="metric-value '+liqCor+'">'+brl(liqLiq)+'</div>'+badgeHtml+'</div></div>';
+    })() +
+    '<p class="section-label">A receber por classe</p>'+
+    '<div class="card" style="padding:4px 16px">'+classeBloco('ouro','🥇','Ouro','#FAEEDA',d.classes.ouro,pgPct,'#EF9F27','#854F0B',dadosInadClasse.ouro)+classeBloco('prata','🥈','Prata','#E6F1FB',d.classes.prata,prPct,'#378ADD','#185FA5',dadosInadClasse.prata)+classeBloco('latao','🚩','Latão','#FCEBEB',d.classes.latao,ltPct,'#E24B4A','#A32D2D',dadosInadClasse.latao)+'</div>'+
+    '<p class="section-label">Status do mês</p>'+
+    '<div class="card">'+statusHtml('green','🟢 PG '+d.status.PG.qnt,brl(d.status.PG.valor))+statusHtml('red','🔴 AT '+d.status.AT.qnt,brl(d.status.AT.valor))+statusCFHtml(d.status.CF)+statusMPHtml(d.status.MP)+statusINHtml(d.status.IN)+'</div>';
 }
 
 function classeBloco(id,emoji,nome,bgIcon,c,pgPct,barColor,pctColor,devedores){
@@ -989,6 +1019,7 @@ async function carregarDespesas(){
     cacheDespesas=d;
     renderDespesas(d.empresa.itens,'desp-empresa',d.empresa.total,d.empresa.pago,'Empresa');
     renderDespesas(d.pessoal.itens,'desp-pessoal',d.pessoal.total,d.pessoal.pago,'Pessoal');
+    redesenharDashboard();
   }catch(e){document.getElementById('desp-empresa').innerHTML='<div class="erro-msg">Erro ao carregar despesas.</div>';}
 }
 
@@ -1059,7 +1090,6 @@ async function salvarDespesa(){
   }catch(e){erroEl.textContent='Erro de conexão.';erroEl.style.display='block';}
 }
 
-let despCarregada=false,projCarregada=false,histCarregada=false,plCarregado=false;
 function showTab(id,el){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
