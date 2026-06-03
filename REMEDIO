@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d1117">
+<title>Meus Remédios</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --bg2:#141a23;
+    --card:#1a2230;
+    --card2:#212c3d;
+    --line:#2a3647;
+    --txt:#e8eef7;
+    --muted:#8b9bb4;
+    --green:#22c55e;
+    --green-d:#16a34a;
+    --red:#ef4444;
+    --red-d:#dc2626;
+    --amber:#f59e0b;
+    --cyan:#38bdf8;
+    --safe-t:env(safe-area-inset-top);
+    --safe-b:env(safe-area-inset-bottom);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  body{
+    min-height:100vh;
+    padding:calc(var(--safe-t) + 18px) 16px calc(var(--safe-b) + 110px);
+    background:
+      radial-gradient(900px 500px at 100% -10%, rgba(56,189,248,.07), transparent 60%),
+      radial-gradient(700px 500px at -10% 110%, rgba(34,197,94,.07), transparent 60%),
+      var(--bg);
+    -webkit-user-select:none;user-select:none;
+  }
+  header{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .logo{
+    width:46px;height:46px;border-radius:14px;flex-shrink:0;
+    background:linear-gradient(145deg,var(--green),var(--cyan));
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:0 8px 24px rgba(34,197,94,.25);
+  }
+  header h1{font-size:21px;font-weight:800;letter-spacing:-.5px;}
+  header p{font-size:12.5px;color:var(--muted);margin-top:1px;}
+
+  .empty{
+    text-align:center;color:var(--muted);padding:60px 20px;font-size:15px;line-height:1.6;
+  }
+  .empty .big{font-size:46px;margin-bottom:14px;}
+
+  .med{
+    background:linear-gradient(160deg,var(--card),var(--card2));
+    border:1px solid var(--line);
+    border-radius:20px;padding:18px;margin-bottom:16px;
+    box-shadow:0 6px 20px rgba(0,0,0,.25);
+    position:relative;overflow:hidden;
+  }
+  .med .topbar{position:absolute;top:0;left:0;right:0;height:4px;}
+  .med.ok    .topbar{background:linear-gradient(90deg,var(--green),var(--cyan));}
+  .med.due   .topbar{background:linear-gradient(90deg,var(--amber),#fbbf24);}
+  .med.late  .topbar{background:linear-gradient(90deg,var(--red),#f87171);}
+
+  .med .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .med .name{font-size:18px;font-weight:700;letter-spacing:-.3px;word-break:break-word;}
+  .med .freq{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .del{
+    background:none;border:none;color:var(--muted);font-size:20px;
+    padding:4px 8px;border-radius:8px;flex-shrink:0;cursor:pointer;
+  }
+  .del:active{background:rgba(239,68,68,.15);color:var(--red);}
+
+  .status{
+    border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:14px;
+    display:flex;align-items:center;gap:10px;line-height:1.4;
+  }
+  .status .ico{font-size:20px;flex-shrink:0;}
+  .status.ok{background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);color:#86efac;}
+  .status.due{background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.3);color:#fcd34d;}
+  .status.late{background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+  .status b{color:var(--txt);font-weight:700;}
+  .status small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
+
+  .btn-take{
+    width:100%;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;
+    color:#fff;cursor:pointer;letter-spacing:.2px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  .btn-take:active{transform:scale(.97);}
+  .btn-take.green{background:linear-gradient(145deg,var(--green),var(--green-d));box-shadow:0 8px 20px rgba(34,197,94,.3);}
+  .btn-take.red  {background:linear-gradient(145deg,var(--red),var(--red-d));  box-shadow:0 8px 20px rgba(239,68,68,.3);}
+
+  /* FAB */
+  .fab{
+    position:fixed;left:50%;transform:translateX(-50%);
+    bottom:calc(var(--safe-b) + 22px);
+    background:linear-gradient(145deg,var(--cyan),#0ea5e9);
+    color:#fff;border:none;border-radius:18px;
+    padding:16px 26px;font-size:16px;font-weight:800;cursor:pointer;
+    box-shadow:0 10px 30px rgba(56,189,248,.4);
+    display:flex;align-items:center;gap:8px;z-index:50;
+  }
+  .fab:active{transform:translateX(-50%) scale(.96);}
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+    display:none;align-items:flex-end;z-index:100;
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--bg2);width:100%;border-radius:26px 26px 0 0;
+    padding:24px 18px calc(var(--safe-b) + 24px);
+    border-top:1px solid var(--line);max-height:92vh;overflow-y:auto;
+    animation:up .25s ease;
+  }
+  @keyframes up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .grab{width:42px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 18px;}
+  .sheet h2{font-size:20px;font-weight:800;margin-bottom:18px;}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 7px;font-weight:600;}
+  input,select{
+    width:100%;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    border-radius:13px;padding:14px;font-size:16px;outline:none;
+    -webkit-user-select:text;user-select:text;
+  }
+  input:focus,select:focus{border-color:var(--cyan);}
+  select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b9bb4' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+  .row{display:flex;gap:10px;}
+  .row > div{flex:1;}
+  .modal-btns{display:flex;gap:10px;margin-top:24px;}
+  .modal-btns button{flex:1;border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;}
+  .cancel{background:var(--card);color:var(--muted);border:1px solid var(--line)!important;}
+  .save{background:linear-gradient(145deg,var(--green),var(--green-d));color:#fff;}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">💊</div>
+  <div>
+    <h1>Meus Remédios</h1>
+    <p>Controle de quando tomar cada um</p>
+  </div>
+</header>
+
+<div id="list"></div>
+
+<button class="fab" onclick="openModal()">＋ Adicionar remédio</button>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h2 id="modalTitle">Novo remédio</h2>
+
+    <label>Nome do remédio</label>
+    <input type="text" id="fName" placeholder="Ex: Vitamina D, Losartana...">
+
+    <label>Tomar a cada quanto tempo?</label>
+    <div class="row">
+      <div>
+        <input type="number" id="fEvery" min="1" value="1" inputmode="numeric">
+      </div>
+      <div>
+        <select id="fUnit">
+          <option value="hours">horas</option>
+          <option value="days" selected>dias</option>
+          <option value="weeks">semanas</option>
+          <option value="months">meses</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint">Ex: a cada 3 dias, 1 vez por semana (= 1 semana), de 8 em 8 horas (= 8 horas).</p>
+
+    <label>Horário de tomar</label>
+    <input type="time" id="fTime" value="08:00">
+
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeModal()">Cancelar</button>
+      <button class="save" onclick="saveMed()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE = "meusRemedios_v1";
+let meds = [];
+let editId = null;
+
+function load(){
+  try{ meds = JSON.parse(localStorage.getItem(STORE)) || []; }
+  catch(e){ meds = []; }
+}
+function save(){ localStorage.setItem(STORE, JSON.stringify(meds)); }
+
+const MS = {hours:3600e3, days:864e5, weeks:7*864e5, months:30*864e5};
+const UNIT_LABEL = {hours:"hora", days:"dia", weeks:"semana", months:"mês"};
+const UNIT_LABEL_P = {hours:"horas", days:"dias", weeks:"semanas", months:"meses"};
+
+function freqText(m){
+  const u = m.every == 1 ? UNIT_LABEL[m.unit] : UNIT_LABEL_P[m.unit];
+  return `A cada ${m.every} ${u} · ${m.time}`;
+}
+
+// calcula a próxima data a partir do último horário tomado
+function nextDate(m){
+  if(!m.lastTaken) return null;
+  const next = new Date(m.lastTaken + m.every * MS[m.unit]);
+  // ajusta para o horário definido
+  const [h,min] = m.time.split(":").map(Number);
+  if(m.unit !== "hours"){ next.setHours(h, min, 0, 0); }
+  return next.getTime();
+}
+
+function fmtDate(ts){
+  const d = new Date(ts);
+  const dias = ["dom","seg","ter","qua","qui","sex","sáb"];
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  return `${dias[d.getDay()]}, ${dd}/${mm} às ${hh}:${mi}`;
+}
+
+function durText(ms){
+  ms = Math.abs(ms);
+  const min = Math.floor(ms/60000);
+  if(min < 60) return `${min} min`;
+  const h = Math.floor(min/60);
+  if(h < 24) return `${h}h${min%60 ? " "+(min%60)+"min" : ""}`;
+  const d = Math.floor(h/24);
+  if(d < 30) return `${d} dia${d>1?"s":""}${h%24 ? " "+(h%24)+"h":""}`;
+  const mo = Math.floor(d/30);
+  return `${mo} ${mo>1?"meses":"mês"}${d%30 ? " "+(d%30)+" dias":""}`;
+}
+
+function render(){
+  const list = document.getElementById("list");
+  if(meds.length === 0){
+    list.innerHTML = `<div class="empty"><div class="big">💊</div>Nenhum remédio cadastrado ainda.<br>Toque em <b>Adicionar remédio</b> para começar.</div>`;
+    return;
+  }
+  const now = Date.now();
+  list.innerHTML = meds.map(m=>{
+    const next = nextDate(m);
+    let cls, statusCls, statusIco, statusHtml;
+
+    if(!m.lastTaken){
+      cls="ok"; statusCls="ok"; statusIco="🆕";
+      statusHtml = `<div>Ainda não foi tomado.<small>Toque no botão verde quando tomar.</small></div>`;
+    } else if(next > now){
+      const diff = next - now;
+      cls="ok"; statusCls="ok"; statusIco="✅";
+      statusHtml = `<div>Próxima dose: <b>${fmtDate(next)}</b><small>Faltam ${durText(diff)}</small></div>`;
+    } else {
+      const late = now - next;
+      // "due" = atrasou menos de 1h, senão "late"
+      if(late < 3600e3){ cls="due"; statusCls="due"; statusIco="⏰";
+        statusHtml = `<div><b>Hora de tomar!</b> Era ${fmtDate(next)}<small>Toque quando tomar.</small></div>`;
+      } else { cls="late"; statusCls="late"; statusIco="⚠️";
+        statusHtml = `<div><b>Atrasado!</b> Era pra ter tomado ${fmtDate(next)}<small>Você está atrasado em ${durText(late)}.</small></div>`;
+      }
+    }
+
+    const btnCls = (cls==="ok" && m.lastTaken && next>now) ? "red" : "green";
+    const btnTxt = (btnCls==="red")
+      ? "✓ Já tomei (registrar de novo)"
+      : "✓ Tomei o remédio";
+
+    return `
+    <div class="med ${cls}">
+      <div class="topbar"></div>
+      <div class="head">
+        <div>
+          <div class="name">${esc(m.name)}</div>
+          <div class="freq">${freqText(m)}</div>
+        </div>
+        <button class="del" onclick="delMed(${m.id})">🗑️</button>
+      </div>
+      <div class="status ${statusCls}">
+        <span class="ico">${statusIco}</span>${statusHtml}
+      </div>
+      <button class="btn-take ${btnCls}" onclick="take(${m.id})">${btnTxt}</button>
+    </div>`;
+  }).join("");
+}
+
+function esc(s){ return s.replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function take(id){
+  const m = meds.find(x=>x.id===id);
+  m.lastTaken = Date.now();
+  save(); render();
+}
+
+function delMed(id){
+  const m = meds.find(x=>x.id===id);
+  if(confirm(`Remover "${m.name}"?`)){
+    meds = meds.filter(x=>x.id!==id);
+    save(); render();
+  }
+}
+
+function openModal(){
+  editId = null;
+  document.getElementById("modalTitle").textContent = "Novo remédio";
+  document.getElementById("fName").value = "";
+  document.getElementById("fEvery").value = "1";
+  document.getElementById("fUnit").value = "days";
+  document.getElementById("fTime").value = "08:00";
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
+
+function saveMed(){
+  const name = document.getElementById("fName").value.trim();
+  const every = parseInt(document.getElementById("fEvery").value);
+  const unit = document.getElementById("fUnit").value;
+  const time = document.getElementById("fTime").value || "08:00";
+  if(!name){ alert("Digite o nome do remédio."); return; }
+  if(!every || every < 1){ alert("A frequência precisa ser pelo menos 1."); return; }
+
+  meds.push({ id: Date.now(), name, every, unit, time, lastTaken: null });
+  save(); render(); closeModal();
+}
+
+// fecha modal ao tocar fora
+document.getElementById("overlay").addEventListener("click", e=>{
+  if(e.target.id === "overlay") closeModal();
+});
+
+load();
+render();
+// atualiza contagem de tempo a cada 30s
+setInterval(render, 30000);
+</script>
+</body>
+</html>
