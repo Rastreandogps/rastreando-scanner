@@ -385,6 +385,7 @@ const ICON_STORAGE  = 'rgps_icones';
 const PROLABORE_KEY = 'rgps_prolabore';
 const VENC_KEY      = 'rgps_vencimentos';
 const PARC_KEY      = 'rgps_parcelamentos';
+const REG_KEY       = 'rgps_registros';
 
 function getParcelamentos(){ return JSON.parse(localStorage.getItem(PARC_KEY)||'{}'); }
 function setParcelamento(nome, dados){
@@ -419,6 +420,40 @@ function getDia(d){
   if(local[d.nome] !== undefined) return local[d.nome];
   if(d.vencimento) return parseInt(d.vencimento);
   return null;
+}
+
+// ── Data de criação das despesas (registro automático, salvo no aparelho) ──
+function getRegistros(){ return JSON.parse(localStorage.getItem(REG_KEY)||'{}'); }
+function setRegistro(nome, data){
+  const r = getRegistros();
+  if(data === null || data === undefined) delete r[nome];
+  else r[nome] = data;
+  localStorage.setItem(REG_KEY, JSON.stringify(r));
+}
+// Retorna a data de criação: prioriza o que está salvo no aparelho;
+// se não houver, usa o que vier da planilha (compatibilidade).
+function getDataRegistro(d){
+  const local = getRegistros();
+  if(local[d.nome]) return local[d.nome];
+  if(d.dataRegistro) return d.dataRegistro;
+  return null;
+}
+// Formata 'AAAA-MM-DD' como DD/MM (ou DD/MM/AA se for de outro ano),
+// fazendo o parse no fuso local para não cair no dia anterior.
+function fmtDataRegistro(data){
+  if(!data) return '';
+  let y, m, dd;
+  const s = String(data).split('T')[0];
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    [y, m, dd] = s.split('-').map(Number);
+  } else {
+    const dr = new Date(data);
+    if(isNaN(dr.getTime())) return String(data);
+    y = dr.getFullYear(); m = dr.getMonth()+1; dd = dr.getDate();
+  }
+  const ddS = String(dd).padStart(2,'0');
+  const mmS = String(m).padStart(2,'0');
+  return y === new Date().getFullYear() ? `${ddS}/${mmS}` : `${ddS}/${mmS}/${String(y).slice(-2)}`;
 }
 
 const brl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -514,10 +549,9 @@ function vencBadge(d){
     return `<span class="venc-badge ${cls}" onclick="abrirPickerVenc(event,'${nomeEsc}',${dia})" style="cursor:pointer">${texto} <i class="ti ti-pencil" style="font-size:9px;opacity:.6"></i></span>`;
   }
 
-  if(d.dataRegistro){
-    const dr = new Date(d.dataRegistro);
-    const fmt = isNaN(dr.getTime()) ? d.dataRegistro : dr.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-    return `<span class="venc-badge venc-registro"><i class="ti ti-calendar" style="font-size:9px"></i> Registrado ${fmt}</span>`;
+  const dataReg = getDataRegistro(d);
+  if(dataReg){
+    return `<span class="venc-badge venc-registro"><i class="ti ti-calendar" style="font-size:9px"></i> Registrado ${fmtDataRegistro(dataReg)}</span>`;
   }
   return '';
 }
@@ -569,6 +603,7 @@ async function excluirDespesa(btn, nome, tipo, categoria){
   const limparLocal = () => {
     setVencimento(nome, null);
     setParcelamento(nome, null);
+    setRegistro(nome, null);
     cacheDespesas = null;
     carregarDespesas();
   };
@@ -1081,13 +1116,17 @@ async function salvarDespesa(){
   }
 
   const hoje = new Date();
-  const dataRegistro = hoje.toISOString().split('T')[0];
+  const dataRegistro = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
   const categoriaGAS = categoria === 'Parcelada' ? 'Fixa' : categoria;
   const payload = {
     action:'salvarDespesa', tipo, categoria:categoriaGAS, nome, valor, status,
     vencimento:  (categoria === 'Fixa'||categoria==='Parcelada') ? (diaSelecionado || null) : null,
     dataRegistro: categoria === 'Variável' ? dataRegistro : null,
   };
+
+  // Registro automático da data de criação (variáveis) — fica salvo no aparelho,
+  // não depende da planilha devolver a data.
+  if(categoria === 'Variável') setRegistro(nome, dataRegistro);
 
   try{
     const json = await postar(payload);
