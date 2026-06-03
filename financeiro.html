@@ -851,7 +851,16 @@ async function carregarDashboard(){
     const[d,inad,desp]=await Promise.all([buscar('dashboard'),buscar('inadimplentesClasse'),buscar('despesas')]);
     if(d.error){document.getElementById('dash-content').innerHTML='<div class="erro-msg">'+d.error+'</div>';return;}
     cacheDash=d;
-    if(!desp.error){ cacheDespesas=desp; despCarregada=true; }
+    if(!desp.error){
+      cacheDespesas=desp;
+      despCarregada=true;
+      // Renderiza já nos containers da aba Despesas (se estiverem no DOM),
+      // senão a aba fica presa no "Carregando..." quando o usuário clicar nela.
+      if(document.getElementById('desp-empresa')){
+        renderDespesas(desp.empresa.itens,'desp-empresa',desp.empresa.total,desp.empresa.pago,'Empresa');
+        renderDespesas(desp.pessoal.itens,'desp-pessoal',desp.pessoal.total,desp.pessoal.pago,'Pessoal');
+      }
+    }
     dadosInadClasse=inad.error?{ouro:[],prata:[],latao:[]}:inad;
     renderDashboard();
   }catch(e){document.getElementById('dash-content').innerHTML='<div class="erro-msg">Erro ao conectar com a planilha.</div>';}
@@ -1096,7 +1105,16 @@ function showTab(id,el){
   document.getElementById('screen-'+id).classList.add('active');
   el.classList.add('active');
   document.getElementById('fab').style.display=id==='despesas'?'flex':'none';
-  if(id==='despesas'&&!despCarregada){carregarDespesas();despCarregada=true;}
+  if(id==='despesas'){
+    if(cacheDespesas){
+      // Já temos os dados (pré-carregados pelo dashboard) — só garante que estão desenhados
+      renderDespesas(cacheDespesas.empresa.itens,'desp-empresa',cacheDespesas.empresa.total,cacheDespesas.empresa.pago,'Empresa');
+      renderDespesas(cacheDespesas.pessoal.itens,'desp-pessoal',cacheDespesas.pessoal.total,cacheDespesas.pessoal.pago,'Pessoal');
+      despCarregada=true;
+    } else if(!despCarregada){
+      carregarDespesas();despCarregada=true;
+    }
+  }
   if(id==='prolabore'&&!plCarregado){carregarProlabore();plCarregado=true;}
   if(id==='projecao'&&!projCarregada){carregarProjecao();projCarregada=true;}
   if(id==='historico'&&!histCarregada){carregarHistorico();histCarregada=true;}
