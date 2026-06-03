@@ -430,12 +430,13 @@ function setRegistro(nome, data){
   else r[nome] = data;
   localStorage.setItem(REG_KEY, JSON.stringify(r));
 }
-// Retorna a data de criação: prioriza o que está salvo no aparelho;
-// se não houver, usa o que vier da planilha (compatibilidade).
+// Retorna a data de criação: prioriza o que vem da planilha (agora por linha →
+// nunca colide entre despesas de mesmo nome); localStorage fica como fallback
+// para despesas criadas antes desta versão.
 function getDataRegistro(d){
+  if(d.dataRegistro) return d.dataRegistro;
   const local = getRegistros();
   if(local[d.nome]) return local[d.nome];
-  if(d.dataRegistro) return d.dataRegistro;
   return null;
 }
 // Formata 'AAAA-MM-DD' como DD/MM (ou DD/MM/AA se for de outro ano),
