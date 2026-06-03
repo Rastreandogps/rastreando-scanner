@@ -1918,10 +1918,19 @@ function renderLista() {
           </button>`
         : '';
 
+      const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      let dataFormatada = '';
+      if (o.data) {
+        const [dd, mm, yy] = o.data.split('/');
+        const dataObj = new Date(parseInt(yy), parseInt(mm) - 1, parseInt(dd));
+        const diaSemana = isNaN(dataObj.getTime()) ? '' : diasSemana[dataObj.getDay()];
+        dataFormatada = diaSemana ? `${diaSemana}, ${o.data}` : o.data;
+      }
+
       let infoExtra = '';
-      if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
-      else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
-      else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
+      if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' \u00b7 ' + o.ano : '') : '';
+      else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' \u00b7 ' + o.ano : '') : '';
+      else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' \u00b7 ' + o.modelo : '');
 
       return `<div class="os-card ${o.statusKey}" onclick="abrirOSdoPainel(${idx})">
         <div class="os-card-top">
@@ -1932,7 +1941,7 @@ function renderLista() {
         </div>
         <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:4px;">
-          <div class="os-card-info">${infoExtra}${o.data ? ' · 📅 ' + o.data : ''}${o.hora ? ' às ' + o.hora : ''}</div>
+          <div class="os-card-info">${infoExtra}${dataFormatada ? ' · 📅 ' + dataFormatada : ''}${o.hora ? ' às ' + o.hora : ''}</div>
           ${pagBadge}
         </div>
         <div class="os-actions-row" onclick="event.stopPropagation()">
