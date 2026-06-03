@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Rastreando GPS" />
 <meta name="theme-color" content="#1a56db" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
 <title>Rastreando GPS — Ordem de Serviço</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1901,9 +1902,9 @@ function renderLista() {
         : '';
       const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
       // Financeiro: apenas instalação, sempre visível
-      const svgFinanceiro = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h12M5 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm8 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M1 9l2-5h10l2 5"/><path d="M1 9h14v8"/><line x1="20" y1="4" x2="20" y2="10"/><line x1="17" y1="7" x2="23" y2="7"/></svg>`;
+      const svgFinanceiro = `<span style="display:flex;align-items:center;gap:2px;line-height:1;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;font-weight:700;"></i></span>`;
       const btnFinanceiro = ts === 'instalacao'
-        ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro">${svgFinanceiro}</button>`
+        ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro" style="gap:2px;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;"></i></button>`
         : '';
 
       const labelData = getLabelData(o.data);
