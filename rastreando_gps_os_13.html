@@ -104,6 +104,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-salvar { padding: 14px; background: #e31c1c; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-limpar { grid-column: span 2; padding: 12px; background: transparent; color: #666; border: 1.5px solid #333; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
 
+/* ===== CARD OS ===== */
 .os-card { background: #1a1a1a; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid #2a2a2a; border-left: 4px solid #333; cursor: pointer; transition: border-color 0.15s; }
 .os-card:active { border-color: #444; }
 .os-card.pendente { border-left-color: #fbbf24; }
@@ -149,14 +150,72 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-empty div { font-size: 40px; margin-bottom: 10px; }
 .os-empty p { font-size: 14px; }
 
-.os-card-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2a2a2a; flex-wrap: wrap; }
-.os-action-btn { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; text-decoration: none; transition: opacity 0.15s; }
-.os-action-btn:active { opacity: 0.8; }
-.os-action-wa { background: #1a3d26; color: #25d366; border: 1px solid #25d366; }
-.os-action-maps { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
-.os-action-confirmar { background: #001a2e; color: #00e5ff; border: 1px solid #00e5ff; }
-.os-action-share { background: #1a0f00; color: #f97316; border: 1px solid #f97316; }
-.os-action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+/* ===== MENU RECOLHÍVEL DE AÇÕES ===== */
+.os-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+}
+.os-actions-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #333;
+  background: #111;
+  color: #777;
+  font-family: inherit;
+  transition: all 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+.os-actions-toggle-btn.aberto {
+  border-color: #00e5ff;
+  color: #00e5ff;
+  background: #001a2e;
+}
+.os-icon-actions {
+  display: none;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.os-icon-actions.aberto {
+  display: flex;
+  animation: fadeInAcoes 0.18s ease;
+}
+@keyframes fadeInAcoes {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.os-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid;
+  text-decoration: none;
+  transition: transform 0.15s, opacity 0.15s;
+  flex-shrink: 0;
+}
+.os-icon-btn:active { transform: scale(0.88); opacity: 0.8; }
+.os-icon-btn svg { width: 15px; height: 15px; }
+.os-icon-btn.i-confirmar { background: #001a2e; color: #00e5ff; border-color: #00e5ff; }
+.os-icon-btn.i-wa        { background: #0d2b1a; color: #25d366; border-color: #25d366; }
+.os-icon-btn.i-maps      { background: #001a2e; color: #60a5fa; border-color: #60a5fa; }
+.os-icon-btn.i-share     { background: #1a0f00; color: #f97316; border-color: #f97316; }
+.os-icon-btn.i-edit      { background: #1a0a1a; color: #c084fc; border-color: #c084fc; }
 
 .painel-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
 .stat-card { background: #1a1a1a; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #2a2a2a; cursor: pointer; transition: all 0.15s; user-select: none; }
@@ -751,9 +810,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="toast" id="toast"></div>
 
 <script>
-// ====================================================================
-// ===== INTEGRAÇÃO COM GOOGLE SHEETS (Apps Script Web App) ===========
-// ====================================================================
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
 
 function setSyncDot(estado) {
@@ -772,10 +828,8 @@ async function syncSalvar(osObj) {
   setSyncDot('busy');
   try {
     const r = await apiPost({ action: 'save', os: JSON.stringify(osObj) });
-    if (r && r.ok) {
-      setSyncDot('ok');
-      setTimeout(() => carregarDoServidor(true), 2000);
-    } else { setSyncDot('err'); }
+    if (r && r.ok) { setSyncDot('ok'); setTimeout(() => carregarDoServidor(true), 2000); }
+    else { setSyncDot('err'); }
   } catch (e) { setSyncDot('err'); }
 }
 async function syncExcluir(osNum) {
@@ -799,9 +853,7 @@ function normalizarOS(o) {
     const parts = String(o.data).split('T')[0].split('-');
     o.data = parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : '';
   }
-  if (o.dataRaw && String(o.dataRaw).includes('T')) {
-    o.dataRaw = String(o.dataRaw).split('T')[0];
-  }
+  if (o.dataRaw && String(o.dataRaw).includes('T')) o.dataRaw = String(o.dataRaw).split('T')[0];
   if (o.hora && String(o.hora).includes('T')) {
     const t = String(o.hora).split('T')[1] || '';
     const p = t.split(':');
@@ -850,7 +902,6 @@ async function carregarDoServidor(silencioso) {
     carregando = false;
   }
 }
-// ====================================================================
 
 let tipo = null, gnv = null, status = 'pendente', counter = 1, editandoIdx = null;
 let tipoServico = null;
@@ -873,7 +924,6 @@ document.addEventListener('click', function(e) {
 function toggleStatusDropdown(e, idx) {
   e.stopPropagation();
   if (dropdownAtivo) { dropdownAtivo.remove(); dropdownAtivo = null; return; }
-
   const badge = e.currentTarget;
   const statusOpcoes = [
     { key: 'agendado',  label: '📅 Agendado' },
@@ -881,7 +931,6 @@ function toggleStatusDropdown(e, idx) {
     { key: 'concluido', label: '✅ Concluído' },
     { key: 'cancelado', label: '❌ Cancelado' }
   ];
-
   const dd = document.createElement('div');
   dd.className = 'status-dropdown';
   statusOpcoes.forEach(op => {
@@ -896,7 +945,6 @@ function toggleStatusDropdown(e, idx) {
     };
     dd.appendChild(item);
   });
-
   badge.style.position = 'relative';
   badge.appendChild(dd);
   dropdownAtivo = dd;
@@ -904,8 +952,7 @@ function toggleStatusDropdown(e, idx) {
 
 function togglePagamentoCard(e, idx) {
   e.stopPropagation();
-  const atual = osList[idx].pago;
-  const novo = !atual;
+  const novo = !osList[idx].pago;
   osList[idx].pago = novo;
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderLista();
@@ -921,6 +968,26 @@ function alterarStatusCard(idx, novoStatus) {
   renderPainel();
   mostrarToast('Status atualizado!');
   syncStatus(osList[idx].osNum, novoStatus);
+}
+
+// ===== TOGGLE DO MENU DE AÇÕES =====
+function toggleAcoes(e, cardId) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const iconsEl = document.getElementById('acoes-' + cardId);
+  if (!iconsEl) return;
+  const aberto = iconsEl.classList.contains('aberto');
+  // Fechar todos os outros abertos
+  document.querySelectorAll('.os-icon-actions.aberto').forEach(el => {
+    if (el !== iconsEl) {
+      el.classList.remove('aberto');
+      const otherBtn = el.previousElementSibling;
+      if (otherBtn) otherBtn.classList.remove('aberto');
+    }
+  });
+  iconsEl.classList.toggle('aberto', !aberto);
+  btn.classList.toggle('aberto', !aberto);
+  btn.textContent = !aberto ? '✕ Fechar' : '⚡ Ações';
 }
 
 function selServico(s) {
@@ -962,9 +1029,7 @@ function calcularTotal() {
   if (valor > 0 && qtd > 0) {
     box.style.display = 'flex';
     num.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-  } else {
-    box.style.display = 'none';
-  }
+  } else { box.style.display = 'none'; }
   const mensalidadeMap = { com: 59.90, sem: 39.90, antigo: 54.90 };
   const valorMes = mensalidadeMap[tipo] || 0;
   const totalMes = valorMes * (qtd || 1);
@@ -973,9 +1038,7 @@ function calcularTotal() {
   if (valorMes > 0 && qtd > 0) {
     mesBox.style.display = 'flex';
     mesNum.textContent = 'R$ ' + totalMes.toFixed(2).replace('.', ',');
-  } else {
-    mesBox.style.display = 'none';
-  }
+  } else { mesBox.style.display = 'none'; }
 }
 
 function init() {
@@ -1081,7 +1144,7 @@ function initRelatorios() {
   renderRelatorios();
 }
 
-  function msgConfirmacao(o) {
+function msgConfirmacao(o) {
   const ts = o.tipoServico || 'instalacao';
   const tipoLabel = ts === 'instalacao' ? 'instalação do rastreador' : ts === 'manutencao' ? 'manutenção do rastreador' : 'retirada do rastreador';
   const veics = o.veiculos && o.veiculos.length > 0 ? o.veiculos : [{ modelo: o.modelo }];
@@ -1111,7 +1174,6 @@ function renderCobrancas() {
   const mes = parseInt(document.getElementById('rel-mes').value);
   const ano = parseInt(document.getElementById('rel-ano').value);
   const lista = document.getElementById('rel-lista-cobrancas');
-
   let inst = osList.filter(o => {
     if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
     if (!o.totalInst || o.totalInst <= 0) return false;
@@ -1121,15 +1183,12 @@ function renderCobrancas() {
     if (partes.length < 3) return true;
     return parseInt(partes[1]) === mes && parseInt(partes[2]) === ano;
   });
-
   if (filtroCobranca === 'pago') inst = inst.filter(o => o.pago);
   else if (filtroCobranca === 'naopago') inst = inst.filter(o => !o.pago);
-
   if (inst.length === 0) {
     lista.innerHTML = '<div style="text-align:center;padding:20px;color:#555;font-size:13px;">Nenhuma cobrança encontrada</div>';
     return;
   }
-
   lista.innerHTML = inst.map(o => {
     const idx = osList.indexOf(o);
     const pago = !!o.pago;
@@ -1160,18 +1219,15 @@ function renderRelatorios() {
   const mes = parseInt(document.getElementById('rel-mes').value);
   const ano = parseInt(document.getElementById('rel-ano').value);
   if (!mes || !ano) return;
-
   const osMes = osList.filter(o => {
     if (!o.data) return false;
     if (o.statusKey !== 'concluido') return false;
     const [d, m, y] = o.data.split('/');
     return parseInt(m) === mes && parseInt(y) === ano;
   });
-
   const inst  = osMes.filter(o => (o.tipoServico || 'instalacao') === 'instalacao');
   const man   = osMes.filter(o => o.tipoServico === 'manutencao');
   const ret   = osMes.filter(o => o.tipoServico === 'retirada');
-
   const instPagasMes = osList.filter(o => {
     if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
     if (!o.pago || !o.totalInst || o.totalInst <= 0) return false;
@@ -1182,9 +1238,8 @@ function renderRelatorios() {
     return parseInt(partes[1]) === mes && parseInt(partes[2]) === ano;
   });
   const receitaInstPaga = instPagasMes.reduce((s, o) => s + (o.totalInst || 0), 0);
-  const custoMan        = man.reduce((s, o) => s + (o.manValor || 0), 0);
-  const total           = receitaInstPaga - custoMan;
-
+  const custoMan = man.reduce((s, o) => s + (o.manValor || 0), 0);
+  const total = receitaInstPaga - custoMan;
   document.getElementById('rel-cnt-inst').textContent = inst.length;
   document.getElementById('rel-cnt-man').textContent  = man.length;
   document.getElementById('rel-cnt-ret').textContent  = ret.length;
@@ -1193,7 +1248,6 @@ function renderRelatorios() {
   const totalEl = document.getElementById('rel-total-mes');
   totalEl.textContent = 'R$ ' + Math.abs(total).toFixed(2).replace('.', ',');
   totalEl.style.color = total >= 0 ? '#22c55e' : '#e31c1c';
-
   const instAll = osList.filter(o => {
     if ((o.tipoServico || 'instalacao') !== 'instalacao') return false;
     if (!o.totalInst || o.totalInst <= 0) return false;
@@ -1207,14 +1261,11 @@ function renderRelatorios() {
   const naoPagas = instAll.filter(o => !o.pago);
   const valPago = pagas.reduce((s,o) => s + (o.totalInst||0), 0);
   const valNaoPago = naoPagas.reduce((s,o) => s + (o.totalInst||0), 0);
-
   document.getElementById('rel-cnt-pago').textContent = pagas.length;
   document.getElementById('rel-cnt-naopago').textContent = naoPagas.length;
   document.getElementById('rel-val-pago').textContent = 'R$ ' + valPago.toFixed(2).replace('.', ',');
   document.getElementById('rel-val-naopago').textContent = 'R$ ' + valNaoPago.toFixed(2).replace('.', ',');
-
   renderCobrancas();
-
   const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const dados = [];
   for (let i = 5; i >= 0; i--) {
@@ -1234,7 +1285,6 @@ function renderRelatorios() {
       ativo: m2 === mes && a2 === ano
     });
   }
-
   const maxVal = Math.max(...dados.map(d => d.inst + d.man + d.ret), 1);
   const alturaMax = 100;
   const grafico = document.getElementById('rel-grafico');
@@ -1534,14 +1584,12 @@ function preencherPreview(d, statusAtivo) {
       return `${i+1}. ${badge}`;
     }).join(' ');
   }
-
   document.getElementById('p-sec-instalacao').style.display = ts === 'instalacao' ? 'block' : 'none';
   document.getElementById('p-sec-manutencao').style.display = ts === 'manutencao' ? 'block' : 'none';
   document.getElementById('p-man-prob-sec').style.display = (ts === 'manutencao' && d.manProblema) ? 'block' : 'none';
   document.getElementById('p-man-serv-sec').style.display = (ts === 'manutencao' && d.manServico) ? 'block' : 'none';
   document.getElementById('p-sec-retirada').style.display = ts === 'retirada' ? 'block' : 'none';
   document.getElementById('btn-financeiro').style.display = ts === 'instalacao' ? 'block' : 'none';
-
   if (ts === 'instalacao') {
     const tipoEl = document.getElementById('p-tipo');
     if (d.tipoKey==='com') tipoEl.innerHTML = '<span class="badge badge-amarelo">Com bloqueio — R$ 59,90/mês</span>';
@@ -1587,11 +1635,9 @@ function preencherPreview(d, statusAtivo) {
     document.getElementById('p-ret-imei').textContent = d.retImei || '—';
     document.getElementById('p-ret-imei-row').style.display = d.retImei ? 'flex' : 'none';
   }
-
   const obsS = document.getElementById('p-obs-sec');
   if (d.obs) { document.getElementById('p-obs').textContent = d.obs; obsS.style.display='block'; }
   else { obsS.style.display='none'; }
-
   if (statusAtivo) {
     document.querySelectorAll('.sc-btn').forEach(b => {
       b.classList.remove('ativo');
@@ -1763,6 +1809,7 @@ function renderPainel() {
   renderLista();
 }
 
+// ===== BADGE: APENAS HOJE E AMANHÃ =====
 function getLabelData(dataStr) {
   if (!dataStr) return null;
   const [d, m, y] = dataStr.split('/');
@@ -1772,12 +1819,10 @@ function getLabelData(dataStr) {
   const diff = (data - hoje) / (1000*60*60*24);
   if (diff === 0) return { texto: 'HOJE', cor: '#e31c1c', bg: '#1f0a0a', borda: '#e31c1c' };
   if (diff === 1) return { texto: 'AMANHÃ', cor: '#fbbf24', bg: '#1a1200', borda: '#fbbf24' };
-  if (diff < 0) return null;
-  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  return { texto: dias[data.getDay()], cor: '#00e5ff', bg: '#001a2e', borda: '#00e5ff' };
+  // Outros dias: sem badge
+  return null;
 }
 
-// ===== ORDENAÇÃO POR URGÊNCIA =====
 function dataParaTimestamp(dataStr) {
   if (!dataStr) return Infinity;
   const partes = dataStr.split('/');
@@ -1789,38 +1834,25 @@ function dataParaTimestamp(dataStr) {
 function ordenarPorUrgencia(lista) {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const hojeTs = hoje.getTime();
-
   return [...lista].sort((a, b) => {
     const tsA = dataParaTimestamp(a.data);
     const tsB = dataParaTimestamp(b.data);
-
-    // Sem data vai pro final absoluto
     if (tsA === Infinity && tsB === Infinity) return 0;
     if (tsA === Infinity) return 1;
     if (tsB === Infinity) return -1;
-
     const passadoA = tsA < hojeTs;
     const passadoB = tsB < hojeTs;
-
-    // Datas passadas vão atrás dos futuros/hoje
     if (passadoA && !passadoB) return 1;
     if (!passadoA && passadoB) return -1;
-
-    // Ambos passados: mais recente primeiro (ontem antes de anteontem)
     if (passadoA && passadoB) return tsB - tsA;
-
-    // Ambos futuros/hoje: mais urgente (mais próximo) primeiro
     return tsA - tsB;
   });
 }
-// ===== FIM ORDENAÇÃO =====
 
 function renderLista() {
   const lista = document.getElementById('lista-os');
   let filtered = filtroAtual === 'todas' ? osList : osList.filter(o => o.statusKey === filtroAtual);
   if (filtroTipoAtual !== 'todas') filtered = filtered.filter(o => (o.tipoServico || 'instalacao') === filtroTipoAtual);
-
-  // Ordenar por urgência: hoje → amanhã → datas futuras → passadas → sem data
   filtered = ordenarPorUrgencia(filtered);
 
   if (filtered.length === 0) {
@@ -1833,71 +1865,70 @@ function renderLista() {
 
   lista.innerHTML = filtered.map((o) => {
     try {
-    const idx = osList.indexOf(o);
-    const ts = o.tipoServico || 'instalacao';
-    const telLimpo = String(o.contato || '').replace(/\D/g,'');
-    const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : '';
-    const mapsUrl = o.mapsLink || (o.endereco ? 'https://maps.google.com/?q=' + encodeURIComponent(o.endereco) : '');
+      const idx = osList.indexOf(o);
+      const cardId = 'card-' + idx;
+      const ts = o.tipoServico || 'instalacao';
+      const telLimpo = String(o.contato || '').replace(/\D/g,'');
+      const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : '';
+      const mapsUrl = o.mapsLink || (o.endereco ? 'https://maps.google.com/?q=' + encodeURIComponent(o.endereco) : '');
 
-    const btnWa = telLimpo.length >= 10
-      ? `<a class="os-action-btn os-action-wa" href="${waLink}" target="_blank" onclick="event.stopPropagation()">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.856L.054 23.447a.75.75 0 0 0 .916.953l5.453-1.33A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.374-.222-3.88.947.993-3.73-.243-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-          WhatsApp
-        </a>` : '';
+      let msgOS = '';
+      try { msgOS = encodeURIComponent(montarMensagem(o)); } catch(err) { console.error('montarMensagem error:', err, o); }
 
-    const btnMaps = mapsUrl
-      ? `<a class="os-action-btn os-action-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Maps
-        </a>` : '';
+      // SVGs inline para os ícones
+      const svgConfirmar = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+      const svgWa = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.856L.054 23.447a.75.75 0 0 0 .916.953l5.453-1.33A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.374-.222-3.88.947.993-3.73-.243-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+      const svgMaps = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+      const svgShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+      const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 
-    let msgOS = '';
-    try { msgOS = encodeURIComponent(montarMensagem(o)); } catch(err) { console.error('montarMensagem error:', err, o); }
-    const btnShare = `<a class="os-action-btn os-action-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Compartilhar OS
-        </a>`;
+      const btnConfirmar = telLimpo.length >= 10
+        ? `<a class="os-icon-btn i-confirmar" href="https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()" title="Confirmar agendamento">${svgConfirmar}</a>`
+        : '';
+      const btnWa = telLimpo.length >= 10
+        ? `<a class="os-icon-btn i-wa" href="${waLink}" target="_blank" onclick="event.stopPropagation()" title="WhatsApp">${svgWa}</a>`
+        : '';
+      const btnMaps = mapsUrl
+        ? `<a class="os-icon-btn i-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()" title="Abrir no Maps">${svgMaps}</a>`
+        : '';
+      const btnShare = `<a class="os-icon-btn i-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar OS">${svgShare}</a>`;
+      const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
 
-    const btnEditar = `<button class="os-action-btn" onclick="event.stopPropagation(); editarOSdoCard(${idx})" style="background:#0a1a2e;color:#00e5ff;border:1px solid #00e5ff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>`;
-    const telLimpo2 = String(o.contato || '').replace(/\D/g,'');
-const btnConfirmar = telLimpo2.length >= 10
-  ? `<a class="os-action-btn os-action-confirmar" href="https://wa.me/55${telLimpo2}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      Confirmar agendamento
-    </a>` : '';
+      const labelData = getLabelData(o.data);
+      const badgeDia = labelData
+        ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid ${labelData.borda};color:${labelData.cor};background:${labelData.bg};margin-left:4px;">${labelData.texto}</span>`
+        : '';
 
-const acoes = `<div class="os-card-actions">${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnEditar}</div>`;
+      const pagBadge = (ts === 'instalacao' && o.totalInst > 0)
+        ? `<button class="pag-badge ${o.pago ? 'pago' : 'nao-pago'}" onclick="togglePagamentoCard(event, ${idx})" title="Clique para ${o.pago ? 'desmarcar' : 'marcar'} como pago">
+            ${o.pago ? '✅ Pago' : '❌ A receber'}
+          </button>`
+        : '';
 
-    let infoExtra = '';
-    if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
-    else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
-    else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
+      let infoExtra = '';
+      if (ts === 'instalacao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
+      else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' · ' + o.ano : '') : '';
+      else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' · ' + o.modelo : '');
 
-    const labelData = getLabelData(o.data);
-    const badgeDia = labelData
-      ? `<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid ${labelData.borda};color:${labelData.cor};background:${labelData.bg};margin-left:6px;">${labelData.texto}</span>`
-      : '';
-
-    const pagBadge = (ts === 'instalacao' && o.totalInst > 0)
-      ? `<button class="pag-badge ${o.pago ? 'pago' : 'nao-pago'}" onclick="togglePagamentoCard(event, ${idx})" title="Clique para ${o.pago ? 'desmarcar' : 'marcar'} como pago">
-          ${o.pago ? '✅ Pago' : '❌ A receber'}
-        </button>`
-      : '';
-
-    return `<div class="os-card ${o.statusKey}" onclick="abrirOSdoPainel(${idx})">
-      <div class="os-card-top">
-        <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span>${badgeDia}</div>
-        <div class="os-card-badges">
-          <button class="os-badge ${o.statusKey}" onclick="toggleStatusDropdown(event, ${idx})">${statusLabel[o.statusKey] || o.status}</button>
+      return `<div class="os-card ${o.statusKey}" onclick="abrirOSdoPainel(${idx})">
+        <div class="os-card-top">
+          <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span>${badgeDia}</div>
+          <div class="os-card-badges">
+            <button class="os-badge ${o.statusKey}" onclick="toggleStatusDropdown(event, ${idx})">${statusLabel[o.statusKey] || o.status}</button>
+          </div>
         </div>
-      </div>
-      <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:4px;">
-        <div class="os-card-info">${infoExtra}${o.data ? ' · 📅 ' + o.data : ''}${o.hora ? ' às ' + o.hora : ''}</div>
-        ${pagBadge}
-      </div>
-      ${acoes}
-    </div>`;
+        <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          <div class="os-card-info">${infoExtra}${o.data ? ' · 📅 ' + o.data : ''}${o.hora ? ' às ' + o.hora : ''}</div>
+          ${pagBadge}
+        </div>
+        <div class="os-actions-row" onclick="event.stopPropagation()">
+          <button class="os-actions-toggle-btn" id="btn-toggle-${cardId}" onclick="toggleAcoes(event, '${cardId}')">⚡ Ações</button>
+          <div class="os-icon-actions" id="acoes-${cardId}">
+            ${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnEdit}
+          </div>
+        </div>
+      </div>`;
     } catch(err) {
       console.error('Erro ao renderizar card:', err, o);
       return `<div class="os-card" onclick="abrirOSdoPainel(${osList.indexOf(o)})">
