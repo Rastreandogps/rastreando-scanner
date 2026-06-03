@@ -958,7 +958,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const parcs  = itens.filter(d => getParc(d.nome) !== null);
   const parcNomes = new Set(parcs.map(d=>d.nome));
   const fixas  = itens.filter(d => d.tipo === 'Fixa' && !parcNomes.has(d.nome));
-  const varrs  = itens.filter(d => d.tipo !== 'Fixa');
+  const varrs  = itens.filter(d => d.tipo !== 'Fixa' && !parcNomes.has(d.nome));
   parcs.forEach(d => d.tipo = 'Parcelada');
   const tFix  = fixas.reduce((s,d)=>s+d.valor,0);
   const pFix  = fixas.filter(d=>d.status==='PG').reduce((s,d)=>s+d.valor,0);
