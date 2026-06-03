@@ -163,7 +163,7 @@
     <label>Tomar a cada quanto tempo?</label>
     <div class="row">
       <div>
-        <input type="number" id="fEvery" min="1" value="1" inputmode="numeric">
+        <input type="number" id="fEvery" min="0.1" step="0.5" value="1" inputmode="decimal">
       </div>
       <div>
         <select id="fUnit">
@@ -174,7 +174,7 @@
         </select>
       </div>
     </div>
-    <p class="hint">Ex: a cada 3 dias, 1 vez por semana (= 1 semana), de 8 em 8 horas (= 8 horas).</p>
+    <p class="hint">Ex: a cada 3 dias, 1 vez por semana (= 1 semana), de 8 em 8 horas (= 8 horas). Pode usar número quebrado: 3,5 dias, 1,5 semana.</p>
 
     <label>Horário de tomar</label>
     <input type="time" id="fTime" value="08:00">
@@ -202,17 +202,22 @@ const UNIT_LABEL = {hours:"hora", days:"dia", weeks:"semana", months:"mês"};
 const UNIT_LABEL_P = {hours:"horas", days:"dias", weeks:"semanas", months:"meses"};
 
 function freqText(m){
-  const u = m.every == 1 ? UNIT_LABEL[m.unit] : UNIT_LABEL_P[m.unit];
-  return `A cada ${m.every} ${u} · ${m.time}`;
+  const u = m.every === 1 ? UNIT_LABEL[m.unit] : UNIT_LABEL_P[m.unit];
+  const n = String(m.every).replace(".", ",");
+  return `A cada ${n} ${u} · ${m.time}`;
 }
 
 // calcula a próxima data a partir do último horário tomado
 function nextDate(m){
   if(!m.lastTaken) return null;
   const next = new Date(m.lastTaken + m.every * MS[m.unit]);
-  // ajusta para o horário definido
-  const [h,min] = m.time.split(":").map(Number);
-  if(m.unit !== "hours"){ next.setHours(h, min, 0, 0); }
+  // só "trava" no horário definido quando a frequência é inteira (sem fração);
+  // se for número quebrado (ex: 3,5 dias), respeita as horas exatas calculadas.
+  const isWhole = Number.isInteger(m.every);
+  if(m.unit !== "hours" && isWhole){
+    const [h,min] = m.time.split(":").map(Number);
+    next.setHours(h, min, 0, 0);
+  }
   return next.getTime();
 }
 
@@ -318,11 +323,11 @@ function closeModal(){ document.getElementById("overlay").classList.remove("show
 
 function saveMed(){
   const name = document.getElementById("fName").value.trim();
-  const every = parseInt(document.getElementById("fEvery").value);
+  const every = parseFloat(document.getElementById("fEvery").value.replace(",", "."));
   const unit = document.getElementById("fUnit").value;
   const time = document.getElementById("fTime").value || "08:00";
   if(!name){ alert("Digite o nome do remédio."); return; }
-  if(!every || every < 1){ alert("A frequência precisa ser pelo menos 1."); return; }
+  if(!every || every <= 0){ alert("A frequência precisa ser maior que zero."); return; }
 
   meds.push({ id: Date.now(), name, every, unit, time, lastTaken: null });
   save(); render(); closeModal();
