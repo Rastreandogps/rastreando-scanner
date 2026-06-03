@@ -881,7 +881,7 @@ function renderDashboard(){
       const despPess=cacheDespesas?Number(cacheDespesas.pessoal.total||0):0;
       // Déficit pessoal: só conta o que ESTOUROU o pró-labore (sobra fica no bolso, não vira crédito)
       const deficitPessoal=pl>0?Math.max(despPess-pl,0):0;
-      const liqLiq=d.liqEsperado-pl-despEmp-deficitPessoal;
+      const liqLiq=d.fatEsperado-despEmp-pl-deficitPessoal;
       const liqCor=liqLiq>=0?'amber':'red';
       const badgePl=pl>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3);margin-top:3px">− '+brl(pl)+' pró-labore</span><br>':'';
       const badgeDesp=despEmp>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(despEmp)+' despesas empresa</span>'+(deficitPessoal>0?'<br>':''):'';
