@@ -1172,11 +1172,10 @@ function abrirModal(){
   document.getElementById('icon-search').style.display='none';
   document.querySelector('.icon-grid-toggle').textContent='▼ Escolher ícone';
   diaSelecionado = null;
-  document.getElementById('venc-field').style.display = 'block';
-  document.getElementById('parc-field').style.display = 'none';
-  document.getElementById('f-cat').value = 'Fixa';
+  document.getElementById('f-cat').value = 'Variável';
   document.getElementById('f-parc-atual').value = '';
   document.getElementById('f-parc-total').value = '';
+  onCatChange();
   buildDayGrid();
   document.getElementById('modal').classList.add('open');
 }
