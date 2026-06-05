@@ -968,33 +968,42 @@ async function syncPago(osNum, pago) {
 
 // ===== NORMALIZAÇÃO DE DATA — aceita QUALQUER formato e devolve DD/MM/YYYY =====
 function normalizarDataParaDDMMYYYY(d) {
-  if (!d) return '';
+  const c = extrairDataComponentes(d);
+  if (!c) return '';
+  return String(c.dia).padStart(2,'0')+'/'+String(c.mes).padStart(2,'0')+'/'+c.ano;
+}
+
+// Extrai {dia, mes, ano} de QUALQUER formato razoável, ou null se não conseguir
+function extrairDataComponentes(d) {
+  if (!d) return null;
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    return { dia: d.getDate(), mes: d.getMonth()+1, ano: d.getFullYear() };
+  }
   const s = String(d).trim();
-  if (!s) return '';
-  // ISO com T: 2026-06-05T03:00:00.000Z
+  if (!s) return null;
+  // ISO com T
   if (s.includes('T')) {
-    const datePart = s.split('T')[0];
-    const m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if (m) return String(m[3]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[1];
+    const m = s.split('T')[0].match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return { dia: +m[3], mes: +m[2], ano: +m[1] };
   }
   // YYYY-MM-DD
-  let m1 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (m1) return String(m1[3]).padStart(2,'0')+'/'+String(m1[2]).padStart(2,'0')+'/'+m1[1];
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return { dia: +m[3], mes: +m[2], ano: +m[1] };
   // DD/MM/YYYY
-  let m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m2) return String(m2[1]).padStart(2,'0')+'/'+String(m2[2]).padStart(2,'0')+'/'+m2[3];
-  // DD/MM/YY -> 20YY
-  let m3 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
-  if (m3) return String(m3[1]).padStart(2,'0')+'/'+String(m3[2]).padStart(2,'0')+'/20'+m3[3];
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return { dia: +m[1], mes: +m[2], ano: +m[3] };
+  // DD/MM/YY
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (m) return { dia: +m[1], mes: +m[2], ano: 2000 + (+m[3]) };
   // DD-MM-YYYY
-  let m4 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (m4) return String(m4[1]).padStart(2,'0')+'/'+String(m4[2]).padStart(2,'0')+'/'+m4[3];
-  // Date stringificado (ex: "Fri Jun 05 2026...")
+  m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m) return { dia: +m[1], mes: +m[2], ano: +m[3] };
+  // Último fallback: tentar parse nativo
   const dt = new Date(s);
   if (!isNaN(dt.getTime())) {
-    return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
+    return { dia: dt.getDate(), mes: dt.getMonth()+1, ano: dt.getFullYear() };
   }
-  return s;
+  return null;
 }
 
 function normalizarOS(o) {
@@ -1059,7 +1068,6 @@ let filtroTipoAtual = 'todas';
 let filtroCobranca = 'todas';
 let osAbertaIdx = null;
 let dropdownAtivo = null;
-let popupHojeJaMostrado = false;
 
 document.addEventListener('click', function(e) {
   if (dropdownAtivo && !dropdownAtivo.contains(e.target)) {
@@ -1232,22 +1240,37 @@ function init() {
 
 // ===== POPUP DO DIA — VERSÃO ELEGANTE, SÓ ENDEREÇO + MODELO =====
 function verificarOSHoje() {
-  if (popupHojeJaMostrado) return;
   const hoje = new Date();
-  const dd = String(hoje.getDate()).padStart(2,'0');
-  const mm = String(hoje.getMonth()+1).padStart(2,'0');
-  const yyyy = hoje.getFullYear();
-  const hojeStr = dd+'/'+mm+'/'+yyyy;
+  const hojeDia = hoje.getDate();
+  const hojeMes = hoje.getMonth() + 1;
+  const hojeAno = hoje.getFullYear();
 
-  // Considera apenas OS de hoje que estão Agendadas OU Pendentes (ainda não finalizadas)
-  // Normaliza a data de cada OS antes de comparar — pega qualquer formato vindo da planilha
+  // Não duplicar: se o popup já está aberto, não cria outro
+  if (document.getElementById('banner-hoje')) return;
+
+  // Considera OS de hoje que ainda NÃO foram finalizadas (agendado ou pendente)
+  // Comparação por componentes (dia/mês/ano) — funciona para QUALQUER formato de data
   const osHoje = osList.filter(o => {
-    const dataOS = normalizarDataParaDDMMYYYY(o.data);
-    return dataOS === hojeStr && (o.statusKey === 'agendado' || o.statusKey === 'pendente');
+    const c = extrairDataComponentes(o.data || o.dataRaw);
+    if (!c) return false;
+    const ehHoje = c.dia === hojeDia && c.mes === hojeMes && c.ano === hojeAno;
+    if (!ehHoje) return false;
+    const sk = o.statusKey || 'agendado';
+    return sk === 'agendado' || sk === 'pendente';
   });
-  if (osHoje.length === 0) return;
 
-  popupHojeJaMostrado = true;
+  // 🔎 LOG DIAGNÓSTICO (abra o Console do navegador F12 para ver)
+  console.log('[OS HOJE] Data de hoje:', hojeDia+'/'+hojeMes+'/'+hojeAno);
+  console.log('[OS HOJE] Total de OS na lista:', osList.length);
+  console.log('[OS HOJE] OS encontradas para hoje (agendado/pendente):', osHoje.length);
+  if (osList.length > 0 && osHoje.length === 0) {
+    console.log('[OS HOJE] Exemplo de OS no cache para inspeção:', {
+      data: osList[0].data, dataRaw: osList[0].dataRaw,
+      statusKey: osList[0].statusKey, osNum: osList[0].osNum
+    });
+  }
+
+  if (osHoje.length === 0) return;
 
   const qtd = osHoje.length;
   const tipoCount = {};
