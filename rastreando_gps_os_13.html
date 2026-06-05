@@ -966,11 +966,39 @@ async function syncPago(osNum, pago) {
   catch (e) { setSyncDot('err'); }
 }
 
-function normalizarOS(o) {
-  if (o.data && String(o.data).includes('T')) {
-    const parts = String(o.data).split('T')[0].split('-');
-    o.data = parts.length === 3 ? parts[2]+'/'+parts[1]+'/'+parts[0] : '';
+// ===== NORMALIZAÇÃO DE DATA — aceita QUALQUER formato e devolve DD/MM/YYYY =====
+function normalizarDataParaDDMMYYYY(d) {
+  if (!d) return '';
+  const s = String(d).trim();
+  if (!s) return '';
+  // ISO com T: 2026-06-05T03:00:00.000Z
+  if (s.includes('T')) {
+    const datePart = s.split('T')[0];
+    const m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return String(m[3]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[1];
   }
+  // YYYY-MM-DD
+  let m1 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m1) return String(m1[3]).padStart(2,'0')+'/'+String(m1[2]).padStart(2,'0')+'/'+m1[1];
+  // DD/MM/YYYY
+  let m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m2) return String(m2[1]).padStart(2,'0')+'/'+String(m2[2]).padStart(2,'0')+'/'+m2[3];
+  // DD/MM/YY -> 20YY
+  let m3 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (m3) return String(m3[1]).padStart(2,'0')+'/'+String(m3[2]).padStart(2,'0')+'/20'+m3[3];
+  // DD-MM-YYYY
+  let m4 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m4) return String(m4[1]).padStart(2,'0')+'/'+String(m4[2]).padStart(2,'0')+'/'+m4[3];
+  // Date stringificado (ex: "Fri Jun 05 2026...")
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
+  }
+  return s;
+}
+
+function normalizarOS(o) {
+  if (o.data) o.data = normalizarDataParaDDMMYYYY(o.data);
   if (o.dataRaw && String(o.dataRaw).includes('T')) o.dataRaw = String(o.dataRaw).split('T')[0];
   if (o.hora && String(o.hora).includes('T')) {
     const t = String(o.hora).split('T')[1] || '';
@@ -1025,7 +1053,7 @@ let tipo = null, gnv = null, status = 'pendente', counter = 1, editandoIdx = nul
 let tipoServico = null;
 let motivoRetirada = null;
 let equipRecuperado = null;
-let osList = JSON.parse(localStorage.getItem('rastreando_os') || '[]');
+let osList = (JSON.parse(localStorage.getItem('rastreando_os') || '[]') || []).map(normalizarOS);
 let filtroAtual = 'agendado';
 let filtroTipoAtual = 'todas';
 let filtroCobranca = 'todas';
@@ -1073,19 +1101,47 @@ function togglePagamentoCard(e, idx) {
   e.stopPropagation();
   const novo = !osList[idx].pago;
   osList[idx].pago = novo;
+
+  // 🔥 LÓGICA AUTOMÁTICA: ao marcar como pago, se está em "A Receber", vira "Concluído"
+  let statusMudou = false;
+  if (novo && osList[idx].statusKey === 'areceber') {
+    osList[idx].statusKey = 'concluido';
+    osList[idx].status = '✅ Concluído';
+    statusMudou = true;
+    syncStatus(osList[idx].osNum, 'concluido');
+  }
+  // E ao desmarcar pago de uma OS Concluída, volta para "A Receber"
+  else if (!novo && osList[idx].statusKey === 'concluido') {
+    osList[idx].statusKey = 'areceber';
+    osList[idx].status = '💰 A Receber';
+    statusMudou = true;
+    syncStatus(osList[idx].osNum, 'areceber');
+  }
+
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
-  renderLista();
-  mostrarToast(novo ? '✅ Marcado como pago!' : '❌ Marcado como não pago');
+  if (statusMudou) {
+    renderPainel();
+    mostrarToast(novo ? '✅ Pago! OS movida para "Concluídas"' : '💰 OS voltou para "A Receber"');
+  } else {
+    renderLista();
+    mostrarToast(novo ? '✅ Marcado como pago!' : '❌ Marcado como não pago');
+  }
   syncPago(osList[idx].osNum, novo);
 }
 
 function alterarStatusCard(idx, novoStatus) {
+  // 🔥 LÓGICA AUTOMÁTICA: se marcar Concluído mas a OS NÃO está paga,
+  // direciona para "A Receber" automaticamente
+  if (novoStatus === 'concluido' && !osList[idx].pago) {
+    novoStatus = 'areceber';
+    mostrarToast('💰 OS movida para "A Receber" (pagamento pendente)');
+  }
   const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   osList[idx].statusKey = novoStatus;
   osList[idx].status = statusMap[novoStatus];
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderPainel();
-  mostrarToast('Status atualizado!');
+  if (novoStatus !== 'areceber') mostrarToast('Status atualizado!');
   syncStatus(osList[idx].osNum, novoStatus);
 }
 
@@ -1167,6 +1223,9 @@ function init() {
   atualizarNumero();
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
   renderVeiculos();
+  // Tenta abrir o popup já com os dados em cache (caso já existam OS pra hoje no localStorage)
+  setTimeout(() => verificarOSHoje(), 300);
+  // E também tenta de novo após sincronizar com a planilha (caso novas OS de hoje cheguem do servidor)
   carregarDoServidor(true).then(() => verificarOSHoje());
   setInterval(() => { if (!carregando) carregarDoServidor(true); }, 25000);
 }
@@ -1181,10 +1240,11 @@ function verificarOSHoje() {
   const hojeStr = dd+'/'+mm+'/'+yyyy;
 
   // Considera apenas OS de hoje que estão Agendadas OU Pendentes (ainda não finalizadas)
-  const osHoje = osList.filter(o =>
-    o.data === hojeStr &&
-    (o.statusKey === 'agendado' || o.statusKey === 'pendente')
-  );
+  // Normaliza a data de cada OS antes de comparar — pega qualquer formato vindo da planilha
+  const osHoje = osList.filter(o => {
+    const dataOS = normalizarDataParaDDMMYYYY(o.data);
+    return dataOS === hojeStr && (o.statusKey === 'agendado' || o.statusKey === 'pendente');
+  });
   if (osHoje.length === 0) return;
 
   popupHojeJaMostrado = true;
@@ -1819,6 +1879,12 @@ function preencherPreview(d, statusAtivo) {
 
 function alterarStatus(novoStatus) {
   if (osAbertaIdx === null) return;
+  // 🔥 LÓGICA AUTOMÁTICA: se marcar Concluído mas a OS NÃO está paga,
+  // direciona para "A Receber" automaticamente
+  if (novoStatus === 'concluido' && !osList[osAbertaIdx].pago) {
+    novoStatus = 'areceber';
+    mostrarToast('💰 OS movida para "A Receber" (pagamento pendente)');
+  }
   const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   osList[osAbertaIdx].statusKey = novoStatus;
   osList[osAbertaIdx].status = statusMap[novoStatus];
@@ -1831,7 +1897,7 @@ function alterarStatus(novoStatus) {
     if (b.classList.contains(novoStatus)) b.classList.add('ativo');
   });
   renderPainel();
-  mostrarToast('Status atualizado!');
+  if (novoStatus !== 'areceber') mostrarToast('Status atualizado!');
   syncStatus(osList[osAbertaIdx].osNum, novoStatus);
 }
 
