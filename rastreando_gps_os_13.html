@@ -308,6 +308,120 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .rel-ctab.ativo-naopago { border-color: #e31c1c; background: #1f0a0a; color: #e31c1c; }
 .rel-ctab.ativo-todas { border-color: #f0f0f0; background: #222; color: #f0f0f0; }
 
+/* ===== POPUP DO DIA — NOVO DESIGN ELEGANTE ===== */
+@keyframes fadeInPopup {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slideUpItem {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.banner-hoje-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.banner-hoje-card {
+  background: linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+  border: 1.5px solid #e31c1c;
+  border-radius: 22px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(227,28,28,0.25), 0 10px 30px rgba(0,0,0,0.7);
+  animation: fadeInPopup 0.28s cubic-bezier(.16,.92,.32,1.16);
+}
+.banner-hoje-header {
+  padding: 24px 22px 16px;
+  border-bottom: 1px solid #2a2a2a;
+  text-align: center;
+  position: relative;
+}
+.banner-hoje-close {
+  position: absolute; top: 14px; right: 14px;
+  background: #2a2a2a; border: none; color: #aaa;
+  border-radius: 50%; width: 30px; height: 30px;
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.banner-hoje-close:hover { background: #3a3a3a; color: #f0f0f0; }
+.banner-hoje-icon-big {
+  font-size: 38px; margin-bottom: 8px;
+  display: inline-block;
+  animation: slideUpItem 0.35s ease;
+}
+.banner-hoje-title {
+  font-size: 17px; font-weight: 700; color: #f0f0f0;
+  line-height: 1.4; padding: 0 16px;
+}
+.banner-hoje-title strong { color: #e31c1c; }
+.banner-hoje-data {
+  font-size: 11px; color: #888; margin-top: 8px;
+  text-transform: capitalize; letter-spacing: 0.03em;
+}
+.banner-hoje-resumo {
+  display: inline-flex; gap: 10px; margin-top: 10px;
+  font-size: 11px; flex-wrap: wrap; justify-content: center;
+}
+.banner-hoje-resumo-item {
+  background: #0f0f0f; border: 1px solid #2a2a2a;
+  padding: 3px 9px; border-radius: 20px; color: #aaa;
+}
+.banner-hoje-body { padding: 16px; }
+.banner-hoje-item {
+  padding: 14px;
+  background: #0f0f0f;
+  border: 1px solid #2a2a2a;
+  border-left: 3px solid #00e5ff;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  animation: slideUpItem 0.3s ease backwards;
+}
+.banner-hoje-item.t-instalacao { border-left-color: #00e5ff; }
+.banner-hoje-item.t-manutencao { border-left-color: #f59e0b; }
+.banner-hoje-item.t-retirada   { border-left-color: #e31c1c; }
+.banner-hoje-item-end {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 14px; color: #f0f0f0; font-weight: 500;
+  line-height: 1.45; margin-bottom: 8px;
+}
+.banner-hoje-item-end .ico { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.banner-hoje-item-veic {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #00e5ff; font-weight: 600;
+  padding-left: 23px;
+}
+.banner-hoje-item.t-manutencao .banner-hoje-item-veic { color: #f59e0b; }
+.banner-hoje-item.t-retirada   .banner-hoje-item-veic { color: #e31c1c; }
+.banner-hoje-footer {
+  padding: 14px 18px 18px;
+  border-top: 1px solid #2a2a2a;
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px;
+}
+.banner-hoje-btn-fechar {
+  padding: 13px; background: #1f1f1f; color: #aaa;
+  border: 1px solid #333; border-radius: 12px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.banner-hoje-btn-fechar:hover { background: #2a2a2a; color: #f0f0f0; }
+.banner-hoje-btn-painel {
+  padding: 13px; background: #e31c1c; color: white;
+  border: none; border-radius: 12px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+  box-shadow: 0 4px 12px rgba(227,28,28,0.25);
+}
+.banner-hoje-btn-painel:hover { background: #c41818; transform: translateY(-1px); }
+
 @media print {
   .topbar, .tabs, .actions, .btn-limpar, .prev-footer, .status-change { display: none !important; }
   body { background: white; }
@@ -584,7 +698,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
   </div>
 
-  <!-- ABA PAINEL -->
+  <!-- ABA PAINEL — ORDEM: AGENDADAS → PENDENTES → A RECEBER → CONCLUÍDAS → TODAS -->
   <div class="page" id="page-painel">
     <div class="painel-stats">
       <div class="stat-card s-agendado ativo" id="fc-agendado" onclick="filtrar('agendado')">
@@ -917,6 +1031,7 @@ let filtroTipoAtual = 'todas';
 let filtroCobranca = 'todas';
 let osAbertaIdx = null;
 let dropdownAtivo = null;
+let popupHojeJaMostrado = false;
 
 document.addEventListener('click', function(e) {
   if (dropdownAtivo && !dropdownAtivo.contains(e.target)) {
@@ -932,8 +1047,8 @@ function toggleStatusDropdown(e, idx) {
   const statusOpcoes = [
     { key: 'agendado',  label: '📅 Agendado' },
     { key: 'pendente',  label: '⏳ Pendente' },
-    { key: 'concluido', label: '✅ Concluído' },
-    { key: 'areceber', label: '💰 A Receber' }
+    { key: 'areceber',  label: '💰 A Receber' },
+    { key: 'concluido', label: '✅ Concluído' }
   ];
   const dd = document.createElement('div');
   dd.className = 'status-dropdown';
@@ -1056,86 +1171,109 @@ function init() {
   setInterval(() => { if (!carregando) carregarDoServidor(true); }, 25000);
 }
 
+// ===== POPUP DO DIA — VERSÃO ELEGANTE, SÓ ENDEREÇO + MODELO =====
 function verificarOSHoje() {
+  if (popupHojeJaMostrado) return;
   const hoje = new Date();
   const dd = String(hoje.getDate()).padStart(2,'0');
   const mm = String(hoje.getMonth()+1).padStart(2,'0');
   const yyyy = hoje.getFullYear();
   const hojeStr = dd+'/'+mm+'/'+yyyy;
-  // Filtra OS para hoje que NÃO estão concluídas e NÃO estão como A Receber
-  const osHoje = osList.filter(o => o.data === hojeStr && o.statusKey !== 'concluido' && o.statusKey !== 'areceber');
+
+  // Considera apenas OS de hoje que estão Agendadas OU Pendentes (ainda não finalizadas)
+  const osHoje = osList.filter(o =>
+    o.data === hojeStr &&
+    (o.statusKey === 'agendado' || o.statusKey === 'pendente')
+  );
   if (osHoje.length === 0) return;
-  
-  // Notificação do navegador
+
+  popupHojeJaMostrado = true;
+
+  const qtd = osHoje.length;
+  const tipoCount = {};
+  osHoje.forEach(o => {
+    const t = o.tipoServico || 'instalacao';
+    tipoCount[t] = (tipoCount[t] || 0) + 1;
+  });
+
+  // Título principal — adaptativo conforme os tipos do dia
+  const labelsSing = { instalacao: 'instalação', manutencao: 'manutenção', retirada: 'retirada' };
+  const labelsPlur = { instalacao: 'instalações', manutencao: 'manutenções', retirada: 'retiradas' };
+  let titulo = '';
+  const tipos = Object.keys(tipoCount);
+  if (tipos.length === 1) {
+    const t = tipos[0];
+    const label = qtd === 1 ? labelsSing[t] : labelsPlur[t];
+    titulo = `Você tem hoje <strong>${qtd}</strong> ${label} agendada${qtd > 1 ? 's' : ''}`;
+  } else {
+    titulo = `Você tem hoje <strong>${qtd}</strong> serviço${qtd > 1 ? 's' : ''} agendado${qtd > 1 ? 's' : ''}`;
+  }
+
+  // Resumo dos tipos
+  const resumoBadges = [];
+  if (tipoCount.instalacao) resumoBadges.push(`<span class="banner-hoje-resumo-item">📡 ${tipoCount.instalacao} instalação${tipoCount.instalacao > 1 ? 'ões' : ''}</span>`);
+  if (tipoCount.manutencao) resumoBadges.push(`<span class="banner-hoje-resumo-item">🔧 ${tipoCount.manutencao} manutenção${tipoCount.manutencao > 1 ? 'ões' : ''}</span>`);
+  if (tipoCount.retirada)   resumoBadges.push(`<span class="banner-hoje-resumo-item">📤 ${tipoCount.retirada} retirada${tipoCount.retirada > 1 ? 's' : ''}</span>`);
+
+  // Data formatada bonita
+  const diasSemana = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dataFormatada = `${diasSemana[hoje.getDay()]}, ${hoje.getDate()} de ${meses[hoje.getMonth()]}`;
+
+  // Cards: APENAS endereço + modelo (conforme solicitado)
+  const cards = osHoje.map((o, i) => {
+    const veics = o.veiculos && o.veiculos.length > 0 ? o.veiculos : [{ modelo: o.modelo }];
+    const modelos = veics.map(v => v.modelo).filter(Boolean).join(', ') || 'Modelo não informado';
+    const endereco = o.endereco || 'Endereço não informado';
+    const tipoServ = o.tipoServico || 'instalacao';
+    const delay = (i * 0.06).toFixed(2);
+    return `
+      <div class="banner-hoje-item t-${tipoServ}" style="animation-delay:${delay}s;">
+        <div class="banner-hoje-item-end">
+          <span class="ico">📍</span>
+          <span>${endereco}</span>
+        </div>
+        <div class="banner-hoje-item-veic">
+          <span>🚗</span>
+          <span>${modelos}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Notificação do navegador (mantida)
   if ('Notification' in window) {
+    const tituloPlain = titulo.replace(/<\/?strong>/g, '');
     const disparar = () => {
       new Notification('🛰️ Rastreando GPS — OS de Hoje', {
-        body: osHoje.length === 1 ? '📋 Você tem 1 serviço hoje' : `📋 Você tem ${osHoje.length} serviços hoje`,
+        body: tituloPlain,
         icon: 'https://cdn-icons-png.flaticon.com/512/565/565547.png'
       });
     };
     if (Notification.permission === 'granted') disparar();
     else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => { if (p === 'granted') disparar(); });
   }
-  
-  // Popup bonito com resumo (endereço e modelo)
-  const lista = osHoje.map(o => {
-    const modelo = o.veiculos && o.veiculos[0] ? o.veiculos[0].modelo : (o.modelo || '—');
-    const endereco = o.endereco || '—';
-    const hora = o.hora ? ` · às ${o.hora}` : '';
-    return `
-      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="color:#00e5ff;font-weight:700;font-size:13px;">${o.osNum}</span>
-          <span style="color:#f0f0f0;font-weight:500;">${o.nome || 'Cliente'}</span>
-          <span style="font-size:11px;color:#aaa;margin-left:auto;">${o.hora || '—'}</span>
-        </div>
-        <div style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span>📍 ${endereco}</span>
-          <span style="color:#666;">|</span>
-          <span>🚗 ${modelo}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  const tipoCount = {};
-  osHoje.forEach(o => {
-    const tipo = o.tipoServico || 'instalacao';
-    tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
-  });
-  let resumo = '';
-  if (tipoCount.instalacao) resumo += `📡 ${tipoCount.instalacao} instalação${tipoCount.instalacao > 1 ? 'ões' : ''} `;
-  if (tipoCount.manutencao) resumo += `🔧 ${tipoCount.manutencao} manutenção${tipoCount.manutencao > 1 ? 'ões' : ''} `;
-  if (tipoCount.retirada) resumo += `📤 ${tipoCount.retirada} retirada${tipoCount.retirada > 1 ? 's' : ''}`;
-  
+
   const banner = document.createElement('div');
   banner.id = 'banner-hoje';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);';
+  banner.className = 'banner-hoje-overlay';
   banner.innerHTML = `
-    <div style="background:#1a1a1a;border:1.5px solid #e31c1c;border-radius:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 35px rgba(0,0,0,0.5);animation:fadeInPopup 0.2s ease-out;">
-      <div style="padding:20px 20px 12px 20px;border-bottom:1px solid #2a2a2a;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div style="font-size:18px;font-weight:700;color:#e31c1c;">📅 OS de Hoje</div>
-            <div style="font-size:12px;color:#aaa;margin-top:4px;">${resumo.trim()}</div>
-          </div>
-          <button onclick="document.getElementById('banner-hoje').remove()" style="background:#2a2a2a;border:none;color:#aaa;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.1s;">✕</button>
-        </div>
+    <div class="banner-hoje-card">
+      <div class="banner-hoje-header">
+        <button class="banner-hoje-close" onclick="document.getElementById('banner-hoje').remove()">✕</button>
+        <div class="banner-hoje-icon-big">📅</div>
+        <div class="banner-hoje-title">${titulo}</div>
+        <div class="banner-hoje-data">${dataFormatada}</div>
+        ${resumoBadges.length > 1 ? `<div class="banner-hoje-resumo">${resumoBadges.join('')}</div>` : ''}
       </div>
-      <div style="padding:8px 16px;">
-        ${lista}
+      <div class="banner-hoje-body">
+        ${cards}
       </div>
-      <div style="padding:12px 20px 20px;border-top:1px solid #2a2a2a;">
-        <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="width:100%;padding:12px;background:#e31c1c;color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:0.1s;">📋 Ver no Painel</button>
+      <div class="banner-hoje-footer">
+        <button class="banner-hoje-btn-fechar" onclick="document.getElementById('banner-hoje').remove()">Fechar</button>
+        <button class="banner-hoje-btn-painel" onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');">📋 Ver no Painel</button>
       </div>
     </div>
-    <style>
-      @keyframes fadeInPopup {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-      }
-    </style>
   `;
   document.body.appendChild(banner);
 }
@@ -1927,7 +2065,6 @@ function renderLista() {
         ? `<a class="os-icon-btn i-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar OS">${svgShare}</a>`
         : '';
       const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
-      const svgFinanceiro = `<span style="display:flex;align-items:center;gap:2px;line-height:1;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;font-weight:700;"></i></span>`;
       const btnFinanceiro = ts === 'instalacao'
         ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro" style="gap:2px;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;"></i></button>`
         : '';
