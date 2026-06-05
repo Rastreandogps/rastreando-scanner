@@ -98,6 +98,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .status-btn.ap { background: #1a1200; color: #fbbf24; border-color: #fbbf24; }
 .status-btn.aa { background: #001a2e; color: #00e5ff; border-color: #00e5ff; }
 .status-btn.ac { background: #001a0a; color: #22c55e; border-color: #22c55e; }
+.status-btn.areceber { background: #1f0a0a; color: #e31c1c; border-color: #e31c1c; }
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
 .btn-ver { padding: 14px; background: #111; color: #00e5ff; border: 1.5px solid #00e5ff; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -111,7 +112,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-card.pendente { border-left-color: #fbbf24; }
 .os-card.agendado { border-left-color: #00e5ff; }
 .os-card.concluido { border-left-color: #22c55e; }
-.os-card.cancelado { border-left-color: #e31c1c; opacity: 0.6; }
+.os-card.areceber { border-left-color: #e31c1c; opacity: 0.9; }
 .os-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
 .os-card-num { font-size: 12px; font-weight: 700; color: #00e5ff; }
 .os-card-nome { font-size: 15px; font-weight: 600; color: #f0f0f0; margin-bottom: 2px; }
@@ -122,7 +123,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-badge.pendente { background: #1a1200; color: #fbbf24; border-color: #fbbf24; }
 .os-badge.agendado { background: #001a2e; color: #00e5ff; border-color: #00e5ff; }
 .os-badge.concluido { background: #001a0a; color: #22c55e; border-color: #22c55e; }
-.os-badge.cancelado { background: #1f0a0a; color: #e31c1c; border-color: #e31c1c; }
+.os-badge.areceber { background: #1f0a0a; color: #e31c1c; border-color: #e31c1c; }
 .os-badge:active { transform: scale(0.96); }
 
 .status-dropdown { position: absolute; top: calc(100% + 6px); right: 0; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 6px; min-width: 160px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
@@ -131,7 +132,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .status-dropdown-item.pendente { color: #fbbf24; }
 .status-dropdown-item.agendado { color: #00e5ff; }
 .status-dropdown-item.concluido { color: #22c55e; }
-.status-dropdown-item.cancelado { color: #e31c1c; }
+.status-dropdown-item.areceber { color: #e31c1c; }
 .status-dropdown-item.ativo { font-weight: 700; }
 
 .pag-badge { font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 20px; cursor: pointer; border: 1px solid; transition: all 0.15s; user-select: none; display: inline-flex; align-items: center; gap: 4px; }
@@ -233,8 +234,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .stat-card.s-agendado.ativo { border-color: #00e5ff; background: #001a2e; }
 .stat-card.s-concluido .stat-num { color: #22c55e; }
 .stat-card.s-concluido.ativo { border-color: #22c55e; background: #001a0a; }
-.stat-card.s-cancelado .stat-num { color: #e31c1c; }
-.stat-card.s-cancelado.ativo { border-color: #e31c1c; background: #1f0a0a; }
+.stat-card.s-areceber .stat-num { color: #e31c1c; }
+.stat-card.s-areceber.ativo { border-color: #e31c1c; background: #1f0a0a; }
 
 .painel-tipo-filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items:center; }
 .tipo-filtro-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #333; background: #111; color: #666; font-family: inherit; transition: all 0.15s; }
@@ -276,12 +277,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .sc-btn.pendente { color: #fbbf24; border-color: #fbbf24; }
 .sc-btn.agendado { color: #00e5ff; border-color: #00e5ff; }
 .sc-btn.concluido { color: #22c55e; border-color: #22c55e; }
-.sc-btn.cancelado { color: #e31c1c; border-color: #e31c1c; }
+.sc-btn.areceber { color: #e31c1c; border-color: #e31c1c; }
 .sc-btn.ativo { color: #111; }
 .sc-btn.ativo.pendente { background: #fbbf24; }
 .sc-btn.ativo.agendado { background: #00e5ff; }
 .sc-btn.ativo.concluido { background: #22c55e; }
-.sc-btn.ativo.cancelado { background: #e31c1c; }
+.sc-btn.ativo.areceber { background: #e31c1c; }
 
 .gnv-label-section { font-size: 12px; color: #aaa; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
 
@@ -557,6 +558,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <button class="status-btn ap" id="s-pendente" onclick="selStatus('pendente')">⏳ Pendente</button>
           <button class="status-btn" id="s-agendado" onclick="selStatus('agendado')">📅 Agendado</button>
           <button class="status-btn" id="s-concluido" onclick="selStatus('concluido')">✅ Concluído</button>
+          <button class="status-btn" id="s-areceber" onclick="selStatus('areceber')">💰 A Receber</button>
         </div>
       </div>
     </div>
@@ -593,13 +595,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="stat-num" id="cnt-pendente">0</div>
         <div class="stat-label">Pendentes</div>
       </div>
+      <div class="stat-card s-areceber" id="fc-areceber" onclick="filtrar('areceber')">
+        <div class="stat-num" id="cnt-areceber">0</div>
+        <div class="stat-label">A Receber</div>
+      </div>
       <div class="stat-card s-concluido" id="fc-concluido" onclick="filtrar('concluido')">
         <div class="stat-num" id="cnt-concluido">0</div>
         <div class="stat-label">Concluídas</div>
-      </div>
-      <div class="stat-card s-cancelado" id="fc-cancelado" onclick="filtrar('cancelado')">
-        <div class="stat-num" id="cnt-cancelado">0</div>
-        <div class="stat-label">Canceladas</div>
       </div>
       <div class="stat-card s-todas" id="fc-todas" onclick="filtrar('todas')">
         <div class="stat-num" id="cnt-todas">0</div>
@@ -795,7 +797,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <button class="sc-btn pendente" onclick="alterarStatus('pendente')">⏳ Pendente</button>
       <button class="sc-btn agendado" onclick="alterarStatus('agendado')">📅 Agendado</button>
       <button class="sc-btn concluido" onclick="alterarStatus('concluido')">✅ Concluído</button>
-      <button class="sc-btn cancelado" onclick="alterarStatus('cancelado')">❌ Cancelado</button>
+      <button class="sc-btn areceber" onclick="alterarStatus('areceber')">💰 A Receber</button>
     </div>
 
     <div class="prev-footer">
@@ -931,7 +933,7 @@ function toggleStatusDropdown(e, idx) {
     { key: 'agendado',  label: '📅 Agendado' },
     { key: 'pendente',  label: '⏳ Pendente' },
     { key: 'concluido', label: '✅ Concluído' },
-    { key: 'cancelado', label: '❌ Cancelado' }
+    { key: 'areceber', label: '💰 A Receber' }
   ];
   const dd = document.createElement('div');
   dd.className = 'status-dropdown';
@@ -963,7 +965,7 @@ function togglePagamentoCard(e, idx) {
 }
 
 function alterarStatusCard(idx, novoStatus) {
-  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   osList[idx].statusKey = novoStatus;
   osList[idx].status = statusMap[novoStatus];
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
@@ -979,7 +981,6 @@ function toggleAcoes(e, cardId) {
   const iconsEl = document.getElementById('acoes-' + cardId);
   if (!iconsEl) return;
   const aberto = iconsEl.classList.contains('aberto');
-  // Fechar todos os outros abertos
   document.querySelectorAll('.os-icon-actions.aberto').forEach(el => {
     if (el !== iconsEl) {
       el.classList.remove('aberto');
@@ -1061,50 +1062,81 @@ function verificarOSHoje() {
   const mm = String(hoje.getMonth()+1).padStart(2,'0');
   const yyyy = hoje.getFullYear();
   const hojeStr = dd+'/'+mm+'/'+yyyy;
-  const osHoje = osList.filter(o => o.data === hojeStr && o.statusKey !== 'cancelado' && o.statusKey !== 'concluido');
+  // Filtra OS para hoje que NÃO estão concluídas e NÃO estão como A Receber
+  const osHoje = osList.filter(o => o.data === hojeStr && o.statusKey !== 'concluido' && o.statusKey !== 'areceber');
   if (osHoje.length === 0) return;
-  const nomes = osHoje.map(o => o.osNum + ' — ' + (o.nome || 'Cliente') + (o.hora ? ' às ' + o.hora : '')).join('\n');
-  const total = osHoje.length;
+  
+  // Notificação do navegador
   if ('Notification' in window) {
     const disparar = () => {
       new Notification('🛰️ Rastreando GPS — OS de Hoje', {
-        body: total === 1 ? '📋 ' + nomes : total + ' OS agendadas para hoje:\n' + nomes,
+        body: osHoje.length === 1 ? '📋 Você tem 1 serviço hoje' : `📋 Você tem ${osHoje.length} serviços hoje`,
         icon: 'https://cdn-icons-png.flaticon.com/512/565/565547.png'
       });
     };
     if (Notification.permission === 'granted') disparar();
     else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => { if (p === 'granted') disparar(); });
   }
-  mostrarBannerHoje(osHoje);
-}
-
-function mostrarBannerHoje(osHoje) {
-  const existing = document.getElementById('banner-hoje');
-  if (existing) existing.remove();
-  const total = osHoje.length;
-  const lista = osHoje.map(o =>
-    `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:13px;">
-      <span style="color:#00e5ff;font-weight:700;">${o.osNum}</span>
-      <span style="color:#f0f0f0;"> — ${o.nome || 'Cliente'}</span>
-      ${o.hora ? `<span style="color:#fbbf24;font-weight:600;"> às ${o.hora}</span>` : ''}
-      <div style="color:#aaa;font-size:12px;">${o.modelo || ''} ${o.gnvVal==='sim'?'· GNV':''}</div>
-    </div>`
-  ).join('');
+  
+  // Popup bonito com resumo (endereço e modelo)
+  const lista = osHoje.map(o => {
+    const modelo = o.veiculos && o.veiculos[0] ? o.veiculos[0].modelo : (o.modelo || '—');
+    const endereco = o.endereco || '—';
+    const hora = o.hora ? ` · às ${o.hora}` : '';
+    return `
+      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="color:#00e5ff;font-weight:700;font-size:13px;">${o.osNum}</span>
+          <span style="color:#f0f0f0;font-weight:500;">${o.nome || 'Cliente'}</span>
+          <span style="font-size:11px;color:#aaa;margin-left:auto;">${o.hora || '—'}</span>
+        </div>
+        <div style="font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span>📍 ${endereco}</span>
+          <span style="color:#666;">|</span>
+          <span>🚗 ${modelo}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  const tipoCount = {};
+  osHoje.forEach(o => {
+    const tipo = o.tipoServico || 'instalacao';
+    tipoCount[tipo] = (tipoCount[tipo] || 0) + 1;
+  });
+  let resumo = '';
+  if (tipoCount.instalacao) resumo += `📡 ${tipoCount.instalacao} instalação${tipoCount.instalacao > 1 ? 'ões' : ''} `;
+  if (tipoCount.manutencao) resumo += `🔧 ${tipoCount.manutencao} manutenção${tipoCount.manutencao > 1 ? 'ões' : ''} `;
+  if (tipoCount.retirada) resumo += `📤 ${tipoCount.retirada} retirada${tipoCount.retirada > 1 ? 's' : ''}`;
+  
   const banner = document.createElement('div');
   banner.id = 'banner-hoje';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);';
   banner.innerHTML = `
-    <div style="background:#1a1a1a;border:1.5px solid #00e5ff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:#00e5ff;">📅 OS de Hoje</div>
-          <div style="font-size:12px;color:#aaa;margin-top:2px;">${total} serviço${total>1?'s':''} agendado${total>1?'s':''} para hoje</div>
+    <div style="background:#1a1a1a;border:1.5px solid #e31c1c;border-radius:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 35px rgba(0,0,0,0.5);animation:fadeInPopup 0.2s ease-out;">
+      <div style="padding:20px 20px 12px 20px;border-bottom:1px solid #2a2a2a;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#e31c1c;">📅 OS de Hoje</div>
+            <div style="font-size:12px;color:#aaa;margin-top:4px;">${resumo.trim()}</div>
+          </div>
+          <button onclick="document.getElementById('banner-hoje').remove()" style="background:#2a2a2a;border:none;color:#aaa;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.1s;">✕</button>
         </div>
-        <button onclick="document.getElementById('banner-hoje').remove()" style="background:#333;border:none;color:#aaa;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
-      <div style="border-top:1px solid #2a2a2a;padding-top:10px;">${lista}</div>
-      <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="margin-top:14px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Ver no Painel</button>
-    </div>`;
+      <div style="padding:8px 16px;">
+        ${lista}
+      </div>
+      <div style="padding:12px 20px 20px;border-top:1px solid #2a2a2a;">
+        <button onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');" style="width:100%;padding:12px;background:#e31c1c;color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:0.1s;">📋 Ver no Painel</button>
+      </div>
+    </div>
+    <style>
+      @keyframes fadeInPopup {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+    </style>
+  `;
   document.body.appendChild(banner);
 }
 
@@ -1201,9 +1233,7 @@ function renderCobrancas() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <div class="cobranca-val ${pago ? '' : 'nao-pago'}">R$ ${(o.totalInst||0).toFixed(2).replace('.',',')}</div>
-        <button onclick="event.stopPropagation(); alterarPagamentoRel(${idx})" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid;cursor:pointer;font-family:inherit;transition:all 0.15s;background:${pago?'#001a0a':'#1f0a0a'};color:${pago?'#22c55e':'#e31c1c'};border-color:${pago?'#22c55e':'#e31c1c'};">
-          ${pago ? '✅ Pago' : '❌ A receber'}
-        </button>
+        <button onclick="event.stopPropagation(); alterarPagamentoRel(${idx})" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid;cursor:pointer;font-family:inherit;transition:all 0.15s;background:${pago?'#001a0a':'#1f0a0a'};color:${pago?'#22c55e':'#e31c1c'};border-color:${pago?'#22c55e':'#e31c1c'};">${pago ? '✅ Pago' : '❌ A receber'}</button>
       </div>
     </div>`;
   }).join('');
@@ -1432,6 +1462,7 @@ function selStatus(s) {
   document.getElementById('s-pendente').className = 'status-btn' + (s==='pendente' ? ' ap' : '');
   document.getElementById('s-agendado').className = 'status-btn' + (s==='agendado' ? ' aa' : '');
   document.getElementById('s-concluido').className = 'status-btn' + (s==='concluido' ? ' ac' : '');
+  document.getElementById('s-areceber').className = 'status-btn' + (s==='areceber' ? ' areceber' : '');
 }
 
 function g(id) { return document.getElementById(id).value.trim(); }
@@ -1445,7 +1476,7 @@ function getDados() {
   const dataRaw = g('data-inst');
   let dataFmt = '';
   if (dataRaw) { const [y,m,d] = dataRaw.split('-'); dataFmt = d+'/'+m+'/'+y; }
-  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído' };
+  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   const tipoTexto = tipo==='com' ? 'Com bloqueio — R$ 59,90/mês' : tipo==='sem' ? 'Sem bloqueio — R$ 39,90/mês' : tipo==='antigo' ? 'Com bloqueio (Contrato Antigo) — R$ 54,90/mês' : '';
   const valorInst = parseFloat(document.getElementById('valor-inst').value) || 0;
   const qtdVeiculos = parseInt(document.getElementById('qtd-veiculos').value) || 1;
@@ -1650,7 +1681,7 @@ function preencherPreview(d, statusAtivo) {
 
 function alterarStatus(novoStatus) {
   if (osAbertaIdx === null) return;
-  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   osList[osAbertaIdx].statusKey = novoStatus;
   osList[osAbertaIdx].status = statusMap[novoStatus];
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
@@ -1801,13 +1832,13 @@ function filtrarTipo(t) {
 }
 
 function renderPainel() {
-  const cnts = { pendente:0, agendado:0, concluido:0, cancelado:0 };
+  const cnts = { pendente:0, agendado:0, concluido:0, areceber:0 };
   osList.forEach(o => { if (cnts[o.statusKey] !== undefined) cnts[o.statusKey]++; });
   document.getElementById('cnt-todas').textContent = osList.length;
   document.getElementById('cnt-pendente').textContent = cnts.pendente;
   document.getElementById('cnt-agendado').textContent = cnts.agendado;
+  document.getElementById('cnt-areceber').textContent = cnts.areceber;
   document.getElementById('cnt-concluido').textContent = cnts.concluido;
-  document.getElementById('cnt-cancelado').textContent = cnts.cancelado;
   renderLista();
 }
 
@@ -1821,7 +1852,6 @@ function getLabelData(dataStr) {
   const diff = (data - hoje) / (1000*60*60*24);
   if (diff === 0) return { texto: 'HOJE', cor: '#e31c1c', bg: '#1f0a0a', borda: '#e31c1c' };
   if (diff === 1) return { texto: 'AMANHÃ', cor: '#fbbf24', bg: '#1a1200', borda: '#fbbf24' };
-  // Outros dias: sem badge
   return null;
 }
 
@@ -1862,7 +1892,7 @@ function renderLista() {
     return;
   }
 
-  const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', areceber:'💰 A Receber' };
   const tipoServLabels = { instalacao:'📡 Instalação', manutencao:'🔧 Manutenção', retirada:'📤 Retirada' };
 
   lista.innerHTML = filtered.map((o) => {
@@ -1877,16 +1907,13 @@ function renderLista() {
       let msgOS = '';
       try { msgOS = encodeURIComponent(montarMensagem(o)); } catch(err) { console.error('montarMensagem error:', err, o); }
 
-      // SVGs inline para os ícones
       const svgConfirmar = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
       const svgWa = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.856L.054 23.447a.75.75 0 0 0 .916.953l5.453-1.33A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.374-.222-3.88.947.993-3.73-.243-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
       const svgMaps = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
       const svgShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
       const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 
-      const concluido = o.statusKey === 'concluido';
-
-      // Confirmar agendamento: some quando concluído
+      const concluido = o.statusKey === 'concluido' || o.statusKey === 'areceber';
       const btnConfirmar = (!concluido && telLimpo.length >= 10)
         ? `<a class="os-icon-btn i-confirmar" href="https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()" title="Confirmar agendamento">${svgConfirmar}</a>`
         : '';
@@ -1896,12 +1923,10 @@ function renderLista() {
       const btnMaps = mapsUrl
         ? `<a class="os-icon-btn i-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()" title="Abrir no Maps">${svgMaps}</a>`
         : '';
-      // Compartilhar OS: some quando concluído
       const btnShare = !concluido
         ? `<a class="os-icon-btn i-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar OS">${svgShare}</a>`
         : '';
       const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
-      // Financeiro: apenas instalação, sempre visível
       const svgFinanceiro = `<span style="display:flex;align-items:center;gap:2px;line-height:1;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;font-weight:700;"></i></span>`;
       const btnFinanceiro = ts === 'instalacao'
         ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro" style="gap:2px;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;"></i></button>`
@@ -1913,9 +1938,7 @@ function renderLista() {
         : '';
 
       const pagBadge = (ts === 'instalacao' && o.totalInst > 0)
-        ? `<button class="pag-badge ${o.pago ? 'pago' : 'nao-pago'}" onclick="togglePagamentoCard(event, ${idx})" title="Clique para ${o.pago ? 'desmarcar' : 'marcar'} como pago">
-            ${o.pago ? '✅ Pago' : '❌ A receber'}
-          </button>`
+        ? `<button class="pag-badge ${o.pago ? 'pago' : 'nao-pago'}" onclick="togglePagamentoCard(event, ${idx})" title="Clique para ${o.pago ? 'desmarcar' : 'marcar'} como pago">${o.pago ? '✅ Pago' : '❌ A receber'}</button>`
         : '';
 
       const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
