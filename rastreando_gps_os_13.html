@@ -1046,6 +1046,7 @@ async function carregarDoServidor(silencioso) {
       if (document.getElementById('page-relatorios').classList.contains('active')) renderRelatorios();
       setSyncDot('ok');
       if (!silencioso) mostrarToast('🔄 Dados atualizados da planilha!');
+      verificarOSHoje();
     } else {
       setSyncDot('err');
       if (!silencioso) mostrarToast('⚠️ Erro ao ler a planilha');
@@ -1068,6 +1069,7 @@ let filtroTipoAtual = 'todas';
 let filtroCobranca = 'todas';
 let osAbertaIdx = null;
 let dropdownAtivo = null;
+let popupHojeMostrado = false;
 
 document.addEventListener('click', function(e) {
   if (dropdownAtivo && !dropdownAtivo.contains(e.target)) {
@@ -1246,7 +1248,7 @@ function verificarOSHoje() {
   const hojeAno = hoje.getFullYear();
 
   // Não duplicar: se o popup já está aberto, não cria outro
-  if (document.getElementById('banner-hoje')) return;
+ if (popupHojeMostrado || document.getElementById('banner-hoje')) return;
 
   // Considera OS de hoje que ainda NÃO foram finalizadas (agendado ou pendente)
   // Comparação por componentes (dia/mês/ano) — funciona para QUALQUER formato de data
@@ -1343,7 +1345,7 @@ function verificarOSHoje() {
   banner.innerHTML = `
     <div class="banner-hoje-card">
       <div class="banner-hoje-header">
-        <button class="banner-hoje-close" onclick="document.getElementById('banner-hoje').remove()">✕</button>
+        <button class="banner-hoje-close" onclick="popupHojeMostrado=true;document.getElementById('banner-hoje').remove()">✕</button>
         <div class="banner-hoje-icon-big">📅</div>
         <div class="banner-hoje-title">${titulo}</div>
         <div class="banner-hoje-data">${dataFormatada}</div>
@@ -1353,8 +1355,8 @@ function verificarOSHoje() {
         ${cards}
       </div>
       <div class="banner-hoje-footer">
-        <button class="banner-hoje-btn-fechar" onclick="document.getElementById('banner-hoje').remove()">Fechar</button>
-        <button class="banner-hoje-btn-painel" onclick="document.getElementById('banner-hoje').remove();mudarAba('painel');">📋 Ver no Painel</button>
+        <button class="banner-hoje-btn-fechar" onclick="popupHojeMostrado=true;document.getElementById('banner-hoje').remove()">Fechar</button>
+        <button class="banner-hoje-btn-painel" onclick="popupHojeMostrado=true;document.getElementById('banner-hoje').remove();mudarAba('painel');">📋 Ver no Painel</button>
       </div>
     </div>
   `;
