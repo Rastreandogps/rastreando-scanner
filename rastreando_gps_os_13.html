@@ -1063,7 +1063,26 @@ function verificarOSHoje() {
   const mm = String(hoje.getMonth()+1).padStart(2,'0');
   const yyyy = hoje.getFullYear();
   const hojeStr = dd+'/'+mm+'/'+yyyy;
-  const osHoje = osList.filter(o => o.data === hojeStr && o.statusKey !== 'cancelado' && o.statusKey !== 'concluido');
+
+  // Normaliza datas (aceita "6/6/2026" e "06/06/2026")
+  const normalizarData = (d) => {
+    if (!d) return '';
+    const partes = String(d).split('/');
+    if (partes.length !== 3) return String(d);
+    return partes[0].padStart(2,'0') + '/' + partes[1].padStart(2,'0') + '/' + partes[2];
+  };
+
+  console.log('[OS Hoje] Data de hoje:', hojeStr);
+  console.log('[OS Hoje] Total de OS na lista:', osList.length);
+  console.log('[OS Hoje] Amostra de datas das OS:', osList.slice(0, 5).map(o => ({ os: o.osNum, data: o.data, status: o.statusKey })));
+
+  const osHoje = osList.filter(o => {
+    const dataNorm = normalizarData(o.data);
+    return dataNorm === hojeStr && o.statusKey !== 'cancelado' && o.statusKey !== 'concluido';
+  });
+
+  console.log('[OS Hoje] OS encontradas para hoje:', osHoje.length, osHoje);
+
   if (osHoje.length === 0) return;
   const nomes = osHoje.map(o => o.osNum + ' — ' + (o.nome || 'Cliente') + (o.hora ? ' às ' + o.hora : '')).join('\n');
   const total = osHoje.length;
@@ -1079,6 +1098,17 @@ function verificarOSHoje() {
   }
   mostrarBannerHoje(osHoje);
 }
+
+// 🧪 FUNÇÃO DE TESTE: digite `testarPopupHoje()` no console (F12) pra forçar o popup
+window.testarPopupHoje = function() {
+  const fake = [
+    { osNum: '#999', nome: 'Cliente Teste 1', hora: '09:00', modelo: 'Honda Civic', ano: '2020', endereco: 'Rua das Flores, 123, Duque de Caxias', tipoServico: 'instalacao', gnvVal: 'nao', statusKey: 'agendado' },
+    { osNum: '#998', nome: 'Cliente Teste 2', hora: '14:30', modelo: 'Toyota Corolla', endereco: 'Av. Brasil, 4500, Rio de Janeiro', tipoServico: 'manutencao', statusKey: 'agendado' },
+    { osNum: '#997', nome: 'Cliente Teste 3', hora: '16:00', modelo: 'Fiat Uno', endereco: 'Rua A, 100', tipoServico: 'retirada', statusKey: 'agendado' }
+  ];
+  mostrarBannerHoje(fake);
+  console.log('✅ Popup de teste exibido com 3 OS fake');
+};
 
 function mostrarBannerHoje(osHoje) {
   const existing = document.getElementById('banner-hoje');
