@@ -25,6 +25,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .sync-dot.ok { background:#22c55e; }
 .sync-dot.busy { background:#fbbf24; animation:pulse 1s infinite; }
 .sync-dot.err { background:#e31c1c; }
+@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 .tabs { display: flex; background: #111; padding: 0 16px; border-bottom: 1px solid #2a2a2a; }
@@ -816,6 +817,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
+const BUILD_VERSION = '2026.06.06.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -1053,8 +1055,12 @@ function init() {
   atualizarNumero();
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
   renderVeiculos();
+  setupLongPressSyncDot();
   carregarDoServidor(true).then(() => verificarOSHoje());
   setInterval(() => { if (!carregando) carregarDoServidor(true); }, 25000);
+  // Verifica versão na inicialização e a cada 2 minutos
+  verificarVersao();
+  setInterval(verificarVersao, 120000);
 }
 
 function verificarOSHoje() {
@@ -1109,6 +1115,98 @@ window.testarPopupHoje = function() {
   mostrarBannerHoje(fake);
   console.log('✅ Popup de teste exibido com 3 OS fake');
 };
+
+// ============================================================
+// 🔄 SISTEMA DE AUTO-ATUALIZAÇÃO DO PWA
+// ============================================================
+async function verificarVersao() {
+  try {
+    const url = window.location.pathname + '?_v=' + Date.now();
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const html = await res.text();
+    const match = html.match(/const BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/);
+    if (!match) return;
+    const versaoServidor = match[1];
+    console.log('[Versão] Atual:', BUILD_VERSION, '| Servidor:', versaoServidor);
+    if (versaoServidor !== BUILD_VERSION) {
+      mostrarBannerAtualizacao(versaoServidor);
+    }
+  } catch(e) {
+    console.log('[Versão] Sem internet ou erro ao verificar:', e.message);
+  }
+}
+
+function mostrarBannerAtualizacao(novaVersao) {
+  if (document.getElementById('banner-update')) return; // Já tá aberto
+  const banner = document.createElement('div');
+  banner.id = 'banner-update';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#001a2e 0%,#0a3a5c 100%);border-bottom:2px solid #00e5ff;color:#fff;padding:10px 14px;z-index:10000;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,229,255,0.3);animation:slideDown 0.3s ease;';
+  banner.innerHTML = `
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;color:#00e5ff;">🚀 Nova versão disponível!</div>
+      <div style="font-size:11px;color:#aaa;margin-top:2px;">v${novaVersao} — toque pra atualizar</div>
+    </div>
+    <button onclick="forcarAtualizacao()" style="background:#00e5ff;color:#000;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🔄 Atualizar</button>
+    <button onclick="document.getElementById('banner-update').remove()" style="background:transparent;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:4px 8px;">✕</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+async function forcarAtualizacao() {
+  mostrarToast('🔄 Limpando cache e atualizando...');
+  try {
+    // Limpa cache do PWA (cache API)
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      console.log('[Update] Caches limpos:', keys.length);
+    }
+    // Desregistra service workers (se existirem)
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      console.log('[Update] Service workers desregistrados:', regs.length);
+    }
+  } catch(e) {
+    console.error('[Update] Erro ao limpar cache:', e);
+  }
+  // Recarrega sem cache, com query param pra bypassar cache do navegador também
+  setTimeout(() => {
+    window.location.href = window.location.pathname + '?_reload=' + Date.now();
+  }, 600);
+}
+
+// Long-press na bolinha de sync = forçar atualização manualmente
+function setupLongPressSyncDot() {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  let timer = null;
+  const iniciar = (e) => {
+    timer = setTimeout(() => {
+      if (confirm('🔄 Forçar atualização do app?\n\nIsso vai limpar o cache e recarregar a versão mais recente.')) {
+        forcarAtualizacao();
+      }
+    }, 800);
+  };
+  const cancelar = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  dot.addEventListener('mousedown', iniciar);
+  dot.addEventListener('touchstart', iniciar, { passive: true });
+  dot.addEventListener('mouseup', cancelar);
+  dot.addEventListener('mouseleave', cancelar);
+  dot.addEventListener('touchend', cancelar);
+  dot.addEventListener('touchcancel', cancelar);
+  dot.style.cursor = 'pointer';
+  dot.title = 'Status da sincronização — segure pra forçar atualização';
+}
+
+// Verifica versão ao voltar pro app (foco)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    verificarVersao();
+  }
+});
+window.addEventListener('focus', verificarVersao);
 
 function mostrarBannerHoje(osHoje) {
   const existing = document.getElementById('banner-hoje');
