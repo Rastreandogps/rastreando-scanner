@@ -852,6 +852,11 @@ function salvarProlabore(){
   if(cacheDash && cacheDespesas){
     _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
     redesenharDashboard();
+    // Re-renderiza despesas para refletir novo pró-labore nos cards de líquido (empresa e pessoal)
+    if(despCarregada){
+      renderDespesas(cacheDespesas.empresa.itens,'desp-empresa',cacheDespesas.empresa.total,cacheDespesas.empresa.pago,'Empresa');
+      renderDespesas(cacheDespesas.pessoal.itens,'desp-pessoal',cacheDespesas.pessoal.total,cacheDespesas.pessoal.pago,'Pessoal');
+    }
   }
 }
 
@@ -964,6 +969,11 @@ function statusINHtml(inn){return '<div class="status-row" style="flex-direction
 // ══════════════════════════════════════════════════════════════════
 // CORREÇÃO — renderDespesas: escapa dataRegistro para usar no
 // onclick de toggleStatusDesp e excluirDespesa
+//
+// NOVO — card de "Líquido da empresa" no topo da aba empresa,
+// no mesmo estilo do "Saldo no seu bolso" da aba pessoal.
+// Fórmula: fat. esperado − despesas empresa − pró-labore − déficit pessoal
+// (idêntica à do dashboard "Liq. após pró-labore")
 // ══════════════════════════════════════════════════════════════════
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const parcs  = itens.filter(d => getParc(d.nome) !== null);
@@ -982,13 +992,47 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const aVar  = tVar - pVar;
   const aberto = total - pago;
 
-  let saldoPessoalHtml = '';
+  // ── Card de saldo no topo (Empresa OU Pessoal) ──
+  let saldoTopoHtml = '';
+
+  if(containerId === 'desp-empresa'){
+    if(cacheDash){
+      const fatEsperado    = Number(cacheDash.fatEsperado||0);
+      const plSalvo        = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
+      const despPessoal    = cacheDespesas ? Number(cacheDespesas.pessoal.total||0) : 0;
+      const deficitPessoal = plSalvo > 0 ? Math.max(despPessoal - plSalvo, 0) : 0;
+      const liqEmpresa     = fatEsperado - total - plSalvo - deficitPessoal;
+      const liqPos         = liqEmpresa >= 0;
+
+      // Monta a explicação do cálculo
+      let subParts = [`${brl(fatEsperado)} fat. esperado`, `− ${brl(total)} despesas`];
+      if(plSalvo > 0)        subParts.push(`− ${brl(plSalvo)} pró-labore`);
+      if(deficitPessoal > 0) subParts.push(`− ${brl(deficitPessoal)} déficit pessoal`);
+
+      saldoTopoHtml = `
+        <div class="pl-saldo-inline ${liqPos?'pos':'neg'}" style="margin-bottom:14px">
+          <div>
+            <div class="pl-saldo-inline-label">${liqPos?'Líquido da empresa':'Prejuízo da empresa'}</div>
+            <div class="pl-saldo-inline-valor">${brl(Math.abs(liqEmpresa))}</div>
+            <div class="pl-saldo-inline-sub">${subParts.join(' ')}</div>
+          </div>
+          <div style="font-size:28px">${liqPos?'💼':'⚠️'}</div>
+        </div>`;
+    } else {
+      saldoTopoHtml = `
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:14px;font-size:12px;color:var(--txt3);font-style:italic">
+          <i class="ti ti-info-circle" style="font-size:13px;margin-right:4px"></i>
+          Carregando faturamento esperado para calcular o líquido da empresa...
+        </div>`;
+    }
+  }
+
   if(containerId === 'desp-pessoal'){
     const plSalvo = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
     if(plSalvo > 0){
       const saldoP = plSalvo - total;
       const saldoPPos = saldoP >= 0;
-      saldoPessoalHtml = `
+      saldoTopoHtml = `
         <div class="pl-saldo-inline ${saldoPPos?'pos':'neg'}" style="margin-bottom:14px">
           <div>
             <div class="pl-saldo-inline-label">${saldoPPos?'Saldo no seu bolso':'Déficit pessoal'}</div>
@@ -998,7 +1042,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
           <div style="font-size:28px">${saldoPPos?'✅':'⚠️'}</div>
         </div>`;
     } else {
-      saldoPessoalHtml = `
+      saldoTopoHtml = `
         <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:14px;font-size:12px;color:var(--txt3);font-style:italic">
           <i class="ti ti-info-circle" style="font-size:13px;margin-right:4px"></i>
           Defina seu pró-labore na aba <strong style="color:var(--purple2)">Pró-labore</strong> para ver o saldo no bolso.
@@ -1056,7 +1100,7 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
     </div>`;
 
   document.getElementById(containerId).innerHTML =
-    saldoPessoalHtml +
+    saldoTopoHtml +
     blocoResumo('Fixas', 'ti-pin', tFix, pFix, aFix) +
     blocoResumo('Parceladas', 'ti-credit-card', tParc, pParc, aParc) +
     blocoResumo('Variáveis', 'ti-arrows-shuffle', tVar, pVar, aVar) +
