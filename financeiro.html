@@ -914,42 +914,42 @@ function renderDashboard(){
     '<div style="height:14px"></div>'+
     '<div class="saldo-card"><div class="saldo-label">Saldo Asaas</div><div class="saldo-value">'+brl(d.saldo)+'</div><div class="saldo-sub">Atualizado às '+d.atualizadoAs+'</div><i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()"></i></div>'+
     // ══════════════════════════════════════════════════════════════════
-    // FÓRMULA — Líquido após pró-labore
-    // = Fat. esperado − Despesas empresa − Pró-labore pendente − Déficit pessoal
+    // NOVA FÓRMULA — Líquido após pró-labore
+    // = (Fat. esperado − Recebido) + Saldo Asaas − Falta pagar empresa
+    //   − Pró-labore − Déficit pessoal
     //
-    // Pró-labore pendente = max(Pró-labore definido − Saldo no bolso, 0)
-    // "Saldo no bolso" = pró-labore − despesas pessoais (calculado na aba Pessoal).
-    // Cada saque que você faz da empresa vai aumentando o saldo no bolso e
-    // reduzindo o pró-labore pendente, sem interferir no líquido.
-    // Só começa a descontar do líquido quando o saldo no bolso ficar negativo
-    // (déficit pessoal), indicando que você gastou mais do que recebeu.
+    // Considera o saldo já existente na conta (sobra de meses anteriores
+    // usada para pagar dívidas deste mês) e foca no que ainda falta
+    // entrar e sair, em vez de tratar despesas como bloco único.
     // ══════════════════════════════════════════════════════════════════
     (()=>{
       const pl             = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
       const despEmp        = cacheDespesas ? Number(cacheDespesas.empresa.total||0) : 0;
+      const pagoEmp        = cacheDespesas ? Number(cacheDespesas.empresa.pago ||0) : 0;
+      const abertoEmp      = Math.max(despEmp - pagoEmp, 0);
       const despPess       = cacheDespesas ? Number(cacheDespesas.pessoal.total||0) : 0;
-      // Saldo no bolso = pró-labore − despesas pessoais (pode ser negativo = déficit)
-      const saldoBolso     = pl - despPess;
-      // Pró-labore pendente: o que a empresa ainda deve a você este mês
-      // Se saldo no bolso >= pró-labore, empresa já pagou tudo → pendente = 0
-      const plPendente     = pl > 0 ? Math.max(pl - Math.max(saldoBolso, 0), 0) : 0;
-      // Déficit pessoal: só existe quando saldo no bolso é negativo
-      const deficitPessoal = saldoBolso < 0 ? Math.abs(saldoBolso) : 0;
-      const liqLiq         = Number(d.fatEsperado||0) - despEmp - plPendente - deficitPessoal;
+      const deficitPessoal = pl > 0 ? Math.max(despPess - pl, 0) : 0;
+      const aReceber       = Math.max(Number(d.fatEsperado||0) - Number(d.recebido||0), 0);
+      const saldoAsaas     = Number(d.saldo||0);
+      const liqLiq         = aReceber + saldoAsaas - abertoEmp - pl - deficitPessoal;
       const liqCor         = liqLiq >= 0 ? 'amber' : 'red';
 
-      const badgeFat     = '<span style="display:inline-block;font-size:10px;color:var(--txt3)">'+brl(Number(d.fatEsperado||0))+' fat. esperado</span><br>';
-      const badgeDesp    = despEmp>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(despEmp)+' despesas empresa</span><br>'
+      const badgeReceber = aReceber>0
+        ? '<span style="display:inline-block;font-size:10px;color:var(--green)">+ '+brl(aReceber)+' a receber</span><br>'
         : '';
-      const badgePl      = plPendente>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(plPendente)+' pró-labore pendente</span>'+(deficitPessoal>0?'<br>':'')
-        : (pl>0 ? '<span style="display:inline-block;font-size:10px;color:var(--green)">✓ pró-labore quitado</span>'+(deficitPessoal>0?'<br>':'') : '');
+      const badgeSaldo   = '<span style="display:inline-block;font-size:10px;color:var(--green)">+ '+brl(saldoAsaas)+' saldo Asaas</span>'
+                         + (abertoEmp>0||pl>0||deficitPessoal>0 ? '<br>' : '');
+      const badgeAberto  = abertoEmp>0
+        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(abertoEmp)+' falta pagar empresa</span>'+(pl>0||deficitPessoal>0?'<br>':'')
+        : '';
+      const badgePl      = pl>0
+        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(pl)+' pró-labore</span>'+(deficitPessoal>0?'<br>':'')
+        : '';
       const badgeDef     = deficitPessoal>0
         ? '<span style="display:inline-block;font-size:10px;color:var(--red)">− '+brl(deficitPessoal)+' déficit pessoal</span>'
         : '';
       const badgeHtml    = '<div class="metric-pl-badge" style="background:transparent;padding:0;margin-top:4px;display:block;line-height:1.6">'
-                         + badgeFat + badgeDesp + badgePl + badgeDef + '</div>';
+                         + badgeReceber + badgeSaldo + badgeAberto + badgePl + badgeDef + '</div>';
 
       return '<div class="metric-grid">'+
         '<div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div>'+
@@ -1001,26 +1001,29 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
   if(containerId === 'desp-empresa'){
     if(cacheDash){
       // ══════════════════════════════════════════════════════════════════
-      // FÓRMULA — Líquido da empresa (mesma do Dashboard)
-      // = Fat. esperado − Despesas empresa − Pró-labore pendente − Déficit pessoal
+      // NOVA FÓRMULA — Líquido da empresa
+      // = (Fat. esperado − Recebido) + Saldo Asaas − Falta pagar empresa
+      //   − Pró-labore − Déficit pessoal
       //
-      // Pró-labore pendente = max(Pró-labore − Saldo no bolso, 0)
-      // Saldo no bolso = pró-labore − despesas pessoais
+      // Mesma lógica do card "Liq. após pró-labore" do Dashboard,
+      // mantém os dois lugares sincronizados.
       // ══════════════════════════════════════════════════════════════════
       const fatEsperado    = Number(cacheDash.fatEsperado||0);
+      const recebido       = Number(cacheDash.recebido||0);
+      const saldoAsaas     = Number(cacheDash.saldo||0);
+      const aReceber       = Math.max(fatEsperado - recebido, 0);
+      const abertoEmp      = Math.max(total - pago, 0);
       const plSalvo        = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
       const despPessoal    = cacheDespesas ? Number(cacheDespesas.pessoal.total||0) : 0;
-      const saldoBolso     = plSalvo - despPessoal;
-      const plPendente     = plSalvo > 0 ? Math.max(plSalvo - Math.max(saldoBolso, 0), 0) : 0;
-      const deficitPessoal = saldoBolso < 0 ? Math.abs(saldoBolso) : 0;
-      const liqEmpresa     = fatEsperado - total - plPendente - deficitPessoal;
+      const deficitPessoal = plSalvo > 0 ? Math.max(despPessoal - plSalvo, 0) : 0;
+      const liqEmpresa     = aReceber + saldoAsaas - abertoEmp - plSalvo - deficitPessoal;
       const liqPos         = liqEmpresa >= 0;
 
-      // Explicação do cálculo
+      // Explicação do cálculo (sempre soma → subtrações)
       let subParts = [];
-      subParts.push(`${brl(fatEsperado)} fat. esperado − ${brl(total)} despesas`);
-      if(plPendente > 0)     subParts.push(`− ${brl(plPendente)} pró-labore pendente`);
-      else if(plSalvo > 0)   subParts.push(`✓ pró-labore quitado`);
+      subParts.push(`${brl(aReceber)} a receber + ${brl(saldoAsaas)} saldo`);
+      if(abertoEmp > 0)      subParts.push(`− ${brl(abertoEmp)} falta pagar`);
+      if(plSalvo > 0)        subParts.push(`− ${brl(plSalvo)} pró-labore`);
       if(deficitPessoal > 0) subParts.push(`− ${brl(deficitPessoal)} déficit pessoal`);
 
       saldoTopoHtml = `
