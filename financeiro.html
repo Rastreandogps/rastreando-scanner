@@ -423,6 +423,9 @@ function getDia(d){
 }
 
 // ── Registros locais (fallback legado, mantido para compatibilidade) ──
+// ATENÇÃO: para variáveis, a chave primária agora é nome+dataRegistro (vindo
+// da planilha via d.dataRegistro). O localStorage só é usado como fallback
+// para despesas criadas antes desta versão do app.
 function getRegistros(){ return JSON.parse(localStorage.getItem(REG_KEY)||'{}'); }
 function setRegistro(chave, data){
   const r = getRegistros();
@@ -432,6 +435,7 @@ function setRegistro(chave, data){
 }
 function getDataRegistro(d){
   if(d.dataRegistro) return d.dataRegistro;
+  // fallback legado: tenta pelo nome simples
   const local = getRegistros();
   if(local[d.nome]) return local[d.nome];
   return null;
@@ -593,12 +597,22 @@ function fecharPickerVenc(){
   _pickerNome = null;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// CORREÇÃO PRINCIPAL — excluirDespesa e toggleStatusDesp
+//
+// Variáveis têm nomes duplicados possíveis (ex: "Padaria" em dias
+// diferentes). A chave única é nome + dataRegistro.
+// Passamos dataRegistro no payload para o GAS encontrar a linha
+// exata, não apenas a primeira linha com aquele nome.
+// ══════════════════════════════════════════════════════════════════
+
 async function excluirDespesa(btn, nome, tipo, categoria, dataRegistro){
   if(!confirm(`Excluir "${nome}"?\n\nIsso também removerá da planilha.`)) return;
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader" style="font-size:12px;animation:spin .8s linear infinite"></i>';
 
   const limparLocal = () => {
+    // Só limpa chaves locais de fixas/parceladas (variáveis usam dataRegistro como chave na planilha)
     setVencimento(nome, null);
     setParcelamento(nome, null);
     setRegistro(nome, null);
@@ -608,6 +622,7 @@ async function excluirDespesa(btn, nome, tipo, categoria, dataRegistro){
 
   try{
     const cat1 = categoria === 'Parcelada' ? 'Fixa' : categoria;
+    // Passa dataRegistro para o GAS localizar a linha exata (variáveis)
     const res1 = await postar({action:'deletarDespesa', nome, tipo, categoria:cat1, dataRegistro: dataRegistro || null});
     if(res1.ok){ limparLocal(); return; }
     if(categoria === 'Parcelada'){
@@ -668,6 +683,10 @@ async function postar(payload){const res=await fetch(API_URL,{method:'POST',body
 let cacheDash=null, cacheDespesas=null;
 let despCarregada=false,projCarregada=false,histCarregada=false,plCarregado=false;
 
+// ══════════════════════════════════════════════════════════════════
+// CORREÇÃO — toggleStatusDesp agora passa dataRegistro
+// para o GAS encontrar a linha exata quando há nomes duplicados
+// ══════════════════════════════════════════════════════════════════
 async function toggleStatusDesp(btn, nome, tipo, categoria, dataRegistro){
   const statusAtual = btn.dataset.status;
   const novoStatus  = statusAtual === 'PG' ? 'AB' : 'PG';
@@ -679,7 +698,7 @@ async function toggleStatusDesp(btn, nome, tipo, categoria, dataRegistro){
       nome, tipo,
       categoria: categoriaGAS,
       status: novoStatus,
-      dataRegistro: dataRegistro || null
+      dataRegistro: dataRegistro || null  // ← chave de desambiguação
     });
     if(res.ok){
       btn.dataset.status = novoStatus;
@@ -833,6 +852,7 @@ function salvarProlabore(){
   if(cacheDash && cacheDespesas){
     _renderProlabore(Number(cacheDash.liqEsperado||0), cacheDespesas.pessoal, v);
     redesenharDashboard();
+    // Re-renderiza despesas para refletir novo pró-labore nos cards de líquido (empresa e pessoal)
     if(despCarregada){
       renderDespesas(cacheDespesas.empresa.itens,'desp-empresa',cacheDespesas.empresa.total,cacheDespesas.empresa.pago,'Empresa');
       renderDespesas(cacheDespesas.pessoal.itens,'desp-pessoal',cacheDespesas.pessoal.total,cacheDespesas.pessoal.pago,'Pessoal');
@@ -913,50 +933,18 @@ function renderDashboard(){
   document.getElementById('dash-content').innerHTML=
     '<div style="height:14px"></div>'+
     '<div class="saldo-card"><div class="saldo-label">Saldo Asaas</div><div class="saldo-value">'+brl(d.saldo)+'</div><div class="saldo-sub">Atualizado às '+d.atualizadoAs+'</div><i class="ti ti-refresh saldo-refresh" onclick="carregarDashboard()"></i></div>'+
-    // ══════════════════════════════════════════════════════════════════
-    // NOVA FÓRMULA — Líquido após pró-labore
-    // = (Fat. esperado − Recebido) + Saldo Asaas − Falta pagar empresa
-    //   − Pró-labore − Déficit pessoal
-    //
-    // Considera o saldo já existente na conta (sobra de meses anteriores
-    // usada para pagar dívidas deste mês) e foca no que ainda falta
-    // entrar e sair, em vez de tratar despesas como bloco único.
-    // ══════════════════════════════════════════════════════════════════
     (()=>{
-      const pl             = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
-      const despEmp        = cacheDespesas ? Number(cacheDespesas.empresa.total||0) : 0;
-      const pagoEmp        = cacheDespesas ? Number(cacheDespesas.empresa.pago ||0) : 0;
-      const abertoEmp      = Math.max(despEmp - pagoEmp, 0);
-      const despPess       = cacheDespesas ? Number(cacheDespesas.pessoal.total||0) : 0;
-      const deficitPessoal = pl > 0 ? Math.max(despPess - pl, 0) : 0;
-      const aReceber       = Math.max(Number(d.fatEsperado||0) - Number(d.recebido||0), 0);
-      const saldoAsaas     = Number(d.saldo||0);
-      const liqLiq         = aReceber + saldoAsaas - abertoEmp - pl - deficitPessoal;
-      const liqCor         = liqLiq >= 0 ? 'amber' : 'red';
-
-      const badgeReceber = aReceber>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--green)">+ '+brl(aReceber)+' a receber</span><br>'
-        : '';
-      const badgeSaldo   = '<span style="display:inline-block;font-size:10px;color:var(--green)">+ '+brl(saldoAsaas)+' saldo Asaas</span>'
-                         + (abertoEmp>0||pl>0||deficitPessoal>0 ? '<br>' : '');
-      const badgeAberto  = abertoEmp>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(abertoEmp)+' falta pagar empresa</span>'+(pl>0||deficitPessoal>0?'<br>':'')
-        : '';
-      const badgePl      = pl>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(pl)+' pró-labore</span>'+(deficitPessoal>0?'<br>':'')
-        : '';
-      const badgeDef     = deficitPessoal>0
-        ? '<span style="display:inline-block;font-size:10px;color:var(--red)">− '+brl(deficitPessoal)+' déficit pessoal</span>'
-        : '';
-      const badgeHtml    = '<div class="metric-pl-badge" style="background:transparent;padding:0;margin-top:4px;display:block;line-height:1.6">'
-                         + badgeReceber + badgeSaldo + badgeAberto + badgePl + badgeDef + '</div>';
-
-      return '<div class="metric-grid">'+
-        '<div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div>'+
-        '<div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div>'+
-        '<div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div>'+
-        '<div class="metric"><div class="metric-label">Liq. após pró-labore</div><div class="metric-value '+liqCor+'">'+brl(liqLiq)+'</div>'+badgeHtml+'</div>'+
-      '</div>';
+      const pl=parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
+      const despEmp=cacheDespesas?Number(cacheDespesas.empresa.total||0):0;
+      const despPess=cacheDespesas?Number(cacheDespesas.pessoal.total||0):0;
+      const deficitPessoal=pl>0?Math.max(despPess-pl,0):0;
+      const liqLiq=d.fatEsperado-despEmp-pl-deficitPessoal;
+      const liqCor=liqLiq>=0?'amber':'red';
+      const badgePl=pl>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3);margin-top:3px">− '+brl(pl)+' pró-labore</span><br>':'';
+      const badgeDesp=despEmp>0?'<span style="display:inline-block;font-size:10px;color:var(--txt3)">− '+brl(despEmp)+' despesas empresa</span>'+(deficitPessoal>0?'<br>':''):'';
+      const badgeDef=deficitPessoal>0?'<span style="display:inline-block;font-size:10px;color:var(--red)">− '+brl(deficitPessoal)+' déficit pessoal</span>':'';
+      const badgeHtml=(badgePl||badgeDesp||badgeDef)?'<div class="metric-pl-badge" style="background:transparent;padding:0;margin-top:4px;display:block;line-height:1.6">'+badgePl+badgeDesp+badgeDef+'</div>':'';
+      return '<div class="metric-grid"><div class="metric"><div class="metric-label">Fat. esperado</div><div class="metric-value">'+brl(d.fatEsperado)+'</div></div><div class="metric"><div class="metric-label">Recebido</div><div class="metric-value green">'+brl(d.recebido)+'</div></div><div class="metric"><div class="metric-label">Inadimplência</div><div class="metric-value red">'+pct(d.inadimplencia)+'</div></div><div class="metric"><div class="metric-label">Liq. após pró-labore</div><div class="metric-value '+liqCor+'">'+brl(liqLiq)+'</div>'+badgeHtml+'</div></div>';
     })() +
     '<p class="section-label">A receber por classe</p>'+
     '<div class="card" style="padding:4px 16px">'+classeBloco('ouro','🥇','Ouro','#FAEEDA',d.classes.ouro,pgPct,'#EF9F27','#854F0B',dadosInadClasse.ouro)+classeBloco('prata','🥈','Prata','#E6F1FB',d.classes.prata,prPct,'#378ADD','#185FA5',dadosInadClasse.prata)+classeBloco('latao','🚩','Latão','#FCEBEB',d.classes.latao,ltPct,'#E24B4A','#A32D2D',dadosInadClasse.latao)+'</div>'+
@@ -978,6 +966,15 @@ function statusCFHtml(cf){return '<div class="status-row" style="flex-direction:
 function statusMPHtml(mp){return statusHtml('amber','🔘 MP '+mp.qnt,brl(mp.valor));}
 function statusINHtml(inn){return '<div class="status-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="status-sanfona-trigger" onclick="toggleStatusSanfona(\'inn\')"><div class="status-sanfona-header"><div class="status-sanfona-left"><span class="tag purple">🚫 IN '+inn.qnt+'</span></div><div style="display:flex;align-items:center;gap:6px"><p style="font-size:14px;font-weight:700;color:var(--txt)">'+brl(inn.valor)+'</p><i class="ti ti-chevron-down status-sanfona-chevron" id="ssanf-chev-inn"></i></div></div></div><div class="status-sanfona-body" id="ssanf-body-inn"></div></div>';}
 
+// ══════════════════════════════════════════════════════════════════
+// CORREÇÃO — renderDespesas: escapa dataRegistro para usar no
+// onclick de toggleStatusDesp e excluirDespesa
+//
+// NOVO — card de "Líquido da empresa" no topo da aba empresa,
+// no mesmo estilo do "Saldo no seu bolso" da aba pessoal.
+// Fórmula: fat. esperado − despesas empresa − pró-labore − déficit pessoal
+// (idêntica à do dashboard "Liq. após pró-labore")
+// ══════════════════════════════════════════════════════════════════
 function renderDespesas(itens, containerId, total, pago, tipoDesp){
   const parcs  = itens.filter(d => getParc(d.nome) !== null);
   const parcNomes = new Set(parcs.map(d=>d.nome));
@@ -1000,29 +997,15 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
 
   if(containerId === 'desp-empresa'){
     if(cacheDash){
-      // ══════════════════════════════════════════════════════════════════
-      // NOVA FÓRMULA — Líquido da empresa
-      // = (Fat. esperado − Recebido) + Saldo Asaas − Falta pagar empresa
-      //   − Pró-labore − Déficit pessoal
-      //
-      // Mesma lógica do card "Liq. após pró-labore" do Dashboard,
-      // mantém os dois lugares sincronizados.
-      // ══════════════════════════════════════════════════════════════════
       const fatEsperado    = Number(cacheDash.fatEsperado||0);
-      const recebido       = Number(cacheDash.recebido||0);
-      const saldoAsaas     = Number(cacheDash.saldo||0);
-      const aReceber       = Math.max(fatEsperado - recebido, 0);
-      const abertoEmp      = Math.max(total - pago, 0);
       const plSalvo        = parseFloat(localStorage.getItem(PROLABORE_KEY)||'0');
       const despPessoal    = cacheDespesas ? Number(cacheDespesas.pessoal.total||0) : 0;
       const deficitPessoal = plSalvo > 0 ? Math.max(despPessoal - plSalvo, 0) : 0;
-      const liqEmpresa     = aReceber + saldoAsaas - abertoEmp - plSalvo - deficitPessoal;
+      const liqEmpresa     = fatEsperado - total - plSalvo - deficitPessoal;
       const liqPos         = liqEmpresa >= 0;
 
-      // Explicação do cálculo (sempre soma → subtrações)
-      let subParts = [];
-      subParts.push(`${brl(aReceber)} a receber + ${brl(saldoAsaas)} saldo`);
-      if(abertoEmp > 0)      subParts.push(`− ${brl(abertoEmp)} falta pagar`);
+      // Monta a explicação do cálculo
+      let subParts = [`${brl(fatEsperado)} fat. esperado`, `− ${brl(total)} despesas`];
       if(plSalvo > 0)        subParts.push(`− ${brl(plSalvo)} pró-labore`);
       if(deficitPessoal > 0) subParts.push(`− ${brl(deficitPessoal)} déficit pessoal`);
 
@@ -1067,10 +1050,14 @@ function renderDespesas(itens, containerId, total, pago, tipoDesp){
     }
   }
 
+  // ── CORREÇÃO: dataRegistro é passado como 5º argumento nas funções de ação ──
+  // Para fixas e parceladas dataRegistro é null (nome é único por design).
+  // Para variáveis, dataRegistro identifica a linha exata na planilha.
   const itemHtml = d => {
     const ic = getIcone(d.nome);
     const isPG = d.status === 'PG';
     const nomeEsc = d.nome.replace(/'/g,"\\'");
+    // Escapa dataRegistro para uso seguro em onclick
     const drEsc = d.dataRegistro ? d.dataRegistro.replace(/'/g,"\\'") : '';
     const badgeVenc = vencBadge(d);
     return `<div class="desp-item">
