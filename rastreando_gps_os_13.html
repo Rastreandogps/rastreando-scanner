@@ -2141,6 +2141,7 @@ function renderLista() {
           <div class="os-card-info">${infoExtra}${dataFormatada ? ' · 📅 ' + dataFormatada : ''}${o.hora ? ' às ' + o.hora : ''}</div>
           ${pagBadge}
         </div>
+        ${o.endereco ? `<div class="os-card-info" style="font-size:11px;color:#777;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍 ${o.endereco}</div>` : ''}
         <div class="os-actions-row" onclick="event.stopPropagation()">
           <button class="os-actions-toggle-btn" id="btn-toggle-${cardId}" onclick="toggleAcoes(event, '${cardId}')">⚡ Ações</button>
           <div class="os-icon-actions" id="acoes-${cardId}">
