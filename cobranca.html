@@ -18,6 +18,7 @@
 --white:#f0f0f0;--muted:#888;--muted2:#555;--text:#f0f0f0;--text2:#bbb;
 --green:#25d366;--green-dim:#0a1f0f;--green2:#1aad54;
 --sent:#0d3320;--sent-border:#1aad54;
+--orange:#ff9800;--orange-dim:#2a1800;
 --radius:14px;--radius-sm:8px;--radius-lg:20px;
 --font:'Space Grotesk',sans-serif;--font-display:'Syne',sans-serif;
 }
@@ -61,14 +62,42 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-green{background:var(--green);color:#000}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:var(--radius-sm);width:auto}
 
-/* IMPORTAR BANNER */
-.import-banner{background:var(--yellow-dim);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+/* ── IMPORTAR BANNER ──────────────────────────────────── */
+.import-banner{background:var(--yellow-dim);border:1.5px solid var(--yellow);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:12px}
 .import-banner-top{display:flex;align-items:center;gap:10px}
 .import-banner-icon{font-size:28px;flex-shrink:0}
 .import-banner-text strong{font-size:14px;font-weight:700;color:var(--yellow);display:block}
 .import-banner-text span{font-size:12px;color:var(--muted)}
+
+/* ── SELETOR AT / IN ──────────────────────────────────── */
+.import-type-selector{display:flex;gap:8px}
+.import-type-btn{
+  flex:1;padding:9px 10px;border-radius:var(--radius-sm);
+  font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;border:1.5px solid var(--border2);
+  background:var(--bg3);color:var(--muted);
+  transition:all .2s;text-align:center;line-height:1.3;
+}
+.import-type-btn:active{transform:scale(.97)}
+.import-type-btn.active-at{
+  background:var(--red-dim);color:var(--red);
+  border-color:var(--red);
+}
+.import-type-btn.active-in{
+  background:var(--orange-dim);color:var(--orange);
+  border-color:var(--orange);
+}
+.import-type-desc{font-size:11px;color:var(--muted);padding:0 2px}
+
 .import-banner-btns{display:flex;gap:8px}
-.btn-import{flex:1;background:var(--yellow);color:#000;font-weight:800;font-size:14px;padding:11px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s}
+.btn-import{
+  flex:1;font-weight:800;font-size:14px;padding:11px;
+  border-radius:var(--radius-sm);border:none;cursor:pointer;
+  font-family:var(--font);display:flex;align-items:center;
+  justify-content:center;gap:6px;transition:all .2s;
+}
+.btn-import.mode-at{background:var(--red);color:#fff}
+.btn-import.mode-in{background:var(--orange);color:#000}
 .btn-import:active{transform:scale(.97)}
 .btn-import:disabled{opacity:.5;cursor:not-allowed}
 .import-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--yellow);padding:4px 0}
@@ -179,16 +208,29 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- BANNER IMPORTAR -->
     <div class="import-banner">
       <div class="import-banner-top">
-        <div class="import-banner-icon">🔴</div>
+        <div class="import-banner-icon" id="importIcon">🔴</div>
         <div class="import-banner-text">
-          <strong>Importar inadimplentes da planilha</strong>
-          <span>Busca automaticamente todos os clientes com status AT do mês atual</span>
+          <strong id="importTitle">Importar inadimplentes da planilha</strong>
+          <span id="importSubtitle">Selecione o tipo abaixo e clique em importar</span>
         </div>
       </div>
+
+      <!-- SELETOR AT / IN -->
+      <div class="import-type-selector">
+        <button class="import-type-btn active-at" id="btnTypeAT" onclick="setImportType('AT')">
+          🔴 Atrasados (AT)<br>
+          <span style="font-size:11px;font-weight:400;color:inherit;opacity:.8">Fatura vencida</span>
+        </button>
+        <button class="import-type-btn" id="btnTypeIN" onclick="setImportType('IN')">
+          🚫 Inadimplentes (IN)<br>
+          <span style="font-size:11px;font-weight:400;color:inherit;opacity:.8">Devendo mês anterior</span>
+        </button>
+      </div>
+
       <div id="import-status"></div>
       <div class="import-banner-btns">
-        <button class="btn-import" id="btnImportar" onclick="importarInadimplentes()">
-          ⚡ Importar agora
+        <button class="btn-import mode-at" id="btnImportar" onclick="importarInadimplentes()">
+          ⚡ Importar AT agora
         </button>
       </div>
     </div>
@@ -329,20 +371,57 @@ const API_SECRET = 'rastreandogps2025';
 let clients = [];
 let currentFilter = 'all';
 let modalCallback = null;
+let importMode = 'AT'; // 'AT' ou 'IN'
 
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
 
-// ── IMPORTAR INADIMPLENTES ──────────────────
+// ── SELETOR AT / IN ─────────────────────────────────────
+function setImportType(mode) {
+  importMode = mode;
+
+  const btnAT = document.getElementById('btnTypeAT');
+  const btnIN = document.getElementById('btnTypeIN');
+  const btnImp = document.getElementById('btnImportar');
+  const icon = document.getElementById('importIcon');
+  const subtitle = document.getElementById('importSubtitle');
+
+  // Reset ambos
+  btnAT.className = 'import-type-btn';
+  btnIN.className = 'import-type-btn';
+
+  if (mode === 'AT') {
+    btnAT.className = 'import-type-btn active-at';
+    btnImp.className = 'btn-import mode-at';
+    btnImp.innerHTML = '⚡ Importar AT agora';
+    icon.textContent = '🔴';
+    subtitle.textContent = 'Faturas vencidas no mês atual';
+  } else {
+    btnIN.className = 'import-type-btn active-in';
+    btnImp.className = 'btn-import mode-in';
+    btnImp.innerHTML = '⚡ Importar IN agora';
+    icon.textContent = '🚫';
+    subtitle.textContent = 'Clientes com dívida de mês anterior';
+  }
+
+  // Limpa status anterior ao trocar de modo
+  document.getElementById('import-status').innerHTML = '';
+}
+
+// ── IMPORTAR INADIMPLENTES ──────────────────────────────
 async function importarInadimplentes() {
   const btn = document.getElementById('btnImportar');
   const statusEl = document.getElementById('import-status');
+
   btn.disabled = true;
   btn.innerHTML = '<span class="spin">⏳</span> Buscando...';
   statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Conectando com a planilha...</div>';
 
+  const action = importMode === 'IN' ? 'inadimplentesIN' : 'inadimplentes';
+  const label  = importMode === 'IN' ? 'IN' : 'AT';
+
   try {
-    const url = API_URL + '?secret=' + API_SECRET + '&action=inadimplentes';
-    const res = await fetch(url);
+    const url = API_URL + '?secret=' + API_SECRET + '&action=' + action;
+    const res  = await fetch(url);
     const json = await res.json();
 
     if (json.error) {
@@ -353,9 +432,9 @@ async function importarInadimplentes() {
     }
 
     if (!json.inadimplentes || json.inadimplentes.length === 0) {
-      statusEl.innerHTML = '<div class="import-result" style="display:block">✅ Nenhum cliente inadimplente no momento!</div>';
+      statusEl.innerHTML = '<div class="import-result" style="display:block">✅ Nenhum cliente ' + label + ' no momento!</div>';
       btn.disabled = false;
-      btn.innerHTML = '⚡ Importar novamente';
+      btn.innerHTML = (importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora');
       return;
     }
 
@@ -373,21 +452,23 @@ async function importarInadimplentes() {
     clients = novos;
     saveToStorage();
 
-    statusEl.innerHTML = '<div class="import-result" style="display:block">✅ ' + novos.length + ' cliente' + (novos.length > 1 ? 's' : '') + ' importado' + (novos.length > 1 ? 's' : '') + ' com sucesso!</div>';
+    const qtd = novos.length;
+    statusEl.innerHTML = '<div class="import-result" style="display:block">✅ ' + qtd + ' cliente' + (qtd > 1 ? 's' : '') + ' [' + label + '] importado' + (qtd > 1 ? 's' : '') + ' com sucesso!</div>';
     btn.disabled = false;
     btn.innerHTML = '🔄 Reimportar';
 
-    showToast('🔴 ' + novos.length + ' inadimplente' + (novos.length > 1 ? 's' : '') + ' importado' + (novos.length > 1 ? 's' : '') + '!');
+    const emoji = importMode === 'IN' ? '🚫' : '🔴';
+    showToast(emoji + ' ' + qtd + ' cliente' + (qtd > 1 ? 's' : '') + ' ' + label + ' importado' + (qtd > 1 ? 's' : '') + '!');
     setTimeout(() => switchTab('clientes'), 1200);
 
   } catch(e) {
     statusEl.innerHTML = '<div class="import-error" style="display:block">❌ Erro de conexão. Verifique sua internet.</div>';
     btn.disabled = false;
-    btn.innerHTML = '⚡ Tentar novamente';
+    btn.innerHTML = (importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora');
   }
 }
 
-// ── TABS ────────────────────────────────────
+// ── TABS ────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -399,7 +480,7 @@ function switchTab(tab) {
   if (tab === 'mensagem') updatePreviews();
 }
 
-// ── PARSE ───────────────────────────────────
+// ── PARSE ────────────────────────────────────────────────
 function parseField(text) { return text.split('\n').map(l => l.trim()).filter(l => l.length > 0); }
 
 function validateFields() {
@@ -447,7 +528,7 @@ function formatPhone(raw) {
   return p;
 }
 
-// ── MENSAGEM ────────────────────────────────
+// ── MENSAGEM ─────────────────────────────────────────────
 function getTemplate() {
   return document.getElementById('msgTemplate').value ||
     'Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087';
@@ -476,7 +557,7 @@ function updatePreviews() {
   } else { pc.style.display='none'; }
 }
 
-// ── FILTER ──────────────────────────────────
+// ── FILTER ───────────────────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
   ['All','Pending','Sent'].forEach(x => {
@@ -486,16 +567,16 @@ function setFilter(f) {
   renderClients();
 }
 
-// ── RENDER ──────────────────────────────────
+// ── RENDER ───────────────────────────────────────────────
 function renderClients() {
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
 
-  const list        = document.getElementById('clientsList');
-  const statsRow    = document.getElementById('statsRow');
-  const filterTabs  = document.getElementById('filterTabs');
-  const progressWrap= document.getElementById('progressWrap');
+  const list         = document.getElementById('clientsList');
+  const statsRow     = document.getElementById('statsRow');
+  const filterTabs   = document.getElementById('filterTabs');
+  const progressWrap = document.getElementById('progressWrap');
 
   if (clients.length === 0) {
     list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p></div>';
@@ -559,7 +640,7 @@ function buildCardHTML(c, i) {
   '</div>';
 }
 
-// ── AÇÕES ───────────────────────────────────
+// ── AÇÕES ────────────────────────────────────────────────
 function toggleCard(id) {
   const c = clients.find(x => x.id===id); if(!c) return;
   c.expanded = !c.expanded;
@@ -642,7 +723,7 @@ function confirmClear() {
     ['fNomes','fTelefones','fMeses','fValores','fLinks'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('validationMsg').style.display='none';
     document.getElementById('import-status').innerHTML='';
-    document.getElementById('btnImportar').innerHTML='⚡ Importar agora';
+    document.getElementById('btnImportar').innerHTML= importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora';
     document.getElementById('btnImportar').disabled=false;
     saveToStorage(); renderClients(); showToast('🗑️ Dados apagados');
   });
