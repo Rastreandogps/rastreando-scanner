@@ -282,7 +282,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="msg-area">
         <textarea id="msgTemplate" placeholder="Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087" oninput="saveTemplate();updatePreviews()" rows="5"></textarea>
         <div class="var-btns">
-          <button class="var-btn" onclick="insertVar('{nome}')">+ Nome</button>
+          <button class="var-btn" onclick="insertVar('{primeiro_nome}')">+ Primeiro Nome</button>
+<button class="var-btn" onclick="insertVar('{nome}')">+ Nome Completo</button>
           <button class="var-btn" onclick="insertVar('{telefone}')">+ Telefone</button>
           <button class="var-btn" onclick="insertVar('{mes}')">+ Data</button>
           <button class="var-btn" onclick="insertVar('{valor}')">+ Valor</button>
@@ -534,7 +535,9 @@ function getTemplate() {
     'Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087';
 }
 function buildMsg(c) {
+  const primeiroNome = c.nome.trim().split(' ')[0];
   return getTemplate()
+    .replace(/{primeiro_nome}/g, primeiroNome)
     .replace(/{nome}/g, c.nome)
     .replace(/{telefone}/g, c.telefone)
     .replace(/{mes}/g, c.mes)
