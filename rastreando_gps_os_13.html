@@ -219,6 +219,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-icon-btn.i-share     { background: #1a0f00; color: #f97316; border-color: #f97316; }
 .os-icon-btn.i-edit      { background: #1a0a1a; color: #c084fc; border-color: #c084fc; }
 .os-icon-btn.i-financeiro { background: #0a1f0a; color: #22c55e; border-color: #22c55e; }
+/* NOVO: botão técnico — roxo escuro diferenciado do editar */
+.os-icon-btn.i-tecnico   { background: #1a0a2e; color: #a78bfa; border-color: #a78bfa; }
 
 .painel-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
 .stat-card { background: #1a1a1a; border-radius: 12px; padding: 12px 6px; text-align: center; border: 1px solid #2a2a2a; cursor: pointer; transition: all 0.15s; user-select: none; }
@@ -580,7 +582,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <button class="btn-ver" onclick="abrirPreview()">👁️ Visualizar</button>
       <button class="btn-salvar" onclick="salvarOS()">💾 Salvar OS</button>
       <button class="btn-wa" onclick="compartilhar()" style="grid-column:span 2">💬 Enviar pelo WhatsApp</button>
-      <button id="btn-financeiro-form" onclick="compartilharFinanceiro()" style="grid-column:span 2; padding:14px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;">💰 Enviar ao Financeiro</button>
+      <!-- NOVO: Botão compartilhar com técnico (sem valores) -->
+      <button id="btn-tecnico-form" onclick="compartilharTecnico()" style="grid-column:span 2; padding:14px; background:#1a0a2e; color:#a78bfa; border:1.5px solid #a78bfa; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; display:none; align-items:center; justify-content:center; gap:8px;">🔧 Compartilhar com Técnico</button>
+      <button id="btn-financeiro-form" onclick="compartilharFinanceiro()" style="grid-column:span 2; padding:14px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; display:none; align-items:center; justify-content:center; gap:8px;">💰 Enviar ao Financeiro</button>
       <button class="btn-limpar" onclick="limpar()">🗑️ Limpar formulário</button>
     </div>
 
@@ -806,6 +810,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <button class="prev-wa" onclick="compartilharPreview()">💬 WhatsApp</button>
       <button class="prev-print" onclick="window.print()">🖨️ Imprimir</button>
       <button id="btn-financeiro" style="grid-column:span 2; padding:11px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;" onclick="compartilharFinanceiro()">💰 Enviar ao Financeiro</button>
+      <!-- NOVO: Botão técnico no overlay -->
+      <button id="btn-tecnico-prev" style="grid-column:span 2; padding:11px; background:#1a0a2e; color:#a78bfa; border:1.5px solid #a78bfa; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;" onclick="compartilharTecnicoPreview()">🔧 Compartilhar com Técnico</button>
       <button class="prev-editar" id="btn-editar" style="display:none; grid-column:span 2;" onclick="editarOS()">✏️ Editar esta OS</button>
       <button class="prev-close" onclick="fechar()">Fechar</button>
       <button class="prev-excluir" id="btn-excluir" style="display:none; grid-column:span 2; padding:11px; background:#1f0a0a; color:#e31c1c; border:1.5px solid #e31c1c; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;" onclick="excluirOS()">🗑️ Excluir esta OS</button>
@@ -817,7 +823,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.06.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.17.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -1004,8 +1010,12 @@ function selServico(s) {
   document.querySelectorAll('.secao-instalacao').forEach(el => el.style.display = s === 'instalacao' ? 'block' : 'none');
   document.querySelectorAll('.secao-manutencao').forEach(el => el.style.display = s === 'manutencao' ? 'block' : 'none');
   document.querySelectorAll('.secao-retirada').forEach(el => el.style.display = s === 'retirada' ? 'block' : 'none');
+  // Financeiro: apenas instalação
   document.getElementById('btn-financeiro-form').style.display = s === 'instalacao' ? 'flex' : 'none';
   document.getElementById('btn-financeiro').style.display = s === 'instalacao' ? 'block' : 'none';
+  // Técnico: sempre visível ao selecionar qualquer tipo de serviço
+  document.getElementById('btn-tecnico-form').style.display = 'flex';
+  document.getElementById('btn-tecnico-prev').style.display = 'block';
   const labelData = document.getElementById('label-data-servico');
   if (s === 'instalacao') labelData.textContent = 'Data de instalação';
   else if (s === 'manutencao') labelData.textContent = 'Data da manutenção';
@@ -1058,7 +1068,6 @@ function init() {
   setupLongPressSyncDot();
   carregarDoServidor(true).then(() => verificarOSHoje());
   setInterval(() => { if (!carregando) carregarDoServidor(true); }, 25000);
-  // Verifica versão na inicialização e a cada 2 minutos
   verificarVersao();
   setInterval(verificarVersao, 120000);
 }
@@ -1070,7 +1079,6 @@ function verificarOSHoje() {
   const yyyy = hoje.getFullYear();
   const hojeStr = dd+'/'+mm+'/'+yyyy;
 
-  // Normaliza datas (aceita "6/6/2026" e "06/06/2026")
   const normalizarData = (d) => {
     if (!d) return '';
     const partes = String(d).split('/');
@@ -1078,16 +1086,10 @@ function verificarOSHoje() {
     return partes[0].padStart(2,'0') + '/' + partes[1].padStart(2,'0') + '/' + partes[2];
   };
 
-  console.log('[OS Hoje] Data de hoje:', hojeStr);
-  console.log('[OS Hoje] Total de OS na lista:', osList.length);
-  console.log('[OS Hoje] Amostra de datas das OS:', osList.slice(0, 5).map(o => ({ os: o.osNum, data: o.data, status: o.statusKey })));
-
   const osHoje = osList.filter(o => {
     const dataNorm = normalizarData(o.data);
     return dataNorm === hojeStr && o.statusKey !== 'cancelado' && o.statusKey !== 'concluido';
   });
-
-  console.log('[OS Hoje] OS encontradas para hoje:', osHoje.length, osHoje);
 
   if (osHoje.length === 0) return;
   const nomes = osHoje.map(o => o.osNum + ' — ' + (o.nome || 'Cliente') + (o.hora ? ' às ' + o.hora : '')).join('\n');
@@ -1105,7 +1107,6 @@ function verificarOSHoje() {
   mostrarBannerHoje(osHoje);
 }
 
-// 🧪 FUNÇÃO DE TESTE: digite `testarPopupHoje()` no console (F12) pra forçar o popup
 window.testarPopupHoje = function() {
   const fake = [
     { osNum: '#999', nome: 'Cliente Teste 1', hora: '09:00', modelo: 'Honda Civic', ano: '2020', endereco: 'Rua das Flores, 123, Duque de Caxias', tipoServico: 'instalacao', gnvVal: 'nao', statusKey: 'agendado' },
@@ -1116,9 +1117,6 @@ window.testarPopupHoje = function() {
   console.log('✅ Popup de teste exibido com 3 OS fake');
 };
 
-// ============================================================
-// 🔄 SISTEMA DE AUTO-ATUALIZAÇÃO DO PWA
-// ============================================================
 async function verificarVersao() {
   try {
     const url = window.location.pathname + '?_v=' + Date.now();
@@ -1128,17 +1126,14 @@ async function verificarVersao() {
     const match = html.match(/const BUILD_VERSION\s*=\s*['"]([^'"]+)['"]/);
     if (!match) return;
     const versaoServidor = match[1];
-    console.log('[Versão] Atual:', BUILD_VERSION, '| Servidor:', versaoServidor);
     if (versaoServidor !== BUILD_VERSION) {
       mostrarBannerAtualizacao(versaoServidor);
     }
-  } catch(e) {
-    console.log('[Versão] Sem internet ou erro ao verificar:', e.message);
-  }
+  } catch(e) {}
 }
 
 function mostrarBannerAtualizacao(novaVersao) {
-  if (document.getElementById('banner-update')) return; // Já tá aberto
+  if (document.getElementById('banner-update')) return;
   const banner = document.createElement('div');
   banner.id = 'banner-update';
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(90deg,#001a2e 0%,#0a3a5c 100%);border-bottom:2px solid #00e5ff;color:#fff;padding:10px 14px;z-index:10000;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,229,255,0.3);animation:slideDown 0.3s ease;';
@@ -1156,28 +1151,20 @@ function mostrarBannerAtualizacao(novaVersao) {
 async function forcarAtualizacao() {
   mostrarToast('🔄 Limpando cache e atualizando...');
   try {
-    // Limpa cache do PWA (cache API)
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
-      console.log('[Update] Caches limpos:', keys.length);
     }
-    // Desregistra service workers (se existirem)
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
       await Promise.all(regs.map(r => r.unregister()));
-      console.log('[Update] Service workers desregistrados:', regs.length);
     }
-  } catch(e) {
-    console.error('[Update] Erro ao limpar cache:', e);
-  }
-  // Recarrega sem cache, com query param pra bypassar cache do navegador também
+  } catch(e) {}
   setTimeout(() => {
     window.location.href = window.location.pathname + '?_reload=' + Date.now();
   }, 600);
 }
 
-// Long-press na bolinha de sync = forçar atualização manualmente
 function setupLongPressSyncDot() {
   const dot = document.getElementById('sync-dot');
   if (!dot) return;
@@ -1200,11 +1187,8 @@ function setupLongPressSyncDot() {
   dot.title = 'Status da sincronização — segure pra forçar atualização';
 }
 
-// Verifica versão ao voltar pro app (foco)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    verificarVersao();
-  }
+  if (document.visibilityState === 'visible') verificarVersao();
 });
 window.addEventListener('focus', verificarVersao);
 
@@ -1213,7 +1197,6 @@ function mostrarBannerHoje(osHoje) {
   if (existing) existing.remove();
   const total = osHoje.length;
 
-  // Conta por tipo de serviço
   const porTipo = { instalacao: 0, manutencao: 0, retirada: 0 };
   osHoje.forEach(o => {
     const t = o.tipoServico || 'instalacao';
@@ -1228,7 +1211,6 @@ function mostrarBannerHoje(osHoje) {
   const tipoEmoji = { instalacao: '📡', manutencao: '🔧', retirada: '📤' };
   const tipoLabel = { instalacao: 'Instalação', manutencao: 'Manutenção', retirada: 'Retirada' };
 
-  // Ordena por horário
   const osOrdenadas = [...osHoje].sort((a, b) => {
     const ha = a.hora || '99:99';
     const hb = b.hora || '99:99';
@@ -1764,6 +1746,8 @@ function preencherPreview(d, statusAtivo) {
   document.getElementById('p-man-serv-sec').style.display = (ts === 'manutencao' && d.manServico) ? 'block' : 'none';
   document.getElementById('p-sec-retirada').style.display = ts === 'retirada' ? 'block' : 'none';
   document.getElementById('btn-financeiro').style.display = ts === 'instalacao' ? 'block' : 'none';
+  // Botão técnico: sempre visível no preview
+  document.getElementById('btn-tecnico-prev').style.display = 'block';
   if (ts === 'instalacao') {
     const tipoEl = document.getElementById('p-tipo');
     if (d.tipoKey==='com') tipoEl.innerHTML = '<span class="badge badge-amarelo">Com bloqueio — R$ 59,90/mês</span>';
@@ -1841,6 +1825,92 @@ function alterarStatus(novoStatus) {
 function fechar() {
   document.getElementById('overlay').classList.remove('open');
   osAbertaIdx = null;
+}
+
+// =====================================================
+// MENSAGEM PARA TÉCNICO — sem valores financeiros
+// =====================================================
+function montarMensagemTecnico(d) {
+  const ts = d.tipoServico || 'instalacao';
+  const tipoLabels = { instalacao: 'Instalação', manutencao: 'Manutenção', retirada: 'Retirada' };
+  const SEP = '━━━━━━━━━━━━━━━━━━━';
+  const LIN = '─────────────────────';
+  let msg = '';
+  msg += '🛰️ *RASTREANDO GPS*\n';
+  msg += SEP + '\n';
+  msg += '📄 *ORDEM DE SERVIÇO ' + d.osNum + '*\n';
+  msg += '🔧 *Tipo:* ' + tipoLabels[ts] + '\n';
+  msg += SEP + '\n\n';
+  if (d.data || d.hora) {
+    msg += '📅 *AGENDAMENTO*\n';
+    if (d.data) msg += '  • *Data:* ' + d.data + '\n';
+    if (d.hora) msg += '  • *Horário:* ' + d.hora + '\n';
+    if (d.status) msg += '  • *Status:* ' + d.status + '\n';
+    msg += LIN + '\n\n';
+  }
+  msg += '👤 *DADOS DO CLIENTE*\n';
+  if (d.nome) msg += '  • *Nome:* ' + d.nome + '\n';
+  if (d.contato) msg += '  • *Contato:* ' + d.contato + '\n';
+  msg += '\n';
+  if (d.endereco) {
+    let labelEnd = ts === 'instalacao' ? 'Endereço da instalação' : ts === 'manutencao' ? 'Endereço da manutenção' : 'Endereço da retirada';
+    msg += '📍 *' + labelEnd + ':*\n  ' + d.endereco + '\n\n';
+  }
+  if (d.mapsLink) msg += '🗺️ *Localização:*\n  ' + d.mapsLink + '\n';
+  msg += LIN + '\n\n';
+  const veicsWA = d.veiculos && d.veiculos.length > 0 ? d.veiculos : [{ modelo: d.modelo, ano: d.ano, gnv: d.gnvVal }];
+  if (veicsWA.length === 1) {
+    msg += '🚗 *VEÍCULO*\n';
+    const v = veicsWA[0];
+    if (v.modelo) msg += '  • *Modelo:* ' + v.modelo + '\n';
+    if (v.ano) msg += '  • *Ano/Modelo:* ' + v.ano + '\n';
+    const gv = v.gnv || v.gnvVal;
+    if (gv) msg += '  • *GNV:* ' + (gv === 'sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+  } else {
+    msg += '🚗 *VEÍCULOS (' + veicsWA.length + ')*\n';
+    veicsWA.forEach((v, i) => {
+      const gv = v.gnv || v.gnvVal;
+      msg += '\n  *Veículo ' + (i + 1) + ':*\n';
+      if (v.modelo) msg += '    • Modelo: ' + v.modelo + '\n';
+      if (v.ano) msg += '    • Ano/Modelo: ' + v.ano + '\n';
+      if (gv) msg += '    • GNV: ' + (gv === 'sim' ? 'Sim ✅' : 'Não ❌') + '\n';
+    });
+  }
+  msg += '\n' + LIN + '\n\n';
+  // Tipo de serviço SEM valores
+  if (ts === 'instalacao') {
+    const tipoTextoCurto = { com: 'Com bloqueio', sem: 'Sem bloqueio', antigo: 'Com bloqueio (Contrato Antigo)' };
+    if (d.tipoKey) {
+      msg += '🔧 *SERVIÇO CONTRATADO*\n';
+      msg += '  • *Plano:* ' + (tipoTextoCurto[d.tipoKey] || d.tipo || '—') + '\n';
+      msg += '  🚙 Quantidade de veículos: ' + (d.qtdVeiculos || 1) + '\n\n';
+    }
+  } else if (ts === 'manutencao') {
+    msg += '🔧 *SERVIÇO DE MANUTENÇÃO*\n\n';
+    if (d.manImei) msg += '📟 *Equipamento:*\n  • *IMEI:* ' + d.manImei + '\n\n';
+    if (d.manProblema) msg += '⚠️ *Problema relatado:*\n  ' + d.manProblema + '\n\n';
+    if (d.manServico) msg += '🛠️ *Serviço executado:*\n  ' + d.manServico + '\n\n';
+    // Sem manValor (custo)
+  } else if (ts === 'retirada') {
+    msg += '📤 *SERVIÇO DE RETIRADA*\n\n';
+    if (d.retMotivo) msg += '📝 *Motivo da retirada:*\n  • ' + d.retMotivo + '\n\n';
+    msg += '📦 *Equipamento:*\n';
+    if (d.retRecuperado) msg += '  • *Situação:* ' + (d.retRecuperado === 'sim' ? 'Recuperado ✅' : 'Não recuperado ❌') + '\n';
+    if (d.retImei) msg += '  • *IMEI:* ' + d.retImei + '\n';
+  }
+  if (d.obs) msg += '\n' + LIN + '\n\n📝 *Observações:*\n  ' + d.obs + '\n';
+  msg += '\n' + SEP + '\n🛰️ *Rastreando GPS*\n📄 *CNPJ:* 29.488.621/0001-48';
+  return msg;
+}
+
+function compartilharTecnico() {
+  if (!tipoServico) { mostrarToast('⚠️ Selecione o tipo de serviço!'); return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(montarMensagemTecnico(getDados())), '_blank');
+}
+
+function compartilharTecnicoPreview() {
+  const d = osAbertaIdx !== null ? osList[osAbertaIdx] : getDados();
+  window.open('https://wa.me/?text=' + encodeURIComponent(montarMensagemTecnico(d)), '_blank');
 }
 
 function montarMensagem(d) {
@@ -1972,7 +2042,6 @@ function filtrarTipo(t) {
   renderLista();
 }
 
-// Helper: identifica se uma OS é "A Receber" (instalação concluída mas não paga)
 function isAReceber(o) {
   return o.statusKey === 'concluido'
     && (o.tipoServico || 'instalacao') === 'instalacao'
@@ -1998,7 +2067,6 @@ function renderPainel() {
   renderLista();
 }
 
-// ===== BADGE: APENAS HOJE E AMANHÃ =====
 function getLabelData(dataStr) {
   if (!dataStr) return null;
   const [d, m, y] = dataStr.split('/');
@@ -2008,7 +2076,6 @@ function getLabelData(dataStr) {
   const diff = (data - hoje) / (1000*60*60*24);
   if (diff === 0) return { texto: 'HOJE', cor: '#e31c1c', bg: '#1f0a0a', borda: '#e31c1c' };
   if (diff === 1) return { texto: 'AMANHÃ', cor: '#fbbf24', bg: '#1a1200', borda: '#fbbf24' };
-  // Outros dias: sem badge
   return null;
 }
 
@@ -2046,7 +2113,6 @@ function renderLista() {
   } else if (filtroAtual === 'areceber') {
     filtered = osList.filter(o => isAReceber(o));
   } else if (filtroAtual === 'concluido') {
-    // Concluídas = concluído e NÃO está em "A Receber" (ou seja, pago ou tipo sem pagamento)
     filtered = osList.filter(o => o.statusKey === 'concluido' && !isAReceber(o));
   } else {
     filtered = osList.filter(o => o.statusKey === filtroAtual);
@@ -2080,10 +2146,11 @@ function renderLista() {
       const svgMaps = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
       const svgShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
       const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+      // SVG para o botão técnico (chave de boca)
+      const svgTecnico = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
 
       const concluido = o.statusKey === 'concluido';
 
-      // Confirmar agendamento: some quando concluído
       const btnConfirmar = (!concluido && telLimpo.length >= 10)
         ? `<a class="os-icon-btn i-confirmar" href="https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()" title="Confirmar agendamento">${svgConfirmar}</a>`
         : '';
@@ -2093,16 +2160,16 @@ function renderLista() {
       const btnMaps = mapsUrl
         ? `<a class="os-icon-btn i-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()" title="Abrir no Maps">${svgMaps}</a>`
         : '';
-      // Compartilhar OS: some quando concluído
       const btnShare = !concluido
         ? `<a class="os-icon-btn i-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar OS">${svgShare}</a>`
         : '';
       const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
-      // Financeiro: apenas instalação, sempre visível
-      const svgFinanceiro = `<span style="display:flex;align-items:center;gap:2px;line-height:1;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;font-weight:700;"></i></span>`;
       const btnFinanceiro = ts === 'instalacao'
         ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro" style="gap:2px;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;"></i></button>`
         : '';
+      // NOVO: botão técnico no card — sempre visível (sem valores financeiros)
+      const tecnicoMsg = encodeURIComponent(montarMensagemTecnico(o));
+      const btnTecnico = `<a class="os-icon-btn i-tecnico" href="https://wa.me/?text=${tecnicoMsg}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar com Técnico">${svgTecnico}</a>`;
 
       const labelData = getLabelData(o.data);
       const badgeDia = labelData
@@ -2145,7 +2212,7 @@ function renderLista() {
         <div class="os-actions-row" onclick="event.stopPropagation()">
           <button class="os-actions-toggle-btn" id="btn-toggle-${cardId}" onclick="toggleAcoes(event, '${cardId}')">⚡ Ações</button>
           <div class="os-icon-actions" id="acoes-${cardId}">
-            ${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnFinanceiro}${btnEdit}
+            ${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnFinanceiro}${btnTecnico}${btnEdit}
           </div>
         </div>
       </div>`;
@@ -2187,6 +2254,9 @@ function limpar(silencioso) {
   });
   document.getElementById('ret-outro-wrap').style.display = 'none';
   document.querySelectorAll('.secao-instalacao,.secao-manutencao,.secao-retirada').forEach(el => el.style.display = 'none');
+  // Esconde botões de técnico/financeiro ao limpar
+  document.getElementById('btn-tecnico-form').style.display = 'none';
+  document.getElementById('btn-financeiro-form').style.display = 'none';
   document.getElementById('qtd-veiculos').value = 1;
   renderVeiculos();
   selStatus('pendente');
