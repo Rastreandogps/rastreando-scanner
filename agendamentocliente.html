@@ -168,7 +168,7 @@
     display:block; font-size:.78rem; font-weight:600; color:var(--ink-muted);
     margin-bottom:8px; letter-spacing:.01em;
   }
-  input[type="text"], input[type="number"]{
+  input[type="text"], input[type="number"], input[type="tel"]{
     width:100%; padding:13px 14px; font-family:var(--font-body); font-size:.95rem;
     color:var(--ink); background:rgba(255,255,255,.035);
     border:1px solid var(--glass-border); border-radius:var(--radius-md);
@@ -357,6 +357,11 @@
     </div>
 
     <div class="field">
+      <label for="telefone">Telefone / WhatsApp</label>
+      <input type="tel" id="telefone" placeholder="(21) 98765-4321" autocomplete="tel" inputmode="numeric">
+    </div>
+
+    <div class="field">
       <label for="rua">Rua / Avenida</label>
       <input type="text" id="rua" placeholder="Ex: Rua das Flores" autocomplete="address-line1">
     </div>
@@ -438,6 +443,7 @@
   };
 
   var nomeInput = document.getElementById('nomeCompleto');
+  var telefoneInput = document.getElementById('telefone');
   var ruaInput = document.getElementById('rua');
   var numeroInput = document.getElementById('numero');
   var bairroInput = document.getElementById('bairro');
@@ -460,6 +466,23 @@
     return String(str || '').replace(/[&<>"']/g, function(c){
       return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
     });
+  }
+
+  function formatPhone(value){
+    var digits = value.replace(/\D/g, '').slice(0, 11);
+    if(digits.length > 10){
+      return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    if(digits.length > 6){
+      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    }
+    if(digits.length > 2){
+      return digits.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    }
+    if(digits.length > 0){
+      return '(' + digits;
+    }
+    return '';
   }
 
   function rastreioHelper(value){
@@ -553,9 +576,10 @@
   }
 
   function updateMeter(){
-    var total = 5 + vehicles.length * 4;
+    var total = 6 + vehicles.length * 4;
     var filled = 0;
     if(nomeInput.value.trim()) filled++;
+    if(telefoneInput.value.replace(/\D/g, '').length >= 10) filled++;
     if(ruaInput.value.trim()) filled++;
     if(numeroInput.value.trim()) filled++;
     if(bairroInput.value.trim()) filled++;
@@ -587,6 +611,7 @@
     linhas.push('Olá! Acabei de agendar a instalação do rastreador pelo formulário.');
     linhas.push('');
     linhas.push('Nome: ' + payload.nomeCompleto);
+    linhas.push('Telefone: ' + payload.telefone);
     linhas.push('Endereço: ' + payload.endereco);
     linhas.push('');
     payload.veiculos.forEach(function(v, i){
@@ -611,6 +636,11 @@
   btnMinus.addEventListener('click', function(){ setVehicleCount(vehicles.length - 1); });
   btnPlus.addEventListener('click', function(){ setVehicleCount(vehicles.length + 1); });
   nomeInput.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
+  telefoneInput.addEventListener('input', function(e){
+    e.target.value = formatPhone(e.target.value);
+    e.target.classList.remove('invalid');
+    updateMeter();
+  });
   [ruaInput, numeroInput, bairroInput, cidadeInput].forEach(function(inp){
     inp.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
   });
@@ -620,6 +650,7 @@
     hideError();
 
     var nome = nomeInput.value.trim();
+    var telefoneDigits = telefoneInput.value.replace(/\D/g, '');
     var rua = ruaInput.value.trim();
     var numero = numeroInput.value.trim();
     var bairro = bairroInput.value.trim();
@@ -627,6 +658,7 @@
     var firstInvalid = null;
 
     if(!nome){ markInvalid(nomeInput); firstInvalid = firstInvalid || nomeInput; }
+    if(telefoneDigits.length < 10){ markInvalid(telefoneInput); firstInvalid = firstInvalid || telefoneInput; }
     if(!rua){ markInvalid(ruaInput); firstInvalid = firstInvalid || ruaInput; }
     if(!numero){ markInvalid(numeroInput); firstInvalid = firstInvalid || numeroInput; }
     if(!bairro){ markInvalid(bairroInput); firstInvalid = firstInvalid || bairroInput; }
@@ -657,6 +689,7 @@
       enviadoEm: new Date().toISOString(),
       idPedido: 'PED-' + Date.now(),
       nomeCompleto: nome,
+      telefone: telefoneInput.value.trim(),
       endereco: rua + ', ' + numero + ' - ' + bairro + ' - ' + cidade,
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
