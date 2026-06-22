@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rastreando GPS — Agendamento de Instalação</title>
+<meta name="description" content="Agende a instalação do rastreador do seu veículo com a Rastreando GPS.">
+<meta name="theme-color" content="#080C16">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#080C16;
+    --bg-mid:#0E1730;
+    --bg-soft:#131F3D;
+    --signal:#2EE6A8;
+    --signal-dim:rgba(46,230,168,.30);
+    --amber:#FFB454;
+    --amber-dim:rgba(255,180,84,.30);
+    --ink:#EEF2FA;
+    --ink-muted:#8B97B4;
+    --ink-faint:#54618A;
+    --glass:rgba(255,255,255,.045);
+    --glass-strong:rgba(255,255,255,.07);
+    --glass-border:rgba(255,255,255,.10);
+    --danger:#FF7A7A;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 20% 15%, rgba(46,230,168,.07), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(255,180,84,.06), transparent 45%),
+      linear-gradient(165deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-soft) 100%);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- fundo animado ---------- */
+  .bg-fx{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+  .grid-dots{
+    position:absolute; inset:-10%;
+    background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px);
+    background-size:26px 26px;
+    opacity:.35;
+    mask-image:radial-gradient(circle at 50% 30%, rgba(0,0,0,.9), transparent 75%);
+  }
+  .orb{position:absolute; border-radius:50%; filter:blur(60px); opacity:.55;}
+  .orb-teal{
+    width:340px; height:340px; left:-90px; top:-60px;
+    background:radial-gradient(circle, var(--signal), transparent 70%);
+    animation:drift1 16s ease-in-out infinite;
+  }
+  .orb-amber{
+    width:300px; height:300px; right:-80px; bottom:-40px;
+    background:radial-gradient(circle, var(--amber), transparent 70%);
+    animation:drift2 19s ease-in-out infinite;
+  }
+  @keyframes drift1{
+    0%,100%{transform:translate(0,0) scale(1);}
+    50%{transform:translate(40px,30px) scale(1.08);}
+  }
+  @keyframes drift2{
+    0%,100%{transform:translate(0,0) scale(1);}
+    50%{transform:translate(-35px,-25px) scale(1.1);}
+  }
+
+  /* ---------- layout ---------- */
+  .stage{
+    position:relative; z-index:1;
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:48px 18px 56px;
+    gap:18px;
+  }
+
+  .card{
+    width:100%; max-width:560px;
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius-lg);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.04);
+    padding:38px 32px 32px;
+    animation:float 7s ease-in-out infinite;
+  }
+  @keyframes float{
+    0%,100%{transform:translateY(0px);}
+    50%{transform:translateY(-7px);}
+  }
+
+  /* ---------- radar / sinal (elemento de assinatura) ---------- */
+  .radar{position:relative; width:58px; height:58px; margin:0 auto 6px;}
+  .radar-ring{
+    position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 0deg, var(--signal-dim), transparent 65%);
+    animation:spin 4s linear infinite;
+  }
+  .radar-ring::after{
+    content:''; position:absolute; inset:9px; border-radius:50%;
+    border:1px solid rgba(46,230,168,.25);
+  }
+  .radar-dot{
+    position:absolute; top:50%; left:50%; width:9px; height:9px; margin:-4.5px 0 0 -4.5px;
+    background:var(--signal); border-radius:50%;
+    box-shadow:0 0 0 0 var(--signal-dim);
+    animation:ping 2.4s ease-out infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes ping{
+    0%{box-shadow:0 0 0 0 rgba(46,230,168,.45);}
+    70%{box-shadow:0 0 0 14px rgba(46,230,168,0);}
+    100%{box-shadow:0 0 0 0 rgba(46,230,168,0);}
+  }
+
+  .signal-tag{
+    text-align:center; font-family:var(--font-mono); font-size:.66rem;
+    letter-spacing:.12em; color:var(--ink-faint); margin:0 0 22px; text-transform:uppercase;
+    transition:color .3s;
+  }
+  .signal-tag.success{color:var(--signal);}
+
+  .eyebrow{
+    font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em;
+    color:var(--signal); text-transform:uppercase; margin:0 0 10px; text-align:center;
+  }
+  h1{
+    font-family:var(--font-display); font-weight:600; text-align:center;
+    font-size:clamp(1.5rem, 5vw, 2rem); line-height:1.2; margin:0 0 10px; color:var(--ink);
+  }
+  h2{
+    font-family:var(--font-display); font-weight:600; text-align:center;
+    font-size:clamp(1.4rem, 5vw, 1.8rem); margin:18px 0 8px; color:var(--ink);
+  }
+  .subtext{
+    text-align:center; color:var(--ink-muted); font-size:.92rem; line-height:1.55;
+    margin:0 0 26px;
+  }
+
+  /* ---------- medidor de sinal (progresso) ---------- */
+  .signal-meter{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px;}
+  .bars{display:flex; align-items:flex-end; gap:3px; height:18px;}
+  .bar{
+    width:5px; border-radius:2px; background:rgba(255,255,255,.12);
+    transition:background .35s;
+  }
+  .bar[data-bar="1"]{height:7px;}
+  .bar[data-bar="2"]{height:11px;}
+  .bar[data-bar="3"]{height:15px;}
+  .bar[data-bar="4"]{height:19px;}
+  .bar.lit{background:var(--signal); box-shadow:0 0 8px var(--signal-dim);}
+  .meter-label{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.06em; color:var(--ink-faint);}
+
+  /* ---------- campos ---------- */
+  .field{margin-bottom:20px;}
+  .field label{
+    display:block; font-size:.78rem; font-weight:600; color:var(--ink-muted);
+    margin-bottom:8px; letter-spacing:.01em;
+  }
+  input[type="text"], input[type="number"]{
+    width:100%; padding:13px 14px; font-family:var(--font-body); font-size:.95rem;
+    color:var(--ink); background:rgba(255,255,255,.035);
+    border:1px solid var(--glass-border); border-radius:var(--radius-md);
+    outline:none; transition:border-color .2s, box-shadow .2s, background .2s;
+  }
+  input::placeholder{color:var(--ink-faint);}
+  input:focus{
+    border-color:var(--signal); background:rgba(255,255,255,.05);
+    box-shadow:0 0 0 3px var(--signal-dim);
+  }
+  input:focus-visible, button:focus-visible{
+    outline:2px solid var(--signal); outline-offset:2px;
+  }
+  input.invalid{border-color:var(--danger); animation:shake .35s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-4px);}
+    75%{transform:translateX(4px);}
+  }
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:480px){ .grid-2{grid-template-columns:1fr;} }
+
+  /* ---------- stepper de quantidade ---------- */
+  .stepper-field{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    margin-bottom:24px;
+  }
+  .stepper-field label{margin-bottom:0; flex:1;}
+  .stepper{display:flex; align-items:center; gap:14px;}
+  .stepper-btn{
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--glass-border);
+    background:rgba(255,255,255,.04); color:var(--ink); font-size:1.2rem; line-height:1;
+    cursor:pointer; transition:transform .15s, background .2s, opacity .2s;
+  }
+  .stepper-btn:hover:not(:disabled){background:var(--signal-dim); border-color:var(--signal);}
+  .stepper-btn:active:not(:disabled){transform:scale(.9);}
+  .stepper-btn:disabled{opacity:.3; cursor:not-allowed;}
+  .stepper-value{
+    font-family:var(--font-display); font-weight:700; font-size:1.3rem; min-width:24px; text-align:center;
+  }
+
+  /* ---------- cartão de veículo ---------- */
+  .vehicle-card{
+    background:rgba(255,255,255,.03); border:1px solid var(--glass-border);
+    border-radius:var(--radius-md); padding:20px 18px 6px; margin-bottom:16px;
+    animation:slideIn .35s ease;
+  }
+  @keyframes slideIn{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .vehicle-eyebrow{
+    font-family:var(--font-mono); font-size:.68rem; letter-spacing:.12em;
+    color:var(--amber); text-transform:uppercase; margin:0 0 16px;
+  }
+
+  /* ---------- toggle (segmented control) ---------- */
+  .toggle-group{display:flex; gap:8px; border-radius:var(--radius-md); padding:2px;}
+  .toggle-group.group-error{box-shadow:0 0 0 1px var(--danger); border-radius:var(--radius-md);}
+  .toggle-btn{
+    flex:1; padding:11px 10px; font-family:var(--font-body); font-weight:600; font-size:.86rem;
+    border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,.03);
+    color:var(--ink-muted); cursor:pointer; transition:all .2s;
+  }
+  .toggle-btn:hover{border-color:rgba(255,255,255,.25); color:var(--ink);}
+  .toggle-btn.active.teal{background:rgba(46,230,168,.16); border-color:var(--signal); color:var(--signal);}
+  .toggle-btn.active.amber{background:rgba(255,180,84,.16); border-color:var(--amber); color:var(--amber);}
+  .helper-text{font-size:.78rem; color:var(--ink-faint); margin:10px 2px 4px; line-height:1.5;}
+
+  /* ---------- erro / envio ---------- */
+  .error-banner{
+    background:rgba(255,122,122,.08); border:1px solid rgba(255,122,122,.35);
+    color:var(--danger); font-size:.84rem; border-radius:var(--radius-md);
+    padding:12px 14px; margin-bottom:18px; line-height:1.4;
+  }
+  .submit-btn{
+    width:100%; padding:16px; border:none; border-radius:var(--radius-md);
+    background:linear-gradient(120deg, var(--signal), #4FD8FF);
+    color:#06140F; font-family:var(--font-display); font-weight:700; font-size:.95rem;
+    letter-spacing:.02em; text-transform:uppercase; cursor:pointer;
+    transition:transform .15s, box-shadow .2s, opacity .2s;
+    box-shadow:0 14px 30px -12px rgba(46,230,168,.55);
+  }
+  .submit-btn:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 18px 34px -10px rgba(46,230,168,.65);}
+  .submit-btn:active:not(:disabled){transform:translateY(0);}
+  .submit-btn:disabled{opacity:.7; cursor:not-allowed; transform:none;}
+
+  .footer-note{
+    text-align:center; margin:20px 0 0; font-size:.76rem; color:var(--ink-faint);
+  }
+  .footer-note .mono{font-family:var(--font-mono); color:var(--ink-muted);}
+
+  /* ---------- card de sucesso ---------- */
+  .success-card{text-align:center;}
+  .check-wrap{width:72px; height:72px; margin:0 auto 4px;}
+  .check-svg{width:100%; height:100%;}
+  .check-circle{
+    fill:none; stroke:var(--signal); stroke-width:2.4;
+    stroke-dasharray:176; stroke-dashoffset:176;
+    animation:drawCircle .6s ease forwards;
+  }
+  .check-path{
+    fill:none; stroke:var(--signal); stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:40; stroke-dashoffset:40;
+    animation:drawPath .4s ease forwards .55s;
+  }
+  @keyframes drawCircle{to{stroke-dashoffset:0;}}
+  @keyframes drawPath{to{stroke-dashoffset:0;}}
+  .ref-tag{
+    font-size:.85rem; color:var(--ink-muted); margin-top:18px;
+  }
+  .ref-tag .mono{font-family:var(--font-mono); color:var(--signal); letter-spacing:.03em;}
+
+  @media (max-width:480px){
+    .card{padding:30px 22px 26px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-fx" aria-hidden="true">
+  <div class="orb orb-teal"></div>
+  <div class="orb orb-amber"></div>
+  <div class="grid-dots"></div>
+</div>
+
+<main class="stage">
+
+  <form class="card" id="formAgendamento" novalidate>
+    <div class="radar" aria-hidden="true">
+      <div class="radar-ring"></div>
+      <div class="radar-dot"></div>
+    </div>
+    <p class="signal-tag" id="signalTag">SINAL: AGUARDANDO DADOS</p>
+
+    <p class="eyebrow">Rastreando GPS · Agendamento</p>
+    <h1>Agende a instalação<br>do seu rastreador</h1>
+    <p class="subtext">Preencha os dados abaixo. É rápido, e sua instalação já entra na nossa agenda.</p>
+
+    <div class="signal-meter" aria-hidden="true">
+      <div class="bars">
+        <span class="bar" data-bar="1"></span>
+        <span class="bar" data-bar="2"></span>
+        <span class="bar" data-bar="3"></span>
+        <span class="bar" data-bar="4"></span>
+      </div>
+      <span class="meter-label" id="meterLabel">0% pronto</span>
+    </div>
+
+    <div class="field">
+      <label for="nomeCompleto">Nome completo</label>
+      <input type="text" id="nomeCompleto" placeholder="Seu nome completo" autocomplete="name">
+    </div>
+
+    <div class="field">
+      <label for="endereco">Endereço da instalação</label>
+      <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade" autocomplete="street-address">
+    </div>
+
+    <div class="field stepper-field">
+      <label>Quantos veículos serão instalados?</label>
+      <div class="stepper">
+        <button type="button" class="stepper-btn" id="btnMinus" aria-label="Diminuir quantidade">−</button>
+        <span class="stepper-value" id="qtyDisplay">1</span>
+        <button type="button" class="stepper-btn" id="btnPlus" aria-label="Aumentar quantidade">+</button>
+      </div>
+    </div>
+
+    <div id="vehiclesContainer"></div>
+
+    <div class="error-banner" id="errorBanner" role="alert" hidden></div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <span id="submitLabel">Confirmar agendamento</span>
+    </button>
+
+    <p class="footer-note">Dúvidas? <span class="mono">(21) 9 8088-6087</span> · <span class="mono">(21) 9 6931-2625</span></p>
+  </form>
+
+  <div class="card success-card" id="successCard" hidden>
+    <div class="check-wrap" aria-hidden="true">
+      <svg viewBox="0 0 64 64" class="check-svg">
+        <circle cx="32" cy="32" r="28" class="check-circle"/>
+        <path d="M19 33 L28 42 L46 22" class="check-path"/>
+      </svg>
+    </div>
+    <p class="signal-tag success">SINAL: CONECTADO</p>
+    <h2>Agendamento recebido</h2>
+    <p class="subtext">Vamos confirmar o melhor horário com você. Pode aguardar nosso contato.</p>
+    <p class="ref-tag">Referência <span class="mono" id="refId"></span></p>
+  </div>
+
+</main>
+
+<script>
+(function(){
+
+  // =========================================================
+  // CONFIGURAÇÃO — troque pela URL do seu Web App do Apps Script
+  // (Extensões > Apps Script na planilha > Implantar > Nova implantação)
+  // =========================================================
+  var CONFIG = {
+    SCRIPT_URL: "COLOQUE_AQUI_A_URL_DO_SEU_APPS_SCRIPT"
+  };
+
+  var nomeInput = document.getElementById('nomeCompleto');
+  var enderecoInput = document.getElementById('endereco');
+  var btnMinus = document.getElementById('btnMinus');
+  var btnPlus = document.getElementById('btnPlus');
+  var qtyDisplay = document.getElementById('qtyDisplay');
+  var vehiclesContainer = document.getElementById('vehiclesContainer');
+  var form = document.getElementById('formAgendamento');
+  var errorBanner = document.getElementById('errorBanner');
+  var submitBtn = document.getElementById('submitBtn');
+  var submitLabel = document.getElementById('submitLabel');
+  var successCard = document.getElementById('successCard');
+  var meterLabel = document.getElementById('meterLabel');
+  var bars = Array.prototype.slice.call(document.querySelectorAll('.bar'));
+
+  var vehicles = [{ modelo:'', ano:'', gnv:null, rastreio:null }];
+
+  function escapeHtml(str){
+    return String(str || '').replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function rastreioHelper(value){
+    if(value === 'com') return 'Com bloqueio: permite bloquear o veículo remotamente em caso de furto.';
+    if(value === 'sem') return 'Sem bloqueio: localização em tempo real, sem função de bloqueio.';
+    return 'Escolha a opção que melhor protege este veículo.';
+  }
+
+  function vehicleCardHTML(v, i){
+    var n = String(i + 1).padStart(2, '0');
+    return ''
+      + '<div class="vehicle-card" data-index="' + i + '">'
+      +   '<p class="vehicle-eyebrow">Veículo ' + n + '</p>'
+      +   '<div class="grid-2">'
+      +     '<div class="field">'
+      +       '<label for="modelo-' + i + '">Qual veículo?</label>'
+      +       '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno 2015 ou placa ABC1D23" data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +     '</div>'
+      +     '<div class="field">'
+      +       '<label for="ano-' + i + '">Ano do veículo</label>'
+      +       '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="field">'
+      +     '<label>Possui kit de GNV?</label>'
+      +     '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
+      +       '<button type="button" class="toggle-btn' + (v.gnv === 'sim' ? ' active amber' : '') + '" data-value="sim">Sim</button>'
+      +       '<button type="button" class="toggle-btn' + (v.gnv === 'nao' ? ' active' : '') + '" data-value="nao">Não</button>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="field">'
+      +     '<label>Tipo de rastreamento</label>'
+      +     '<div class="toggle-group" data-group="rastreio" data-index="' + i + '">'
+      +       '<button type="button" class="toggle-btn' + (v.rastreio === 'com' ? ' active teal' : '') + '" data-value="com">Com bloqueio</button>'
+      +       '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
+      +     '</div>'
+      +     '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
+      +   '</div>'
+      + '</div>';
+  }
+
+  function renderVehicles(){
+    vehiclesContainer.innerHTML = vehicles.map(vehicleCardHTML).join('');
+    attachVehicleListeners();
+  }
+
+  function attachVehicleListeners(){
+    vehiclesContainer.querySelectorAll('input[data-field]').forEach(function(inp){
+      inp.addEventListener('input', function(e){
+        var i = +e.target.dataset.index;
+        var field = e.target.dataset.field;
+        vehicles[i][field] = e.target.value;
+        e.target.classList.remove('invalid');
+        updateMeter();
+      });
+    });
+
+    vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
+      group.querySelectorAll('.toggle-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var i = +group.dataset.index;
+          var g = group.dataset.group;
+          vehicles[i][g] = btn.dataset.value;
+          group.classList.remove('group-error');
+          group.querySelectorAll('.toggle-btn').forEach(function(b){
+            b.classList.remove('active', 'teal', 'amber');
+          });
+          btn.classList.add('active', g === 'gnv' ? 'amber' : 'teal');
+          if(g === 'rastreio'){
+            var helper = group.parentElement.querySelector('.helper-text');
+            if(helper) helper.textContent = rastreioHelper(btn.dataset.value);
+          }
+          updateMeter();
+        });
+      });
+    });
+  }
+
+  function setVehicleCount(n){
+    n = Math.max(1, Math.min(10, n));
+    if(n > vehicles.length){
+      while(vehicles.length < n) vehicles.push({ modelo:'', ano:'', gnv:null, rastreio:null });
+    } else {
+      vehicles.length = n;
+    }
+    qtyDisplay.textContent = n;
+    btnMinus.disabled = n <= 1;
+    btnPlus.disabled = n >= 10;
+    renderVehicles();
+    updateMeter();
+  }
+
+  function updateMeter(){
+    var total = 2 + vehicles.length * 4;
+    var filled = 0;
+    if(nomeInput.value.trim()) filled++;
+    if(enderecoInput.value.trim()) filled++;
+    vehicles.forEach(function(v){
+      if(v.modelo && v.modelo.trim()) filled++;
+      if(v.ano) filled++;
+      if(v.gnv) filled++;
+      if(v.rastreio) filled++;
+    });
+    var pct = Math.round((filled / total) * 100);
+    meterLabel.textContent = pct + '% pronto';
+    var lit = Math.round(pct / 25);
+    bars.forEach(function(b, idx){ b.classList.toggle('lit', idx < lit); });
+  }
+
+  function markInvalid(el){ if(el) el.classList.add('invalid'); }
+
+  function showError(msg){ errorBanner.textContent = msg; errorBanner.hidden = false; }
+  function hideError(){ errorBanner.hidden = true; }
+
+  function setSending(isSending){
+    submitBtn.disabled = isSending;
+    submitLabel.textContent = isSending ? 'Enviando sinal...' : 'Confirmar agendamento';
+  }
+
+  function showSuccess(idPedido){
+    form.hidden = true;
+    successCard.hidden = false;
+    document.getElementById('refId').textContent = idPedido;
+    successCard.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  btnMinus.addEventListener('click', function(){ setVehicleCount(vehicles.length - 1); });
+  btnPlus.addEventListener('click', function(){ setVehicleCount(vehicles.length + 1); });
+  nomeInput.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
+  enderecoInput.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    hideError();
+
+    var nome = nomeInput.value.trim();
+    var endereco = enderecoInput.value.trim();
+    var firstInvalid = null;
+
+    if(!nome){ markInvalid(nomeInput); firstInvalid = firstInvalid || nomeInput; }
+    if(!endereco){ markInvalid(enderecoInput); firstInvalid = firstInvalid || enderecoInput; }
+
+    vehicles.forEach(function(v, i){
+      var modeloEl = document.getElementById('modelo-' + i);
+      var anoEl = document.getElementById('ano-' + i);
+      if(!v.modelo || !v.modelo.trim()){ markInvalid(modeloEl); firstInvalid = firstInvalid || modeloEl; }
+      if(!v.ano){ markInvalid(anoEl); firstInvalid = firstInvalid || anoEl; }
+      if(!v.gnv){
+        var gnvGroup = vehiclesContainer.querySelector('.toggle-group[data-group="gnv"][data-index="' + i + '"]');
+        if(gnvGroup){ gnvGroup.classList.add('group-error'); firstInvalid = firstInvalid || gnvGroup; }
+      }
+      if(!v.rastreio){
+        var rGroup = vehiclesContainer.querySelector('.toggle-group[data-group="rastreio"][data-index="' + i + '"]');
+        if(rGroup){ rGroup.classList.add('group-error'); firstInvalid = firstInvalid || rGroup; }
+      }
+    });
+
+    if(firstInvalid){
+      showError('Preencha os campos destacados antes de enviar.');
+      firstInvalid.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+
+    var payload = {
+      enviadoEm: new Date().toISOString(),
+      idPedido: 'PED-' + Date.now(),
+      nomeCompleto: nome,
+      endereco: endereco,
+      quantidadeVeiculos: vehicles.length,
+      veiculos: vehicles.map(function(v){
+        return { modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
+      })
+    };
+
+    setSending(true);
+
+    if(CONFIG.SCRIPT_URL.indexOf('COLOQUE_AQUI') > -1){
+      // Modo de teste — sem Apps Script configurado ainda.
+      setTimeout(function(){ setSending(false); showSuccess(payload.idPedido); }, 600);
+      return;
+    }
+
+    fetch(CONFIG.SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data && data.ok){
+          showSuccess(payload.idPedido);
+        } else {
+          throw new Error('resposta inválida');
+        }
+      })
+      .catch(function(){
+        setSending(false);
+        showError('Não foi possível enviar agora. Verifique sua internet e tente de novo.');
+      });
+  });
+
+  renderVehicles();
+  updateMeter();
+  btnMinus.disabled = true;
+
+})();
+</script>
+</body>
+</html>
