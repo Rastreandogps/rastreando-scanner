@@ -373,6 +373,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       </div>
     </div>
 
+    <button type="button" id="btn-colar-agendamento" onclick="abrirModalColar()" style="display:none; width:100%; margin-bottom:14px; padding:13px; background:#0a1a2e; color:#00e5ff; border:1.5px solid #00e5ff; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; align-items:center; justify-content:center; gap:8px;">
+      📋 Colar agendamento do cliente
+    </button>
+
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -822,11 +826,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   </div>
 </div>
 
+<!-- OVERLAY COLAR AGENDAMENTO -->
+<div class="overlay" id="overlay-colar">
+  <div class="prev-card" style="max-width:520px;">
+    <div class="prev-header" style="border-bottom:none; margin-bottom:10px;">
+      <div>
+        <h2 style="font-size:16px;">📋 Colar agendamento do cliente</h2>
+        <p>Cole abaixo a mensagem que o cliente enviou pelo WhatsApp após preencher o formulário de agendamento</p>
+      </div>
+    </div>
+    <div class="field">
+      <textarea id="colar-textarea" placeholder="Cole aqui a mensagem completa do agendamento..." style="min-height:220px; font-family:'JetBrains Mono', monospace; font-size:13px;"></textarea>
+    </div>
+    <div class="prev-footer">
+      <button class="prev-wa" style="background:#00e5ff; color:#06140F;" onclick="aplicarDadosColados()">✅ Preencher campos</button>
+      <button class="prev-close" onclick="fecharModalColar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.17.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.22.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -1019,6 +1042,8 @@ function selServico(s) {
   // Técnico: sempre visível ao selecionar qualquer tipo de serviço
   document.getElementById('btn-tecnico-form').style.display = 'flex';
   document.getElementById('btn-tecnico-prev').style.display = 'block';
+  // Colar agendamento: apenas para instalação
+  document.getElementById('btn-colar-agendamento').style.display = s === 'instalacao' ? 'flex' : 'none';
   const labelData = document.getElementById('label-data-servico');
   if (s === 'instalacao') labelData.textContent = 'Data de instalação';
   else if (s === 'manutencao') labelData.textContent = 'Data da manutenção';
@@ -1663,6 +1688,87 @@ function getMapsLink() {
   return end.length > 5 ? 'https://maps.google.com/?q=' + encodeURIComponent(end) : '';
 }
 
+// =====================================================
+// COLAR AGENDAMENTO DO CLIENTE — autopreenchimento
+// =====================================================
+function abrirModalColar() {
+  document.getElementById('colar-textarea').value = '';
+  document.getElementById('overlay-colar').classList.add('open');
+  setTimeout(() => document.getElementById('colar-textarea').focus(), 100);
+}
+
+function fecharModalColar() {
+  document.getElementById('overlay-colar').classList.remove('open');
+}
+
+function processarAgendamentoCliente(texto) {
+  const dados = { nome: '', telefone: '', endereco: '', idPedido: '', veiculos: [] };
+
+  const nomeMatch = texto.match(/Nome:\s*(.+)/i);
+  if (nomeMatch) dados.nome = nomeMatch[1].trim();
+
+  const telMatch = texto.match(/Telefone:\s*(.+)/i);
+  if (telMatch) dados.telefone = telMatch[1].trim();
+
+  const endMatch = texto.match(/Endere[cç]o:\s*(.+)/i);
+  if (endMatch) dados.endereco = endMatch[1].trim();
+
+  const idMatch = texto.match(/ID do pedido:\s*(\S+)/i);
+  if (idMatch) dados.idPedido = idMatch[1].trim();
+
+  const veiculoRegex = /Ve[ií]culo\s*\d+:\s*(.+?)\s*\((\d{4})\)\s*[\r\n]+\s*GNV:\s*(Sim|N[aã]o)\s*\|\s*Rastreio:\s*(Com bloqueio|Sem bloqueio)/gi;
+  let m;
+  while ((m = veiculoRegex.exec(texto)) !== null) {
+    dados.veiculos.push({
+      modelo: m[1].trim(),
+      ano: m[2].trim(),
+      gnv: /sim/i.test(m[3]) ? 'sim' : 'nao',
+      rastreio: /^com/i.test(m[4]) ? 'com' : 'sem'
+    });
+  }
+
+  return dados;
+}
+
+function aplicarDadosColados() {
+  const texto = document.getElementById('colar-textarea').value;
+  if (!texto.trim()) { mostrarToast('⚠️ Cole o texto do agendamento primeiro'); return; }
+
+  const dados = processarAgendamentoCliente(texto);
+
+  if (!dados.nome && dados.veiculos.length === 0) {
+    mostrarToast('⚠️ Não reconheci esse texto. Confira se é a mensagem do formulário de agendamento.');
+    return;
+  }
+
+  if (dados.nome) document.getElementById('nome').value = dados.nome;
+  if (dados.telefone) document.getElementById('contato').value = dados.telefone;
+  if (dados.endereco) document.getElementById('endereco').value = dados.endereco;
+  atualizarMaps();
+
+  if (dados.veiculos.length > 0) {
+    renderVeiculosComDados(dados.veiculos.map(v => ({ modelo: v.modelo, ano: v.ano, gnv: v.gnv })));
+    calcularTotal();
+
+    const tiposDetectados = dados.veiculos.map(v => v.rastreio);
+    const tipoUnico = tiposDetectados.every(t => t === tiposDetectados[0]) ? tiposDetectados[0] : null;
+    if (tipoUnico) {
+      selTipo(tipoUnico);
+    } else {
+      mostrarToast('⚠️ Veículos com planos diferentes — confira o "Tipo de instalação" manualmente');
+    }
+  }
+
+  if (dados.idPedido) {
+    const obsAtual = document.getElementById('obs').value.trim();
+    const refTexto = 'Agendado pelo formulário online (ID: ' + dados.idPedido + ')';
+    document.getElementById('obs').value = obsAtual ? obsAtual + '\n' + refTexto : refTexto;
+  }
+
+  fecharModalColar();
+  mostrarToast('✅ Campos preenchidos automaticamente!');
+}
+
 function salvarOS() {
   if (!tipoServico) { mostrarToast('⚠️ Selecione o tipo de serviço!'); return; }
   const d = getDados();
@@ -2260,6 +2366,7 @@ function limpar(silencioso) {
   // Esconde botões de técnico/financeiro ao limpar
   document.getElementById('btn-tecnico-form').style.display = 'none';
   document.getElementById('btn-financeiro-form').style.display = 'none';
+  document.getElementById('btn-colar-agendamento').style.display = 'none';
   document.getElementById('qtd-veiculos').value = 1;
   renderVeiculos();
   selStatus('pendente');
