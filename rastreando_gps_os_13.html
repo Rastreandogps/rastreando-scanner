@@ -801,10 +801,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <h2>📡 Rastreando GPS</h2>
         <p>CNPJ 29.488.621/0001-48 · (21) 9 8088-6087</p>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:14px;font-weight:700;color:#00e5ff" id="p-num"></div>
-        <div style="font-size:12px;color:#9ca3af" id="p-dataos"></div>
-        <div id="p-tipo-serv-badge" style="margin-top:4px;"></div>
+      <div style="display:flex; align-items:flex-start; gap:10px;">
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:700;color:#00e5ff" id="p-num"></div>
+          <div style="font-size:12px;color:#9ca3af" id="p-dataos"></div>
+          <div id="p-tipo-serv-badge" style="margin-top:4px;"></div>
+        </div>
+        <button onclick="fechar()" title="Fechar" style="background:#2a2a2a; border:none; color:#aaa; border-radius:50%; width:30px; height:30px; font-size:16px; cursor:pointer; flex-shrink:0; line-height:1; padding:0;">✕</button>
       </div>
     </div>
 
@@ -934,7 +937,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.24.002'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
