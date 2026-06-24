@@ -402,7 +402,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="cal-resumo-mes" id="cal-resumo-mes"></div>
 
     <div class="cal-toolbar">
-      <button class="btn-refresh" style="margin-left:0;" onclick="carregarDoServidor(false).then(renderCalendario)">🔄 Atualizar calendário</button>
+      <button class="btn-refresh" style="margin-left:0; border-color:#25d366; background:#0d2b1a; color:#25d366;" onclick="compartilharPreAgendamento()">💬 Enviar pré-agendamento</button>
     </div>
 
     <div class="cal-legenda">
@@ -938,7 +938,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.003'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.24.004'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -2578,6 +2578,16 @@ function abrirDiaCalendario(dataStr) {
   }
 
   document.getElementById('overlay-dia').classList.add('open');
+}
+
+function compartilharPreAgendamento() {
+  const link = 'https://rastreandogps.github.io/rastreando-scanner/agendamentocliente.html';
+  let msg = '🛰️ *Rastreando GPS*\n\n';
+  msg += '📋 Faça seu pré-agendamento.\n';
+  msg += 'Coloque os dados corretamente.\n';
+  msg += 'Clique no link abaixo:\n\n';
+  msg += link;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function fecharDiaOverlay() {
