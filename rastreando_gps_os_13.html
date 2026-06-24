@@ -938,7 +938,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.004'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.24.005'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -2541,6 +2541,52 @@ function renderCalendario() {
   document.getElementById('cal-grid').innerHTML = html;
 }
 
+function gerarAcoesCalendarioHTML(o, idx) {
+  const cardId = 'caldia-' + idx;
+  const ts = o.tipoServico || 'instalacao';
+  const telLimpo = String(o.contato || '').replace(/\D/g,'');
+  const waLink = telLimpo.length >= 10 ? `https://wa.me/55${telLimpo}` : '';
+  const mapsUrl = o.mapsLink || (o.endereco ? 'https://maps.google.com/?q=' + encodeURIComponent(o.endereco) : '');
+
+  let msgOS = '';
+  try { msgOS = encodeURIComponent(montarMensagem(o)); } catch(err) { console.error('montarMensagem error:', err, o); }
+
+  const svgConfirmar = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+  const svgWa = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.856L.054 23.447a.75.75 0 0 0 .916.953l5.453-1.33A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.374-.222-3.88.947.993-3.73-.243-.386A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+  const svgMaps = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+  const svgShare = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+  const svgEdit = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  const svgTecnico = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+
+  const concluido = o.statusKey === 'concluido';
+
+  const btnConfirmar = (!concluido && telLimpo.length >= 10)
+    ? `<a class="os-icon-btn i-confirmar" href="https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgConfirmacao(o))}" target="_blank" onclick="event.stopPropagation()" title="Confirmar agendamento">${svgConfirmar}</a>`
+    : '';
+  const btnWa = telLimpo.length >= 10
+    ? `<a class="os-icon-btn i-wa" href="${waLink}" target="_blank" onclick="event.stopPropagation()" title="WhatsApp">${svgWa}</a>`
+    : '';
+  const btnMaps = mapsUrl
+    ? `<a class="os-icon-btn i-maps" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()" title="Abrir no Maps">${svgMaps}</a>`
+    : '';
+  const btnShare = !concluido
+    ? `<a class="os-icon-btn i-share" href="https://wa.me/?text=${msgOS}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar OS">${svgShare}</a>`
+    : '';
+  const btnEdit = `<button class="os-icon-btn i-edit" onclick="event.stopPropagation(); fecharDiaOverlay(); editarOSdoCard(${idx})" title="Editar">${svgEdit}</button>`;
+  const btnFinanceiro = ts === 'instalacao'
+    ? `<button class="os-icon-btn i-financeiro" onclick="event.stopPropagation(); osAbertaIdx=${idx}; compartilharFinanceiro();" title="Enviar ao Financeiro" style="gap:2px;"><i class="ti ti-car" style="font-size:15px;"></i><i class="ti ti-plus" style="font-size:10px;"></i></button>`
+    : '';
+  const tecnicoMsg = encodeURIComponent(montarMensagemTecnico(o));
+  const btnTecnico = `<a class="os-icon-btn i-tecnico" href="https://wa.me/?text=${tecnicoMsg}" target="_blank" onclick="event.stopPropagation()" title="Compartilhar com Técnico">${svgTecnico}</a>`;
+
+  return `<div class="os-actions-row" onclick="event.stopPropagation()">
+    <button class="os-actions-toggle-btn" id="btn-toggle-${cardId}" onclick="toggleAcoes(event, '${cardId}')">⚡ Ações</button>
+    <div class="os-icon-actions" id="acoes-${cardId}">
+      ${btnConfirmar}${btnWa}${btnMaps}${btnShare}${btnFinanceiro}${btnTecnico}${btnEdit}
+    </div>
+  </div>`;
+}
+
 function abrirDiaCalendario(dataStr) {
   const osPorDia = calGetOSPorData();
   const idxs = osPorDia[dataStr] || [];
@@ -2573,6 +2619,7 @@ function abrirDiaCalendario(dataStr) {
         </div>
         <div class="cdc-info">${tipoServLabels[ts] || ts}${o.hora ? ' · 🕐 ' + o.hora : ''}</div>
         ${o.endereco ? `<div class="cdc-info" style="margin-top:2px;">📍 ${o.endereco}</div>` : ''}
+        ${gerarAcoesCalendarioHTML(o, idx)}
       </div>`;
     }).join('');
   }
