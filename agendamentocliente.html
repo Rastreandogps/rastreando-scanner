@@ -4,8 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rastreando GPS — Agendamento de Instalação</title>
-<meta name="description" content="Agende a instalação do rastreador do seu veículo com a Rastreando GPS.">
+<meta name="description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
 <meta name="theme-color" content="#080C16">
+
+<!-- ============================================================ -->
+<!-- Open Graph / Facebook / WhatsApp — prévia de link            -->
+<!-- TROQUE og:url e og:image pela URL final quando publicar      -->
+<!-- ============================================================ -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://agendamento.rastreandogpsbr.com.br/">
+<meta property="og:title" content="📅 Agende sua instalação">
+<meta property="og:description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
+<meta property="og:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
+<meta property="og:image:secure_url" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Rastreando GPS — Agendamento de instalação">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="Rastreando GPS">
+
+<!-- ============================================================ -->
+<!-- Twitter Card                                                  -->
+<!-- ============================================================ -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="📅 Agende sua instalação">
+<meta name="twitter:description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
+<meta name="twitter:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
+<!-- ============================================================ -->
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -100,28 +127,43 @@
     50%{transform:translateY(-7px);}
   }
 
-  /* ---------- radar / sinal (elemento de assinatura) ---------- */
-  .radar{position:relative; width:58px; height:58px; margin:0 auto 6px;}
-  .radar-ring{
-    position:absolute; inset:0; border-radius:50%;
-    background:conic-gradient(from 0deg, var(--signal-dim), transparent 65%);
-    animation:spin 4s linear infinite;
+  /* ---------- satélite enviando sinal (elemento de assinatura) ---------- */
+  .sat-signal{width:124px; height:96px; margin:0 auto 6px;}
+  .sat-signal svg{width:100%; height:100%; display:block;}
+
+  .sat-bob{
+    transform-box: fill-box; transform-origin:center;
+    animation:satBob 3.2s ease-in-out infinite;
   }
-  .radar-ring::after{
-    content:''; position:absolute; inset:9px; border-radius:50%;
-    border:1px solid rgba(46,230,168,.25);
+  @keyframes satBob{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-3px);}
   }
-  .radar-dot{
-    position:absolute; top:50%; left:50%; width:9px; height:9px; margin:-4.5px 0 0 -4.5px;
-    background:var(--signal); border-radius:50%;
-    box-shadow:0 0 0 0 var(--signal-dim);
-    animation:ping 2.4s ease-out infinite;
+
+  .sat-blink{animation:satBlink 1.6s ease-in-out infinite;}
+  @keyframes satBlink{
+    0%,100%{opacity:1;}
+    50%{opacity:.25;}
   }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @keyframes ping{
-    0%{box-shadow:0 0 0 0 rgba(46,230,168,.45);}
-    70%{box-shadow:0 0 0 14px rgba(46,230,168,0);}
-    100%{box-shadow:0 0 0 0 rgba(46,230,168,0);}
+
+  .signal-beam{
+    fill:none; stroke:var(--signal); stroke-width:1.6; stroke-linecap:round;
+    stroke-dasharray:3 7; opacity:.55;
+    animation:beamFlow 1.3s linear infinite;
+  }
+  .signal-beam.beam2{stroke:var(--amber); opacity:.4; animation-delay:.15s;}
+  .signal-beam.beam3{animation-delay:.3s;}
+  @keyframes beamFlow{to{stroke-dashoffset:-20;}}
+
+  .receiver-ping{
+    fill:none; stroke:var(--signal); stroke-width:1.2;
+    transform-box: fill-box; transform-origin:center;
+    animation:receiverPing 2.4s ease-out infinite;
+  }
+  @keyframes receiverPing{
+    0%{transform:scale(1); opacity:.6;}
+    70%{transform:scale(4.2); opacity:0;}
+    100%{transform:scale(4.2); opacity:0;}
   }
 
   .signal-tag{
@@ -331,9 +373,34 @@
 <main class="stage">
 
   <form class="card" id="formAgendamento" novalidate>
-    <div class="radar" aria-hidden="true">
-      <div class="radar-ring"></div>
-      <div class="radar-dot"></div>
+    <div class="sat-signal" aria-hidden="true">
+      <svg viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(65,20)">
+          <g class="sat-bob">
+            <rect x="-7" y="-6" width="14" height="12" rx="2" fill="var(--glass-strong)" stroke="var(--amber)" stroke-width="1.4"/>
+            <rect x="-22" y="-3" width="12" height="6" rx="1.5" fill="none" stroke="var(--amber)" stroke-width="1.4"/>
+            <rect x="10" y="-3" width="12" height="6" rx="1.5" fill="none" stroke="var(--amber)" stroke-width="1.4"/>
+            <line x1="-10" y1="0" x2="-7" y2="0" stroke="var(--amber)" stroke-width="1.4"/>
+            <line x1="7" y1="0" x2="10" y2="0" stroke="var(--amber)" stroke-width="1.4"/>
+            <line x1="0" y1="-6" x2="0" y2="-13" stroke="var(--amber)" stroke-width="1.2"/>
+            <circle cx="0" cy="-13" r="1.6" fill="var(--amber)" class="sat-blink"/>
+          </g>
+        </g>
+
+        <path d="M65,29 L48,70" class="signal-beam beam1"/>
+        <path d="M65,29 L65,70" class="signal-beam beam2"/>
+        <path d="M65,29 L82,70" class="signal-beam beam3"/>
+
+        <g transform="translate(65,78)">
+          <line x1="0" y1="-14" x2="0" y2="-6" stroke="var(--signal)" stroke-width="1.6"/>
+          <circle cx="0" cy="-14" r="2" fill="var(--signal)"/>
+          <circle cx="0" cy="-14" r="2" class="receiver-ping"/>
+          <rect x="-22" y="-6" width="44" height="10" rx="4" fill="var(--glass-strong)" stroke="var(--signal)" stroke-width="1.4"/>
+          <path d="M-14,-6 L-9,-13 L9,-13 L14,-6 Z" fill="none" stroke="var(--signal)" stroke-width="1.4"/>
+          <circle cx="-13" cy="5" r="3.4" fill="var(--bg-deep)" stroke="var(--signal)" stroke-width="1.4"/>
+          <circle cx="13" cy="5" r="3.4" fill="var(--bg-deep)" stroke="var(--signal)" stroke-width="1.4"/>
+        </g>
+      </svg>
     </div>
     <p class="signal-tag" id="signalTag">SINAL: AGUARDANDO DADOS</p>
 
