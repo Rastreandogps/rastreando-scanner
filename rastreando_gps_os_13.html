@@ -116,6 +116,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-card.tipo-instalacao { background: #0d1f12; border-color: #1a3320; }
 .os-card.tipo-manutencao { background: #1f1a09; border-color: #332d12; }
 .os-card.tipo-retirada   { background: #1f0d0d; border-color: #331515; }
+.os-card.tecnico-agendado { border-left-color: #a78bfa; background: #150a2e; border-color: #2a1a4a; }
 .os-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
 .os-card-num { font-size: 12px; font-weight: 700; color: #00e5ff; }
 .os-card-nome { font-size: 15px; font-weight: 600; color: #f0f0f0; margin-bottom: 2px; }
@@ -127,6 +128,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .os-badge.agendado { background: #001a2e; color: #00e5ff; border-color: #00e5ff; }
 .os-badge.concluido { background: #001a0a; color: #22c55e; border-color: #22c55e; }
 .os-badge.cancelado { background: #1f0a0a; color: #e31c1c; border-color: #e31c1c; }
+.os-badge.tecnico-agendado { background: #1a0a2e; color: #a78bfa; border-color: #a78bfa; }
 .os-badge:active { transform: scale(0.96); }
 
 .status-dropdown { position: absolute; top: calc(100% + 6px); right: 0; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 6px; min-width: 160px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
@@ -136,6 +138,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .status-dropdown-item.agendado { color: #00e5ff; }
 .status-dropdown-item.concluido { color: #22c55e; }
 .status-dropdown-item.cancelado { color: #e31c1c; }
+.status-dropdown-item.tecnico { color: #a78bfa; }
 .status-dropdown-item.ativo { font-weight: 700; }
 
 .pag-badge { font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 20px; cursor: pointer; border: 1px solid; transition: all 0.15s; user-select: none; display: inline-flex; align-items: center; gap: 4px; }
@@ -286,11 +289,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .sc-btn.agendado { color: #00e5ff; border-color: #00e5ff; }
 .sc-btn.concluido { color: #22c55e; border-color: #22c55e; }
 .sc-btn.cancelado { color: #e31c1c; border-color: #e31c1c; }
+.sc-btn.tecnico { color: #a78bfa; border-color: #a78bfa; }
 .sc-btn.ativo { color: #111; }
 .sc-btn.ativo.pendente { background: #fbbf24; }
 .sc-btn.ativo.agendado { background: #00e5ff; }
 .sc-btn.ativo.concluido { background: #22c55e; }
 .sc-btn.ativo.cancelado { background: #e31c1c; }
+.sc-btn.ativo.tecnico { background: #a78bfa; }
 
 .gnv-label-section { font-size: 12px; color: #aaa; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
 
@@ -353,6 +358,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .cal-dia-card.tipo-instalacao { border-left-color: #00e5ff; }
 .cal-dia-card.tipo-manutencao { border-left-color: #f59e0b; }
 .cal-dia-card.tipo-retirada { border-left-color: #e31c1c; }
+.cal-dia-card.tecnico-agendado { border-left-color: #a78bfa; }
 .cal-dia-card .cdc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
 .cal-dia-card .cdc-nome { font-size: 14px; font-weight: 600; color: #f0f0f0; }
 .cal-dia-card .cdc-info { font-size: 12px; color: #aaa; margin-top: 2px; }
@@ -409,6 +415,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
       <span><span class="dot" style="background:#00e5ff"></span> Instalação</span>
       <span><span class="dot" style="background:#f59e0b"></span> Manutenção</span>
       <span><span class="dot" style="background:#e31c1c"></span> Retirada</span>
+      <span><span class="dot" style="background:#a78bfa"></span> Para técnico</span>
+      <span><span class="dot" style="background:#22c55e"></span> Concluído</span>
     </div>
 
     <div class="cal-grid-dias">
@@ -641,6 +649,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
           <button class="status-btn ap" id="s-pendente" onclick="selStatus('pendente')">⏳ Pendente</button>
           <button class="status-btn" id="s-agendado" onclick="selStatus('agendado')">📅 Agendado</button>
           <button class="status-btn" id="s-concluido" onclick="selStatus('concluido')">✅ Concluído</button>
+        </div>
+        <div id="tecnico-toggle-wrap" style="display:none; margin-top:10px;">
+          <label style="display:flex; align-items:center; gap:9px; padding:11px 13px; border:1.5px solid #a78bfa; border-radius:10px; background:#150a2e; cursor:pointer; font-size:13px; color:#d8b4fe; font-weight:500; user-select:none;">
+            <input type="checkbox" id="chk-tecnico" onchange="toggleParaTecnicoForm()" style="width:17px; height:17px; cursor:pointer; accent-color:#a78bfa; flex-shrink:0;" />
+            👷 Agendado para um técnico <span style="color:#9d8bb0; font-weight:400;">(não serei eu quem vai realizar)</span>
+          </label>
         </div>
       </div>
     </div>
@@ -882,7 +896,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="status-change" id="status-change-wrap" style="display:none">
       <div class="sc-label">Alterar status</div>
       <button class="sc-btn pendente" onclick="alterarStatus('pendente')">⏳ Pendente</button>
-      <button class="sc-btn agendado" onclick="alterarStatus('agendado')">📅 Agendado</button>
+      <button class="sc-btn agendado" onclick="alterarStatus('agendado', false)">📅 Agendado</button>
+      <button class="sc-btn tecnico" onclick="alterarStatus('agendado', true)">👷 Para técnico</button>
       <button class="sc-btn concluido" onclick="alterarStatus('concluido')">✅ Concluído</button>
       <button class="sc-btn cancelado" onclick="alterarStatus('cancelado')">❌ Cancelado</button>
     </div>
@@ -938,7 +953,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.005'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.24.006'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -1000,6 +1015,8 @@ function normalizarOS(o) {
     gnv: (v.gnv === 'null' || v.gnv === '' || v.gnv === undefined) ? null : v.gnv,
     gnvVal: (v.gnvVal === 'null' || v.gnvVal === '' || v.gnvVal === undefined) ? null : v.gnvVal
   }));
+  o.paraTecnico = (o.paraTecnico === true || o.paraTecnico === 'true' || o.paraTecnico === 'TRUE' || o.paraTecnico === 1 || o.paraTecnico === '1');
+  if (o.statusKey === 'agendado') o.status = getStatusLabel(o);
   return o;
 }
 
@@ -1033,6 +1050,7 @@ async function carregarDoServidor(silencioso) {
 }
 
 let tipo = null, gnv = null, status = 'pendente', counter = 1, editandoIdx = null;
+let paraTecnico = false;
 let tipoServico = null;
 let motivoRetirada = null;
 let equipRecuperado = null;
@@ -1055,19 +1073,21 @@ function toggleStatusDropdown(e, idx) {
   if (dropdownAtivo) { dropdownAtivo.remove(); dropdownAtivo = null; return; }
   const badge = e.currentTarget;
   const statusOpcoes = [
-    { key: 'agendado',  label: '📅 Agendado' },
-    { key: 'pendente',  label: '⏳ Pendente' },
-    { key: 'concluido', label: '✅ Concluído' }
+    { key: 'agendado',  label: '📅 Agendado', tecnico: false },
+    { key: 'agendado',  label: '👷 Agendado (técnico)', tecnico: true, cssClass: 'tecnico' },
+    { key: 'pendente',  label: '⏳ Pendente', tecnico: false },
+    { key: 'concluido', label: '✅ Concluído', tecnico: false }
   ];
   const dd = document.createElement('div');
   dd.className = 'status-dropdown';
   statusOpcoes.forEach(op => {
+    const ativo = osList[idx].statusKey === op.key && (op.key !== 'agendado' || !!osList[idx].paraTecnico === !!op.tecnico);
     const item = document.createElement('div');
-    item.className = 'status-dropdown-item ' + op.key + (osList[idx].statusKey === op.key ? ' ativo' : '');
+    item.className = 'status-dropdown-item ' + (op.cssClass || op.key) + (ativo ? ' ativo' : '');
     item.textContent = op.label;
     item.onclick = function(ev) {
       ev.stopPropagation();
-      alterarStatusCard(idx, op.key);
+      alterarStatusCard(idx, op.key, op.tecnico);
       dd.remove();
       dropdownAtivo = null;
     };
@@ -1088,14 +1108,15 @@ function togglePagamentoCard(e, idx) {
   syncPago(osList[idx].osNum, novo);
 }
 
-function alterarStatusCard(idx, novoStatus) {
-  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+function alterarStatusCard(idx, novoStatus, paraTecnicoFlag) {
+  const isTecnico = novoStatus === 'agendado' && !!paraTecnicoFlag;
   osList[idx].statusKey = novoStatus;
-  osList[idx].status = statusMap[novoStatus];
+  osList[idx].paraTecnico = isTecnico;
+  osList[idx].status = getStatusLabel(osList[idx]);
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   renderPainel();
   mostrarToast('Status atualizado!');
-  syncStatus(osList[idx].osNum, novoStatus);
+  syncSalvar(osList[idx]);
 }
 
 // ===== TOGGLE DO MENU DE AÇÕES =====
@@ -1703,6 +1724,32 @@ function selStatus(s) {
   document.getElementById('s-pendente').className = 'status-btn' + (s==='pendente' ? ' ap' : '');
   document.getElementById('s-agendado').className = 'status-btn' + (s==='agendado' ? ' aa' : '');
   document.getElementById('s-concluido').className = 'status-btn' + (s==='concluido' ? ' ac' : '');
+  const wrap = document.getElementById('tecnico-toggle-wrap');
+  if (wrap) wrap.style.display = s === 'agendado' ? 'block' : 'none';
+  if (s !== 'agendado') {
+    paraTecnico = false;
+    const chk = document.getElementById('chk-tecnico');
+    if (chk) chk.checked = false;
+  }
+}
+
+function toggleParaTecnicoForm() {
+  paraTecnico = document.getElementById('chk-tecnico').checked;
+}
+
+// Rótulo de status considerando a marcação "agendado para técnico"
+function getStatusLabel(o) {
+  if (o.statusKey === 'agendado' && o.paraTecnico) return '👷 Agendado';
+  const map = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  return map[o.statusKey] || o.status || '⏳ Pendente';
+}
+
+// Cor da bolinha no calendário: concluído = verde, agendado p/ técnico = roxo, senão cor do tipo de serviço
+function calCorDot(o) {
+  if (o.statusKey === 'concluido') return '#22c55e';
+  if (o.statusKey === 'agendado' && o.paraTecnico) return '#a78bfa';
+  const t = o.tipoServico || 'instalacao';
+  return CAL_COR_TIPO[t] || '#999';
 }
 
 function g(id) { return document.getElementById(id).value.trim(); }
@@ -1717,6 +1764,7 @@ function getDados() {
   let dataFmt = '';
   if (dataRaw) { const [y,m,d] = dataRaw.split('-'); dataFmt = d+'/'+m+'/'+y; }
   const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído' };
+  const isParaTecnico = status === 'agendado' && paraTecnico;
   const tipoTexto = tipo==='com' ? 'Com bloqueio — R$ 59,90/mês' : tipo==='sem' ? 'Sem bloqueio — R$ 39,90/mês' : tipo==='antigo' ? 'Com bloqueio (Contrato Antigo) — R$ 54,90/mês' : '';
   const valorInst = parseFloat(document.getElementById('valor-inst').value) || 0;
   const qtdVeiculos = parseInt(document.getElementById('qtd-veiculos').value) || 1;
@@ -1735,7 +1783,8 @@ function getDados() {
     gnvVal: getVeiculos()[0]?.gnv || null,
     tipo: tipoTexto, tipoKey: tipo,
     data: dataFmt, dataRaw: dataRaw, hora: g('hora-inst'),
-    statusKey: status, status: statusMap[status] || '⏳ Pendente',
+    statusKey: status, status: isParaTecnico ? '👷 Agendado' : (statusMap[status] || '⏳ Pendente'),
+    paraTecnico: isParaTecnico,
     obs: g('obs'), mapsLink: getMapsLink(),
     valorInst: valorInst, qtdVeiculos: qtdVeiculos, totalInst: totalInst,
     valorMensalidade: valorMensalidade, totalMensalidade: totalMensalidade,
@@ -1995,29 +2044,39 @@ function preencherPreview(d, statusAtivo) {
   if (d.obs) { document.getElementById('p-obs').textContent = d.obs; obsS.style.display='block'; }
   else { obsS.style.display='none'; }
   if (statusAtivo) {
+    const isTecnicoAtivo = statusAtivo === 'agendado' && !!d.paraTecnico;
+    document.querySelectorAll('.sc-btn').forEach(b => b.classList.remove('ativo'));
     document.querySelectorAll('.sc-btn').forEach(b => {
-      b.classList.remove('ativo');
-      if (b.classList.contains(statusAtivo)) b.classList.add('ativo');
+      if (isTecnicoAtivo) {
+        if (b.classList.contains('tecnico')) b.classList.add('ativo');
+      } else if (b.classList.contains(statusAtivo) && !b.classList.contains('tecnico')) {
+        b.classList.add('ativo');
+      }
     });
   }
 }
 
-function alterarStatus(novoStatus) {
+function alterarStatus(novoStatus, paraTecnicoFlag) {
   if (osAbertaIdx === null) return;
-  const statusMap = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
+  const isTecnico = novoStatus === 'agendado' && !!paraTecnicoFlag;
   osList[osAbertaIdx].statusKey = novoStatus;
-  osList[osAbertaIdx].status = statusMap[novoStatus];
+  osList[osAbertaIdx].paraTecnico = isTecnico;
+  osList[osAbertaIdx].status = getStatusLabel(osList[osAbertaIdx]);
   localStorage.setItem('rastreando_os', JSON.stringify(osList));
   const ts = osList[osAbertaIdx].tipoServico || 'instalacao';
   const statusId = ts === 'instalacao' ? 'p-status' : ts === 'manutencao' ? 'p-man-status' : 'p-ret-status';
-  document.getElementById(statusId).textContent = statusMap[novoStatus];
+  document.getElementById(statusId).textContent = osList[osAbertaIdx].status;
+  document.querySelectorAll('.sc-btn').forEach(b => b.classList.remove('ativo'));
   document.querySelectorAll('.sc-btn').forEach(b => {
-    b.classList.remove('ativo');
-    if (b.classList.contains(novoStatus)) b.classList.add('ativo');
+    if (isTecnico) {
+      if (b.classList.contains('tecnico')) b.classList.add('ativo');
+    } else if (b.classList.contains(novoStatus) && !b.classList.contains('tecnico')) {
+      b.classList.add('ativo');
+    }
   });
   renderPainel();
   mostrarToast('Status atualizado!');
-  syncStatus(osList[osAbertaIdx].osNum, novoStatus);
+  syncSalvar(osList[osAbertaIdx]);
 }
 
 function fechar() {
@@ -2323,7 +2382,6 @@ function renderLista() {
     return;
   }
 
-  const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
   const tipoServLabels = { instalacao:'📡 Instalação', manutencao:'🔧 Manutenção', retirada:'📤 Retirada' };
 
   lista.innerHTML = filtered.map((o) => {
@@ -2394,11 +2452,13 @@ function renderLista() {
       else if (ts === 'manutencao') infoExtra = o.modelo ? o.modelo + (o.ano ? ' \u00b7 ' + o.ano : '') : '';
       else if (ts === 'retirada') infoExtra = (o.retMotivo ? o.retMotivo : '') + (o.modelo ? ' \u00b7 ' + o.modelo : '');
 
-      return `<div class="os-card ${o.statusKey} tipo-${ts}" onclick="abrirOSdoPainel(${idx})">
+      const isParaTecnico = o.statusKey === 'agendado' && !!o.paraTecnico;
+
+      return `<div class="os-card ${o.statusKey} tipo-${ts}${isParaTecnico ? ' tecnico-agendado' : ''}" onclick="abrirOSdoPainel(${idx})">
         <div class="os-card-top">
           <div class="os-card-num">OS ${o.osNum} <span class="tipo-serv-badge ${ts}">${tipoServLabels[ts] || ts}</span>${badgeDia}</div>
           <div class="os-card-badges">
-            <button class="os-badge ${o.statusKey}" onclick="toggleStatusDropdown(event, ${idx})">${statusLabel[o.statusKey] || o.status}</button>
+            <button class="os-badge ${o.statusKey}${isParaTecnico ? ' tecnico-agendado' : ''}" onclick="toggleStatusDropdown(event, ${idx})">${getStatusLabel(o)}</button>
           </div>
         </div>
         <div class="os-card-nome">${o.nome || 'Cliente não informado'}</div>
@@ -2522,8 +2582,7 @@ function renderCalendario() {
     if (idxs.length > 0) {
       const mostrar = idxs.slice(0, 4);
       dotsHtml = '<div class="cal-dia-dots">' + mostrar.map(idx => {
-        const t = osList[idx].tipoServico || 'instalacao';
-        return `<span class="dot" style="background:${CAL_COR_TIPO[t] || '#999'}"></span>`;
+        return `<span class="dot" style="background:${calCorDot(osList[idx])}"></span>`;
       }).join('') + (idxs.length > 4 ? `<span class="mais">+${idxs.length - 4}</span>` : '') + '</div>';
     }
 
@@ -2603,7 +2662,6 @@ function abrirDiaCalendario(dataStr) {
     lista.innerHTML = '<div class="os-empty" style="padding:24px 10px;"><div style="font-size:32px;">📭</div><p>Nenhuma OS agendada neste dia</p></div>';
   } else {
     const tipoServLabels = { instalacao:'📡 Instalação', manutencao:'🔧 Manutenção', retirada:'📤 Retirada' };
-    const statusLabel = { pendente:'⏳ Pendente', agendado:'📅 Agendado', concluido:'✅ Concluído', cancelado:'❌ Cancelado' };
     const ordenados = [...idxs].sort((a, b) => {
       const ha = osList[a].hora || '99:99';
       const hb = osList[b].hora || '99:99';
@@ -2612,10 +2670,11 @@ function abrirDiaCalendario(dataStr) {
     lista.innerHTML = ordenados.map(idx => {
       const o = osList[idx];
       const ts = o.tipoServico || 'instalacao';
-      return `<div class="cal-dia-card tipo-${ts}" onclick="fecharDiaOverlay(); abrirOSdoPainel(${idx})">
+      const isParaTecnico = o.statusKey === 'agendado' && !!o.paraTecnico;
+      return `<div class="cal-dia-card tipo-${ts}${isParaTecnico ? ' tecnico-agendado' : ''}" onclick="fecharDiaOverlay(); abrirOSdoPainel(${idx})">
         <div class="cdc-top">
           <div class="cdc-nome">${o.nome || 'Cliente não informado'}</div>
-          <span class="os-badge ${o.statusKey}" style="cursor:default;" onclick="event.stopPropagation()">${statusLabel[o.statusKey] || o.status || ''}</span>
+          <span class="os-badge ${o.statusKey}${isParaTecnico ? ' tecnico-agendado' : ''}" style="cursor:default;" onclick="event.stopPropagation()">${getStatusLabel(o)}</span>
         </div>
         <div class="cdc-info">${tipoServLabels[ts] || ts}${o.hora ? ' · 🕐 ' + o.hora : ''}</div>
         ${o.endereco ? `<div class="cdc-info" style="margin-top:2px;">📍 ${o.endereco}</div>` : ''}
@@ -2714,6 +2773,9 @@ function editarOS() {
   }
   status = o.statusKey || 'pendente';
   selStatus(status);
+  paraTecnico = status === 'agendado' && !!o.paraTecnico;
+  const chkTec = document.getElementById('chk-tecnico');
+  if (chkTec) chkTec.checked = paraTecnico;
   if (o.mapsLink && o.mapsLink.startsWith('http') && !o.mapsLink.includes('maps.google.com/?q=')) {
     document.getElementById('maps-manual-check').checked = true;
     document.getElementById('maps-manual-input').value = o.mapsLink;
