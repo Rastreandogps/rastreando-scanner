@@ -953,7 +953,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.006'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.24.007'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -1015,7 +1015,9 @@ function normalizarOS(o) {
     gnv: (v.gnv === 'null' || v.gnv === '' || v.gnv === undefined) ? null : v.gnv,
     gnvVal: (v.gnvVal === 'null' || v.gnvVal === '' || v.gnvVal === undefined) ? null : v.gnvVal
   }));
-  o.paraTecnico = (o.paraTecnico === true || o.paraTecnico === 'true' || o.paraTecnico === 'TRUE' || o.paraTecnico === 1 || o.paraTecnico === '1');
+  const flagDireto = (o.paraTecnico === true || o.paraTecnico === 'true' || o.paraTecnico === 'TRUE' || o.paraTecnico === 1 || o.paraTecnico === '1');
+  const flagPeloTexto = o.statusKey === 'agendado' && String(o.status || '').indexOf('👷') !== -1;
+  o.paraTecnico = flagDireto || flagPeloTexto;
   if (o.statusKey === 'agendado') o.status = getStatusLabel(o);
   return o;
 }
