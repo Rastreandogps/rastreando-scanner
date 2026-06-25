@@ -953,7 +953,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 const API_URL = 'https://script.google.com/a/macros/rastreandogps.com/s/AKfycbxx7YKwdYU73ub7iNZrH_-Hx7guLwyXmnhO5a7Z-PSy-aivId_m-1p7tNMXAyAvRBYn/exec';
-const BUILD_VERSION = '2026.06.24.007'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
+const BUILD_VERSION = '2026.06.25.001'; // 🔢 Versão do app — incremente a cada deploy pra forçar update no PWA
 
 function setSyncDot(estado) {
   const d = document.getElementById('sync-dot');
@@ -2673,12 +2673,15 @@ function abrirDiaCalendario(dataStr) {
       const o = osList[idx];
       const ts = o.tipoServico || 'instalacao';
       const isParaTecnico = o.statusKey === 'agendado' && !!o.paraTecnico;
+      const veicsCard = (o.veiculos && o.veiculos.length > 0) ? o.veiculos : [{ modelo: o.modelo, ano: o.ano }];
+      const modelosCard = veicsCard.map(v => v.modelo).filter(Boolean).join(', ');
       return `<div class="cal-dia-card tipo-${ts}${isParaTecnico ? ' tecnico-agendado' : ''}" onclick="fecharDiaOverlay(); abrirOSdoPainel(${idx})">
         <div class="cdc-top">
           <div class="cdc-nome">${o.nome || 'Cliente não informado'}</div>
           <span class="os-badge ${o.statusKey}${isParaTecnico ? ' tecnico-agendado' : ''}" style="cursor:default;" onclick="event.stopPropagation()">${getStatusLabel(o)}</span>
         </div>
         <div class="cdc-info">${tipoServLabels[ts] || ts}${o.hora ? ' · 🕐 ' + o.hora : ''}</div>
+        ${modelosCard ? `<div class="cdc-info" style="margin-top:2px;">🚗 ${modelosCard}</div>` : ''}
         ${o.endereco ? `<div class="cdc-info" style="margin-top:2px;">📍 ${o.endereco}</div>` : ''}
         ${gerarAcoesCalendarioHTML(o, idx)}
       </div>`;
