@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Acerto de Contas - Instalações</title>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --bg-card: #141a24;
+    --bg-card-2: #1a212d;
+    --red: #e8002d;
+    --cyan: #00e5ff;
+    --text: #e8eaed;
+    --text-dim: #8b96a5;
+    --green: #00c853;
+    --yellow: #ffb300;
+    --border: #232c38;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 60px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px 20px;
+  }
+  header h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  header h1 span { color: var(--cyan); }
+  .sync-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    transition: background .3s, box-shadow .3s;
+  }
+  .sync-dot.syncing { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .saldo-card { text-align: center; padding: 24px 18px; }
+  .saldo-label { color: var(--text-dim); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .saldo-valor { font-size: 38px; font-weight: 800; color: var(--red); line-height: 1.1; }
+  .saldo-valor.quitado { color: var(--green); font-size: 26px; }
+  .saldo-sub { color: var(--text-dim); font-size: 12px; margin-top: 6px; }
+
+  .card h2 { font-size: 14px; color: var(--cyan); margin-bottom: 14px; font-weight: 700; }
+
+  label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; margin-top: 14px; }
+  label:first-of-type { margin-top: 0; }
+  input {
+    width: 100%;
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+  }
+  input:focus { border-color: var(--cyan); }
+
+  button {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 16px;
+    cursor: pointer;
+    transition: opacity .15s, transform .15s;
+  }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .btn-primary { background: var(--red); color: #fff; }
+  .btn-admin { background: var(--cyan); color: #04222a; }
+
+  .historico-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .historico-item:last-child { border-bottom: none; }
+  .hi-left { flex: 1; min-width: 0; }
+  .hi-cliente { font-size: 14px; font-weight: 600; }
+  .hi-veiculo { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .hi-data { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .hi-valor { font-size: 14px; font-weight: 700; color: var(--green); white-space: nowrap; }
+  .hi-vazio { text-align: center; color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+
+  .admin-link {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 8px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+    z-index: 50;
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: var(--green); }
+  .toast.fail { border-color: var(--red); }
+
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 40;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    width: 100%;
+    max-width: 360px;
+  }
+  .modal h2 { margin-bottom: 4px; }
+  .modal-sub { color: var(--text-dim); font-size: 12px; margin-bottom: 4px; }
+  .modal-close {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 14px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <h1>Acerto <span>Rastreando GPS</span></h1>
+    <div class="sync-dot" id="syncDot"></div>
+  </header>
+
+  <div class="card saldo-card">
+    <div class="saldo-label">Saldo devedor</div>
+    <div class="saldo-valor" id="saldoValor">--</div>
+    <div class="saldo-sub" id="saldoSub"></div>
+  </div>
+
+  <div class="card">
+    <h2>Registrar instalação</h2>
+    <form id="formInstalacao">
+      <label for="cliente">Nome do cliente</label>
+      <input type="text" id="cliente" placeholder="Ex: João da Silva" required autocomplete="off">
+
+      <label for="veiculo">Modelo do veículo</label>
+      <input type="text" id="veiculo" placeholder="Ex: Honda CG 160" required autocomplete="off">
+
+      <label for="valor">Valor da instalação (R$)</label>
+      <input type="number" id="valor" placeholder="Ex: 80" min="0.01" step="0.01" required inputmode="decimal">
+
+      <button type="submit" class="btn-primary" id="btnSubmit">✅ Registrar instalação</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Histórico</h2>
+    <div id="historico">
+      <div class="hi-vazio">Carregando...</div>
+    </div>
+  </div>
+
+  <div class="admin-link" id="abrirAdmin">🔒 Área do Mateus</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modalAdmin">
+  <div class="modal">
+    <h2>Área do Mateus</h2>
+    <div class="modal-sub">Apenas Mateus deve usar isto.</div>
+
+    <label for="adminPin">PIN</label>
+    <input type="password" id="adminPin" inputmode="numeric" maxlength="6" placeholder="••••">
+
+    <label for="adminSaldo">Novo saldo devedor (R$)</label>
+    <input type="number" id="adminSaldo" step="0.01" placeholder="Ex: 1200">
+
+    <button class="btn-admin" id="btnAtualizarSaldo">Atualizar saldo</button>
+    <div class="modal-close" id="fecharAdmin">Cancelar</div>
+  </div>
+</div>
+
+<script>
+  // ===================== CONFIGURAÇÃO =====================
+  const APPS_SCRIPT_URL = 'COLE_AQUI_A_URL_DO_SEU_APPS_SCRIPT'; // substitua pela URL do Web App
+  const POLLING_INTERVAL = 20000; // 20 segundos
+  // ==========================================================
+
+  const el = {
+    syncDot: document.getElementById('syncDot'),
+    saldoValor: document.getElementById('saldoValor'),
+    saldoSub: document.getElementById('saldoSub'),
+    historico: document.getElementById('historico'),
+    form: document.getElementById('formInstalacao'),
+    btnSubmit: document.getElementById('btnSubmit'),
+    toast: document.getElementById('toast'),
+    abrirAdmin: document.getElementById('abrirAdmin'),
+    modalAdmin: document.getElementById('modalAdmin'),
+    fecharAdmin: document.getElementById('fecharAdmin'),
+    btnAtualizarSaldo: document.getElementById('btnAtualizarSaldo'),
+    adminPin: document.getElementById('adminPin'),
+    adminSaldo: document.getElementById('adminSaldo'),
+  };
+
+  let state = { saldoDevedor: 0, instalacoes: [] };
+
+  function formatBRL(valor) {
+    const n = Number(valor) || 0;
+    return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatData(dataStr) {
+    const d = new Date(dataStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function setSyncStatus(status) {
+    el.syncDot.className = 'sync-dot' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
+  }
+
+  function showToast(msg, kind) {
+    el.toast.textContent = msg;
+    el.toast.className = 'toast show' + (kind ? ' ' + kind : '');
+    setTimeout(() => { el.toast.className = 'toast'; }, 2800);
+  }
+
+  function renderSaldo() {
+    const saldo = state.saldoDevedor;
+    if (saldo <= 0) {
+      el.saldoValor.textContent = '🎉 Quitado';
+      el.saldoValor.className = 'saldo-valor quitado';
+      el.saldoSub.textContent = saldo < 0 ? 'Crédito a favor: ' + formatBRL(Math.abs(saldo)) : '';
+    } else {
+      el.saldoValor.textContent = formatBRL(saldo);
+      el.saldoValor.className = 'saldo-valor';
+      el.saldoSub.textContent = '';
+    }
+  }
+
+  function renderHistorico() {
+    if (!state.instalacoes || state.instalacoes.length === 0) {
+      el.historico.innerHTML = '<div class="hi-vazio">Nenhuma instalação registrada ainda.</div>';
+      return;
+    }
+    el.historico.innerHTML = state.instalacoes.map(function (item) {
+      return '<div class="historico-item">' +
+        '<div class="hi-left">' +
+          '<div class="hi-cliente">' + escapeHtml(item.cliente) + '</div>' +
+          '<div class="hi-veiculo">' + escapeHtml(item.veiculo) + '</div>' +
+          '<div class="hi-data">' + formatData(item.data) + '</div>' +
+        '</div>' +
+        '<div class="hi-valor">-' + formatBRL(item.valor) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  async function carregarDados() {
+    setSyncStatus('syncing');
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+      const data = await res.json();
+      if (data.erro) throw new Error(data.erro);
+      state.saldoDevedor = Number(data.saldoDevedor) || 0;
+      state.instalacoes = data.instalacoes || [];
+      renderSaldo();
+      renderHistorico();
+      setSyncStatus('ok');
+    } catch (err) {
+      console.error(err);
+      setSyncStatus('error');
+    }
+  }
+
+  el.form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const cliente = document.getElementById('cliente').value.trim();
+    const veiculo = document.getElementById('veiculo').value.trim();
+    const valor = parseFloat(document.getElementById('valor').value);
+
+    if (!cliente || !veiculo || isNaN(valor) || valor <= 0) {
+      showToast('Preencha todos os campos corretamente.', 'fail');
+      return;
+    }
+
+    el.btnSubmit.disabled = true;
+    el.btnSubmit.textContent = 'Registrando...';
+    setSyncStatus('syncing');
+
+    // atualização otimista
+    const saldoAnterior = state.saldoDevedor;
+    const instalacoesAnterior = state.instalacoes.slice();
+    state.saldoDevedor = saldoAnterior - valor;
+    state.instalacoes = [{ data: new Date().toISOString(), cliente: cliente, veiculo: veiculo, valor: valor }].concat(state.instalacoes);
+    renderSaldo();
+    renderHistorico();
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'addInstalacao', cliente: cliente, veiculo: veiculo, valor: valor })
+      });
+      const data = await res.json();
+      if (data.erro) throw new Error(data.erro);
+
+      state.saldoDevedor = Number(data.saldoDevedor);
+      renderSaldo();
+      setSyncStatus('ok');
+      showToast('Instalação registrada!', 'ok');
+      el.form.reset();
+    } catch (err) {
+      console.error(err);
+      // desfaz atualização otimista
+      state.saldoDevedor = saldoAnterior;
+      state.instalacoes = instalacoesAnterior;
+      renderSaldo();
+      renderHistorico();
+      setSyncStatus('error');
+      showToast('Falha ao registrar. Tente novamente.', 'fail');
+    } finally {
+      el.btnSubmit.disabled = false;
+      el.btnSubmit.textContent = '✅ Registrar instalação';
+    }
+  });
+
+  el.abrirAdmin.addEventListener('click', function () {
+    el.modalAdmin.classList.add('open');
+  });
+  el.fecharAdmin.addEventListener('click', function () {
+    el.modalAdmin.classList.remove('open');
+    el.adminPin.value = '';
+    el.adminSaldo.value = '';
+  });
+
+  el.btnAtualizarSaldo.addEventListener('click', async function () {
+    const pin = el.adminPin.value.trim();
+    const novoSaldo = parseFloat(el.adminSaldo.value);
+
+    if (!pin) {
+      showToast('Digite o PIN.', 'fail');
+      return;
+    }
+    if (isNaN(novoSaldo)) {
+      showToast('Digite o novo saldo.', 'fail');
+      return;
+    }
+
+    el.btnAtualizarSaldo.disabled = true;
+    el.btnAtualizarSaldo.textContent = 'Atualizando...';
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'setSaldo', pin: pin, valor: novoSaldo })
+      });
+      const data = await res.json();
+      if (data.erro) throw new Error(data.erro);
+
+      state.saldoDevedor = Number(data.saldoDevedor);
+      renderSaldo();
+      showToast('Saldo atualizado!', 'ok');
+      el.modalAdmin.classList.remove('open');
+      el.adminPin.value = '';
+      el.adminSaldo.value = '';
+    } catch (err) {
+      showToast(err.message === 'PIN incorreto' ? 'PIN incorreto.' : 'Erro ao atualizar.', 'fail');
+    } finally {
+      el.btnAtualizarSaldo.disabled = false;
+      el.btnAtualizarSaldo.textContent = 'Atualizar saldo';
+    }
+  });
+
+  carregarDados();
+  setInterval(carregarDados, POLLING_INTERVAL);
+</script>
+
+</body>
+</html>
