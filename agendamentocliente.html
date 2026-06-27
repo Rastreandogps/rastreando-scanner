@@ -217,29 +217,14 @@
   .bar[data-bar="4"]{height:19px;}
   .bar.lit{background:var(--signal); box-shadow:0 0 8px var(--signal-dim);}
   .meter-label{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.06em; color:var(--ink-faint);}
-/* ---------- localização GPS ---------- */
-  .location-box{
-    margin-bottom:26px;
-    background:linear-gradient(135deg, rgba(46,230,168,.10), rgba(255,180,84,.04));
-    border:1px solid rgba(46,230,168,.30);
-    border-radius:var(--radius-md);
-    padding:18px;
+
+  /* ---------- status da busca de CEP ---------- */
+  .cep-status{
+    font-size:.78rem; margin:8px 2px 0; line-height:1.5; color:var(--ink-faint);
+    transition:color .2s;
   }
-  .location-btn{
-    width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:14px; border:1px solid rgba(46,230,168,.4); border-radius:var(--radius-md);
-    background:rgba(46,230,168,.10); color:var(--signal);
-    font-family:var(--font-display); font-weight:700; font-size:.9rem;
-    cursor:pointer; transition:background .2s, transform .15s;
-  }
-  .location-btn svg{width:18px; height:18px; flex-shrink:0;}
-  .location-btn:hover:not(:disabled){background:var(--signal-dim);}
-  .location-btn:active:not(:disabled){transform:scale(.98);}
-  .location-btn:disabled{opacity:.6; cursor:wait;}
-  .location-result{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:4px;}
-  .location-coords{font-family:var(--font-mono); font-size:.78rem; color:var(--signal);}
-  .location-link{font-size:.78rem; color:var(--ink); text-decoration:underline; text-decoration-color:rgba(255,255,255,.3);}
-  .location-retry{margin-left:auto; background:none; border:none; color:var(--ink-faint); font-size:.76rem; text-decoration:underline; cursor:pointer; padding:0;}
+  .cep-status.success{color:var(--signal);}
+  .cep-status.error{color:var(--danger);}
 
   /* ---------- seções do formulário ---------- */
   .form-section{margin-bottom:8px;}
@@ -486,20 +471,10 @@
     <div class="form-section">
       <p class="section-label">Endereço</p>
 
-      <div class="location-box" id="locationBox">
-        <button type="button" class="location-btn" id="btnLocation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z"/>
-            <circle cx="12" cy="10" r="2.5"/>
-          </svg>
-          <span id="locationBtnLabel">Usar minha localização exata</span>
-        </button>
-        <p class="helper-text" id="locationHelper">Toque para enviar o ponto exato de GPS — ajuda o instalador a chegar certo, mesmo que o endereço abaixo esteja incompleto.</p>
-        <div class="location-result" id="locationResult" hidden>
-          <span class="location-coords" id="locationCoords"></span>
-          <a href="#" id="locationMapLink" target="_blank" rel="noopener" class="location-link">Ver no mapa</a>
-          <button type="button" class="location-retry" id="locationRetry">Tentar de novo</button>
-        </div>
+      <div class="field">
+        <label for="cep">CEP</label>
+        <input type="text" id="cep" placeholder="00000-000" autocomplete="postal-code" inputmode="numeric" maxlength="9">
+        <p class="cep-status" id="cepStatus">Digite o CEP e a gente preenche rua, bairro e cidade pra você.</p>
       </div>
 
       <div class="field">
@@ -521,6 +496,11 @@
       <div class="field">
         <label for="cidade">Cidade</label>
         <input type="text" id="cidade" placeholder="Ex: Duque de Caxias" autocomplete="address-level2">
+      </div>
+
+      <div class="field">
+        <label for="referencia">Ponto de referência (opcional)</label>
+        <input type="text" id="referencia" placeholder="Ex: Perto do mercado, portão azul..." autocomplete="off">
       </div>
     </div>
 
@@ -586,22 +566,17 @@
 
   var nomeInput = document.getElementById('nomeCompleto');
   var telefoneInput = document.getElementById('telefone');
+  var cepInput = document.getElementById('cep');
+  var cepStatus = document.getElementById('cepStatus');
   var ruaInput = document.getElementById('rua');
   var numeroInput = document.getElementById('numero');
   var bairroInput = document.getElementById('bairro');
   var cidadeInput = document.getElementById('cidade');
+  var referenciaInput = document.getElementById('referencia');
   var btnMinus = document.getElementById('btnMinus');
   var btnPlus = document.getElementById('btnPlus');
   var qtyDisplay = document.getElementById('qtyDisplay');
   var vehiclesContainer = document.getElementById('vehiclesContainer');
-  var btnLocation = document.getElementById('btnLocation');
-  var locationBtnLabel = document.getElementById('locationBtnLabel');
-  var locationHelper = document.getElementById('locationHelper');
-  var locationResult = document.getElementById('locationResult');
-  var locationCoords = document.getElementById('locationCoords');
-  var locationMapLink = document.getElementById('locationMapLink');
-  var locationRetry = document.getElementById('locationRetry');
-  var capturedLocation = null;
   var form = document.getElementById('formAgendamento');
   var errorBanner = document.getElementById('errorBanner');
   var submitBtn = document.getElementById('submitBtn');
@@ -763,8 +738,8 @@
     linhas.push('Nome: ' + payload.nomeCompleto);
     linhas.push('Telefone: ' + payload.telefone);
     linhas.push('Endereço: ' + payload.endereco);
-    if(payload.localizacao){
-      linhas.push('Localização no mapa: ' + payload.localizacao.linkMaps);
+    if(payload.pontoReferencia){
+      linhas.push('Ponto de referência: ' + payload.pontoReferencia);
     }
     linhas.push('');
     payload.veiculos.forEach(function(v, i){
@@ -798,52 +773,49 @@
     inp.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
   });
 
-  function requestLocation(){
-    var confirmado = window.confirm(
-      'Use esta opção apenas se você estiver AGORA no local onde será feita a instalação.\n\n' +
-      'Se não estiver no local, toque em "Cancelar" e preencha o endereço manualmente abaixo.'
-    );
-    if(!confirmado){
-      return;
+  function formatCEP(value){
+    var digits = value.replace(/\D/g, '').slice(0, 8);
+    if(digits.length > 5){
+      return digits.replace(/(\d{5})(\d{0,3})/, '$1-$2');
     }
-    if(!('geolocation' in navigator)){
-      locationHelper.textContent = 'Seu navegador não suporta localização automática. Preencha o endereço manualmente.';
-      return;
-    }
-    btnLocation.disabled = true;
-    locationBtnLabel.textContent = 'Obtendo localização...';
-    navigator.geolocation.getCurrentPosition(function(pos){
-      capturedLocation = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy
-      };
-      btnLocation.hidden = true;
-      locationResult.hidden = false;
-      locationCoords.textContent = 'Localização capturada (precisão de ' + Math.round(capturedLocation.accuracy) + 'm)';
-      locationMapLink.href = 'https://www.google.com/maps?q=' + capturedLocation.lat + ',' + capturedLocation.lng;
-      locationHelper.textContent = 'Perfeito! Essa localização será enviada junto com o endereço abaixo.';
-    }, function(err){
-      btnLocation.disabled = false;
-      locationBtnLabel.textContent = 'Usar minha localização exata';
-      if(err.code === err.PERMISSION_DENIED){
-        locationHelper.textContent = 'Permissão negada. Você pode liberar a localização nas configurações do navegador, ou só preencher o endereço abaixo.';
-      } else if(err.code === err.TIMEOUT){
-        locationHelper.textContent = 'Tempo esgotado ao buscar o sinal de GPS. Tente novamente ao ar livre ou preencha o endereço manualmente.';
-      } else {
-        locationHelper.textContent = 'Não foi possível obter sua localização. Preencha o endereço manualmente.';
-      }
-    }, { enableHighAccuracy:true, timeout:12000, maximumAge:0 });
+    return digits;
   }
 
-  btnLocation.addEventListener('click', requestLocation);
-  locationRetry.addEventListener('click', function(){
-    capturedLocation = null;
-    locationResult.hidden = true;
-    btnLocation.hidden = false;
-    btnLocation.disabled = false;
-    locationBtnLabel.textContent = 'Usar minha localização exata';
-    locationHelper.textContent = 'Toque para enviar o ponto exato de GPS — ajuda o instalador a chegar certo, mesmo que o endereço abaixo esteja incompleto.';
+  function setCepStatus(msg, tipo){
+    cepStatus.textContent = msg;
+    cepStatus.classList.remove('success', 'error');
+    if(tipo) cepStatus.classList.add(tipo);
+  }
+
+  function buscarCEP(digits){
+    setCepStatus('Buscando endereço...', null);
+    fetch('https://viacep.com.br/ws/' + digits + '/json/')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.erro){
+          setCepStatus('CEP não encontrado. Preencha o endereço manualmente abaixo.', 'error');
+          return;
+        }
+        if(data.logradouro){ ruaInput.value = data.logradouro; ruaInput.classList.remove('invalid'); }
+        if(data.bairro){ bairroInput.value = data.bairro; bairroInput.classList.remove('invalid'); }
+        if(data.localidade){ cidadeInput.value = data.localidade; cidadeInput.classList.remove('invalid'); }
+        setCepStatus('Endereço encontrado! Confirme e complete com o número.', 'success');
+        numeroInput.focus();
+        updateMeter();
+      })
+      .catch(function(){
+        setCepStatus('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.', 'error');
+      });
+  }
+
+  cepInput.addEventListener('input', function(e){
+    e.target.value = formatCEP(e.target.value);
+    var digits = e.target.value.replace(/\D/g, '');
+    if(digits.length === 8){
+      buscarCEP(digits);
+    } else {
+      setCepStatus('Digite o CEP e a gente preenche rua, bairro e cidade pra você.', null);
+    }
   });
 
   form.addEventListener('submit', function(e){
@@ -891,17 +863,13 @@
       idPedido: 'PED-' + Date.now(),
       nomeCompleto: nome,
       telefone: telefoneInput.value.trim(),
+      cep: cepInput.value.trim(),
       endereco: rua + ', ' + numero + ' - ' + bairro + ' - ' + cidade,
+      pontoReferencia: referenciaInput.value.trim(),
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
         return { modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
-      }),
-      localizacao: capturedLocation ? {
-        latitude: capturedLocation.lat,
-        longitude: capturedLocation.lng,
-        precisaoMetros: Math.round(capturedLocation.accuracy),
-        linkMaps: 'https://www.google.com/maps?q=' + capturedLocation.lat + ',' + capturedLocation.lng
-      } : null
+      })
     };
 
     setSending(true);
