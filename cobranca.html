@@ -183,6 +183,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .fnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);transition:color .2s;background:none;border:none;font-family:var(--font)}
 .fnav-btn.active{color:var(--yellow)}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.date-filter-select{flex:1;min-width:140px;background:var(--bg3);border:1.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:8px 12px;border-radius:20px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none}
+.date-filter-select:focus{border-color:var(--yellow)}
+.date-filter-clear{flex-shrink:0;background:var(--yellow-dim);color:var(--yellow);border:1.5px solid var(--yellow);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .2s;display:none}
+.date-filter-clear:active{transform:scale(.95)}
 .filter-tab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border2);background:var(--bg3);color:var(--muted);font-family:var(--font);transition:all .2s}
 .filter-tab.active{background:var(--yellow-dim);color:var(--yellow);border-color:var(--yellow)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -330,6 +336,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="filter-tab" id="ftPending" onclick="setFilter('pending')">⏳ Pendentes</button>
       <button class="filter-tab" id="ftSent" onclick="setFilter('sent')">✅ Enviados</button>
     </div>
+    <div class="date-filter-wrap" id="dateFilterWrap" style="display:none">
+      <span class="date-filter-label">📅 Vencimento:</span>
+      <select class="date-filter-select" id="dateFilterSelect" onchange="setDateFilter(this.value)">
+        <option value="all">Todas as datas</option>
+      </select>
+      <button class="date-filter-clear" id="dateFilterClear" onclick="setDateFilter('all')">✕ Limpar</button>
+    </div>
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
@@ -378,6 +391,7 @@ const API_SECRET = 'rastreandogps2025';
 
 let clients = [];
 let currentFilter = 'all';
+let currentDateFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT'; // 'AT' ou 'IN'
 
@@ -587,11 +601,49 @@ function setFilter(f) {
   renderClients();
 }
 
+function parseDateBR(str) {
+  const m = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1]).getTime();
+}
+
+function getUniqueDates() {
+  const set = new Set();
+  clients.forEach(c => set.add(formatarData(c.mes)));
+  return Array.from(set).sort((a,b) => parseDateBR(a) - parseDateBR(b));
+}
+
+function renderDateFilterOptions() {
+  const sel = document.getElementById('dateFilterSelect');
+  const wrap = document.getElementById('dateFilterWrap');
+  const clearBtn = document.getElementById('dateFilterClear');
+  if (!sel || !wrap) return;
+  if (clients.length === 0) { wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  const dates = getUniqueDates();
+  sel.innerHTML = '<option value="all">Todas as datas ('+clients.length+')</option>' +
+    dates.map(d => {
+      const qtd = clients.filter(c => formatarData(c.mes) === d).length;
+      return '<option value="'+d+'">'+d+' ('+qtd+')</option>';
+    }).join('');
+  if (currentDateFilter !== 'all' && !dates.includes(currentDateFilter)) currentDateFilter = 'all';
+  sel.value = currentDateFilter;
+  clearBtn.style.display = currentDateFilter !== 'all' ? 'block' : 'none';
+}
+
+function setDateFilter(v) {
+  currentDateFilter = v;
+  renderClients();
+}
+
 // ── RENDER ───────────────────────────────────────────────
 function renderClients() {
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
+  if (currentDateFilter !== 'all') pool = pool.filter(c => formatarData(c.mes) === currentDateFilter);
+
+  renderDateFilterOptions();
 
   const list         = document.getElementById('clientsList');
   const statsRow     = document.getElementById('statsRow');
