@@ -799,6 +799,13 @@
   });
 
   function requestLocation(){
+    var confirmado = window.confirm(
+      'Use esta opção apenas se você estiver AGORA no local onde será feita a instalação.\n\n' +
+      'Se não estiver no local, toque em "Cancelar" e preencha o endereço manualmente abaixo.'
+    );
+    if(!confirmado){
+      return;
+    }
     if(!('geolocation' in navigator)){
       locationHelper.textContent = 'Seu navegador não suporta localização automática. Preencha o endereço manualmente.';
       return;
