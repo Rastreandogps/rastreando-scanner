@@ -1860,7 +1860,7 @@ function fecharModalColar() {
 }
 
 function processarAgendamentoCliente(texto) {
-  const dados = { nome: '', telefone: '', endereco: '', idPedido: '', veiculos: [] };
+  const dados = { nome: '', telefone: '', endereco: '', idPedido: '', referencia: '', veiculos: [] };
 
   const nomeMatch = texto.match(/Nome:\s*(.+)/i);
   if (nomeMatch) dados.nome = nomeMatch[1].trim();
@@ -1870,6 +1870,9 @@ function processarAgendamentoCliente(texto) {
 
   const endMatch = texto.match(/Endere[cç]o:\s*(.+)/i);
   if (endMatch) dados.endereco = endMatch[1].trim();
+
+  const refMatch = texto.match(/Ponto de refer[eê]ncia:\s*(.+)/i);
+  if (refMatch) dados.referencia = refMatch[1].trim();
 
   const idMatch = texto.match(/ID do pedido:\s*(\S+)/i);
   if (idMatch) dados.idPedido = idMatch[1].trim();
@@ -1917,12 +1920,11 @@ function aplicarDadosColados() {
     }
   }
 
-  if (dados.idPedido) {
+if (dados.referencia) {
     const obsAtual = document.getElementById('obs').value.trim();
-    const refTexto = 'Agendado pelo formulário online (ID: ' + dados.idPedido + ')';
+    const refTexto = '📍 Ponto de referência: ' + dados.referencia;
     document.getElementById('obs').value = obsAtual ? obsAtual + '\n' + refTexto : refTexto;
   }
-
   fecharModalColar();
   mostrarToast('✅ Campos preenchidos automaticamente!');
 }
