@@ -472,9 +472,9 @@
       <p class="section-label">Endereço</p>
 
       <div class="field">
-        <label for="cep">CEP</label>
+        <label for="cep">CEP (opcional)</label>
         <input type="text" id="cep" placeholder="00000-000" autocomplete="postal-code" inputmode="numeric" maxlength="9">
-        <p class="cep-status" id="cepStatus">Digite o CEP e a gente preenche rua, bairro e cidade pra você.</p>
+        <p class="cep-status" id="cepStatus">Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.</p>
       </div>
 
       <div class="field">
@@ -793,7 +793,7 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(data.erro){
-          setCepStatus('CEP não encontrado. Preencha o endereço manualmente abaixo.', 'error');
+          setCepStatus('CEP não encontrado. Sem problema, pode preencher o endereço manualmente abaixo.', 'error');
           return;
         }
         if(data.logradouro){ ruaInput.value = data.logradouro; ruaInput.classList.remove('invalid'); }
@@ -804,7 +804,7 @@
         updateMeter();
       })
       .catch(function(){
-        setCepStatus('Não foi possível buscar o CEP agora. Preencha o endereço manualmente.', 'error');
+        setCepStatus('Não foi possível buscar o CEP agora. Sem problema, pode preencher o endereço manualmente abaixo.', 'error');
       });
   }
 
@@ -813,8 +813,10 @@
     var digits = e.target.value.replace(/\D/g, '');
     if(digits.length === 8){
       buscarCEP(digits);
+    } else if(digits.length === 0){
+      setCepStatus('Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.', null);
     } else {
-      setCepStatus('Digite o CEP e a gente preenche rua, bairro e cidade pra você.', null);
+      setCepStatus('Continue digitando ou, se não souber, pode preencher o endereço manualmente abaixo.', null);
     }
   });
 
