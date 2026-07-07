@@ -606,6 +606,10 @@ function doLogin() {
   }
   currentUser = user;
   currentRole = 'tech';
+  // Salva sessao no localStorage (expira em 12h)
+  localStorage.setItem('app_tecnico_session', JSON.stringify({
+    user, role: 'tech', ts: Date.now()
+  }));
   showTechScreen();
 }
 
@@ -614,6 +618,10 @@ function doAdminLogin() {
   if (pass === ADMIN_PASS) {
     currentUser = 'Admin';
     currentRole = 'admin';
+    // Salva sessao admin (expira em 4h)
+    localStorage.setItem('app_tecnico_session', JSON.stringify({
+      user: 'Admin', role: 'admin', ts: Date.now()
+    }));
     showAdminScreen();
   } else if (pass !== null) {
     showToast('Senha incorreta', 'error');
@@ -621,6 +629,8 @@ function doAdminLogin() {
 }
 
 function doLogout() {
+  // Limpa sessao salva
+  localStorage.removeItem('app_tecnico_session');
   currentUser = null;
   currentRole = null;
   if (pollInterval) clearInterval(pollInterval);
@@ -685,12 +695,15 @@ function showAdminTab(tab) {
 // ════════════════════════════════════════
 async function gasRequest(payload) {
   try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    return await res.json();
+    const url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch(_) {
+      console.error('GAS resposta nao-JSON:', text.slice(0, 200));
+      return { ok: false, error: 'Resposta invalida do servidor' };
+    }
   } catch(e) {
     console.error('GAS Error:', e);
     return { ok: false, error: e.message };
@@ -1182,17 +1195,43 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
 // ════════════════════════════════════════
 // AUTO-DETECÇÃO DE VIRADA DE MÊS
 // ════════════════════════════════════════
-(function checkMonthRollover() {
+(function init() {
+  // ── Virada de mês
   const stored = localStorage.getItem('app_tecnico_month');
   const now = new Date();
-  const current = `${now.getFullYear()}-${now.getMonth()}`;
+  const current = now.getFullYear() + '-' + now.getMonth();
   if (stored && stored !== current) {
-    // New month — clear local cache signal
     localStorage.setItem('app_tecnico_month', current);
-    console.log('[APP Técnico] Virada de mês detectada.');
   } else if (!stored) {
     localStorage.setItem('app_tecnico_month', current);
   }
+
+  // ── Restaurar sessao salva (sem pedir senha novamente)
+  const SESSION_TTL_TECH  = 12 * 60 * 60 * 1000; // 12 horas
+  const SESSION_TTL_ADMIN =  4 * 60 * 60 * 1000; //  4 horas
+  try {
+    const raw = localStorage.getItem('app_tecnico_session');
+    if (raw) {
+      const sess = JSON.parse(raw);
+      const ttl  = sess.role === 'admin' ? SESSION_TTL_ADMIN : SESSION_TTL_TECH;
+      if (sess.ts && (Date.now() - sess.ts) < ttl) {
+        // Sessao ainda valida
+        currentUser = sess.user;
+        currentRole = sess.role;
+        if (sess.role === 'admin') {
+          showAdminScreen();
+        } else {
+          showTechScreen();
+        }
+        return; // nao mostra login
+      } else {
+        localStorage.removeItem('app_tecnico_session');
+      }
+    }
+  } catch(_) {
+    localStorage.removeItem('app_tecnico_session');
+  }
+  // Sem sessao valida — mostra tela de login normalmente
 })();
 </script>
 
