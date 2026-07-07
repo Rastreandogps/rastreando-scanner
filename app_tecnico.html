@@ -761,12 +761,22 @@ function renderCalDayCards(ids) {
                d.getFullYear() === hoje.getFullYear();
       });
 
+  // Título do bloco
+  const hoje = new Date();
+  const hojeStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+  const ehHoje  = !ids;
+
   if (selecionadas.length === 0) {
-    wrap.innerHTML = '';
+    wrap.innerHTML = ehHoje
+      ? '<div style="margin:16px 0;padding:16px;background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;">' +
+          '<div style="font-size:28px;margin-bottom:8px;">✅</div>' +
+          '<div style="font-size:14px;font-weight:700;color:var(--primary);">Nenhuma OS para hoje</div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-top:4px;">' + hojeStr + '</div>' +
+        '</div>'
+      : '';
     return;
   }
 
-  // Título do bloco
   const titulo = ids ? 'Ordens do dia selecionado' : 'Ordens de hoje';
   wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>' +
     selecionadas.map(o => renderCardInline(o)).join('');
@@ -946,8 +956,7 @@ function renderTechOSList() {
 
         // ── VEÍCULOS em destaque
         (o.veiculo ? (function() {
-          // Separa veículos pelo separador ' || ' (duplo pipe)
-          // O ' | ' simples dentro de cada veículo (GNV | Rastreio) é preservado
+          // Separa veículos: detecta formato novo ' || ' e formato antigo ') | Modelo'
           let lista;
           if (o.veiculo.includes(' || ')) {
             lista = o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
@@ -957,6 +966,7 @@ function renderTechOSList() {
             ).filter(Boolean);
           } else {
             lista = [o.veiculo.trim()];
+          }
           }
 
           const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
