@@ -800,80 +800,84 @@ function renderTechOSList() {
     const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
     const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
     const cid      = 'cb-' + o.id;
+    const DIAS     = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
 
-    // Dia da semana
-    const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-    let diaSemana = '';
-    let dataExib  = 'Sem data — pendente';
+    let dataExib = 'Sem data — pendente';
+    let diaExib  = '';
     if (hasDate) {
       const dp = parseDate(o.data);
-      if (dp) {
-        diaSemana = DIAS[dp.getDay()];
-        dataExib  = diaSemana + ', ' + formatDateBR(o.data);
-      }
+      if (dp) { diaExib = DIAS[dp.getDay()]; dataExib = formatDateBR(o.data); }
     }
 
-    // Cor da borda e badge
     const borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
     const badgeHtml   = hasDate
       ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
       : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Pendente</span>';
 
     return (
-      '<div class="os-card' + cardCls + '" style="border-left-color:' + borderColor + ';padding:16px;">' +
+      '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;">' +
 
-        // ── LINHA 1: nome + badge + wpp
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
-          '<div class="os-client" style="font-size:16px;">' + esc(o.nome) + '</div>' +
-          '<div style="display:flex;align-items:center;gap:6px;">' +
-            badgeHtml +
-            (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" title="WhatsApp" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:#25D366;border-radius:50%;text-decoration:none;flex-shrink:0;">' +
-              '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
-            '</a>' : '') +
+        // ── CABEÇALHO: nome + badge + whatsapp
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px;">' +
+          '<div>' +
+            '<div style="font-size:15px;font-weight:700;color:var(--primary);line-height:1.3;">' + esc(o.nome) + '</div>' +
+            '<div style="margin-top:4px;">' + badgeHtml + '</div>' +
+          '</div>' +
+          (wppLink
+            ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" title="Abrir WhatsApp" style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:38px;height:38px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 8px rgba(37,211,102,.35);">' +
+              '<svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+              '</a>'
+            : '') +
+        '</div>' +
+
+        // ── VEÍCULO em destaque
+        (o.veiculo
+          ? '<div style="display:flex;align-items:center;gap:8px;background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="17" height="17"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
+              '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.veiculo) + '</span>' +
+            '</div>'
+          : '') +
+
+        // ── DATA em destaque
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+          '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;flex:1;">' +
+            '<div style="font-size:10px;font-weight:700;color:' + (hasDate ? '#1d4ed8' : '#b45309') + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
+            '<div style="font-size:16px;font-weight:800;color:' + (hasDate ? 'var(--primary)' : 'var(--accent2)') + ';">' + dataExib + '</div>' +
           '</div>' +
         '</div>' +
 
-        // ── LINHA 2: veículo
-        (o.veiculo ? '<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--primary);font-weight:600;margin-bottom:5px;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
-          esc(o.veiculo) +
-        '</div>' : '') +
+        // ── ENDEREÇO + MAPS (sempre visível, compacto)
+        (o.endereco
+          ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+              '<div style="flex:1;display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--muted);">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
+                '<span>' + esc(o.endereco) + '</span>' +
+              '</div>' +
+              (mapsLink
+                ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
+                  '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+                  'Maps</a>'
+                : '') +
+            '</div>'
+          : '') +
 
-        // ── LINHA 3: endereço clicável (maps)
-        (o.endereco ? '<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:5px;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
-          (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--muted);text-decoration:underline;text-underline-offset:2px;">' + esc(o.endereco) + '</a>' : esc(o.endereco)) +
-        '</div>' : '') +
-
-        // ── LINHA 4: data/dia da semana
-        '<div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:' + (hasDate ? 'var(--accent)' : 'var(--accent2)') + ';margin-bottom:10px;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
-          dataExib +
-        '</div>' +
-
-        // ── LINHA 5: campo de data editável pelo técnico
+        // ── CAMPO ALTERAR DATA
         '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
-          '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">' + (hasDate ? '📅 Alterar data:' : '📅 Definir data:') + '</span>' +
+          '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
           '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
-        '<div onclick="event.stopPropagation()" style="display:flex;justify-content:flex-end;margin-top:6px;">' +
-          '<button class="card-delete-btn" onclick="event.stopPropagation();cardDelete(this)" style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:none;border:1px solid #fca5a5;border-radius:8px;color:#ef4444;font-size:11px;font-weight:600;cursor:pointer;">' +
-            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Excluir OS' +
-          '</button>' +
-        '</div>' +
 
-        // ── CORPO EXPANSÍVEL (tipo, obs, maps)
-        '<div id="' + cid + '" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">' +
-          '<span style="font-size:12px;font-weight:600;color:var(--accent);background:#eff6ff;padding:2px 8px;border-radius:6px;">' + esc(o.tipo || 'Instalação') + '</span>' +
-          (o.obs ? '<div style="font-size:13px;color:var(--muted);margin-top:8px;font-style:italic;">💬 ' + esc(o.obs) + '</div>' : '') +
-          (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:10px;background:#4285F4;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📍 Abrir no Google Maps</a>' : '') +
-        '</div>' +
-
-        // ── SETA EXPANDIR (toque no card)
-        '<div class="card-toggle" data-cid="' + o.id + '" style="text-align:center;margin-top:6px;cursor:pointer;">' +
-          '<span id="chev-' + o.id + '" style="font-size:16px;color:var(--muted);display:inline-block;transition:transform .25s;">▾</span>' +
-        '</div>' +
+        // ── GAVETA (obs + tipo) — só aparece se tiver conteúdo
+        ((o.obs || o.tipo)
+          ? '<div class="card-toggle" data-cid="' + o.id + '" style="text-align:center;margin-top:8px;cursor:pointer;padding:2px 0;">' +
+              '<span id="chev-' + o.id + '" style="font-size:14px;color:var(--muted);display:inline-block;transition:transform .25s;">▾ mais detalhes</span>' +
+            '</div>' +
+            '<div id="' + cid + '" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:10px;">' +
+              (o.tipo ? '<span style="font-size:12px;font-weight:600;color:var(--accent);background:#eff6ff;padding:3px 10px;border-radius:6px;">' + esc(o.tipo) + '</span>' : '') +
+              (o.obs ? '<div style="font-size:13px;color:var(--muted);margin-top:8px;font-style:italic;">💬 ' + esc(o.obs) + '</div>' : '') +
+            '</div>'
+          : '') +
 
       '</div>'
     );
