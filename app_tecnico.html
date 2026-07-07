@@ -404,6 +404,7 @@
         </div>
       </div>
 
+      <div id="manual-form-wrap">
       <div style="border-top:1px solid var(--border);margin-bottom:16px;"></div>
       <h3>Nova Ordem de Serviço</h3>
       <div class="form-row">
@@ -447,6 +448,7 @@
         </button>
         <button type="button" class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
       </div>
+      </div><!-- fim manual-form-wrap -->
 
     </div>
   </div>
@@ -1469,11 +1471,13 @@ async function submitImportOS() {
 }
 
 function toggleImport() {
-  const panel = document.getElementById('import-panel');
-  const label = document.getElementById('import-btn-label');
-  const open  = panel.style.display === 'block';
-  panel.style.display = open ? 'none' : 'block';
-  label.textContent   = open ? '📋 Importar agendamento do cliente' : '✖ Fechar importação';
+  const panel      = document.getElementById('import-panel');
+  const manualForm = document.getElementById('manual-form-wrap');
+  const label      = document.getElementById('import-btn-label');
+  const open       = panel.style.display === 'block';
+  panel.style.display      = open ? 'none'  : 'block';
+  manualForm.style.display = open ? 'block' : 'none';
+  label.textContent        = open ? '📋 Importar agendamento do cliente' : '✖ Fechar importação';
 }
 
 function resetImportForm() {
@@ -1486,6 +1490,8 @@ function resetImportForm() {
   const label = document.getElementById('import-btn-label');
   if (panel) panel.style.display = 'none';
   if (label) label.textContent = '📋 Importar agendamento do cliente';
+  const manualForm = document.getElementById('manual-form-wrap');
+  if (manualForm) manualForm.style.display = 'block';
 }
 
 // ════════════════════════════════
