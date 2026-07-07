@@ -834,14 +834,26 @@ function renderTechOSList() {
           '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
         '</div>' +
 
-        // ── VEÍCULO em destaque
-        (o.veiculo
-          ? '<div style="display:flex;align-items:center;gap:8px;background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="17" height="17"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' +
-              '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.veiculo) + '</span>' +
-            '</div>'
-          : '') +
-
+        // ── VEÍCULOS em destaque (separados por |)
+        (o.veiculo ? (function() {
+          const lista = o.veiculo.split('|').map(v => v.trim()).filter(Boolean);
+          const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+          if (lista.length <= 1) {
+            return '<div style="display:flex;align-items:center;gap:8px;background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
+              svgCar + '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.veiculo.trim()) + '</span></div>';
+          }
+          return '<div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-bottom:10px;">' +
+            lista.map(function(v, i) {
+              return '<div style="display:flex;align-items:flex-start;gap:8px;' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
+                '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;padding-top:1px;">' +
+                  svgCar +
+                  '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
+                '</div>' +
+                '<span style="font-size:13px;font-weight:700;color:var(--primary);line-height:1.4;">' + esc(v) + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        })() : '') +
         // ── DATA em destaque
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
           '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;flex:1;">' +
@@ -850,30 +862,36 @@ function renderTechOSList() {
           '</div>' +
         '</div>' +
 
-        // ── ENDEREÇO + MAPS (sempre visível, compacto)
+        // ── ENDEREÇO + REFERÊNCIA + MAPS
         (o.endereco
-          ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
-              '<div style="flex:1;display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--muted);">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
-                '<span>' + esc(o.endereco) + '</span>' +
+          ? '<div style="margin-bottom:12px;">' +
+              '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+                '<div style="flex:1;min-width:0;">' +
+                  '<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--muted);">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
+                    '<span>' + esc(o.endereco) + '</span>' +
+                  '</div>' +
+                  (o.obs
+                    ? '<div style="display:flex;align-items:flex-start;gap:5px;font-size:11px;color:var(--muted);margin-top:4px;padding-left:19px;">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2.5" width="11" height="11" style="flex-shrink:0;margin-top:1px;"><polygon points="3,11 22,2 13,21 11,13"/></svg>' +
+                        '<span style="font-style:italic;line-height:1.4;">' + esc(o.obs) + '</span>' +
+                      '</div>'
+                    : '') +
+                '</div>' +
+                (mapsLink
+                  ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
+                    '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+                    'Maps</a>'
+                  : '') +
               '</div>' +
-              (mapsLink
-                ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
-                  '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
-                  'Maps</a>'
-                : '') +
             '</div>'
           : '') +
-
         // ── CAMPO ALTERAR DATA
         '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
           '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
           '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
-
-        // ── OBSERVAÇÕES (se houver)
-        (o.obs ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;padding:6px 10px;background:#f8fafc;border-radius:8px;">💬 ' + esc(o.obs) + '</div>' : '') +
 
       '</div>'
     );
