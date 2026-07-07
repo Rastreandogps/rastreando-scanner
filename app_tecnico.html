@@ -431,6 +431,22 @@
   </div>
 </div>
 
+<!-- MODAL: CONFIRMAR CONCLUSÃO -->
+<div class="modal-overlay" id="modal-concluir">
+  <div class="modal-box">
+    <div class="modal-title">✅ Concluir Serviço</div>
+    <div class="modal-sub">Tem certeza que deseja marcar esta OS como concluída?</div>
+    <div style="background:#f0fdf4;border-radius:12px;padding:14px;margin-bottom:4px;text-align:center;">
+      <div id="concluir-nome" style="font-size:15px;font-weight:700;color:var(--primary);"></div>
+      <div id="concluir-veiculo" style="font-size:12px;color:var(--muted);margin-top:4px;"></div>
+    </div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="fecharModalConcluir()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="confirmarConcluir()" style="background:var(--success);">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: CONFIRMAR EXCLUSÃO -->
 <div class="modal-overlay" id="modal-delete">
   <div class="modal-box">
@@ -1396,11 +1412,32 @@ function toInputDate(str) {
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-// Marcar OS como concluída
-async function cardConcluir(btn) {
-  const id   = btn.getAttribute('data-id');
-  const tech = btn.getAttribute('data-tech');
+// Variável para guardar OS pendente de conclusão
+let pendingConcluir = null;
+
+// Abre modal de confirmação de conclusão
+function cardConcluir(btn) {
+  const id     = btn.getAttribute('data-id');
+  const tech   = btn.getAttribute('data-tech');
   if (!id || !tech) return;
+  // Busca OS para mostrar nome/veiculo no modal
+  const o = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
+  pendingConcluir = { id, tech };
+  document.getElementById('concluir-nome').textContent    = o ? o.nome    : '';
+  document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
+  document.getElementById('modal-concluir').classList.add('open');
+}
+
+function fecharModalConcluir() {
+  document.getElementById('modal-concluir').classList.remove('open');
+  pendingConcluir = null;
+}
+
+// Executa a conclusão após confirmação
+async function confirmarConcluir() {
+  if (!pendingConcluir) return;
+  const { id, tech } = pendingConcluir;
+  fecharModalConcluir();
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
   if (result.ok) {
@@ -1409,6 +1446,20 @@ async function cardConcluir(btn) {
     renderDoneList();
   } else {
     showToast('Erro ao concluir.', 'error');
+    setSyncStatus('ok');
+  }
+}
+
+// Reverter conclusão — volta para ativo
+async function reverterConclusao(id, tech) {
+  setSyncStatus('syncing');
+  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'ativo' });
+  if (result.ok) {
+    showToast('OS revertida para ativa!', 'success');
+    await loadTechOrders();
+    renderDoneList();
+  } else {
+    showToast('Erro ao reverter.', 'error');
     setSyncStatus('ok');
   }
 }
@@ -1437,7 +1488,10 @@ function renderDoneList() {
         '<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Concluído</span>' +
       '</div>' +
       (o.veiculo ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
-      '<div style="font-size:12px;color:var(--muted);">📅 ' + (o.data ? formatDateBR(o.data) : 'Sem data') + ' · ' + esc(o.tipo || '') + '</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">📅 ' + (o.data ? formatDateBR(o.data) : 'Sem data') + ' · ' + esc(o.tipo || '') + '</div>' +
+      '<button onclick="reverterConclusao(\'' + o.id + '\',\'' + esc(o._tech || currentUser) + '\')" style="width:100%;padding:9px;background:none;border:1.5px solid var(--muted);border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reverter para Ativa' +
+      '</button>' +
     '</div>';
   }).join('');
 }
