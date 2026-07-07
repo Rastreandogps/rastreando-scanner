@@ -123,35 +123,58 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 .cal-nav{display:flex;gap:6px}
 
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-dow{
   text-align:center;font-size:10px;font-weight:700;
   color:var(--text-muted);text-transform:uppercase;padding:4px 0 8px;
 }
 .cal-day{
-  aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;cursor:pointer;
-  transition:background .15s;position:relative;
-  font-size:13px;font-weight:500;
+  border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:6px 2px 5px;
+  cursor:pointer;transition:background .15s,transform .1s;
+  position:relative;min-height:46px;
 }
-.cal-day:empty{background:none!important}
+.cal-day:active{transform:scale(.93)}
+.cal-day.empty-cell{background:none!important;pointer-events:none}
 .cal-day.other-month{color:var(--text-muted)}
-.cal-day.today{background:var(--bg-card2);border:1px solid var(--border2)}
-.cal-day.has-os{font-weight:700}
-.cal-day.selected{background:var(--cyan)!important;color:#04222a!important}
+.cal-day.today .cal-num{
+  background:var(--cyan);color:#04222a;
+  border-radius:50%;width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;
+}
+.cal-day.selected{background:rgba(0,229,255,.15)!important;border:1px solid rgba(0,229,255,.4)}
+.cal-day.selected .cal-num{color:var(--cyan);font-weight:800}
+.cal-day.has-os .cal-num{font-weight:800}
+.cal-num{
+  font-size:13px;font-weight:500;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  min-width:24px;min-height:24px;
+}
 .cal-day .dot-row{
-  display:flex;gap:2px;position:absolute;bottom:4px;
+  display:flex;gap:3px;margin-top:4px;
   flex-wrap:wrap;justify-content:center;max-width:90%;
 }
-.cal-day .dot{width:5px;height:5px;border-radius:50%}
+.cal-day .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .dot-pending{background:var(--pending)}
 .dot-done{background:var(--done)}
 
 .cal-day-detail{
-  background:var(--bg-card);border:1px solid var(--border2);
-  border-radius:14px;padding:14px;margin-top:12px;
+  background:var(--bg-card);border:1px solid rgba(0,229,255,.2);
+  border-radius:14px;padding:14px;margin-top:14px;
+  animation:fadeIn .2s ease;
 }
-.cal-day-detail h3{font-size:13px;color:var(--cyan);margin-bottom:10px;font-weight:700}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cal-day-detail-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.cal-day-detail-header h3{font-size:13px;color:var(--cyan);font-weight:700;flex:1}
+.cal-day-detail-close{
+  font-size:18px;color:var(--text-muted);cursor:pointer;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;background:var(--bg-card2);
+}
 .no-os-msg{text-align:center;color:var(--text-dim);font-size:13px;padding:20px 0}
 
 /* ── PAINEL ── */
@@ -561,15 +584,17 @@ function renderCalendario() {
   const month = calDate.getMonth();
   document.getElementById('calMonth').textContent = `${MESES[month]} ${year}`;
 
-  const firstDay = new Date(year, month, 1).getDay();
+  const firstDay   = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = new Date();
 
   const grid = document.getElementById('calGrid');
-  grid.innerHTML = DIAS_SEMANA.map(d=>`<div class="cal-dow">${d}</div>`).join('');
 
-  // dias em branco
-  for(let i=0;i<firstDay;i++) grid.innerHTML += `<div class="cal-day"></div>`;
+  // cabeçalho dias da semana
+  let html = DIAS_SEMANA.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // células vazias antes do dia 1
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-day empty-cell"></div>`;
 
   for(let d=1;d<=daysInMonth;d++) {
     const dateStr = `${String(d).padStart(2,'0')}/${String(month+1).padStart(2,'0')}/${year}`;
@@ -578,28 +603,39 @@ function renderCalendario() {
     const isSel   = (selectedDay === dateStr);
 
     let cls = 'cal-day';
-    if(isToday)       cls += ' today';
-    if(dayOS.length)  cls += ' has-os';
-    if(isSel)         cls += ' selected';
+    if(isToday)      cls += ' today';
+    if(dayOS.length) cls += ' has-os';
+    if(isSel)        cls += ' selected';
 
-    const dots = dayOS.map(o => {
+    // máximo 3 bolinhas visíveis para não estourar
+    const dotsToShow = dayOS.slice(0, 4);
+    const dots = dotsToShow.map(o => {
       const dotCls = o.status === 'contato_realizado' ? 'dot dot-done' : 'dot dot-pending';
       return `<div class="${dotCls}"></div>`;
     }).join('');
 
-    grid.innerHTML += `
+    html += `
       <div class="${cls}" onclick="selectDay('${dateStr}')">
-        ${d}
+        <div class="cal-num">${d}</div>
         ${dayOS.length ? `<div class="dot-row">${dots}</div>` : ''}
       </div>`;
   }
 
+  grid.innerHTML = html;
   renderCalDetail();
 }
 
 function selectDay(dateStr) {
+  // toggle: clica no mesmo dia fecha o detalhe
   selectedDay = (selectedDay === dateStr) ? null : dateStr;
   renderCalendario();
+  // rola até o detalhe se abriu
+  if(selectedDay) {
+    setTimeout(()=>{
+      const det = document.getElementById('calDetail');
+      if(det) det.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }, 50);
+  }
 }
 
 function renderCalDetail() {
@@ -607,18 +643,28 @@ function renderCalDetail() {
   if (!selectedDay) { det.innerHTML=''; return; }
 
   const dayOS = osList.filter(o => o.data_agendada === selectedDay);
+
   if (!dayOS.length) {
-    det.innerHTML = `<div class="cal-day-detail"><div class="no-os-msg">Nenhuma OS neste dia.</div></div>`;
+    det.innerHTML = `
+      <div class="cal-day-detail">
+        <div class="cal-day-detail-header">
+          <h3>📅 ${selectedDay}</h3>
+          <div class="cal-day-detail-close" onclick="selectDay('${selectedDay}')">✕</div>
+        </div>
+        <div class="no-os-msg">Nenhuma OS agendada neste dia.</div>
+      </div>`;
     return;
   }
 
   det.innerHTML = `
     <div class="cal-day-detail">
-      <h3>📋 OS em ${selectedDay}</h3>
-      ${dayOS.map(o => osCardHTML(o, true)).join('')}
+      <div class="cal-day-detail-header">
+        <h3>📅 ${selectedDay} · ${dayOS.length} OS</h3>
+        <div class="cal-day-detail-close" onclick="selectDay('${selectedDay}')">✕</div>
+      </div>
+      ${dayOS.map(o => osCardHTML(o, false)).join('')}
     </div>`;
 
-  // bind actions
   bindOSActions(det, dayOS);
 }
 
@@ -682,8 +728,9 @@ function osCardHTML(os, compact) {
       <div class="os-card-title">
         <div class="os-nome">${esc(os.cliente_nome) || 'Sem nome'}</div>
         <div class="os-meta">
-          <span>📅 ${os.data_agendada || '—'}${os.hora_agendada?' '+os.hora_agendada:''}</span>
+          <span>📅 ${os.data_agendada || '—'}${os.hora_agendada?' às '+os.hora_agendada:''}</span>
           <span>🚗 ${esc(os.veiculo) || '—'}</span>
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">📍 ${esc(os.endereco) || '—'}</span>
         </div>
       </div>
       <div class="os-status-badge ${badgeCls}">${badgeTxt}</div>
