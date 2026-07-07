@@ -866,7 +866,7 @@ function renderTechOSList() {
         '</div>' +
 
         // ── SETA EXPANDIR (toque no card)
-        '<div onclick="toggleCard('' + o.id + '')" style="text-align:center;margin-top:6px;cursor:pointer;">' +
+        '<div class="card-toggle" data-cid="' + o.id + '" style="text-align:center;margin-top:6px;cursor:pointer;">' +
           '<span id="chev-' + o.id + '" style="font-size:16px;color:var(--muted);display:inline-block;transition:transform .25s;">▾</span>' +
         '</div>' +
 
@@ -876,13 +876,22 @@ function renderTechOSList() {
 }
 
 function toggleCard(id) {
-  const body  = document.getElementById('cb-' + id);
-  const chev  = document.getElementById('chev-' + id);
+  const body = document.getElementById('cb-' + id);
+  const chev = document.getElementById('chev-' + id);
   if (!body) return;
   const open = body.style.display === 'block';
   body.style.display = open ? 'none' : 'block';
   if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 }
+
+// Listener delegado para os cards expansíveis (evita problema de aspas inline)
+document.addEventListener('click', function(e) {
+  const div = e.target.closest('.card-toggle');
+  if (div) {
+    e.stopPropagation();
+    toggleCard(div.getAttribute('data-cid'));
+  }
+});
 
 // Funções auxiliares para evitar problema de aspas nos onclick inline
 function cardSaveDate(btn) {
@@ -904,11 +913,18 @@ function cardDelete(btn) {
 }
 
 async function saveDate(id, tech) {
-  const val = document.getElementById('date-' + id).value;
+  // Busca o input pelo data-id (novo card usa data-attributes)
+  const input = document.querySelector('.card-date-input[data-id="' + id + '"]');
+  const val   = input ? input.value : '';
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
-  if (result.ok) { showToast('Data salva!', 'success'); await loadTechOrders(); }
-  else { showToast('Erro ao salvar data.', 'error'); setSyncStatus('ok'); }
+  if (result.ok) {
+    showToast('Data salva!', 'success');
+    await loadTechOrders();
+  } else {
+    showToast('Erro ao salvar data.', 'error');
+    setSyncStatus('ok');
+  }
 }
 
 // ════════════════════════════════
