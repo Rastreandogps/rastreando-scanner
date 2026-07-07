@@ -465,6 +465,7 @@
 
       <div class="parsed-preview" id="parsed-preview"></div>
 
+      <!-- Dados gerais do cliente -->
       <div id="import-form" style="display:none;margin-top:16px;">
         <div class="form-row">
           <div class="form-field">
@@ -482,25 +483,16 @@
             <input type="text" id="if-end">
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row single">
           <div class="form-field">
-            <label>Veículo / Placa</label>
-            <input type="text" id="if-veiculo">
-          </div>
-          <div class="form-field">
-            <label>Data de Instalação</label>
-            <input type="date" id="if-data">
+            <label>Observações / Ponto de referência</label>
+            <textarea id="if-obs" rows="2" placeholder="Ex: Ponto de referência, informações extras..."></textarea>
           </div>
         </div>
         <div class="form-row">
           <div class="form-field">
-            <label>Tipo de Serviço</label>
-            <select id="if-tipo">
-              <option value="Instalação">Instalação</option>
-              <option value="Manutenção">Manutenção</option>
-              <option value="Remoção">Remoção</option>
-              <option value="Substituição">Substituição</option>
-            </select>
+            <label>Data de Instalação</label>
+            <input type="date" id="if-data">
           </div>
           <div class="form-field">
             <label>Técnico Responsável *</label>
@@ -512,15 +504,13 @@
             </select>
           </div>
         </div>
-        <div class="form-row single">
-          <div class="form-field">
-            <label>Observações</label>
-            <textarea id="if-obs" rows="2" placeholder="Observações adicionais..."></textarea>
-          </div>
-        </div>
-        <button class="btn-primary" onclick="submitImportOS()">
+
+        <!-- Cards dos veículos detectados -->
+        <div id="if-veiculos-wrap" style="margin-top:16px;"></div>
+
+        <button class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          Enviar OS Importada
+          Enviar OS para cada veículo
         </button>
       </div>
     </div>
@@ -1080,65 +1070,169 @@ function clearForm() {
 // IMPORTAR MENSAGEM
 // ════════════════════════════════════════
 function parseMessage() {
-  const txt = document.getElementById('paste-area').value;
-  if (!txt.trim()) { showToast('Cole a mensagem primeiro', 'error'); return; }
+  const txt = document.getElementById('paste-area').value.trim();
+  if (!txt) { showToast('Cole a mensagem primeiro', 'error'); return; }
 
-  const parsed = {};
-  const lines = txt.split('\n');
-
-  // Flexible parser: handles "Campo: valor" patterns
-  const patterns = {
-    nome:     [/nome[:\s]+(.+)/i, /cliente[:\s]+(.+)/i, /^([A-ZÀ-Ú][a-zà-ú]+ [A-ZÀ-Ú].+)$/m],
-    telefone: [/tel(?:efone)?[:\s]+(.+)/i, /fone[:\s]+(.+)/i, /whatsapp[:\s]+(.+)/i, /contato[:\s]+(.+)/i, /(\(?\d{2}\)?\s?\d[\s.-]?\d{4}[-.]?\d{4})/],
-    endereco: [/endere[çc]o[:\s]+(.+)/i, /local[:\s]+(.+)/i, /rua[:\s]+(.+)/i, /av(?:enida)?[:\s]+(.+)/i],
-    veiculo:  [/ve[íi]culo[:\s]+(.+)/i, /carro[:\s]+(.+)/i, /placa[:\s]+(.+)/i, /modelo[:\s]+(.+)/i],
-    data:     [/data[:\s]+(.+)/i, /dia[:\s]+(.+)/i, /agendamento[:\s]+(.+)/i, /(\d{1,2}\/\d{1,2}\/\d{2,4})/],
-    tipo:     [/servi[çc]o[:\s]+(.+)/i, /tipo[:\s]+(.+)/i]
-  };
-
-  for (const [field, regexes] of Object.entries(patterns)) {
-    for (const rx of regexes) {
-      const m = txt.match(rx);
-      if (m && m[1]) { parsed[field] = m[1].trim(); break; }
-    }
-  }
-
-  // Convert date to input format
-  if (parsed.data) {
-    const dateStr = parsed.data;
-    const dm = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  // ── Campos gerais
+  const nome      = (txt.match(/nome[:\s]+(.+)/i) || txt.match(/cliente[:\s]+(.+)/i) || [])[1];
+  const telefone  = (txt.match(/tel(?:efone)?[:\s]+(.+)/i) || txt.match(/whatsapp[:\s]+(.+)/i) || txt.match(/(\(?\d{2}\)?[\s.]?\d[\s.]?\d{4}[-.\s]?\d{4})/) || [])[1];
+  const endereco  = (txt.match(/endere[çc]o[:\s]+(.+)/i) || txt.match(/local[:\s]+(.+)/i) || [])[1];
+  const referencia = (txt.match(/(?:ponto de refer[eê]ncia|refer[eê]ncia)[:\s]+(.+)/i) || [])[1];
+  const dataM     = txt.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+  let dataISO = '';
+  if (dataM) {
+    const dm = dataM[1].match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if (dm) {
       const y = dm[3].length === 2 ? '20' + dm[3] : dm[3];
-      parsed.data = `${y}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+      dataISO = y + '-' + dm[2].padStart(2,'0') + '-' + dm[1].padStart(2,'0');
     }
   }
 
-  // Show preview
+  // ── Múltiplos veículos
+  // Captura blocos: "Veículo N: Modelo
+GNV: X | Rastreio: Y"
+  const veiculos = [];
+  const linhas   = txt.split('\n');
+  for (let i = 0; i < linhas.length; i++) {
+    const mVei = linhas[i].match(/ve[íi]culo\s*\d*\s*[:\s]+(.+)/i);
+    if (mVei) {
+      const modelo = mVei[1].trim();
+      let gnv = '', rastreio = '';
+      // Linha seguinte pode ter "GNV: X | Rastreio: Y"
+      if (i + 1 < linhas.length) {
+        const mInfo = linhas[i+1].match(/GNV[:\s]+(.+?)\s*\|\s*Rastreio[:\s]+(.+)/i);
+        if (mInfo) { gnv = mInfo[1].trim(); rastreio = mInfo[2].trim(); i++; }
+      }
+      const obsVei = [gnv ? 'GNV: ' + gnv : '', rastreio ? 'Rastreio: ' + rastreio : ''].filter(Boolean).join(' | ');
+      veiculos.push({ modelo, obs: obsVei });
+    }
+  }
+
+  // Fallback: campo simples
+  if (veiculos.length === 0) {
+    const vSimples = (txt.match(/ve[íi]culo[:\s]+(.+)/i) || txt.match(/carro[:\s]+(.+)/i) || txt.match(/modelo[:\s]+(.+)/i) || [])[1];
+    if (vSimples) veiculos.push({ modelo: vSimples.trim(), obs: '' });
+  }
+
+  // ── Preencher campos gerais
+  document.getElementById('if-nome').value = (nome || '').trim();
+  document.getElementById('if-tel').value  = (telefone || '').trim();
+  document.getElementById('if-end').value  = (endereco || '').trim();
+  document.getElementById('if-obs').value  = (referencia || '').trim();
+  document.getElementById('if-data').value = dataISO;
+
+  // ── Renderizar cards de veículos
+  const wrap = document.getElementById('if-veiculos-wrap');
+  if (veiculos.length > 0) {
+    // Guarda count em campo oculto
+    let html = '<input type="hidden" id="if-v-count" value="' + veiculos.length + '">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px;">🚗 ' + veiculos.length + ' veículo(s) detectado(s) — 1 OS por veículo:</div>';
+    veiculos.forEach((v, i) => {
+      html += '<div style="background:#f0f4ff;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #c7d7ff;">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">Veículo ' + (i+1) + '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+          '<div class="form-field"><label>Modelo</label>' +
+            '<input type="text" id="if-v-modelo-' + i + '" value="' + escHtml(v.modelo) + '"></div>' +
+          '<div class="form-field"><label>Tipo de Serviço</label>' +
+            '<select id="if-v-tipo-' + i + '">' +
+              '<option value="Instalação">Instalação</option>' +
+              '<option value="Manutenção">Manutenção</option>' +
+              '<option value="Remoção">Remoção</option>' +
+              '<option value="Substituição">Substituição</option>' +
+            '</select></div>' +
+        '</div>' +
+        (v.obs ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;">ℹ️ ' + escHtml(v.obs) + '</div>' : '') +
+        '<input type="hidden" id="if-v-obs-' + i + '" value="' + escHtml(v.obs) + '">' +
+      '</div>';
+    });
+    wrap.innerHTML = html;
+  } else {
+    // Sem veículos detectados — campo manual
+    wrap.innerHTML = '<input type="hidden" id="if-v-count" value="0">' +
+      '<div class="form-field"><label>Veículo / Placa</label>' +
+      '<input type="text" id="if-veiculo-manual" placeholder="Ex: Gol / ABC-1234"></div>';
+  }
+
+  // ── Preview resumido
   const preview = document.getElementById('parsed-preview');
   preview.style.display = 'block';
-  preview.innerHTML = `<p>✅ <strong>Dados identificados:</strong></p>
-    ${parsed.nome ? `<p>👤 <strong>Nome:</strong> ${escHtml(parsed.nome)}</p>` : '<p style="color:#ef4444">⚠️ Nome não identificado — preencha manualmente</p>'}
-    ${parsed.telefone ? `<p>📞 <strong>Telefone:</strong> ${escHtml(parsed.telefone)}</p>` : '<p style="color:#ef4444">⚠️ Telefone não identificado — preencha manualmente</p>'}
-    ${parsed.endereco ? `<p>📍 <strong>Endereço:</strong> ${escHtml(parsed.endereco)}</p>` : '<p style="color:#ef4444">⚠️ Endereço não identificado — preencha manualmente</p>'}
-    ${parsed.veiculo ? `<p>🚗 <strong>Veículo:</strong> ${escHtml(parsed.veiculo)}</p>` : ''}
-    ${parsed.data ? `<p>📅 <strong>Data:</strong> ${formatDateBR(parsed.data)}</p>` : '<p style="color:#b45309">📅 Sem data — técnico poderá definir depois</p>'}`;
+  preview.innerHTML =
+    '<p>✅ <strong>Dados importados' + (veiculos.length > 1 ? ' — ' + veiculos.length + ' veículos detectados' : '') + ':</strong></p>' +
+    (nome     ? '<p>👤 <strong>Nome:</strong> ' + escHtml((nome||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Nome não identificado</p>') +
+    (telefone ? '<p>📞 <strong>Telefone:</strong> ' + escHtml((telefone||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Telefone não identificado</p>') +
+    (endereco ? '<p>📍 <strong>Endereço:</strong> ' + escHtml((endereco||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Endereço não identificado</p>') +
+    (referencia ? '<p>📌 <strong>Referência:</strong> ' + escHtml(referencia.trim()) + '</p>' : '') +
+    (veiculos.length > 0 ? '<p>🚗 <strong>Veículos:</strong> ' + veiculos.map(v => v.modelo).join(', ') + '</p>' : '') +
+    (dataISO ? '<p>📅 <strong>Data:</strong> ' + formatDateBR(dataISO) + '</p>' : '<p style="color:#b45309">📅 Sem data — técnico poderá definir depois</p>');
 
-  // Populate import form
-  document.getElementById('if-nome').value    = parsed.nome || '';
-  document.getElementById('if-tel').value     = parsed.telefone || '';
-  document.getElementById('if-end').value     = parsed.endereco || '';
-  document.getElementById('if-veiculo').value = parsed.veiculo || '';
-  document.getElementById('if-data').value    = parsed.data || '';
-  if (parsed.tipo) {
-    const tipoMap = { instal: 'Instalação', manut: 'Manutenção', remo: 'Remoção', subst: 'Substituição' };
-    for (const [k,v] of Object.entries(tipoMap)) {
-      if (parsed.tipo.toLowerCase().includes(k)) {
-        document.getElementById('if-tipo').value = v; break;
-      }
-    }
-  }
   document.getElementById('import-form').style.display = 'block';
-  showToast('Dados importados! Verifique e selecione o técnico.', 'success');
+  showToast(veiculos.length > 1 ? veiculos.length + ' veículos detectados! Selecione o técnico.' : 'Dados importados! Selecione o técnico.', 'success');
+}
+
+
+async function submitImportOS() {
+  const nome    = document.getElementById('if-nome').value.trim();
+  const tel     = document.getElementById('if-tel').value.trim();
+  const end     = document.getElementById('if-end').value.trim();
+  const obs     = document.getElementById('if-obs').value.trim();
+  const data    = document.getElementById('if-data').value;
+  const tecnico = document.getElementById('if-tecnico').value;
+
+  if (!nome || !tel || !end || !tecnico) {
+    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
+  }
+
+  const countEl = document.getElementById('if-v-count');
+  const count   = countEl ? parseInt(countEl.value) : 0;
+
+  // Sem veículos detectados → usa campo manual
+  if (count === 0) {
+    const vManual = document.getElementById('if-veiculo-manual');
+    const veiculo = vManual ? vManual.value.trim() : '';
+    const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end,
+                 tipo: 'Instalação', data, veiculo, obs, id: genId() };
+    setAdminSyncStatus('syncing');
+    const result = await gasRequest(os);
+    if (result.ok) {
+      showToast('OS enviada para ' + tecnico + '!', 'success');
+      resetImportForm();
+      await loadAllOrders();
+    } else {
+      showToast('Erro ao enviar OS.', 'error');
+      setAdminSyncStatus('ok');
+    }
+    return;
+  }
+
+  // Envia 1 OS por veículo
+  setAdminSyncStatus('syncing');
+  let erros = 0;
+  for (let i = 0; i < count; i++) {
+    const modelo  = document.getElementById('if-v-modelo-' + i)?.value.trim() || '';
+    const tipo    = document.getElementById('if-v-tipo-' + i)?.value || 'Instalação';
+    const vObs    = document.getElementById('if-v-obs-' + i)?.value.trim() || '';
+    const obsFull = [obs, vObs].filter(Boolean).join(' | ');
+    const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end,
+                 tipo, data, veiculo: modelo, obs: obsFull, id: genId() };
+    const result = await gasRequest(os);
+    if (!result.ok) erros++;
+  }
+
+  if (erros === 0) {
+    showToast(count + ' OS enviadas para ' + tecnico + '!', 'success');
+    resetImportForm();
+    await loadAllOrders();
+  } else {
+    showToast(erros + ' OS com erro. Tente novamente.', 'error');
+    setAdminSyncStatus('ok');
+  }
+}
+
+function resetImportForm() {
+  document.getElementById('paste-area').value = '';
+  document.getElementById('parsed-preview').style.display = 'none';
+  document.getElementById('import-form').style.display = 'none';
+  document.getElementById('if-veiculos-wrap').innerHTML = '';
 }
 
 // ════════════════════════════════════════
