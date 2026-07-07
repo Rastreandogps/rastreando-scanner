@@ -325,7 +325,7 @@
           <select id="f-tecnico">
             <option value="">Selecione...</option>
             <option value="Glauber">Glauber</option>
-            <option value="Ederson">Ederson</option>
+            <option value="Eberson">Eberson</option>
             <option value="Jonas">Jonas</option>
           </select>
         </div>
@@ -373,7 +373,7 @@
             <select id="if-tecnico">
               <option value="">Selecione...</option>
               <option value="Glauber">Glauber</option>
-              <option value="Ederson">Ederson</option>
+              <option value="Eberson">Eberson</option>
               <option value="Jonas">Jonas</option>
             </select>
           </div>
@@ -397,7 +397,7 @@
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
         <button class="btn-parse" onclick="filterAdmin('all')" id="af-all" style="padding:7px 14px;">Todos</button>
         <button class="btn-parse" onclick="filterAdmin('Glauber')" id="af-Glauber" style="padding:7px 14px;">Glauber</button>
-        <button class="btn-parse" onclick="filterAdmin('Ederson')" id="af-Ederson" style="padding:7px 14px;">Ederson</button>
+        <button class="btn-parse" onclick="filterAdmin('Eberson')" id="af-Eberson" style="padding:7px 14px;">Eberson</button>
         <button class="btn-parse" onclick="filterAdmin('Jonas')" id="af-Jonas" style="padding:7px 14px;">Jonas</button>
       </div>
       <div id="admin-os-list"></div>
@@ -446,13 +446,13 @@
 // ════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659';
-const TECH_CREDENTIALS = { 'Glauber': '123456', 'Ederson': '123456', 'Jonas': '123456' };
+const TECH_CREDENTIALS = { 'Glauber': '123456', 'Eberson': '123456', 'Jonas': '123456' };
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 let currentUser  = null;
 let currentRole  = null;
-let allOrders    = { Glauber: [], Ederson: [], Jonas: [] };
+let allOrders    = { Glauber: [], Eberson: [], Jonas: [] };
 let pendingDelete = null;
 let adminFilter  = 'all';
 let pollInterval = null;
@@ -656,7 +656,7 @@ async function loadAllOrders() {
   const now = new Date();
   const result = await gasRequest({ action: 'getAllOrders', month: now.getMonth()+1, year: now.getFullYear() });
   if (result.ok) {
-    allOrders = result.data || { Glauber: [], Ederson: [], Jonas: [] };
+    allOrders = result.data || { Glauber: [], Eberson: [], Jonas: [] };
     renderAdminOSList();
   }
   setAdminSyncStatus('ok');
@@ -867,7 +867,7 @@ function filterAdmin(tech) {
 function renderAdminOSList() {
   const list = document.getElementById('admin-os-list');
   if (!list) return;
-  const techs = adminFilter === 'all' ? ['Glauber','Ederson','Jonas'] : [adminFilter];
+  const techs = adminFilter === 'all' ? ['Glauber','Eberson','Jonas'] : [adminFilter];
   let items = [];
   techs.forEach(t => (allOrders[t] || []).forEach(o => items.push({...o, _tech: t})));
 
