@@ -658,6 +658,7 @@ async function loadAllOrders() {
   if (result.ok) {
     allOrders = result.data || { Glauber: [], Eberson: [], Jonas: [] };
     renderAdminOSList();
+    atualizarContadores();
   }
   setAdminSyncStatus('ok');
 }
@@ -932,10 +933,24 @@ async function saveDate(id, tech) {
 // ════════════════════════════════
 function filterAdmin(tech) {
   adminFilter = tech;
-  document.querySelectorAll('[id^="af-"]').forEach(b => b.style.background = '');
+  document.querySelectorAll('[id^="af-"]').forEach(b => {
+    b.style.background = '';
+    b.style.color = '';
+  });
   const el = document.getElementById('af-' + tech);
-  if (el) el.style.background = '#dbeafe';
+  if (el) { el.style.background = '#dbeafe'; el.style.color = '#1d4ed8'; }
   renderAdminOSList();
+}
+
+function atualizarContadores() {
+  const total = ['Glauber','Eberson','Jonas'].reduce((s,t) => s + (allOrders[t]||[]).length, 0);
+  const elAll = document.getElementById('af-all');
+  if (elAll) elAll.textContent = 'Todos' + (total > 0 ? ' (' + total + ')' : '');
+  ['Glauber','Eberson','Jonas'].forEach(t => {
+    const el = document.getElementById('af-' + t);
+    const n  = (allOrders[t] || []).length;
+    if (el) el.textContent = t + (n > 0 ? ' (' + n + ')' : '');
+  });
 }
 
 function renderAdminOSList() {
@@ -958,14 +973,23 @@ function renderAdminOSList() {
 
   list.innerHTML = items.map(o => {
     const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
-    return '<div class="admin-os-item">' +
-      '<div class="admin-os-info">' +
+    const techLC = o._tech.toLowerCase();
+    return '<div class="admin-os-item" style="flex-wrap:wrap;gap:8px;">' +
+      '<div class="admin-os-info" style="min-width:0;flex:1;">' +
         '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
         '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
         '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
       '</div>' +
-      '<span class="tech-badge tech-' + o._tech.toLowerCase() + '">' + o._tech + '</span>' +
-      '<button class="btn-delete" onclick="requestDelete(\'' + o.id + '\',\'' + o._tech + '\')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+      // Reatribuição: select + botão confirmar
+      '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+        '<select class="admin-reassign-sel" data-id="' + o.id + '" data-tech="' + o._tech + '" style="padding:5px 8px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;cursor:pointer;" title="Reatribuir técnico">' +
+          '<option value="Glauber"' + (o._tech==='Glauber'?' selected':'') + '>Glauber</option>' +
+          '<option value="Eberson"' + (o._tech==='Eberson'?' selected':'') + '>Eberson</option>' +
+          '<option value="Jonas"' + (o._tech==='Jonas'?' selected':'') + '>Jonas</option>' +
+        '</select>' +
+        '<button class="btn-save-date" onclick="adminReatribuir(this)" title="Confirmar reatribuição" style="padding:6px 10px;font-size:12px;">✔</button>' +
+        '<button class="btn-delete" onclick="adminDelete(this)" data-id="' + o.id + '" data-tech="' + o._tech + '" title="Excluir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -1166,6 +1190,44 @@ function toInputDate(str) {
 }
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// Reatribuir OS para outro técnico (admin)
+async function adminReatribuir(btn) {
+  const sel     = btn.parentElement.querySelector('.admin-reassign-sel');
+  if (!sel) return;
+  const id      = sel.getAttribute('data-id');
+  const techOld = sel.getAttribute('data-tech');
+  const techNew = sel.value;
+  if (techOld === techNew) { showToast('Técnico já é ' + techNew, ''); return; }
+
+  setAdminSyncStatus('syncing');
+  // 1. Buscar OS completa no allOrders
+  const os = (allOrders[techOld] || []).find(o => o.id === id);
+  if (!os) { showToast('OS não encontrada.', 'error'); return; }
+
+  // 2. Salvar na nova aba
+  const r1 = await gasRequest({ action: 'saveOrder', tech: techNew,
+    nome: os.nome, telefone: os.telefone, endereco: os.endereco,
+    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: os.obs, id: os.id });
+  if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
+
+  // 3. Apagar da aba antiga
+  const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
+  if (r2.ok) {
+    showToast('OS movida para ' + techNew + '!', 'success');
+    await loadAllOrders();
+  } else {
+    showToast('Movida mas erro ao remover original.', 'error');
+    await loadAllOrders();
+  }
+}
+
+// Deletar do card admin (usa data-attributes para evitar aspas quebradas)
+function adminDelete(btn) {
+  const id   = btn.getAttribute('data-id');
+  const tech = btn.getAttribute('data-tech');
+  requestDelete(id, tech);
+}
 
 function esc(str) {
   if (!str) return '';
