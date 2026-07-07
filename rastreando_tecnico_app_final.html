@@ -465,6 +465,7 @@ const POLL_MS = 30000;
 // ══════════════════════════════════════════════════════════
 let session = { tecnico: '', senha: '' };
 let osList = [];
+let globalOsList = osList; // alias sempre atualizado
 let calDate = new Date();
 let selectedDay = null;
 let filterStatus = 'todos';
@@ -564,6 +565,7 @@ async function loadOS() {
     const data = await res.json();
     if (data.erro) throw new Error(data.erro);
     osList = data.os || [];
+    globalOsList = osList;
     renderCalendario();
     renderPainel();
     setSyncStatus('ok');
@@ -820,12 +822,52 @@ function bindOSActions(container, osList) {
   });
 }
 
+// Atualiza card no DOM imediatamente após mudança de status
+function atualizarCardDOM(os) {
+  const isPendente = os.status !== 'contato_realizado';
+
+  // Atualiza borda/cor do card
+  const card = document.getElementById('card-' + os.id);
+  if(card) {
+    card.className = card.className
+      .replace(/status-pendente|status-feito/g, '')
+      .trim() + (isPendente ? ' status-pendente' : ' status-feito');
+  }
+
+  // Atualiza badge de status
+  const badges = document.querySelectorAll('#card-' + os.id + ' .os-status-badge');
+  badges.forEach(b => {
+    b.className = 'os-status-badge ' + (isPendente ? 'badge-pendente' : 'badge-feito');
+    b.textContent = isPendente ? '⏳ Pendente' : '✅ Feito';
+  });
+
+  // Atualiza botão de contato
+  const btns = document.querySelectorAll('.btn-contato[data-id="' + os.id + '"]');
+  btns.forEach(btn => {
+    btn.textContent = isPendente ? '📞 Marcar contato realizado' : '↩️ Desfazer contato';
+    btn.className = 'os-btn btn-contato' + (isPendente ? '' : ' done');
+    btn.disabled = false;
+    btn.dataset.status = os.status;
+  });
+
+  // Atualiza info de contato
+  document.querySelectorAll('#body-' + os.id + ' .contato-info').forEach(el => {
+    el.textContent = os.data_contato
+      ? 'Contato: ' + os.data_contato + ' às ' + os.hora_contato
+      : '';
+  });
+
+  // Atualiza calendário (bolinhas)
+  renderCalendario();
+}
+
 async function toggleContato(osId, btn) {
-  const os = osList.find(o => o.id === osId);
-  if (!os) return;
+  // Busca na lista global sempre
+  const os = globalOsList.find(o => o.id === osId);
+  if (!os) { showToast('OS não encontrada.','fail'); return; }
 
   const novoStatus = os.status === 'contato_realizado' ? 'pendente' : 'contato_realizado';
-  const txtOriginal = btn.textContent;
+  const txtOriginal = btn.textContent.trim();
   btn.textContent = 'Salvando...';
   btn.disabled = true;
 
@@ -844,6 +886,7 @@ async function toggleContato(osId, btn) {
     const data = await res.json();
     if(data.erro) throw new Error(data.erro);
 
+    // Atualiza estado local imediatamente
     os.status = novoStatus;
     if(novoStatus === 'contato_realizado') {
       const now = new Date();
@@ -855,7 +898,10 @@ async function toggleContato(osId, btn) {
       os.hora_contato = '';
       showToast('Contato desmarcado.','ok');
     }
-    loadOS();
+
+    // Atualiza o card no DOM sem recarregar tudo
+    atualizarCardDOM(os);
+
   } catch(err) {
     showToast('Erro: '+err.message,'fail');
     btn.textContent = txtOriginal;
