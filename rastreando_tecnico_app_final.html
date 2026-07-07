@@ -297,6 +297,45 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 }
 .fab:active{transform:scale(.93);box-shadow:0 2px 10px rgba(0,229,255,.2)}
 
+/* ── MODAL SENHA ADMIN ── */
+.modal-senha-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:none;align-items:center;justify-content:center;
+  padding:24px;z-index:200;
+}
+.modal-senha-bg.open{display:flex}
+.modal-senha-box{
+  background:var(--bg-card);border:1px solid var(--border2);
+  border-radius:16px;padding:24px;width:100%;max-width:320px;
+}
+.modal-senha-box h3{font-size:15px;font-weight:800;color:var(--red);margin-bottom:6px}
+.modal-senha-box p{font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.5}
+.modal-senha-input{
+  width:100%;background:var(--bg-card2);border:1px solid var(--border2);
+  color:var(--text);padding:13px 14px;border-radius:10px;
+  font-size:18px;outline:none;text-align:center;letter-spacing:4px;
+  margin-bottom:12px;
+}
+.modal-senha-input:focus{border-color:var(--red)}
+.btn-apagar-confirm{
+  width:100%;background:var(--red);color:#fff;border:none;
+  border-radius:10px;padding:13px;font-size:14px;font-weight:800;
+  cursor:pointer;margin-bottom:8px;transition:opacity .15s;
+}
+.btn-apagar-confirm:disabled{opacity:.5}
+.btn-apagar-cancel{
+  width:100%;background:none;color:var(--text-dim);
+  border:1px solid var(--border2);border-radius:10px;
+  padding:11px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.btn-apagar{
+  background:rgba(232,0,45,.12);color:var(--red);
+  border:1px solid rgba(232,0,45,.25);border-radius:8px;
+  font-size:11px;font-weight:700;padding:5px 10px;
+  cursor:pointer;transition:opacity .15s;white-space:nowrap;
+}
+.btn-apagar:active{opacity:.7}
+
 /* ── TOAST ── */
 .toast{
   position:fixed;bottom:80px;left:50%;
@@ -451,6 +490,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   </div>
 </div>
 
+<!-- MODAL SENHA ADMIN -->
+<div class="modal-senha-bg" id="modalSenha">
+  <div class="modal-senha-box">
+    <h3>🗑️ Apagar OS</h3>
+    <p>Esta ação é irreversível. Digite a senha do administrador para confirmar.</p>
+    <input type="password" class="modal-senha-input" id="senhaAdminInput"
+           placeholder="••••••" inputmode="numeric" maxlength="6">
+    <div id="senhaErro" style="color:var(--red);font-size:12px;text-align:center;margin-bottom:10px;min-height:16px"></div>
+    <button class="btn-apagar-confirm" id="btnConfirmarApagar">🗑️ Confirmar exclusão</button>
+    <button class="btn-apagar-cancel" id="btnCancelarApagar">Cancelar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -490,6 +542,10 @@ let pollTimer = null;
   document.getElementById('btnLogin').addEventListener('click', doLogin);
   document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('btnLogout').addEventListener('click', doLogout);
+  document.getElementById('btnConfirmarApagar').addEventListener('click', confirmarApagar);
+  document.getElementById('btnCancelarApagar').addEventListener('click', fecharModalApagar);
+  document.getElementById('senhaAdminInput').addEventListener('keydown', e => { if(e.key==='Enter') confirmarApagar(); });
+  document.getElementById('modalSenha').addEventListener('click', e => { if(e.target===document.getElementById('modalSenha')) fecharModalApagar(); });
 })();
 
 function showLogin() {
@@ -797,6 +853,9 @@ function osCardHTML(os, compact) {
         ${isPendente ? '📞 Marcar contato realizado' : '↩️ Desfazer contato'}
       </button>
       ${contatoInfo}
+      <div style="text-align:right;margin-top:10px">
+        <button class="btn-apagar" data-del-id="${os.id}">🗑️ Apagar OS</button>
+      </div>
     </div>
   </div>`;
 }
@@ -818,6 +877,12 @@ function bindOSActions(container, osList) {
     btn.onclick = (e) => {
       e.stopPropagation();
       toggleContato(btn.dataset.id, btn);
+    };
+  });
+  container.querySelectorAll('.btn-apagar[data-del-id]').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      abrirModalApagar(btn.dataset.delId);
     };
   });
 }
@@ -1008,6 +1073,69 @@ function setupSwipe() {
   }, {passive:true});
   // posição inicial
   switchTab(0);
+}
+
+// ══════════════════════════════════════════════════════════
+// APAGAR OS
+// ══════════════════════════════════════════════════════════
+const ADMIN_SENHA_TEC = '271659';
+let osParaApagar = null;
+
+function abrirModalApagar(osId) {
+  osParaApagar = osId;
+  document.getElementById('senhaAdminInput').value = '';
+  document.getElementById('senhaErro').textContent = '';
+  document.getElementById('modalSenha').classList.add('open');
+  setTimeout(() => document.getElementById('senhaAdminInput').focus(), 100);
+}
+
+function fecharModalApagar() {
+  osParaApagar = null;
+  document.getElementById('modalSenha').classList.remove('open');
+  document.getElementById('senhaAdminInput').value = '';
+  document.getElementById('senhaErro').textContent = '';
+}
+
+async function confirmarApagar() {
+  const senha = document.getElementById('senhaAdminInput').value.trim();
+  if (senha !== ADMIN_SENHA_TEC) {
+    document.getElementById('senhaErro').textContent = 'Senha incorreta.';
+    document.getElementById('senhaAdminInput').value = '';
+    document.getElementById('senhaAdminInput').focus();
+    return;
+  }
+  if (!osParaApagar) return;
+
+  const btn = document.getElementById('btnConfirmarApagar');
+  btn.textContent = 'Apagando...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        action: 'deleteOS',
+        tecnico: session.tecnico,
+        senha: senha,
+        id: osParaApagar
+      })
+    });
+    const data = await res.json();
+    if (data.erro) throw new Error(data.erro);
+
+    // Remove da lista local
+    globalOsList = globalOsList.filter(o => o.id !== osParaApagar);
+    osList = globalOsList;
+
+    fecharModalApagar();
+    showToast('OS apagada com sucesso.','ok');
+    renderCalendario();
+    renderPainel();
+  } catch(err) {
+    document.getElementById('senhaErro').textContent = err.message || 'Erro ao apagar.';
+  } finally {
+    btn.textContent = '🗑️ Confirmar exclusão'; btn.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════════════════════
