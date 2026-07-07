@@ -825,17 +825,23 @@ function renderTechCalendar() {
 }
 
 function parseDate(str) {
-  if (!str) return null;
-  // handles DD/MM/YYYY or YYYY-MM-DD
-  if (str.includes('/')) {
+  if (!str || str === 'undefined' || str === 'null') return null;
+  str = String(str).trim();
+  // DD/MM/YYYY
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
     const [d,m,y] = str.split('/');
-    return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-  } else if (str.includes('-')) {
+    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     const [y,m,d] = str.split('-');
-    return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    return isNaN(dt.getTime()) ? null : dt;
   }
   return null;
 }
+
 
 function formatDateBR(str) {
   if (!str) return '';
@@ -852,11 +858,13 @@ function renderTechOSList() {
   const orders = allOrders[currentUser] || [];
   const now    = new Date();
 
-  // only this month
+  // Mostra: sem data (pendentes) + com data no mês atual
   const monthly = orders.filter(o => {
-    if (!o.data) return true; // pending always shown
-    const d = parseDate(o.data);
-    return !d || (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear());
+    const dataStr = (o.data || '').trim();
+    if (!dataStr) return true; // sem data = pendente, sempre aparece
+    const d = parseDate(dataStr);
+    if (!d) return true; // nao conseguiu parsear = mostra tbm
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
   if (monthly.length === 0) {
@@ -876,31 +884,59 @@ function renderTechOSList() {
   });
 
   list.innerHTML = monthly.map(o => {
-    const hasDate  = o.data && o.data.trim() !== '';
-    const badge    = hasDate ? 'badge-scheduled' : 'badge-pending';
-    const badgeTxt = hasDate ? 'Agendado' : 'Pendente';
+    const hasDate   = o.data && o.data.trim() !== '' && o.data !== 'undefined';
+    const badge     = hasDate ? 'badge-scheduled' : 'badge-pending';
+    const badgeTxt  = hasDate ? 'Agendado' : 'Pendente';
     const cardClass = hasDate ? '' : ' pending';
-    const dateVal  = hasDate ? toInputDate(o.data) : '';
+    const dateVal   = hasDate ? toInputDate(o.data) : '';
+    const telLimpo  = (o.telefone || '').replace(/\D/g,'');
+    const wppLink   = telLimpo ? 'https://wa.me/55' + telLimpo : '';
+    const mapsLink  = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+    const dataExib  = hasDate ? formatDateBR(o.data) : 'Sem data definida';
+    const cardId    = 'card-body-' + o.id;
 
-    return `<div class="os-card${cardClass}">
-      <div class="os-card-header">
-        <div class="os-client">${escHtml(o.nome)}</div>
-        <span class="os-badge ${badge}">${badgeTxt}</span>
-      </div>
-      <div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>${escHtml(o.endereco)}</div>
-      <div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>${escHtml(o.telefone)}</div>
-      ${o.veiculo ? `<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>${escHtml(o.veiculo)}</div>` : ''}
-      <span class="os-type">${escHtml(o.tipo || 'Instalação')}</span>
-      ${o.obs ? `<div class="os-notes">💬 ${escHtml(o.obs)}</div>` : ''}
-      <div class="os-date-row">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        <input type="date" class="os-date-input" value="${dateVal}" id="date-${o.id}" placeholder="Selecionar data">
-        <button class="btn-save-date" onclick="saveDate('${o.id}','${escAttr(currentUser)}')">Salvar</button>
-        <button class="btn-delete" title="Excluir OS" onclick="requestDelete('${o.id}','${escAttr(currentUser)}')">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-        </button>
-      </div>
-    </div>`;
+    return '<div class="os-card' + cardClass + '" style="cursor:pointer;" onclick="toggleCard(\'' + o.id + '\')">' +
+      '<div class="os-card-header">' +
+        '<div class="os-client">' + escHtml(o.nome) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span class="os-badge ' + badge + '">' + badgeTxt + '</span>' +
+          '<span style="font-size:18px;color:var(--muted);transition:transform .3s;" id="chevron-' + o.id + '">›</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="os-info" style="margin-top:4px;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+        '<span style="font-size:13px;font-weight:600;color:' + (hasDate ? 'var(--accent)' : 'var(--accent2)') + ';">' + dataExib + '</span>' +
+      '</div>' +
+
+      // CORPO EXPANSÍVEL
+      '<div id="' + cardId + '" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">' +
+        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' + escHtml(o.endereco) + '</div>' +
+        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>' + escHtml(o.telefone) + '</div>' +
+        (o.veiculo ? '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + escHtml(o.veiculo) + '</div>' : '') +
+        '<span class="os-type">' + escHtml(o.tipo || 'Instalação') + '</span>' +
+        (o.obs ? '<div class="os-notes">💬 ' + escHtml(o.obs) + '</div>' : '') +
+
+        // BOTÕES WhatsApp + Maps
+        '<div style="display:flex;gap:8px;margin-top:12px;">' +
+          (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 12px;background:#25D366;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">' +
+            '<svg viewBox="0 0 24 24" width="17" height="17" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+            'WhatsApp</a>' : '') +
+          (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 12px;background:#4285F4;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">' +
+            '<svg viewBox="0 0 24 24" width="17" height="17" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
+            'Maps</a>' : '') +
+        '</div>' +
+
+        // CAMPO DATA EDITÁVEL
+        '<div class="os-date-row" onclick="event.stopPropagation()" style="margin-top:10px;">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
+          '<input type="date" class="os-date-input" value="' + dateVal + '" id="date-' + o.id + '" placeholder="Definir data">' +
+          '<button class="btn-save-date" onclick="event.stopPropagation();saveDate(\'' + o.id + '\',\'' + escAttr(currentUser) + '\')">Salvar</button>' +
+          '<button class="btn-delete" title="Excluir OS" onclick="event.stopPropagation();requestDelete(\'' + o.id + '\',\'' + escAttr(currentUser) + '\')">' +
+            '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -963,7 +999,7 @@ function renderAdminOSList() {
     <div class="admin-os-item">
       <div class="admin-os-info">
         <div class="admin-os-name">${escHtml(o.nome)}</div>
-        <div class="admin-os-meta">${o.data ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data'} · ${escHtml(o.tipo||'Instalação')} · ${escHtml(o.telefone||'')}</div>
+        <div class="admin-os-meta">${(o.data && o.data.trim() && o.data !== 'undefined') ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data'} · ${escHtml(o.tipo||'Instalação')} · ${escHtml(o.telefone||'')}</div>
         <div class="admin-os-meta" style="margin-top:2px;">📍 ${escHtml(o.endereco||'')}</div>
       </div>
       <span class="tech-badge tech-${o._tech.toLowerCase()}">${o._tech}</span>
@@ -1135,12 +1171,14 @@ async function confirmDeleteAction() {
     document.getElementById('delete-error').style.display = 'block';
     return;
   }
+  // Guarda referencia antes de fechar modal
+  const toDelete = pendingDelete;
   closeDeleteModal();
 
-  if (pendingDelete.type === 'single') {
+  if (toDelete.type === 'single') {
     setAdminSyncStatus('syncing');
     setSyncStatus('syncing');
-    const result = await gasRequest({ action: 'deleteOrder', id: pendingDelete.id, tech: pendingDelete.tech });
+    const result = await gasRequest({ action: 'deleteOrder', id: toDelete.id, tech: toDelete.tech });
     if (result.ok) {
       showToast('Ordem excluída!', 'success');
       if (currentRole === 'tech') await loadTechOrders();
@@ -1148,7 +1186,7 @@ async function confirmDeleteAction() {
     } else {
       showToast('Erro ao excluir.', 'error');
     }
-  } else if (pendingDelete.type === 'all') {
+  } else if (toDelete.type === 'all') {
     setAdminSyncStatus('syncing');
     const result = await gasRequest({ action: 'deleteAll' });
     if (result.ok) {
@@ -1164,6 +1202,15 @@ async function confirmDeleteAction() {
 // ════════════════════════════════════════
 // UTILITÁRIOS
 // ════════════════════════════════════════
+function toggleCard(id) {
+  const body    = document.getElementById('card-body-' + id);
+  const chevron = document.getElementById('chevron-' + id);
+  if (!body) return;
+  const open = body.style.display === 'block';
+  body.style.display    = open ? 'none' : 'block';
+  chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+}
+
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
