@@ -836,7 +836,11 @@ function renderTechOSList() {
 
         // ── VEÍCULOS em destaque (separados por |)
         (o.veiculo ? (function() {
-          const lista = o.veiculo.split('|').map(v => v.trim()).filter(Boolean);
+          // Separa veículos pelo separador ' || ' (duplo pipe entre veículos)
+          // O ' | ' simples é preservado dentro das descrições (GNV | Rastreio)
+          const lista = o.veiculo.includes(' || ')
+            ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean)
+            : [o.veiculo.trim()];
           const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
           if (lista.length <= 1) {
             return '<div style="display:flex;align-items:center;gap:8px;background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
@@ -1152,7 +1156,7 @@ async function submitImportOS() {
       const vObs   = (document.getElementById('if-v-obs-' + i)?.value || '').trim();
       if (modelo) partes.push(vObs ? modelo + ' (' + vObs + ')' : modelo);
     }
-    veiculosStr = partes.join(' | ');
+    veiculosStr = partes.join(' || ');
   }
 
   // Tipo: pega o do primeiro veículo ou Instalação
