@@ -695,38 +695,72 @@ function renderTechCalendar() {
   const total  = new Date(year, month+1, 0).getDate();
   const orders = allOrders[currentUser] || [];
 
+  // Monta mapa dia → lista de IDs de ordens agendadas nesse dia
   const dateMap = {};
   orders.forEach(o => {
-    if (o.data) {
-      const d = parseDate(o.data);
-      if (d && d.getMonth() === month && d.getFullYear() === year) {
-        const k = d.getDate();
-        if (!dateMap[k]) dateMap[k] = 0;
-        dateMap[k]++;
-      }
-    }
+    if (!o.data || o.data.trim() === '' || o.data === 'undefined') return;
+    const d = parseDate(o.data);
+    if (!d || isNaN(d.getTime())) return;
+    if (d.getMonth() !== month || d.getFullYear() !== year) return;
+    const k = d.getDate();
+    if (!dateMap[k]) dateMap[k] = [];
+    dateMap[k].push(o.id);
   });
+
+  const pendentes = orders.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined');
 
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
 
   for (let d = 1; d <= total; d++) {
-    const isToday = d === now.getDate();
-    const count   = dateMap[d] || 0;
+    const isToday  = d === now.getDate();
+    const ids      = dateMap[d] || [];
+    const temPend  = isToday && pendentes.length > 0;
     let dots = '';
-    if (count > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(count, 3));
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '"><span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
-  }
+    if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(ids.length, 3));
+    if (temPend)         dots += '<div class="dot dot-yellow"></div>';
 
-  // Bolinha amarela no dia de hoje se houver pendentes
-  const pendentes = orders.filter(o => !o.data || o.data.trim() === '');
-  if (pendentes.length > 0) {
-    const todayEl = grid.querySelector('.cal-day.today');
-    if (todayEl) {
-      let dotsDiv = todayEl.querySelector('.dots');
-      if (!dotsDiv) { dotsDiv = document.createElement('div'); dotsDiv.className = 'dots'; todayEl.appendChild(dotsDiv); }
-      dotsDiv.innerHTML += '<div class="dot dot-yellow"></div>';
-    }
+    // Se tem ordens nesse dia, torna clicável
+    const onclick = ids.length > 0 ? ' onclick="calDayClick([' + ids.map(id => "'"+id+"'").join(',') + '])"' : '';
+    const cursor  = ids.length > 0 ? ' style="cursor:pointer;"' : '';
+
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '"' + onclick + cursor + '>' +
+      '<span>' + d + '</span>' +
+      (dots ? '<div class="dots">' + dots + '</div>' : '') +
+    '</div>';
   }
+}
+
+// Clique num dia do calendário → vai para aba Ordens e abre o(s) card(s)
+function calDayClick(ids) {
+  showTechTab('orders');
+  // Pequeno delay para garantir que a aba renderizou
+  setTimeout(() => {
+    if (ids.length === 1) {
+      // Abre direto o card
+      const body = document.getElementById('cb-' + ids[0]);
+      const chev = document.getElementById('chev-' + ids[0]);
+      if (body && body.style.display !== 'block') {
+        body.style.display = 'block';
+        if (chev) chev.style.transform = 'rotate(90deg)';
+      }
+      // Rola até o card
+      const card = body ? body.closest('.os-card') : null;
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // Múltiplos cards no dia: abre todos e rola pro primeiro
+      let primeiro = null;
+      ids.forEach(id => {
+        const body = document.getElementById('cb-' + id);
+        const chev = document.getElementById('chev-' + id);
+        if (body && body.style.display !== 'block') {
+          body.style.display = 'block';
+          if (chev) chev.style.transform = 'rotate(90deg)';
+        }
+        if (!primeiro && body) primeiro = body.closest('.os-card');
+      });
+      if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 80);
 }
 
 // ════════════════════════════════
@@ -986,27 +1020,35 @@ async function submitImportOS() {
 
   setAdminSyncStatus('syncing');
 
+  // Monta string de veículos: "Ranger (2019) | HRV (2021) | ..."
+  let veiculosStr = '';
   if (count === 0) {
     const vManual = document.getElementById('if-veiculo-manual');
-    const veiculo = vManual ? vManual.value.trim() : '';
-    const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo: 'Instalação', data, veiculo, obs, id: genId() });
-    if (result.ok) { showToast('OS enviada para ' + tecnico + '!', 'success'); resetImportForm(); await loadAllOrders(); }
-    else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
-    return;
+    veiculosStr = vManual ? vManual.value.trim() : '';
+  } else {
+    const partes = [];
+    for (let i = 0; i < count; i++) {
+      const modelo = (document.getElementById('if-v-modelo-' + i)?.value || '').trim();
+      const vObs   = (document.getElementById('if-v-obs-' + i)?.value || '').trim();
+      if (modelo) partes.push(vObs ? modelo + ' (' + vObs + ')' : modelo);
+    }
+    veiculosStr = partes.join(' | ');
   }
 
-  let erros = 0;
-  for (let i = 0; i < count; i++) {
-    const modelo  = (document.getElementById('if-v-modelo-' + i)?.value || '').trim();
-    const tipo    = document.getElementById('if-v-tipo-' + i)?.value || 'Instalação';
-    const vObs    = (document.getElementById('if-v-obs-' + i)?.value || '').trim();
-    const obsFull = [obs, vObs].filter(Boolean).join(' | ');
-    const result  = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: modelo, obs: obsFull, id: genId() });
-    if (!result.ok) erros++;
-  }
+  // Tipo: pega o do primeiro veículo ou Instalação
+  const tipoEl = document.getElementById('if-v-tipo-0');
+  const tipo = tipoEl ? tipoEl.value : 'Instalação';
 
-  if (erros === 0) { showToast(count + ' OS enviadas para ' + tecnico + '!', 'success'); resetImportForm(); await loadAllOrders(); }
-  else { showToast(erros + ' OS com erro.', 'error'); setAdminSyncStatus('ok'); }
+  // Salva UMA única OS com todos os veículos no campo veiculo
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs, id: genId() });
+  if (result.ok) {
+    showToast('OS enviada para ' + tecnico + '!', 'success');
+    resetImportForm();
+    await loadAllOrders();
+  } else {
+    showToast('Erro ao enviar OS.', 'error');
+    setAdminSyncStatus('ok');
+  }
 }
 
 function resetImportForm() {
