@@ -723,11 +723,12 @@ function renderTechCalendar() {
     if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(ids.length, 3));
     if (temPend)         dots += '<div class="dot dot-yellow"></div>';
 
-    // Se tem ordens nesse dia, torna clicável
-    const onclick = ids.length > 0 ? ' onclick="calDayClick([' + ids.map(id => "'"+id+"'").join(',') + '])"' : '';
-    const cursor  = ids.length > 0 ? ' style="cursor:pointer;"' : '';
+    // Se tem ordens nesse dia, torna clicável via data-ids (evita problema de aspas)
+    const dataIds = ids.length > 0 ? ' data-ids="' + ids.join('|') + '"' : '';
+    const calCursor = ids.length > 0 ? ' style="cursor:pointer;"' : '';
+    const calClass  = ids.length > 0 ? ' cal-clickable' : '';
 
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '"' + onclick + cursor + '>' +
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + '>' +
       '<span>' + d + '</span>' +
       (dots ? '<div class="dots">' + dots + '</div>' : '') +
     '</div>';
@@ -1045,6 +1046,12 @@ document.addEventListener('click', function(e) {
     e.stopPropagation();
     toggleCard(div.getAttribute('data-cid'));
   }
+  // Listener para dias do calendário
+  const calDay = e.target.closest('.cal-clickable');
+  if (calDay) {
+    const raw = calDay.getAttribute('data-ids');
+    if (raw) calDayClick(raw.split('|'));
+  }
 });
 
 // Funções auxiliares para evitar problema de aspas nos onclick inline
@@ -1127,7 +1134,8 @@ function renderAdminOSList() {
   list.innerHTML = items.map(o => {
     const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
     const techLC = o._tech.toLowerCase();
-    return '<div class="admin-os-item" style="flex-wrap:wrap;gap:8px;">' +
+    const bgCard = dataOk ? '' : 'background:#fffbeb;border-color:#fde68a;';
+    return '<div class="admin-os-item" style="flex-wrap:wrap;gap:8px;' + bgCard + '">' +
       '<div class="admin-os-info" style="min-width:0;flex:1;">' +
         '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
         '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
