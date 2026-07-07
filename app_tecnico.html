@@ -448,6 +448,8 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
+const BUILD_VERSION = '2026-07-07-v2';
+console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659';
 const TECH_CREDENTIALS = { 'Glauber': '123456', 'Eberson': '123456', 'Jonas': '123456' };
@@ -748,21 +750,29 @@ function renderCalDayCards(ids) {
   if (!wrap) return;
 
   const orders = allOrders[currentUser] || [];
-  const selecionadas = ids
-    ? orders.filter(o => ids.includes(o.id))
-    : orders.filter(o => {
-        // Dia vigente: ordens de hoje
-        if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
-        const d = parseDate(o.data);
-        if (!d) return false;
-        const hoje = new Date();
-        return d.getDate() === hoje.getDate() &&
-               d.getMonth() === hoje.getMonth() &&
-               d.getFullYear() === hoje.getFullYear();
-      });
+  const hoje   = new Date();
+
+  let selecionadas;
+  if (ids) {
+    // Clicou num dia específico — mostra as OS daquele dia
+    selecionadas = orders.filter(o => ids.includes(o.id));
+  } else {
+    // Dia vigente: mostra OS de hoje + todas as pendentes (sem data)
+    const deHoje    = orders.filter(o => {
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+      const d = parseDate(o.data);
+      if (!d) return false;
+      return d.getDate() === hoje.getDate() &&
+             d.getMonth() === hoje.getMonth() &&
+             d.getFullYear() === hoje.getFullYear();
+    });
+    const pendentes = orders.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined');
+    // Junta: primeiro as de hoje, depois as pendentes (sem duplicar)
+    const ids_hoje = new Set(deHoje.map(o => o.id));
+    selecionadas = [...deHoje, ...pendentes.filter(o => !ids_hoje.has(o.id))];
+  }
 
   // Título do bloco
-  const hoje = new Date();
   const hojeStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
   const ehHoje  = !ids;
 
@@ -777,7 +787,7 @@ function renderCalDayCards(ids) {
     return;
   }
 
-  const titulo = ids ? 'Ordens do dia selecionado' : 'Ordens de hoje';
+  const titulo = ids ? 'Ordens do dia selecionado' : 'Hoje · ' + hojeStr;
   wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>' +
     selecionadas.map(o => renderCardInline(o)).join('');
 
