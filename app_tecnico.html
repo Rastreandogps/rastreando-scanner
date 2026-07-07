@@ -314,6 +314,7 @@
     <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new">➕ Nova OS</button>
     <button class="tab-btn admin-tab" onclick="showAdminTab('import')" id="at-import">📥 Importar</button>
     <button class="tab-btn admin-tab" onclick="showAdminTab('all-os')" id="at-all">📋 Todas as OS</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view">👁️ Técnico</button>
   </div>
 
   <!-- NOVA OS -->
@@ -420,6 +421,32 @@
       <div id="admin-os-list"></div>
     </div>
   </div>
+  <!-- VER TÉCNICO -->
+  <div id="admin-tab-view-tech" class="screen">
+    <div class="admin-section">
+      <h3>👁️ Visualizar Calendário do Técnico</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Selecione um técnico para ver o calendário e as ordens dele.</p>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+        <button class="admin-tech-btn" data-tech="Glauber" onclick="adminVerTecnico('Glauber')" style="flex:1;padding:12px;background:#dbeafe;color:#1e40af;border:2px solid #bfdbfe;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Glauber</button>
+        <button class="admin-tech-btn" data-tech="Eberson" onclick="adminVerTecnico('Eberson')" style="flex:1;padding:12px;background:#fee2e2;color:#991b1b;border:2px solid #fecaca;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Eberson</button>
+        <button class="admin-tech-btn" data-tech="Jonas"   onclick="adminVerTecnico('Jonas')"   style="flex:1;padding:12px;background:#d1fae5;color:#065f46;border:2px solid #a7f3d0;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Jonas</button>
+      </div>
+      <!-- Calendário do técnico selecionado -->
+      <div id="admin-view-tech-content" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div id="admin-view-tech-name" style="font-size:16px;font-weight:700;color:var(--primary);"></div>
+          <div style="display:flex;gap:6px;font-size:11px;">
+            <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
+            <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
+          </div>
+        </div>
+        <div class="cal-grid" id="admin-cal-grid" style="margin-bottom:16px;"></div>
+        <div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px;"></div>
+        <div id="admin-tech-os-list"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL: LOGIN ADMIN -->
@@ -458,15 +485,11 @@
 <div class="modal-overlay" id="modal-delete">
   <div class="modal-box">
     <div class="modal-title">🗑️ Confirmar Exclusão</div>
-    <div class="modal-sub" id="delete-modal-sub">Digite a senha do administrador para excluir.</div>
-    <form onsubmit="confirmarExclusao(); return false;">
-      <input type="password" class="modal-input" id="delete-senha-input" placeholder="••••••" maxlength="6" inputmode="numeric" autocomplete="off">
-      <div class="modal-btns">
-        <button type="button" class="btn-cancel" onclick="fecharModalDelete()">Cancelar</button>
-        <button type="submit" class="btn-confirm">Excluir</button>
-      </div>
-    </form>
-    <p id="delete-senha-erro" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+    <div class="modal-sub" id="delete-modal-sub">Tem certeza que deseja excluir esta ordem de serviço?</div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="fecharModalDelete()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="confirmarExclusao()">Excluir</button>
+    </div>
   </div>
 </div>
 
@@ -548,13 +571,6 @@ function fecharModalDelete() {
 }
 
 async function confirmarExclusao() {
-  const pass = document.getElementById('delete-senha-input').value;
-  if (pass !== ADMIN_PASS) {
-    document.getElementById('delete-senha-erro').style.display = 'block';
-    document.getElementById('delete-senha-input').value = '';
-    document.getElementById('delete-senha-input').focus();
-    return;
-  }
   const toDelete = pendingDelete;
   fecharModalDelete();
 
@@ -654,9 +670,11 @@ function showAdminTab(tab) {
   document.getElementById('admin-tab-new-os').classList.toggle('active', tab === 'new-os');
   document.getElementById('admin-tab-import').classList.toggle('active', tab === 'import');
   document.getElementById('admin-tab-all-os').classList.toggle('active', tab === 'all-os');
+  document.getElementById('admin-tab-view-tech').classList.toggle('active', tab === 'view-tech');
   document.getElementById('at-new').classList.toggle('active', tab === 'new-os');
   document.getElementById('at-import').classList.toggle('active', tab === 'import');
   document.getElementById('at-all').classList.toggle('active', tab === 'all-os');
+  document.getElementById('at-view').classList.toggle('active', tab === 'view-tech');
   if (tab === 'all-os') renderAdminOSList();
 }
 
@@ -733,9 +751,10 @@ function renderTechCalendar() {
   const total  = new Date(year, month+1, 0).getDate();
   const orders = allOrders[currentUser] || [];
 
-  // Monta mapa dia → lista de IDs de ordens agendadas nesse dia
+  // Monta mapa dia → lista de IDs de ordens agendadas nesse dia (ignora concluídas)
   const dateMap = {};
   orders.forEach(o => {
+    if (o.status === 'concluido') return; // ignora concluídas
     if (!o.data || o.data.trim() === '' || o.data === 'undefined') return;
     const d = parseDate(o.data);
     if (!d || isNaN(d.getTime())) return;
@@ -1432,6 +1451,98 @@ function toInputDate(str) {
 }
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ── Admin: visualizar calendário de um técnico
+async function adminVerTecnico(tech) {
+  // Destacar botão selecionado
+  document.querySelectorAll('.admin-tech-btn').forEach(b => {
+    b.style.opacity = b.getAttribute('data-tech') === tech ? '1' : '0.45';
+    b.style.transform = b.getAttribute('data-tech') === tech ? 'scale(1.04)' : 'scale(1)';
+  });
+
+  // Buscar ordens do técnico
+  setAdminSyncStatus('syncing');
+  const now    = new Date();
+  const result = await gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() });
+  setAdminSyncStatus('ok');
+
+  const orders = result.ok ? (result.data || []) : [];
+
+  // Mostrar área
+  const wrap = document.getElementById('admin-view-tech-content');
+  wrap.style.display = 'block';
+  document.getElementById('admin-view-tech-name').textContent = tech;
+  document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
+
+  // Renderizar calendário
+  const grid  = document.getElementById('admin-cal-grid');
+  const year  = now.getFullYear();
+  const month = now.getMonth();
+  grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
+
+  const dateMap  = {};
+  const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined'));
+  orders.forEach(o => {
+    if (o.status === 'concluido') return;
+    if (!o.data || o.data.trim() === '' || o.data === 'undefined') return;
+    const d = parseDate(o.data);
+    if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
+    const k = d.getDate();
+    if (!dateMap[k]) dateMap[k] = 0;
+    dateMap[k]++;
+  });
+
+  const first = new Date(year, month, 1).getDay();
+  const total = new Date(year, month+1, 0).getDate();
+  for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
+  for (let d = 1; d <= total; d++) {
+    const isToday = d === now.getDate();
+    const count   = dateMap[d] || 0;
+    const temPend = isToday && pendentes.length > 0;
+    let dots = '';
+    if (count > 0)  dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(count, 3));
+    if (temPend)    dots += '<div class="dot dot-yellow"></div>';
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '">' +
+      '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
+  }
+
+  // Listar ordens do técnico
+  const lista = document.getElementById('admin-tech-os-list');
+  const ativas = orders.filter(o => o.status !== 'concluido');
+  if (ativas.length === 0) {
+    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem para este mês.</p></div>';
+    return;
+  }
+  ativas.sort((a,b) => {
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1; if (!b.data) return -1;
+    return parseDate(a.data) - parseDate(b.data);
+  });
+  lista.innerHTML = ativas.map(o => {
+    const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
+    const hoje   = new Date();
+    const amanha = new Date(); amanha.setDate(hoje.getDate()+1);
+    let dataLabel = dataOk ? formatDateBR(o.data) : '⏳ Sem data';
+    let dataStyle = 'color:var(--muted)';
+    if (dataOk) {
+      const dp = parseDate(o.data);
+      if (dp) {
+        const eHoje   = dp.getDate()===hoje.getDate()   && dp.getMonth()===hoje.getMonth()   && dp.getFullYear()===hoje.getFullYear();
+        const eAmanha = dp.getDate()===amanha.getDate() && dp.getMonth()===amanha.getMonth() && dp.getFullYear()===amanha.getFullYear();
+        if (eHoje)   { dataLabel = 'Hoje';   dataStyle = 'color:#ef4444;font-weight:700'; }
+        else if (eAmanha) { dataLabel = 'Amanhã'; dataStyle = 'color:#b45309;font-weight:700'; }
+      }
+    }
+    return '<div class="admin-os-item" style="' + (!dataOk ? 'background:#fffbeb;border-color:#fde68a;' : '') + 'flex-wrap:wrap;">' +
+      '<div class="admin-os-info" style="flex:1;min-width:0;">' +
+        '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
+        '<div class="admin-os-meta"><span style="' + dataStyle + '">📅 ' + dataLabel + '</span> · ' + esc(o.tipo||'') + '</div>' +
+        '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
+        (o.veiculo ? '<div class="admin-os-meta">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
 
 // Variável para guardar OS pendente de conclusão
 let pendingConcluir = null;
