@@ -121,8 +121,10 @@
   /* OS CARDS */
   .section-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
   .os-card {
-    background: white; border-radius: 16px; padding: 18px; margin-bottom: 14px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.06); border-left: 4px solid var(--accent);
+    background: white; border-radius: 16px; padding: 18px; margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,.04), 0 10px 24px rgba(0,0,0,.08);
+    border-left: 4px solid var(--accent);
+    border-bottom: 3px solid rgba(0,0,0,.06);
   }
   .os-card.pending { border-left-color: var(--accent2); }
   .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
@@ -274,7 +276,7 @@
     <!-- Cards do dia selecionado -->
     <div id="cal-day-cards" style="padding:0 20px 20px;max-width:680px;margin:0 auto;"></div>
   </div>
-  <div id="tech-tab-orders" class="screen" style="padding-top:20px;">
+  <div id="tech-tab-orders" class="screen" style="padding-top:20px;background:#e8eef8;min-height:100vh;">
     <div class="section-title" id="orders-month-label"></div>
     <div id="tech-os-list"></div>
   </div>
