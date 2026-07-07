@@ -271,6 +271,8 @@
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
+    <!-- Cards do dia selecionado -->
+    <div id="cal-day-cards" style="padding:0 20px 20px;max-width:680px;margin:0 auto;"></div>
   </div>
   <div id="tech-tab-orders" class="screen" style="padding-top:20px;">
     <div class="section-title" id="orders-month-label"></div>
@@ -647,6 +649,7 @@ async function loadTechOrders() {
     allOrders[currentUser] = result.data || [];
     renderTechCalendar();
     renderTechOSList();
+    renderCalDayCards(null); // mostra ordens de hoje no calendário
   }
   setSyncStatus('ok');
 }
@@ -733,35 +736,139 @@ function renderTechCalendar() {
 
 // Clique num dia do calendário → vai para aba Ordens e abre o(s) card(s)
 function calDayClick(ids) {
-  showTechTab('orders');
-  // Pequeno delay para garantir que a aba renderizou
-  setTimeout(() => {
-    if (ids.length === 1) {
-      // Abre direto o card
-      const body = document.getElementById('cb-' + ids[0]);
-      const chev = document.getElementById('chev-' + ids[0]);
-      if (body && body.style.display !== 'block') {
-        body.style.display = 'block';
-        if (chev) chev.style.transform = 'rotate(90deg)';
-      }
-      // Rola até o card
-      const card = body ? body.closest('.os-card') : null;
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      // Múltiplos cards no dia: abre todos e rola pro primeiro
-      let primeiro = null;
-      ids.forEach(id => {
-        const body = document.getElementById('cb-' + id);
-        const chev = document.getElementById('chev-' + id);
-        if (body && body.style.display !== 'block') {
-          body.style.display = 'block';
-          if (chev) chev.style.transform = 'rotate(90deg)';
-        }
-        if (!primeiro && body) primeiro = body.closest('.os-card');
+  // Não muda de aba — mostra os cards abaixo do calendário
+  renderCalDayCards(ids);
+}
+
+function renderCalDayCards(ids) {
+  const wrap = document.getElementById('cal-day-cards');
+  if (!wrap) return;
+
+  const orders = allOrders[currentUser] || [];
+  const selecionadas = ids
+    ? orders.filter(o => ids.includes(o.id))
+    : orders.filter(o => {
+        // Dia vigente: ordens de hoje
+        if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+        const d = parseDate(o.data);
+        if (!d) return false;
+        const hoje = new Date();
+        return d.getDate() === hoje.getDate() &&
+               d.getMonth() === hoje.getMonth() &&
+               d.getFullYear() === hoje.getFullYear();
       });
-      if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (selecionadas.length === 0) {
+    wrap.innerHTML = '';
+    return;
+  }
+
+  // Título do bloco
+  const titulo = ids ? 'Ordens do dia selecionado' : 'Ordens de hoje';
+  wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>' +
+    selecionadas.map(o => renderCardInline(o)).join('');
+
+  // Scroll suave até os cards
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderCardInline(o) {
+  const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
+  const cardCls  = hasDate ? '' : ' pending';
+  const dateVal  = hasDate ? toInputDate(o.data) : '';
+  const telLimpo = (o.telefone || '').replace(/\D/g,'');
+  const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
+  const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+  const cid      = 'cbc-' + o.id; // prefixo diferente para não colidir com aba ordens
+  const DIAS     = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+
+  let dataExib = 'Sem data — pendente';
+  let diaExib  = '';
+  if (hasDate) {
+    const dp = parseDate(o.data);
+    if (dp) { diaExib = DIAS[dp.getDay()]; dataExib = formatDateBR(o.data); }
+  }
+
+  const borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
+  const tipoTag = o.tipo ? '<span style="background:#eff6ff;color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
+  const badgeHtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
+    (hasDate
+      ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
+      : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Pendente</span>') +
+    tipoTag + '</div>';
+
+  // Veículos
+  const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
+  let veiculoHtml = '';
+  if (o.veiculo) {
+    const lista = o.veiculo.includes(' || ') ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean) : [o.veiculo.trim()];
+    if (lista.length <= 1) {
+      const partes = o.veiculo.trim().split(' | ');
+      const modelo = partes[0] || '';
+      const info   = partes.slice(1).join(' · ') || '';
+      veiculoHtml = '<div style="background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' + svgCar + '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span></div>' +
+        (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:19px;">' + esc(info) + '</div>' : '') +
+      '</div>';
+    } else {
+      veiculoHtml = '<div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-bottom:10px;">' +
+        lista.map(function(v, i) {
+          const partes = v.split(' | ');
+          const modelo = partes[0] || '';
+          const info   = partes.slice(1).join(' · ') || '';
+          return '<div style="' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+              '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' + svgCar +
+                '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
+              '</div>' +
+              '<span style="font-size:13px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span>' +
+            '</div>' +
+            (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:36px;">' + esc(info) + '</div>' : '') +
+          '</div>';
+        }).join('') + '</div>';
     }
-  }, 80);
+  }
+
+  return '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + (hasDate ? 'white' : '#fffbeb') + ';margin-bottom:14px;">' +
+    // Nome + WPP
+    '<div style="margin-bottom:12px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</span>' +
+        (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+        '</a>' : '') +
+      '</div>' +
+      '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
+    '</div>' +
+    veiculoHtml +
+    // Data
+    '<div style="margin-bottom:10px;">' +
+      '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;">' +
+        '<div style="font-size:10px;font-weight:700;color:' + (hasDate ? '#1d4ed8' : '#b45309') + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
+        '<div style="font-size:16px;font-weight:800;color:' + (hasDate ? 'var(--primary)' : 'var(--accent2)') + ';">' + dataExib + '</div>' +
+      '</div>' +
+    '</div>' +
+    // Endereço + Maps
+    (o.endereco ? '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;">' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--muted);">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
+          '<span>' + esc(o.endereco) + '</span>' +
+        '</div>' +
+        (o.obs ? '<div style="display:flex;align-items:flex-start;gap:5px;font-size:11px;color:var(--muted);margin-top:4px;padding-left:19px;">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2.5" width="11" height="11" style="flex-shrink:0;margin-top:1px;"><polygon points="3,11 22,2 13,21 11,13"/></svg>' +
+          '<span style="font-style:italic;">' + esc(o.obs) + '</span></div>' : '') +
+      '</div>' +
+      (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps</a>' : '') +
+    '</div>' : '') +
+    // Campo alterar data
+    '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
+      '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
+      '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
+      '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
+    '</div>' +
+  '</div>';
 }
 
 // ════════════════════════════════
