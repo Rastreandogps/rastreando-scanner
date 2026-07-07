@@ -457,7 +457,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 // ══════════════════════════════════════════════════════════
 // CONFIG — substitua pela URL do seu Apps Script
 // ══════════════════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwDk2FER9rlbsJXxufDVhTUWDdMG_GIfAy8zKy2tE7VMbNOCwz7deEV1KhJL8xGOng/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxKxJ1uwA4iOLbr_6oswVUYeE2vGDD-nGRPJ4KhcvDj3GeqCE8nlhgBsuzhpAoEoYI/exec';
 const POLL_MS = 30000;
 
 // ══════════════════════════════════════════════════════════
@@ -791,8 +791,8 @@ function osCardHTML(os, compact) {
         ${wppURL ? `<button class="os-btn btn-wpp" data-wpp="${wppURL}">💬 WhatsApp</button>` : ''}
         ${mapsURL ? `<button class="os-btn btn-maps" data-maps="${mapsURL}">📍 Maps</button>` : ''}
       </div>
-      <button class="os-btn btn-contato${isPendente?'':' done'}" data-id="${os.id}" style="margin-top:8px">
-        ${isPendente ? '📞 Marcar contato realizado' : '✅ Contato realizado'}
+      <button class="os-btn btn-contato${isPendente?'':' done'}" data-id="${os.id}" data-status="${os.status}" style="margin-top:8px">
+        ${isPendente ? '📞 Marcar contato realizado' : '↩️ Desfazer contato'}
       </button>
       ${contatoInfo}
     </div>
@@ -813,15 +813,19 @@ function bindOSActions(container, osList) {
     btn.onclick = () => window.open(btn.dataset.maps, '_blank');
   });
   container.querySelectorAll('.btn-contato[data-id]').forEach(btn => {
-    btn.onclick = () => marcarContato(btn.dataset.id, btn);
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      toggleContato(btn.dataset.id, btn);
+    };
   });
 }
 
-async function marcarContato(osId, btn) {
+async function toggleContato(osId, btn) {
   const os = osList.find(o => o.id === osId);
   if (!os) return;
-  if (os.status === 'contato_realizado') return;
 
+  const novoStatus = os.status === 'contato_realizado' ? 'pendente' : 'contato_realizado';
+  const txtOriginal = btn.textContent;
   btn.textContent = 'Salvando...';
   btn.disabled = true;
 
@@ -833,21 +837,28 @@ async function marcarContato(osId, btn) {
         action: 'updateStatus',
         tecnico: session.tecnico,
         senha: session.senha,
-        id: osId
+        id: osId,
+        novoStatus: novoStatus
       })
     });
     const data = await res.json();
     if(data.erro) throw new Error(data.erro);
 
-    os.status = 'contato_realizado';
-    const now = new Date();
-    os.data_contato  = now.toLocaleDateString('pt-BR');
-    os.hora_contato  = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    showToast('Contato registrado!','ok');
+    os.status = novoStatus;
+    if(novoStatus === 'contato_realizado') {
+      const now = new Date();
+      os.data_contato = now.toLocaleDateString('pt-BR');
+      os.hora_contato = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      showToast('Contato registrado!','ok');
+    } else {
+      os.data_contato = '';
+      os.hora_contato = '';
+      showToast('Contato desmarcado.','ok');
+    }
     loadOS();
   } catch(err) {
     showToast('Erro: '+err.message,'fail');
-    btn.textContent = '📞 Marcar contato realizado';
+    btn.textContent = txtOriginal;
     btn.disabled = false;
   }
 }
