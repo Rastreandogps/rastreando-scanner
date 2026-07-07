@@ -948,9 +948,16 @@ function renderTechOSList() {
         (o.veiculo ? (function() {
           // Separa veículos pelo separador ' || ' (duplo pipe)
           // O ' | ' simples dentro de cada veículo (GNV | Rastreio) é preservado
-          const lista = o.veiculo.includes(' || ')
-            ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean)
-            : [o.veiculo.trim()];
+          let lista;
+          if (o.veiculo.includes(' || ')) {
+            lista = o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
+          } else if (/\)\s*\|\s*[A-ZÀ-Ú]/.test(o.veiculo)) {
+            lista = o.veiculo.split(/\)\s*\|\s*(?=[A-ZÀ-Ú])/).map((v, i, arr) =>
+              i < arr.length - 1 ? v.trim() + ')' : v.trim()
+            ).filter(Boolean);
+          } else {
+            lista = [o.veiculo.trim()];
+          }
 
           const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
 
