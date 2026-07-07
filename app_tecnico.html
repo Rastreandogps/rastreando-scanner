@@ -301,15 +301,17 @@
 
   <div class="login-box">
     <h2>Entrar</h2>
-    <div class="field-group">
-      <label>Seu Nome</label>
-      <input type="text" id="login-user" placeholder="Digite seu nome..." autocomplete="off" autocorrect="off" spellcheck="false">
-    </div>
-    <div class="field-group">
-      <label>Senha (1 a 6 dígitos)</label>
-      <input type="password" id="login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
-    </div>
-    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <form onsubmit="doLogin(); return false;" autocomplete="off">
+      <div class="field-group">
+        <label>Seu Nome</label>
+        <input type="text" id="login-user" placeholder="Digite seu nome..." autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="field-group">
+        <label>Senha (1 a 6 dígitos)</label>
+        <input type="password" id="login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
+      </div>
+      <button type="submit" class="btn-login">Entrar</button>
+    </form>
     <p class="login-error" id="login-error">Usuário ou senha incorretos.</p>
     <button class="btn-admin" onclick="doAdminLogin()">🔐 Área do Administrador</button>
   </div>
@@ -535,6 +537,24 @@
 </div>
 
 <!-- ════════════════════════════════════════
+     MODAL: ADMIN LOGIN
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="admin-login-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔐 Área do Administrador</div>
+    <div class="modal-sub">Digite a senha para acessar.</div>
+    <form onsubmit="confirmAdminLogin(); return false;">
+      <input type="password" class="modal-input" id="admin-login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
+      <div class="modal-btns">
+        <button type="button" class="btn-cancel" onclick="closeAdminLoginModal()">Cancelar</button>
+        <button type="submit" class="btn-confirm" style="background:var(--admin);">Entrar</button>
+      </div>
+    </form>
+    <p id="admin-login-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      MODAL: CONFIRM DELETE
 ════════════════════════════════════════ -->
 <div class="modal-overlay" id="delete-modal">
@@ -604,18 +624,32 @@ function doLogin() {
 }
 
 function doAdminLogin() {
-  const pass = prompt('Senha do Administrador:');
+  // Abre modal proprio (prompt() bloqueado no GitHub Pages)
+  document.getElementById('admin-login-pass').value = '';
+  document.getElementById('admin-login-error').style.display = 'none';
+  document.getElementById('admin-login-modal').classList.add('open');
+  setTimeout(() => document.getElementById('admin-login-pass').focus(), 100);
+}
+
+function confirmAdminLogin() {
+  const pass = document.getElementById('admin-login-pass').value;
   if (pass === ADMIN_PASS) {
+    closeAdminLoginModal();
     currentUser = 'Admin';
     currentRole = 'admin';
-    // Salva sessao admin (expira em 4h)
     localStorage.setItem('app_tecnico_session', JSON.stringify({
       user: 'Admin', role: 'admin', ts: Date.now()
     }));
     showAdminScreen();
-  } else if (pass !== null) {
-    showToast('Senha incorreta', 'error');
+  } else {
+    document.getElementById('admin-login-error').style.display = 'block';
+    document.getElementById('admin-login-pass').value = '';
+    document.getElementById('admin-login-pass').focus();
   }
+}
+
+function closeAdminLoginModal() {
+  document.getElementById('admin-login-modal').classList.remove('open');
 }
 
 function doLogout() {
@@ -1325,12 +1359,9 @@ function showToast(msg, type = '') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Enter no campo nome → foca na senha; Enter na senha → faz login
+// Enter no campo nome → foca na senha (o form cuida do Enter na senha)
 document.getElementById('login-user').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('login-pass').focus();
-});
-document.getElementById('login-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('login-pass').focus(); }
 });
 
 // ════════════════════════════════════════
