@@ -371,7 +371,7 @@
       <div id="import-panel" style="display:none;margin-bottom:20px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid var(--border);">
         <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Cole a mensagem do cliente. O sistema preenche os campos automaticamente.</p>
         <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento..."></textarea>
-        <button class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
+        <button type="button" class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
         <div class="parsed-preview" id="parsed-preview"></div>
         <div id="import-form" style="display:none;margin-top:16px;">
           <div class="form-row">
@@ -397,7 +397,7 @@
             </div>
           </div>
           <div id="if-veiculos-wrap" style="margin-top:16px;"></div>
-          <button class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
+          <button type="button" class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
             Enviar OS
           </button>
@@ -441,11 +441,11 @@
         <div class="form-field"><label>Observações</label><textarea id="f-obs" rows="3" placeholder="Informações adicionais..."></textarea></div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="submitOS()">
+        <button type="button" class="btn-primary" onclick="submitOS()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           Enviar OS
         </button>
-        <button class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
+        <button type="button" class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
       </div>
 
     </div>
@@ -456,7 +456,7 @@
     <div class="admin-section">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
         <h3 style="margin:0;">Todas as Ordens de Serviço</h3>
-        <button class="btn-danger-outline" onclick="confirmDeleteAll()">🗑️ Apagar Todas</button>
+        <button type="button" class="btn-danger-outline" onclick="confirmDeleteAll()">🗑️ Apagar Todas</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
         <button class="btn-parse" onclick="filterAdmin('all')" id="af-all" style="padding:7px 14px;">Todos</button>
@@ -1312,11 +1312,15 @@ function renderAdminOSList() {
 // SUBMETER OS – MANUAL
 // ════════════════════════════════
 async function submitOS() {
+  // Só executa se pelo menos nome E técnico foram preenchidos manualmente
   const nome    = document.getElementById('f-nome').value.trim();
   const tel     = document.getElementById('f-tel').value.trim();
   const end     = document.getElementById('f-end').value.trim();
   const tipo    = document.getElementById('f-tipo').value;
   const tecnico = document.getElementById('f-tecnico').value;
+  // Proteção extra: não executa se o painel de importação está aberto e ativo
+  const importPanel = document.getElementById('import-panel');
+  if (importPanel && importPanel.style.display === 'block') return;
   const data    = document.getElementById('f-data').value;
   const veiculo = document.getElementById('f-veiculo').value.trim();
   const obs     = document.getElementById('f-obs').value.trim();
@@ -1456,6 +1460,7 @@ async function submitImportOS() {
   if (result.ok) {
     showToast('OS enviada para ' + tecnico + '!', 'success');
     resetImportForm();
+    clearForm(); // garante que formulário manual fica vazio
     await loadAllOrders();
   } else {
     showToast('Erro ao enviar OS.', 'error');
