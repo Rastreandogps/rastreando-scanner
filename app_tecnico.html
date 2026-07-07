@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APP Técnico</title>
+<style>
+  :root {
+    --primary: #1a2744;
+    --accent: #3b82f6;
+    --accent2: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --admin: #7c3aed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  #screen-login {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #1e3a8a 100%);
+    padding: 24px;
+  }
+  .login-logo {
+    width: 72px; height: 72px; background: var(--accent);
+    border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; box-shadow: 0 8px 32px rgba(59,130,246,0.4);
+  }
+  .login-logo svg { width: 40px; height: 40px; fill: white; }
+  .login-title { color: white; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .login-sub { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
+  .login-box {
+    background: white; border-radius: 20px; padding: 32px;
+    width: 100%; max-width: 360px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--primary); }
+  .field-group { margin-bottom: 16px; }
+  .field-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .field-group select, .field-group input {
+    width: 100%; padding: 12px 14px; border: 2px solid var(--border);
+    border-radius: 10px; font-size: 15px; outline: none; transition: border .2s;
+    background: white; color: var(--text);
+  }
+  .field-group select:focus, .field-group input:focus { border-color: var(--accent); }
+  .btn-login {
+    width: 100%; padding: 13px; background: var(--accent);
+    color: white; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: opacity .2s; margin-top: 8px;
+  }
+  .btn-login:hover { opacity: .9; }
+  .btn-admin {
+    width: 100%; padding: 11px; background: transparent;
+    color: var(--admin); border: 2px solid var(--admin); border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px;
+    transition: all .2s;
+  }
+  .btn-admin:hover { background: var(--admin); color: white; }
+  .login-error { color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #1e3a8a 100%);
+    color: white; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-avatar {
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: white;
+  }
+  .avatar-tech { background: var(--accent); }
+  .avatar-admin { background: var(--admin); }
+  .header-name { font-weight: 700; font-size: 16px; }
+  .header-role { font-size: 12px; opacity: .7; }
+  .btn-logout {
+    padding: 7px 14px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2);
+    color: white; border-radius: 8px; font-size: 13px; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex; background: white; border-bottom: 2px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    position: sticky; top: 72px; z-index: 90;
+  }
+  .tab-btn {
+    padding: 13px 20px; border: none; background: none; font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer; white-space: nowrap; transition: all .2s;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn.admin-tab.active { color: var(--admin); border-bottom-color: var(--admin); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* ── CALENDAR ── */
+  .calendar-wrap { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 20px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-label { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0; text-transform: uppercase; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 12px;
+    cursor: default; position: relative; gap: 2px;
+  }
+  .cal-day.today { background: #eff6ff; font-weight: 700; color: var(--accent); }
+  .cal-day.other-month { opacity: .3; }
+  .cal-day .dots { display: flex; gap: 2px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-blue { background: var(--accent); }
+  .dot-yellow { background: var(--accent2); }
+
+  /* ── OS CARDS ── */
+  .section-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+  .os-card {
+    background: white; border-radius: 16px; padding: 18px; margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06); border-left: 4px solid var(--accent);
+    position: relative;
+  }
+  .os-card.pending { border-left-color: var(--accent2); }
+  .os-card.done { border-left-color: var(--success); opacity: .7; }
+  .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
+  .os-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    display: inline-block;
+  }
+  .badge-scheduled { background: #dbeafe; color: #1d4ed8; }
+  .badge-pending { background: #fef3c7; color: #b45309; }
+  .badge-done { background: #d1fae5; color: #065f46; }
+  .os-info { font-size: 13px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .os-info svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .os-date-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .os-date-input {
+    flex: 1; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 13px; outline: none; transition: border .2s;
+  }
+  .os-date-input:focus { border-color: var(--accent); }
+  .btn-save-date {
+    padding: 8px 14px; background: var(--accent); color: white; border: none;
+    border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .btn-delete {
+    padding: 7px; background: #fee2e2; color: var(--danger); border: none;
+    border-radius: 8px; cursor: pointer; display: flex; align-items: center;
+  }
+  .os-type { font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 6px; display: inline-block; background: #eff6ff; padding: 2px 8px; border-radius: 6px; }
+  .os-notes { font-size: 13px; color: var(--muted); margin-top: 8px; font-style: italic; }
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .4; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── ADMIN AREA ── */
+  .admin-header-bar {
+    background: linear-gradient(135deg, #4c1d95, #6d28d9);
+    color: white; padding: 16px 20px; border-radius: 14px;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .admin-header-bar svg { width: 28px; height: 28px; }
+  .admin-section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .admin-section h3 { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
+  .form-field input, .form-field select, .form-field textarea {
+    width: 100%; padding: 10px 12px; border: 2px solid var(--border);
+    border-radius: 10px; font-size: 14px; outline: none; transition: border .2s;
+    font-family: inherit; resize: vertical;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--admin); }
+  .btn-primary {
+    padding: 12px 20px; background: var(--admin); color: white; border: none;
+    border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: opacity .2s; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover { opacity: .9; }
+  .btn-danger-outline {
+    padding: 10px 16px; background: white; color: var(--danger);
+    border: 2px solid var(--danger); border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .paste-area {
+    width: 100%; padding: 12px; border: 2px dashed var(--border);
+    border-radius: 10px; font-size: 13px; min-height: 100px;
+    outline: none; resize: vertical; font-family: inherit; transition: border .2s;
+  }
+  .paste-area:focus { border-color: var(--admin); }
+  .btn-parse {
+    padding: 10px 18px; background: #eff6ff; color: var(--accent);
+    border: 2px solid var(--accent); border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 10px;
+  }
+  .parsed-preview {
+    background: #f8fafc; border-radius: 10px; padding: 14px;
+    margin-top: 12px; display: none; border: 1px solid var(--border);
+  }
+  .parsed-preview p { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .parsed-preview strong { color: var(--primary); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
+    font-size: 14px; font-weight: 600; z-index: 9999; transition: transform .3s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: white; border-radius: 20px; padding: 28px;
+    width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+  .modal-input {
+    width: 100%; padding: 12px; border: 2px solid var(--border);
+    border-radius: 10px; font-size: 16px; text-align: center; outline: none;
+    letter-spacing: 4px; transition: border .2s;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-btns button { flex: 1; }
+  .btn-cancel {
+    padding: 11px; background: var(--border); color: var(--text);
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-confirm {
+    padding: 11px; background: var(--danger); color: white;
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+
+  /* ── ADMIN OS LIST ── */
+  .admin-os-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    background: #f8fafc; border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid var(--border);
+  }
+  .admin-os-info { flex: 1; }
+  .admin-os-name { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .admin-os-meta { font-size: 12px; color: var(--muted); }
+  .tech-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+  .tech-ederson { background: #fee2e2; color: #991b1b; }
+  .tech-glauber { background: #dbeafe; color: #1e40af; }
+  .tech-jonas { background: #d1fae5; color: #065f46; }
+
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .screen { padding: 14px; }
+    .app-header { padding: 12px 16px; }
+  }
+
+  .loading-spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.4); border-top-color: white;
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sync-indicator { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     SCREEN: LOGIN
+════════════════════════════════════════ -->
+<div id="screen-login">
+  <div class="login-logo">
+    <svg viewBox="0 0 24 24"><path d="M14.5 2.5c0 1.5-1.5 7-1.5 7h-2S9.5 4 9.5 2.5a2.5 2.5 0 0 1 5 0zM12 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 9l2-5h10l2 5H5zm4-5l-1.5-4M15 15l-1.5-4"/></svg>
+  </div>
+  <div class="login-title">APP Técnico</div>
+  <div class="login-sub">Rastreando GPS</div>
+
+  <div class="login-box">
+    <h2>Entrar</h2>
+    <div class="field-group">
+      <label>Seu Nome</label>
+      <input type="text" id="login-user" placeholder="Digite seu nome..." autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field-group">
+      <label>Senha (1 a 6 dígitos)</label>
+      <input type="password" id="login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
+    </div>
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <p class="login-error" id="login-error">Usuário ou senha incorretos.</p>
+    <button class="btn-admin" onclick="doAdminLogin()">🔐 Área do Administrador</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: TECH DASHBOARD
+════════════════════════════════════════ -->
+<div id="screen-tech" style="display:none;">
+  <div class="app-header">
+    <div class="header-left">
+      <div class="header-avatar avatar-tech" id="tech-avatar">G</div>
+      <div>
+        <div class="header-name" id="tech-header-name">Glauber</div>
+        <div class="header-role">Técnico</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="sync-indicator"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Sincronizado</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar">📅 Calendário</button>
+    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders">📋 Ordens</button>
+  </div>
+
+  <div id="tech-tab-calendar" class="screen active">
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-title" id="cal-month-label">Julho 2025</div>
+        <div class="sync-indicator" style="font-size:12px;">
+          <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
+          <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
+
+  <div id="tech-tab-orders" class="screen" style="padding-top:20px;">
+    <div class="section-title" id="orders-month-label">Ordens de Julho</div>
+    <div id="tech-os-list">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <p>Nenhuma ordem de serviço.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: ADMIN DASHBOARD
+════════════════════════════════════════ -->
+<div id="screen-admin" style="display:none;">
+  <div class="app-header" style="background:linear-gradient(135deg,#4c1d95,#6d28d9);">
+    <div class="header-left">
+      <div class="header-avatar avatar-admin">A</div>
+      <div>
+        <div class="header-name">Administrador</div>
+        <div class="header-role">Acesso total</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="sync-indicator"><div class="sync-dot" id="admin-sync-dot"></div><span id="admin-sync-label">Sincronizado</span></div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new">➕ Nova OS</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('import')" id="at-import">📥 Importar</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('all-os')" id="at-all">📋 Todas as OS</button>
+  </div>
+
+  <!-- NOVA OS -->
+  <div id="admin-tab-new-os" class="screen active">
+    <div class="admin-section">
+      <h3>Nova Ordem de Serviço</h3>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome do Cliente *</label>
+          <input type="text" id="f-nome" placeholder="Ex: João da Silva">
+        </div>
+        <div class="form-field">
+          <label>Telefone *</label>
+          <input type="tel" id="f-tel" placeholder="(21) 9 0000-0000">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label>Endereço *</label>
+          <input type="text" id="f-end" placeholder="Rua, número, bairro, cidade">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Tipo de Serviço</label>
+          <select id="f-tipo">
+            <option value="Instalação">Instalação</option>
+            <option value="Manutenção">Manutenção</option>
+            <option value="Remoção">Remoção</option>
+            <option value="Substituição">Substituição</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Técnico Responsável *</label>
+          <select id="f-tecnico">
+            <option value="">Selecione...</option>
+            <option value="Glauber">Glauber</option>
+            <option value="Ederson">Ederson</option>
+            <option value="Jonas">Jonas</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Data de Instalação</label>
+          <input type="date" id="f-data">
+        </div>
+        <div class="form-field">
+          <label>Veículo / Placa</label>
+          <input type="text" id="f-veiculo" placeholder="Ex: Gol / ABC-1234">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-field">
+          <label>Observações</label>
+          <textarea id="f-obs" rows="3" placeholder="Informações adicionais..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="submitOS()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Enviar OS
+        </button>
+        <button class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORTAR -->
+  <div id="admin-tab-import" class="screen">
+    <div class="admin-section">
+      <h3>📋 Importar Agendamento do Cliente</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+        Cole a mensagem de confirmação de agendamento enviada pelo cliente. O sistema preencherá os campos automaticamente.
+      </p>
+      <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento do cliente...&#10;&#10;Exemplo:&#10;Nome: João Silva&#10;Telefone: (21) 9 8765-4321&#10;Endereço: Rua das Flores, 123 - Centro&#10;Veículo: Civic / ABC-1234&#10;Data: 15/07/2025"></textarea>
+      <button class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
+
+      <div class="parsed-preview" id="parsed-preview"></div>
+
+      <div id="import-form" style="display:none;margin-top:16px;">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Nome do Cliente</label>
+            <input type="text" id="if-nome">
+          </div>
+          <div class="form-field">
+            <label>Telefone</label>
+            <input type="tel" id="if-tel">
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-field">
+            <label>Endereço</label>
+            <input type="text" id="if-end">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Veículo / Placa</label>
+            <input type="text" id="if-veiculo">
+          </div>
+          <div class="form-field">
+            <label>Data de Instalação</label>
+            <input type="date" id="if-data">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Tipo de Serviço</label>
+            <select id="if-tipo">
+              <option value="Instalação">Instalação</option>
+              <option value="Manutenção">Manutenção</option>
+              <option value="Remoção">Remoção</option>
+              <option value="Substituição">Substituição</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Técnico Responsável *</label>
+            <select id="if-tecnico">
+              <option value="">Selecione...</option>
+              <option value="Glauber">Glauber</option>
+              <option value="Ederson">Ederson</option>
+              <option value="Jonas">Jonas</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-field">
+            <label>Observações</label>
+            <textarea id="if-obs" rows="2" placeholder="Observações adicionais..."></textarea>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="submitImportOS()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+          Enviar OS Importada
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODAS AS OS -->
+  <div id="admin-tab-all-os" class="screen">
+    <div class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <h3 style="margin:0;">Todas as Ordens de Serviço</h3>
+        <button class="btn-danger-outline" onclick="confirmDeleteAll()">🗑️ Apagar Todas</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn-parse" onclick="filterAdmin('all')" id="af-all" style="padding:7px 14px;">Todos</button>
+        <button class="btn-parse" onclick="filterAdmin('Glauber')" id="af-Glauber" style="padding:7px 14px;">Glauber</button>
+        <button class="btn-parse" onclick="filterAdmin('Ederson')" id="af-Ederson" style="padding:7px 14px;">Ederson</button>
+        <button class="btn-parse" onclick="filterAdmin('Jonas')" id="af-Jonas" style="padding:7px 14px;">Jonas</button>
+      </div>
+      <div id="admin-os-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: CONFIRM DELETE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <div class="modal-title">🔐 Confirmar Exclusão</div>
+    <div class="modal-sub" id="delete-modal-sub">Digite a senha do administrador para confirmar a exclusão.</div>
+    <input type="password" class="modal-input" id="delete-modal-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmDeleteAction()">Excluir</button>
+    </div>
+    <p id="delete-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// CONFIGURAÇÃO
+// ════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
+
+const ADMIN_PASS = '271659';
+const TECH_CREDENTIALS = {
+  'Glauber': '123456',
+  'Ederson': '123456',
+  'Jonas':   '123456'
+};
+
+// Estado global
+let currentUser = null;
+let currentRole = null;
+let allOrders   = { Glauber: [], Ederson: [], Jonas: [] };
+let pendingDelete = null; // { type: 'single'|'all', id, tech }
+let adminFilter = 'all';
+let pollInterval = null;
+
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+// ════════════════════════════════════════
+// AUTENTICAÇÃO
+// ════════════════════════════════════════
+function doLogin() {
+  // Normaliza: primeira letra maiúscula, resto minúsculo (ex: "glauber" → "Glauber")
+  const raw  = document.getElementById('login-user').value.trim();
+  const user = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-error');
+  err.style.display = 'none';
+
+  if (!raw)  { showToast('Digite seu nome', 'error'); return; }
+  if (!pass) { showToast('Digite sua senha', 'error'); return; }
+  if (TECH_CREDENTIALS[user] !== pass) {
+    err.style.display = 'block';
+    return;
+  }
+  currentUser = user;
+  currentRole = 'tech';
+  showTechScreen();
+}
+
+function doAdminLogin() {
+  const pass = prompt('Senha do Administrador:');
+  if (pass === ADMIN_PASS) {
+    currentUser = 'Admin';
+    currentRole = 'admin';
+    showAdminScreen();
+  } else if (pass !== null) {
+    showToast('Senha incorreta', 'error');
+  }
+}
+
+function doLogout() {
+  currentUser = null;
+  currentRole = null;
+  if (pollInterval) clearInterval(pollInterval);
+  document.getElementById('screen-tech').style.display  = 'none';
+  document.getElementById('screen-admin').style.display = 'none';
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// ════════════════════════════════════════
+// TELAS
+// ════════════════════════════════════════
+function showTechScreen() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-admin').style.display = 'none';
+  document.getElementById('screen-tech').style.display  = 'block';
+  document.getElementById('tech-avatar').textContent    = currentUser[0];
+  document.getElementById('tech-header-name').textContent = currentUser;
+  showTechTab('calendar');
+  loadTechOrders();
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(loadTechOrders, 30000);
+}
+
+function showAdminScreen() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-tech').style.display  = 'none';
+  document.getElementById('screen-admin').style.display = 'block';
+  showAdminTab('new-os');
+  loadAllOrders();
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(loadAllOrders, 30000);
+}
+
+function showTechTab(tab) {
+  ['calendar','orders'].forEach(t => {
+    document.getElementById(`tech-tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`tt-${t}`).classList.toggle('active', t === tab);
+  });
+}
+
+function showAdminTab(tab) {
+  ['new-os','import','all-os'].forEach(t => {
+    const el = document.getElementById(`admin-tab-${t}`);
+    const btn = document.getElementById(`at-${t.replace('-os','').replace('new','new').replace('all','all')}`);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  // fix IDs
+  document.getElementById('admin-tab-new-os').classList.toggle('active', tab === 'new-os');
+  document.getElementById('admin-tab-import').classList.toggle('active', tab === 'import');
+  document.getElementById('admin-tab-all-os').classList.toggle('active', tab === 'all-os');
+  document.getElementById('at-new').classList.toggle('active', tab === 'new-os');
+  document.getElementById('at-import').classList.toggle('active', tab === 'import');
+  document.getElementById('at-all').classList.toggle('active', tab === 'all-os');
+  if (tab === 'all-os') renderAdminOSList();
+}
+
+// ════════════════════════════════════════
+// GOOGLE APPS SCRIPT – COMUNICAÇÃO
+// ════════════════════════════════════════
+async function gasRequest(payload) {
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch(e) {
+    console.error('GAS Error:', e);
+    return { ok: false, error: e.message };
+  }
+}
+
+// LOAD – técnico vê apenas suas ordens do mês atual
+async function loadTechOrders() {
+  setSyncStatus('syncing');
+  const now = new Date();
+  const result = await gasRequest({ action: 'getOrders', tech: currentUser, month: now.getMonth() + 1, year: now.getFullYear() });
+  if (result.ok) {
+    allOrders[currentUser] = result.data || [];
+    renderTechCalendar();
+    renderTechOSList();
+    setSyncStatus('ok');
+  } else {
+    setSyncStatus('ok'); // silencioso
+  }
+}
+
+async function loadAllOrders() {
+  setAdminSyncStatus('syncing');
+  const now = new Date();
+  const result = await gasRequest({ action: 'getAllOrders', month: now.getMonth() + 1, year: now.getFullYear() });
+  if (result.ok) {
+    allOrders = result.data || { Glauber: [], Ederson: [], Jonas: [] };
+    renderAdminOSList();
+    setAdminSyncStatus('ok');
+  } else {
+    setAdminSyncStatus('ok');
+  }
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot) return;
+  if (status === 'syncing') {
+    dot.className = 'sync-dot syncing';
+    lbl.textContent = 'Sincronizando...';
+  } else {
+    dot.className = 'sync-dot';
+    lbl.textContent = 'Sincronizado';
+  }
+}
+
+function setAdminSyncStatus(status) {
+  const dot = document.getElementById('admin-sync-dot');
+  const lbl = document.getElementById('admin-sync-label');
+  if (!dot) return;
+  if (status === 'syncing') {
+    dot.className = 'sync-dot syncing';
+    lbl.textContent = 'Sincronizando...';
+  } else {
+    dot.className = 'sync-dot';
+    lbl.textContent = 'Sincronizado';
+  }
+}
+
+// ════════════════════════════════════════
+// CALENDÁRIO
+// ════════════════════════════════════════
+function renderTechCalendar() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  document.getElementById('cal-month-label').textContent = `${MONTHS[month]} ${year}`;
+  document.getElementById('orders-month-label').textContent = `Ordens de ${MONTHS[month]}`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = DAYS.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+
+  const first = new Date(year, month, 1).getDay();
+  const days  = new Date(year, month + 1, 0).getDate();
+
+  // orders this month
+  const orders = allOrders[currentUser] || [];
+
+  // build date→orders map
+  const dateMap = {};
+  orders.forEach(o => {
+    if (o.data) {
+      const d = parseDate(o.data);
+      if (d && d.getMonth() === month && d.getFullYear() === year) {
+        const key = d.getDate();
+        if (!dateMap[key]) dateMap[key] = [];
+        dateMap[key].push(o);
+      }
+    }
+  });
+
+  // blank cells
+  for (let i = 0; i < first; i++) {
+    grid.innerHTML += `<div class="cal-day other-month"></div>`;
+  }
+
+  for (let d = 1; d <= days; d++) {
+    const isToday = d === now.getDate();
+    const dayOrders = dateMap[d] || [];
+    const pendingOrders = orders.filter(o => !o.data || o.data === '');
+    let dots = '';
+    if (dayOrders.length > 0) dots += `<div class="dot dot-blue"></div>`.repeat(Math.min(dayOrders.length, 3));
+    grid.innerHTML += `<div class="cal-day${isToday ? ' today' : ''}">
+      <span>${d}</span>
+      ${dots ? `<div class="dots">${dots}</div>` : ''}
+    </div>`;
+  }
+
+  // Show pending dot on today if any pending
+  const todayPending = (allOrders[currentUser] || []).filter(o => !o.data || o.data === '');
+  if (todayPending.length > 0) {
+    const todayEl = grid.querySelectorAll('.cal-day.today')[0];
+    if (todayEl) {
+      const dotsDiv = todayEl.querySelector('.dots') || (() => { const d = document.createElement('div'); d.className = 'dots'; todayEl.appendChild(d); return d; })();
+      dotsDiv.innerHTML += `<div class="dot dot-yellow"></div>`;
+    }
+  }
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  // handles DD/MM/YYYY or YYYY-MM-DD
+  if (str.includes('/')) {
+    const [d,m,y] = str.split('/');
+    return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+  } else if (str.includes('-')) {
+    const [y,m,d] = str.split('-');
+    return new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+  }
+  return null;
+}
+
+function formatDateBR(str) {
+  if (!str) return '';
+  const d = parseDate(str);
+  if (!d) return str;
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// ════════════════════════════════════════
+// RENDER OS – TÉCNICO
+// ════════════════════════════════════════
+function renderTechOSList() {
+  const list   = document.getElementById('tech-os-list');
+  const orders = allOrders[currentUser] || [];
+  const now    = new Date();
+
+  // only this month
+  const monthly = orders.filter(o => {
+    if (!o.data) return true; // pending always shown
+    const d = parseDate(o.data);
+    return !d || (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear());
+  });
+
+  if (monthly.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p>Nenhuma ordem para este mês.</p>
+    </div>`;
+    return;
+  }
+
+  // sort: with date first
+  monthly.sort((a,b) => {
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1;
+    if (!b.data) return -1;
+    return parseDate(a.data) - parseDate(b.data);
+  });
+
+  list.innerHTML = monthly.map(o => {
+    const hasDate  = o.data && o.data.trim() !== '';
+    const badge    = hasDate ? 'badge-scheduled' : 'badge-pending';
+    const badgeTxt = hasDate ? 'Agendado' : 'Pendente';
+    const cardClass = hasDate ? '' : ' pending';
+    const dateVal  = hasDate ? toInputDate(o.data) : '';
+
+    return `<div class="os-card${cardClass}">
+      <div class="os-card-header">
+        <div class="os-client">${escHtml(o.nome)}</div>
+        <span class="os-badge ${badge}">${badgeTxt}</span>
+      </div>
+      <div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>${escHtml(o.endereco)}</div>
+      <div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>${escHtml(o.telefone)}</div>
+      ${o.veiculo ? `<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>${escHtml(o.veiculo)}</div>` : ''}
+      <span class="os-type">${escHtml(o.tipo || 'Instalação')}</span>
+      ${o.obs ? `<div class="os-notes">💬 ${escHtml(o.obs)}</div>` : ''}
+      <div class="os-date-row">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <input type="date" class="os-date-input" value="${dateVal}" id="date-${o.id}" placeholder="Selecionar data">
+        <button class="btn-save-date" onclick="saveDate('${o.id}','${escAttr(currentUser)}')">Salvar</button>
+        <button class="btn-delete" title="Excluir OS" onclick="requestDelete('${o.id}','${escAttr(currentUser)}')">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toInputDate(str) {
+  if (!str) return '';
+  const d = parseDate(str);
+  if (!d) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function saveDate(id, tech) {
+  const val = document.getElementById(`date-${id}`).value;
+  setSyncStatus('syncing');
+  const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
+  if (result.ok) {
+    showToast('Data salva!', 'success');
+    await loadTechOrders();
+  } else {
+    showToast('Erro ao salvar data.', 'error');
+    setSyncStatus('ok');
+  }
+}
+
+// ════════════════════════════════════════
+// RENDER OS – ADMIN
+// ════════════════════════════════════════
+function filterAdmin(tech) {
+  adminFilter = tech;
+  document.querySelectorAll('[id^="af-"]').forEach(b => b.style.background = '');
+  document.getElementById(`af-${tech}`) && (document.getElementById(`af-${tech}`).style.background = '#dbeafe');
+  renderAdminOSList();
+}
+
+function renderAdminOSList() {
+  const list = document.getElementById('admin-os-list');
+  if (!list) return;
+
+  let items = [];
+  const techs = adminFilter === 'all' ? ['Glauber','Ederson','Jonas'] : [adminFilter];
+  techs.forEach(t => {
+    (allOrders[t] || []).forEach(o => items.push({...o, _tech: t}));
+  });
+
+  if (items.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:32px 0;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <p>Nenhuma ordem encontrada.</p>
+    </div>`;
+    return;
+  }
+
+  items.sort((a,b) => {
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1;
+    if (!b.data) return -1;
+    return parseDate(a.data) - parseDate(b.data);
+  });
+
+  list.innerHTML = items.map(o => `
+    <div class="admin-os-item">
+      <div class="admin-os-info">
+        <div class="admin-os-name">${escHtml(o.nome)}</div>
+        <div class="admin-os-meta">${o.data ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data'} · ${escHtml(o.tipo||'Instalação')} · ${escHtml(o.telefone||'')}</div>
+        <div class="admin-os-meta" style="margin-top:2px;">📍 ${escHtml(o.endereco||'')}</div>
+      </div>
+      <span class="tech-badge tech-${o._tech.toLowerCase()}">${o._tech}</span>
+      <button class="btn-delete" title="Excluir" onclick="requestDelete('${o.id}','${o._tech}')">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+// SUBMETER OS
+// ════════════════════════════════════════
+async function submitOS() {
+  const nome    = document.getElementById('f-nome').value.trim();
+  const tel     = document.getElementById('f-tel').value.trim();
+  const end     = document.getElementById('f-end').value.trim();
+  const tipo    = document.getElementById('f-tipo').value;
+  const tecnico = document.getElementById('f-tecnico').value;
+  const data    = document.getElementById('f-data').value;
+  const veiculo = document.getElementById('f-veiculo').value.trim();
+  const obs     = document.getElementById('f-obs').value.trim();
+
+  if (!nome || !tel || !end || !tecnico) {
+    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
+  }
+
+  const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() };
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest(os);
+  if (result.ok) {
+    showToast(`OS enviada para ${tecnico}!`, 'success');
+    clearForm();
+    await loadAllOrders();
+  } else {
+    showToast('Erro ao enviar OS.', 'error');
+    setAdminSyncStatus('ok');
+  }
+}
+
+async function submitImportOS() {
+  const nome    = document.getElementById('if-nome').value.trim();
+  const tel     = document.getElementById('if-tel').value.trim();
+  const end     = document.getElementById('if-end').value.trim();
+  const tipo    = document.getElementById('if-tipo').value;
+  const tecnico = document.getElementById('if-tecnico').value;
+  const data    = document.getElementById('if-data').value;
+  const veiculo = document.getElementById('if-veiculo').value.trim();
+  const obs     = document.getElementById('if-obs').value.trim();
+
+  if (!nome || !tel || !end || !tecnico) {
+    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
+  }
+
+  const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() };
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest(os);
+  if (result.ok) {
+    showToast(`OS enviada para ${tecnico}!`, 'success');
+    document.getElementById('paste-area').value = '';
+    document.getElementById('parsed-preview').style.display = 'none';
+    document.getElementById('import-form').style.display = 'none';
+    await loadAllOrders();
+  } else {
+    showToast('Erro ao enviar OS.', 'error');
+    setAdminSyncStatus('ok');
+  }
+}
+
+function clearForm() {
+  ['f-nome','f-tel','f-end','f-veiculo','f-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-data').value = '';
+  document.getElementById('f-tipo').value = 'Instalação';
+  document.getElementById('f-tecnico').value = '';
+}
+
+// ════════════════════════════════════════
+// IMPORTAR MENSAGEM
+// ════════════════════════════════════════
+function parseMessage() {
+  const txt = document.getElementById('paste-area').value;
+  if (!txt.trim()) { showToast('Cole a mensagem primeiro', 'error'); return; }
+
+  const parsed = {};
+  const lines = txt.split('\n');
+
+  // Flexible parser: handles "Campo: valor" patterns
+  const patterns = {
+    nome:     [/nome[:\s]+(.+)/i, /cliente[:\s]+(.+)/i, /^([A-ZÀ-Ú][a-zà-ú]+ [A-ZÀ-Ú].+)$/m],
+    telefone: [/tel(?:efone)?[:\s]+(.+)/i, /fone[:\s]+(.+)/i, /whatsapp[:\s]+(.+)/i, /contato[:\s]+(.+)/i, /(\(?\d{2}\)?\s?\d[\s.-]?\d{4}[-.]?\d{4})/],
+    endereco: [/endere[çc]o[:\s]+(.+)/i, /local[:\s]+(.+)/i, /rua[:\s]+(.+)/i, /av(?:enida)?[:\s]+(.+)/i],
+    veiculo:  [/ve[íi]culo[:\s]+(.+)/i, /carro[:\s]+(.+)/i, /placa[:\s]+(.+)/i, /modelo[:\s]+(.+)/i],
+    data:     [/data[:\s]+(.+)/i, /dia[:\s]+(.+)/i, /agendamento[:\s]+(.+)/i, /(\d{1,2}\/\d{1,2}\/\d{2,4})/],
+    tipo:     [/servi[çc]o[:\s]+(.+)/i, /tipo[:\s]+(.+)/i]
+  };
+
+  for (const [field, regexes] of Object.entries(patterns)) {
+    for (const rx of regexes) {
+      const m = txt.match(rx);
+      if (m && m[1]) { parsed[field] = m[1].trim(); break; }
+    }
+  }
+
+  // Convert date to input format
+  if (parsed.data) {
+    const dateStr = parsed.data;
+    const dm = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (dm) {
+      const y = dm[3].length === 2 ? '20' + dm[3] : dm[3];
+      parsed.data = `${y}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+    }
+  }
+
+  // Show preview
+  const preview = document.getElementById('parsed-preview');
+  preview.style.display = 'block';
+  preview.innerHTML = `<p>✅ <strong>Dados identificados:</strong></p>
+    ${parsed.nome ? `<p>👤 <strong>Nome:</strong> ${escHtml(parsed.nome)}</p>` : '<p style="color:#ef4444">⚠️ Nome não identificado — preencha manualmente</p>'}
+    ${parsed.telefone ? `<p>📞 <strong>Telefone:</strong> ${escHtml(parsed.telefone)}</p>` : '<p style="color:#ef4444">⚠️ Telefone não identificado — preencha manualmente</p>'}
+    ${parsed.endereco ? `<p>📍 <strong>Endereço:</strong> ${escHtml(parsed.endereco)}</p>` : '<p style="color:#ef4444">⚠️ Endereço não identificado — preencha manualmente</p>'}
+    ${parsed.veiculo ? `<p>🚗 <strong>Veículo:</strong> ${escHtml(parsed.veiculo)}</p>` : ''}
+    ${parsed.data ? `<p>📅 <strong>Data:</strong> ${formatDateBR(parsed.data)}</p>` : '<p style="color:#b45309">📅 Sem data — técnico poderá definir depois</p>'}`;
+
+  // Populate import form
+  document.getElementById('if-nome').value    = parsed.nome || '';
+  document.getElementById('if-tel').value     = parsed.telefone || '';
+  document.getElementById('if-end').value     = parsed.endereco || '';
+  document.getElementById('if-veiculo').value = parsed.veiculo || '';
+  document.getElementById('if-data').value    = parsed.data || '';
+  if (parsed.tipo) {
+    const tipoMap = { instal: 'Instalação', manut: 'Manutenção', remo: 'Remoção', subst: 'Substituição' };
+    for (const [k,v] of Object.entries(tipoMap)) {
+      if (parsed.tipo.toLowerCase().includes(k)) {
+        document.getElementById('if-tipo').value = v; break;
+      }
+    }
+  }
+  document.getElementById('import-form').style.display = 'block';
+  showToast('Dados importados! Verifique e selecione o técnico.', 'success');
+}
+
+// ════════════════════════════════════════
+// DELETAR OS
+// ════════════════════════════════════════
+function requestDelete(id, tech) {
+  pendingDelete = { type: 'single', id, tech };
+  document.getElementById('delete-modal-sub').textContent = 'Digite a senha do administrador para excluir esta ordem de serviço.';
+  document.getElementById('delete-modal-pass').value = '';
+  document.getElementById('delete-error').style.display = 'none';
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function confirmDeleteAll() {
+  pendingDelete = { type: 'all' };
+  document.getElementById('delete-modal-sub').textContent = 'Digite a senha do administrador para excluir TODAS as ordens de serviço.';
+  document.getElementById('delete-modal-pass').value = '';
+  document.getElementById('delete-error').style.display = 'none';
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+  pendingDelete = null;
+}
+
+async function confirmDeleteAction() {
+  const pass = document.getElementById('delete-modal-pass').value;
+  if (pass !== ADMIN_PASS) {
+    document.getElementById('delete-error').style.display = 'block';
+    return;
+  }
+  closeDeleteModal();
+
+  if (pendingDelete.type === 'single') {
+    setAdminSyncStatus('syncing');
+    setSyncStatus('syncing');
+    const result = await gasRequest({ action: 'deleteOrder', id: pendingDelete.id, tech: pendingDelete.tech });
+    if (result.ok) {
+      showToast('Ordem excluída!', 'success');
+      if (currentRole === 'tech') await loadTechOrders();
+      else await loadAllOrders();
+    } else {
+      showToast('Erro ao excluir.', 'error');
+    }
+  } else if (pendingDelete.type === 'all') {
+    setAdminSyncStatus('syncing');
+    const result = await gasRequest({ action: 'deleteAll' });
+    if (result.ok) {
+      showToast('Todas as ordens foram excluídas!', 'success');
+      await loadAllOrders();
+    } else {
+      showToast('Erro ao excluir.', 'error');
+    }
+  }
+  pendingDelete = null;
+}
+
+// ════════════════════════════════════════
+// UTILITÁRIOS
+// ════════════════════════════════════════
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return escHtml(str);
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Enter no campo nome → foca na senha; Enter na senha → faz login
+document.getElementById('login-user').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-pass').focus();
+});
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// ════════════════════════════════════════
+// AUTO-DETECÇÃO DE VIRADA DE MÊS
+// ════════════════════════════════════════
+(function checkMonthRollover() {
+  const stored = localStorage.getItem('app_tecnico_month');
+  const now = new Date();
+  const current = `${now.getFullYear()}-${now.getMonth()}`;
+  if (stored && stored !== current) {
+    // New month — clear local cache signal
+    localStorage.setItem('app_tecnico_month', current);
+    console.log('[APP Técnico] Virada de mês detectada.');
+  } else if (!stored) {
+    localStorage.setItem('app_tecnico_month', current);
+  }
+})();
+</script>
+
+<!-- ════════════════════════════════════════
+     GOOGLE APPS SCRIPT (cole no GAS)
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  if (data.action === 'saveOrder') {
+    const sheet = ss.getSheetByName(data.tech);
+    sheet.appendRow([
+      data.id,
+      data.nome,
+      data.telefone,
+      data.endereco,
+      data.tipo,
+      data.data || '',
+      data.veiculo || '',
+      data.obs || '',
+      new Date().toLocaleDateString('pt-BR')
+    ]);
+    return ok({});
+  }
+  
+  if (data.action === 'getOrders') {
+    const sheet = ss.getSheetByName(data.tech);
+    const rows = sheet.getDataRange().getValues().slice(1);
+    const orders = rows.map(r => ({
+      id: r[0], nome: r[1], telefone: r[2], endereco: r[3],
+      tipo: r[4], data: r[5], veiculo: r[6], obs: r[7]
+    })).filter(o => {
+      if (!o.data) return true;
+      const d = new Date(o.data.split('/').reverse().join('-') + 'T12:00:00');
+      return d.getMonth()+1 == data.month && d.getFullYear() == data.year;
+    });
+    return ok(orders);
+  }
+  
+  if (data.action === 'getAllOrders') {
+    const result = {};
+    ['Glauber','Ederson','Jonas'].forEach(name => {
+      const sheet = ss.getSheetByName(name);
+      if (!sheet) { result[name] = []; return; }
+      const rows = sheet.getDataRange().getValues().slice(1);
+      result[name] = rows.map(r => ({
+        id: r[0], nome: r[1], telefone: r[2], endereco: r[3],
+        tipo: r[4], data: r[5], veiculo: r[6], obs: r[7]
+      }));
+    });
+    return ok(result);
+  }
+  
+  if (data.action === 'updateDate') {
+    const sheet = ss.getSheetByName(data.tech);
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] == data.id) {
+        const dateStr = data.data ? formatDate(data.data) : '';
+        sheet.getRange(i+1, 6).setValue(dateStr);
+        break;
+      }
+    }
+    return ok({});
+  }
+  
+  if (data.action === 'deleteOrder') {
+    const sheet = ss.getSheetByName(data.tech);
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] == data.id) {
+        sheet.deleteRow(i+1);
+        break;
+      }
+    }
+    return ok({});
+  }
+  
+  if (data.action === 'deleteAll') {
+    ['Glauber','Ederson','Jonas'].forEach(name => {
+      const sheet = ss.getSheetByName(name);
+      if (sheet && sheet.getLastRow() > 1) {
+        sheet.deleteRows(2, sheet.getLastRow()-1);
+      }
+    });
+    return ok({});
+  }
+  
+  return ok({});
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return '';
+  const [y,m,d] = isoStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function ok(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, data }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+════════════════════════════════════════ -->
+</body>
+</html>
