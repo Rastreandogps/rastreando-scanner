@@ -109,7 +109,13 @@
   .screen.active { display: block; }
 
   /* CALENDAR */
-  .calendar-wrap { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 20px; }
+  .calendar-wrap {
+    background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px;
+    box-shadow:
+      0 2px 12px rgba(0,0,0,.06),
+      0 0 0 1px rgba(59,130,246,.08),
+      0 0 20px rgba(59,130,246,.10);
+  }
   .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .cal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -129,11 +135,41 @@
   .section-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
   .os-card {
     background: white; border-radius: 16px; padding: 18px; margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,.04), 0 10px 24px rgba(0,0,0,.08);
     border-left: 4px solid var(--accent);
     border-bottom: 3px solid rgba(0,0,0,.06);
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.04),
+      0 10px 24px rgba(0,0,0,.08),
+      0 0 0 1px rgba(59,130,246,.08),
+      0 0 18px rgba(59,130,246,.13),
+      inset 0 0 0 1px rgba(59,130,246,.04);
+    transition: box-shadow .2s;
   }
-  .os-card.pending { border-left-color: var(--accent2); }
+  .os-card:hover {
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.04),
+      0 10px 24px rgba(0,0,0,.1),
+      0 0 0 1px rgba(59,130,246,.15),
+      0 0 28px rgba(59,130,246,.22),
+      inset 0 0 0 1px rgba(59,130,246,.06);
+  }
+  .os-card.pending {
+    border-left-color: var(--accent2);
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.04),
+      0 10px 24px rgba(0,0,0,.08),
+      0 0 0 1px rgba(245,158,11,.1),
+      0 0 18px rgba(245,158,11,.15),
+      inset 0 0 0 1px rgba(245,158,11,.04);
+  }
+  .os-card.pending:hover {
+    box-shadow:
+      0 4px 6px rgba(0,0,0,.04),
+      0 10px 24px rgba(0,0,0,.1),
+      0 0 0 1px rgba(245,158,11,.18),
+      0 0 28px rgba(245,158,11,.25),
+      inset 0 0 0 1px rgba(245,158,11,.06);
+  }
   .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
   .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
   .os-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
@@ -153,7 +189,13 @@
   .empty-state p { font-size: 15px; }
 
   /* ADMIN */
-  .admin-section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+  .admin-section {
+    background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px;
+    box-shadow:
+      0 2px 12px rgba(0,0,0,.06),
+      0 0 0 1px rgba(124,58,237,.06),
+      0 0 20px rgba(124,58,237,.08);
+  }
   .admin-section h3 { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 16px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
   .form-row.single { grid-template-columns: 1fr; }
@@ -913,6 +955,12 @@ function renderCardInline(o) {
         (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
           '<svg viewBox="0 0 24 24" width="15" height="15" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
         '</a>' : '') +
+      (wppLink ? '<a href="' + montarMsgPrePronta(o, wppLink) + '" target="_blank" onclick="event.stopPropagation()" title="Mensagem pré-pronta" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#1d4ed8;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(29,78,216,.35);flex-shrink:0;">' +
+        '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' +
+      '</a>' : '') +
+        (wppLink ? '<a href="' + montarMsgPrePronta(o, wppLink) + '" target="_blank" onclick="event.stopPropagation()" title="Mensagem pré-pronta" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#1d4ed8;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(29,78,216,.35);flex-shrink:0;">' +
+          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' +
+        '</a>' : '') +
       '</div>' +
       '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
     '</div>' +
@@ -1451,6 +1499,31 @@ function toInputDate(str) {
 }
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// Monta link WhatsApp com mensagem pré-pronta do técnico
+function montarMsgPrePronta(o, wppLink) {
+  const telLimpo = (o.telefone || '').replace(/\D/g, '');
+  const tecnico  = currentUser || 'Técnico';
+  const veiculo  = o.veiculo  || 'seu veículo';
+  const endereco = o.endereco || '';
+
+  // Data formatada ou pendente
+  let dataStr = '';
+  if (o.data && o.data.trim() && o.data !== 'undefined') {
+    const DIAS = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+    const dp = parseDate(o.data);
+    if (dp) dataStr = DIAS[dp.getDay()] + ', dia ' + formatDateBR(o.data);
+    else    dataStr = formatDateBR(o.data);
+  }
+
+  const msg =
+    'Olá! Me chamo ' + tecnico + ', técnico prestador da Rastreando GPS, tudo bem? 😊\n\n' +
+    'Estou entrando em contato para agendarmos a instalação do rastreador do veículo *' + veiculo + '*.' +
+    (endereco ? '\n\nSeu endereço é *' + endereco + '*, correto?' : '') +
+    (dataStr  ? '\n\nPodemos agendar para *' + dataStr + '*?' : '\n\nQual seria o melhor dia para realizarmos a instalação?');
+
+  return 'https://wa.me/55' + telLimpo + '?text=' + encodeURIComponent(msg);
+}
 
 // ── Admin: visualizar calendário de um técnico
 async function adminVerTecnico(tech) {
