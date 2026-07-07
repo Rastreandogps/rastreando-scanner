@@ -842,7 +842,7 @@ function renderTechOSList() {
             ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean)
             : [o.veiculo.trim()];
 
-          const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+          const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
 
           if (lista.length <= 1) {
             // Veículo único — exibe modelo em cima, info (GNV/Rastreio) abaixo
