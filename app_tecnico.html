@@ -361,6 +361,50 @@
   <!-- NOVA OS -->
   <div id="admin-tab-new-os" class="screen active">
     <div class="admin-section">
+      <!-- Botão importar no topo -->
+      <button onclick="toggleImport()" style="width:100%;padding:12px;background:#f0f4ff;border:2px dashed var(--accent);border-radius:12px;color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <span id="import-btn-label">📋 Importar agendamento do cliente</span>
+      </button>
+
+      <!-- Painel de importação (oculto por padrão) -->
+      <div id="import-panel" style="display:none;margin-bottom:20px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid var(--border);">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Cole a mensagem do cliente. O sistema preenche os campos automaticamente.</p>
+        <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento..."></textarea>
+        <button class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
+        <div class="parsed-preview" id="parsed-preview"></div>
+        <div id="import-form" style="display:none;margin-top:16px;">
+          <div class="form-row">
+            <div class="form-field"><label>Nome do Cliente</label><input type="text" id="if-nome"></div>
+            <div class="form-field"><label>Telefone</label><input type="tel" id="if-tel"></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-field"><label>Endereço</label><input type="text" id="if-end"></div>
+          </div>
+          <div class="form-row single">
+            <div class="form-field"><label>Observações / Ponto de referência</label><textarea id="if-obs" rows="2"></textarea></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Data de Instalação</label><input type="date" id="if-data"></div>
+            <div class="form-field">
+              <label>Técnico Responsável *</label>
+              <select id="if-tecnico">
+                <option value="">Selecione...</option>
+                <option value="Glauber">Glauber</option>
+                <option value="Eberson">Eberson</option>
+                <option value="Jonas">Jonas</option>
+              </select>
+            </div>
+          </div>
+          <div id="if-veiculos-wrap" style="margin-top:16px;"></div>
+          <button class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            Enviar OS
+          </button>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin-bottom:16px;"></div>
       <h3>Nova Ordem de Serviço</h3>
       <div class="form-row">
         <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="f-nome" placeholder="Ex: João da Silva"></div>
@@ -403,15 +447,6 @@
         </button>
         <button class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
       </div>
-
-      <!-- Divisor -->
-      <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
-
-      <!-- Botão para abrir importação -->
-      <button onclick="toggleImport()" style="width:100%;padding:12px;background:#f0f4ff;border:2px dashed var(--accent);border-radius:12px;color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        <span id="import-btn-label">📋 Importar agendamento do cliente</span>
-      </button>
 
       <!-- Painel de importação (oculto por padrão) -->
       <div id="import-panel" style="display:none;margin-top:16px;">
