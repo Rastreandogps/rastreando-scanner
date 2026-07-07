@@ -448,42 +448,6 @@
         <button class="btn-cancel" onclick="clearForm()" style="border-radius:10px;padding:12px 16px;">Limpar</button>
       </div>
 
-      <!-- Painel de importação (oculto por padrão) -->
-      <div id="import-panel" style="display:none;margin-top:16px;">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Cole a mensagem do cliente. O sistema preenche os campos automaticamente.</p>
-        <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento..."></textarea>
-        <button class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
-        <div class="parsed-preview" id="parsed-preview"></div>
-        <div id="import-form" style="display:none;margin-top:16px;">
-          <div class="form-row">
-            <div class="form-field"><label>Nome do Cliente</label><input type="text" id="if-nome"></div>
-            <div class="form-field"><label>Telefone</label><input type="tel" id="if-tel"></div>
-          </div>
-          <div class="form-row single">
-            <div class="form-field"><label>Endereço</label><input type="text" id="if-end"></div>
-          </div>
-          <div class="form-row single">
-            <div class="form-field"><label>Observações / Ponto de referência</label><textarea id="if-obs" rows="2"></textarea></div>
-          </div>
-          <div class="form-row">
-            <div class="form-field"><label>Data de Instalação</label><input type="date" id="if-data"></div>
-            <div class="form-field">
-              <label>Técnico Responsável *</label>
-              <select id="if-tecnico">
-                <option value="">Selecione...</option>
-                <option value="Glauber">Glauber</option>
-                <option value="Eberson">Eberson</option>
-                <option value="Jonas">Jonas</option>
-              </select>
-            </div>
-          </div>
-          <div id="if-veiculos-wrap" style="margin-top:16px;"></div>
-          <button class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-            Enviar OS
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -972,7 +936,7 @@ function renderCardInline(o) {
           const partes = v.split(' | ');
           const modelo = partes[0] || '';
           const info   = partes.slice(1).join(' · ') || '';
-          return '<div style="' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
+          return '<div style="' + (i > 0 ? 'margin-top:10px;padding-top:10px;border-top:1px solid transparent;box-shadow:0 -1px 0 0 rgba(59,130,246,.15), 0 -2px 8px 0 rgba(59,130,246,.12);' : '') + '">' +
             '<div style="display:flex;align-items:center;gap:6px;">' +
               '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' + svgCar +
                 '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
@@ -1155,7 +1119,7 @@ function renderTechOSList() {
               const partes = v.split(' | ');
               const modelo = partes[0] || '';
               const info   = partes.slice(1).join(' · ') || '';
-              return '<div style="' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
+              return '<div style="' + (i > 0 ? 'margin-top:10px;padding-top:10px;border-top:1px solid transparent;box-shadow:0 -1px 0 0 rgba(59,130,246,.15), 0 -2px 8px 0 rgba(59,130,246,.12);' : '') + '">' +
                 '<div style="display:flex;align-items:center;gap:6px;">' +
                   '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
                     svgCar +
