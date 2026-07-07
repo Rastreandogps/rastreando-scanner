@@ -12,7 +12,6 @@
     --success: #10b981;
     --danger: #ef4444;
     --bg: #f0f4ff;
-    --card: #ffffff;
     --text: #1e293b;
     --muted: #64748b;
     --border: #e2e8f0;
@@ -21,7 +20,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* ── LOGIN ── */
+  /* LOGIN */
   #screen-login {
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -38,35 +37,30 @@
   .login-sub { color: #94a3b8; font-size: 14px; margin-bottom: 32px; }
   .login-box {
     background: white; border-radius: 20px; padding: 32px;
-    width: 100%; max-width: 360px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
   .login-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--primary); }
   .field-group { margin-bottom: 16px; }
   .field-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
-  .field-group select, .field-group input {
+  .field-group input {
     width: 100%; padding: 12px 14px; border: 2px solid var(--border);
     border-radius: 10px; font-size: 15px; outline: none; transition: border .2s;
     background: white; color: var(--text);
   }
-  .field-group select:focus, .field-group input:focus { border-color: var(--accent); }
+  .field-group input:focus { border-color: var(--accent); }
   .btn-login {
     width: 100%; padding: 13px; background: var(--accent);
     color: white; border: none; border-radius: 10px;
-    font-size: 15px; font-weight: 700; cursor: pointer;
-    transition: opacity .2s; margin-top: 8px;
+    font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
   }
-  .btn-login:hover { opacity: .9; }
   .btn-admin {
     width: 100%; padding: 11px; background: transparent;
     color: var(--admin); border: 2px solid var(--admin); border-radius: 10px;
     font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px;
-    transition: all .2s;
   }
-  .btn-admin:hover { background: var(--admin); color: white; }
   .login-error { color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center; display: none; }
 
-  /* ── HEADER ── */
+  /* HEADER */
   .app-header {
     background: linear-gradient(135deg, var(--primary) 0%, #1e3a8a 100%);
     color: white; padding: 16px 20px;
@@ -76,7 +70,8 @@
   }
   .header-left { display: flex; align-items: center; gap: 10px; }
   .header-avatar {
-    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 14px; color: white;
   }
   .avatar-tech { background: var(--accent); }
@@ -86,11 +81,9 @@
   .btn-logout {
     padding: 7px 14px; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.2);
     color: white; border-radius: 8px; font-size: 13px; cursor: pointer;
-    transition: background .2s;
   }
-  .btn-logout:hover { background: rgba(255,255,255,.25); }
 
-  /* ── TABS ── */
+  /* TABS */
   .tab-bar {
     display: flex; background: white; border-bottom: 2px solid var(--border);
     overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -98,17 +91,17 @@
   }
   .tab-btn {
     padding: 13px 20px; border: none; background: none; font-size: 13px; font-weight: 600;
-    color: var(--muted); cursor: pointer; white-space: nowrap; transition: all .2s;
+    color: var(--muted); cursor: pointer; white-space: nowrap;
     border-bottom: 3px solid transparent; margin-bottom: -2px;
   }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-btn.admin-tab.active { color: var(--admin); border-bottom-color: var(--admin); }
 
-  /* ── SCREENS ── */
+  /* SCREENS */
   .screen { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
   .screen.active { display: block; }
 
-  /* ── CALENDAR ── */
+  /* CALENDAR */
   .calendar-wrap { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 20px; }
   .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .cal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
@@ -116,8 +109,7 @@
   .cal-day-label { text-align: center; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0; text-transform: uppercase; }
   .cal-day {
     aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; font-size: 12px;
-    cursor: default; position: relative; gap: 2px;
+    align-items: center; justify-content: center; font-size: 12px; gap: 2px;
   }
   .cal-day.today { background: #eff6ff; font-weight: 700; color: var(--accent); }
   .cal-day.other-month { opacity: .3; }
@@ -126,53 +118,32 @@
   .dot-blue { background: var(--accent); }
   .dot-yellow { background: var(--accent2); }
 
-  /* ── OS CARDS ── */
+  /* OS CARDS */
   .section-title { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
   .os-card {
     background: white; border-radius: 16px; padding: 18px; margin-bottom: 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,.06); border-left: 4px solid var(--accent);
-    position: relative;
   }
   .os-card.pending { border-left-color: var(--accent2); }
-  .os-card.done { border-left-color: var(--success); opacity: .7; }
-  .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
   .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
-  .os-badge {
-    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-    display: inline-block;
-  }
+  .os-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
   .badge-scheduled { background: #dbeafe; color: #1d4ed8; }
   .badge-pending { background: #fef3c7; color: #b45309; }
-  .badge-done { background: #d1fae5; color: #065f46; }
   .os-info { font-size: 13px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .os-info svg { width: 14px; height: 14px; flex-shrink: 0; }
-  .os-date-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .os-date-input {
-    flex: 1; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px;
-    font-size: 13px; outline: none; transition: border .2s;
-  }
-  .os-date-input:focus { border-color: var(--accent); }
-  .btn-save-date {
-    padding: 8px 14px; background: var(--accent); color: white; border: none;
-    border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
-  }
-  .btn-delete {
-    padding: 7px; background: #fee2e2; color: var(--danger); border: none;
-    border-radius: 8px; cursor: pointer; display: flex; align-items: center;
-  }
   .os-type { font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 6px; display: inline-block; background: #eff6ff; padding: 2px 8px; border-radius: 6px; }
   .os-notes { font-size: 13px; color: var(--muted); margin-top: 8px; font-style: italic; }
+  .os-date-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .os-date-input { flex: 1; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+  .os-date-input:focus { border-color: var(--accent); }
+  .btn-save-date { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-delete { padding: 7px; background: #fee2e2; color: var(--danger); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; }
   .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
   .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .4; }
   .empty-state p { font-size: 15px; }
 
-  /* ── ADMIN AREA ── */
-  .admin-header-bar {
-    background: linear-gradient(135deg, #4c1d95, #6d28d9);
-    color: white; padding: 16px 20px; border-radius: 14px;
-    margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
-  }
-  .admin-header-bar svg { width: 28px; height: 28px; }
+  /* ADMIN */
   .admin-section { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
   .admin-section h3 { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 16px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -180,40 +151,31 @@
   .form-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; }
   .form-field input, .form-field select, .form-field textarea {
     width: 100%; padding: 10px 12px; border: 2px solid var(--border);
-    border-radius: 10px; font-size: 14px; outline: none; transition: border .2s;
-    font-family: inherit; resize: vertical;
+    border-radius: 10px; font-size: 14px; outline: none; font-family: inherit; resize: vertical;
   }
   .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--admin); }
   .btn-primary {
     padding: 12px 20px; background: var(--admin); color: white; border: none;
     border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: opacity .2s; display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .btn-primary:hover { opacity: .9; }
-  .btn-danger-outline {
-    padding: 10px 16px; background: white; color: var(--danger);
-    border: 2px solid var(--danger); border-radius: 10px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-  }
-  .paste-area {
-    width: 100%; padding: 12px; border: 2px dashed var(--border);
-    border-radius: 10px; font-size: 13px; min-height: 100px;
-    outline: none; resize: vertical; font-family: inherit; transition: border .2s;
-  }
+  .btn-danger-outline { padding: 10px 16px; background: white; color: var(--danger); border: 2px solid var(--danger); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-cancel { padding: 11px; background: var(--border); color: var(--text); border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .paste-area { width: 100%; padding: 12px; border: 2px dashed var(--border); border-radius: 10px; font-size: 13px; min-height: 100px; outline: none; resize: vertical; font-family: inherit; }
   .paste-area:focus { border-color: var(--admin); }
-  .btn-parse {
-    padding: 10px 18px; background: #eff6ff; color: var(--accent);
-    border: 2px solid var(--accent); border-radius: 10px;
-    font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 10px;
-  }
-  .parsed-preview {
-    background: #f8fafc; border-radius: 10px; padding: 14px;
-    margin-top: 12px; display: none; border: 1px solid var(--border);
-  }
+  .btn-parse { padding: 10px 18px; background: #eff6ff; color: var(--accent); border: 2px solid var(--accent); border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .parsed-preview { background: #f8fafc; border-radius: 10px; padding: 14px; margin-top: 12px; display: none; border: 1px solid var(--border); }
   .parsed-preview p { font-size: 13px; color: var(--text); margin-bottom: 4px; }
-  .parsed-preview strong { color: var(--primary); }
+  .admin-os-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border); }
+  .admin-os-info { flex: 1; }
+  .admin-os-name { font-size: 14px; font-weight: 700; color: var(--primary); }
+  .admin-os-meta { font-size: 12px; color: var(--muted); }
+  .tech-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .tech-ederson { background: #fee2e2; color: #991b1b; }
+  .tech-glauber { background: #dbeafe; color: #1e40af; }
+  .tech-jonas { background: #d1fae5; color: #065f46; }
 
-  /* ── TOAST ── */
+  /* TOAST */
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
     background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
@@ -224,81 +186,43 @@
   .toast.success { background: var(--success); }
   .toast.error { background: var(--danger); }
 
-  /* ── MODAL ── */
+  /* MODAL */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000;
     display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-overlay.open { display: flex; }
-  .modal-box {
-    background: white; border-radius: 20px; padding: 28px;
-    width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
-  }
+  .modal-box { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
   .modal-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
   .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
-  .modal-input {
-    width: 100%; padding: 12px; border: 2px solid var(--border);
-    border-radius: 10px; font-size: 16px; text-align: center; outline: none;
-    letter-spacing: 4px; transition: border .2s;
-  }
+  .modal-input { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 10px; font-size: 16px; text-align: center; outline: none; letter-spacing: 4px; }
   .modal-input:focus { border-color: var(--accent); }
   .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
   .modal-btns button { flex: 1; }
-  .btn-cancel {
-    padding: 11px; background: var(--border); color: var(--text);
-    border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  .btn-confirm {
-    padding: 11px; background: var(--danger); color: white;
-    border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
-  }
+  .btn-confirm { padding: 11px; background: var(--danger); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
 
-  /* ── ADMIN OS LIST ── */
-  .admin-os-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px;
-    background: #f8fafc; border-radius: 10px; margin-bottom: 8px;
-    border: 1px solid var(--border);
-  }
-  .admin-os-info { flex: 1; }
-  .admin-os-name { font-size: 14px; font-weight: 700; color: var(--primary); }
-  .admin-os-meta { font-size: 12px; color: var(--muted); }
-  .tech-badge {
-    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
-  }
-  .tech-ederson { background: #fee2e2; color: #991b1b; }
-  .tech-glauber { background: #dbeafe; color: #1e40af; }
-  .tech-jonas { background: #d1fae5; color: #065f46; }
+  /* SYNC */
+  .sync-indicator { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .screen { padding: 14px; }
     .app-header { padding: 12px 16px; }
   }
-
-  .loading-spinner {
-    display: inline-block; width: 16px; height: 16px;
-    border: 2px solid rgba(255,255,255,.4); border-top-color: white;
-    border-radius: 50%; animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .sync-indicator { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
-  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════
-     SCREEN: LOGIN
-════════════════════════════════════════ -->
+<!-- TELA DE LOGIN -->
 <div id="screen-login">
   <div class="login-logo">
     <svg viewBox="0 0 24 24"><path d="M14.5 2.5c0 1.5-1.5 7-1.5 7h-2S9.5 4 9.5 2.5a2.5 2.5 0 0 1 5 0zM12 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 9l2-5h10l2 5H5zm4-5l-1.5-4M15 15l-1.5-4"/></svg>
   </div>
   <div class="login-title">APP Técnico</div>
   <div class="login-sub">Rastreando GPS</div>
-
   <div class="login-box">
     <h2>Entrar</h2>
     <form onsubmit="doLogin(); return false;" autocomplete="off">
@@ -307,25 +231,23 @@
         <input type="text" id="login-user" placeholder="Digite seu nome..." autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
       <div class="field-group">
-        <label>Senha (1 a 6 dígitos)</label>
+        <label>Senha</label>
         <input type="password" id="login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
       </div>
       <button type="submit" class="btn-login">Entrar</button>
     </form>
     <p class="login-error" id="login-error">Usuário ou senha incorretos.</p>
-    <button class="btn-admin" onclick="doAdminLogin()">🔐 Área do Administrador</button>
+    <button type="button" class="btn-admin" onclick="abrirModalAdmin()">🔐 Área do Administrador</button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     SCREEN: TECH DASHBOARD
-════════════════════════════════════════ -->
+<!-- TELA DO TÉCNICO -->
 <div id="screen-tech" style="display:none;">
   <div class="app-header">
     <div class="header-left">
       <div class="header-avatar avatar-tech" id="tech-avatar">G</div>
       <div>
-        <div class="header-name" id="tech-header-name">Glauber</div>
+        <div class="header-name" id="tech-header-name">Técnico</div>
         <div class="header-role">Técnico</div>
       </div>
     </div>
@@ -334,17 +256,15 @@
       <button class="btn-logout" onclick="doLogout()">Sair</button>
     </div>
   </div>
-
   <div class="tab-bar">
     <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar">📅 Calendário</button>
     <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders">📋 Ordens</button>
   </div>
-
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
       <div class="cal-header">
-        <div class="cal-title" id="cal-month-label">Julho 2025</div>
-        <div class="sync-indicator" style="font-size:12px;">
+        <div class="cal-title" id="cal-month-label"></div>
+        <div style="display:flex;gap:6px;font-size:12px;">
           <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
           <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
         </div>
@@ -352,21 +272,13 @@
       <div class="cal-grid" id="cal-grid"></div>
     </div>
   </div>
-
   <div id="tech-tab-orders" class="screen" style="padding-top:20px;">
-    <div class="section-title" id="orders-month-label">Ordens de Julho</div>
-    <div id="tech-os-list">
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <p>Nenhuma ordem de serviço.</p>
-      </div>
-    </div>
+    <div class="section-title" id="orders-month-label"></div>
+    <div id="tech-os-list"></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     SCREEN: ADMIN DASHBOARD
-════════════════════════════════════════ -->
+<!-- TELA DO ADMIN -->
 <div id="screen-admin" style="display:none;">
   <div class="app-header" style="background:linear-gradient(135deg,#4c1d95,#6d28d9);">
     <div class="header-left">
@@ -381,7 +293,6 @@
       <button class="btn-logout" onclick="doLogout()">Sair</button>
     </div>
   </div>
-
   <div class="tab-bar">
     <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new">➕ Nova OS</button>
     <button class="tab-btn admin-tab" onclick="showAdminTab('import')" id="at-import">📥 Importar</button>
@@ -392,22 +303,12 @@
   <div id="admin-tab-new-os" class="screen active">
     <div class="admin-section">
       <h3>Nova Ordem de Serviço</h3>
-
       <div class="form-row">
-        <div class="form-field">
-          <label>Nome do Cliente *</label>
-          <input type="text" id="f-nome" placeholder="Ex: João da Silva">
-        </div>
-        <div class="form-field">
-          <label>Telefone *</label>
-          <input type="tel" id="f-tel" placeholder="(21) 9 0000-0000">
-        </div>
+        <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="f-nome" placeholder="Ex: João da Silva"></div>
+        <div class="form-field"><label>Telefone *</label><input type="tel" id="f-tel" placeholder="(21) 9 0000-0000"></div>
       </div>
       <div class="form-row single">
-        <div class="form-field">
-          <label>Endereço *</label>
-          <input type="text" id="f-end" placeholder="Rua, número, bairro, cidade">
-        </div>
+        <div class="form-field"><label>Endereço *</label><input type="text" id="f-end" placeholder="Rua, número, bairro, cidade"></div>
       </div>
       <div class="form-row">
         <div class="form-field">
@@ -430,20 +331,11 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="form-field">
-          <label>Data de Instalação</label>
-          <input type="date" id="f-data">
-        </div>
-        <div class="form-field">
-          <label>Veículo / Placa</label>
-          <input type="text" id="f-veiculo" placeholder="Ex: Gol / ABC-1234">
-        </div>
+        <div class="form-field"><label>Data de Instalação</label><input type="date" id="f-data"></div>
+        <div class="form-field"><label>Veículo / Placa</label><input type="text" id="f-veiculo" placeholder="Ex: Gol / ABC-1234"></div>
       </div>
       <div class="form-row single">
-        <div class="form-field">
-          <label>Observações</label>
-          <textarea id="f-obs" rows="3" placeholder="Informações adicionais..."></textarea>
-        </div>
+        <div class="form-field"><label>Observações</label><textarea id="f-obs" rows="3" placeholder="Informações adicionais..."></textarea></div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn-primary" onclick="submitOS()">
@@ -459,43 +351,23 @@
   <div id="admin-tab-import" class="screen">
     <div class="admin-section">
       <h3>📋 Importar Agendamento do Cliente</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">
-        Cole a mensagem de confirmação de agendamento enviada pelo cliente. O sistema preencherá os campos automaticamente.
-      </p>
-      <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento do cliente...&#10;&#10;Exemplo:&#10;Nome: João Silva&#10;Telefone: (21) 9 8765-4321&#10;Endereço: Rua das Flores, 123 - Centro&#10;Veículo: Civic / ABC-1234&#10;Data: 15/07/2025"></textarea>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Cole a mensagem do cliente. O sistema preenche os campos automaticamente.</p>
+      <textarea class="paste-area" id="paste-area" placeholder="Cole aqui a mensagem de agendamento..."></textarea>
       <button class="btn-parse" onclick="parseMessage()">🔍 Importar Dados</button>
-
       <div class="parsed-preview" id="parsed-preview"></div>
-
-      <!-- Dados gerais do cliente -->
       <div id="import-form" style="display:none;margin-top:16px;">
         <div class="form-row">
-          <div class="form-field">
-            <label>Nome do Cliente</label>
-            <input type="text" id="if-nome">
-          </div>
-          <div class="form-field">
-            <label>Telefone</label>
-            <input type="tel" id="if-tel">
-          </div>
+          <div class="form-field"><label>Nome do Cliente</label><input type="text" id="if-nome"></div>
+          <div class="form-field"><label>Telefone</label><input type="tel" id="if-tel"></div>
         </div>
         <div class="form-row single">
-          <div class="form-field">
-            <label>Endereço</label>
-            <input type="text" id="if-end">
-          </div>
+          <div class="form-field"><label>Endereço</label><input type="text" id="if-end"></div>
         </div>
         <div class="form-row single">
-          <div class="form-field">
-            <label>Observações / Ponto de referência</label>
-            <textarea id="if-obs" rows="2" placeholder="Ex: Ponto de referência, informações extras..."></textarea>
-          </div>
+          <div class="form-field"><label>Observações / Ponto de referência</label><textarea id="if-obs" rows="2"></textarea></div>
         </div>
         <div class="form-row">
-          <div class="form-field">
-            <label>Data de Instalação</label>
-            <input type="date" id="if-data">
-          </div>
+          <div class="form-field"><label>Data de Instalação</label><input type="date" id="if-data"></div>
           <div class="form-field">
             <label>Técnico Responsável *</label>
             <select id="if-tecnico">
@@ -506,13 +378,10 @@
             </select>
           </div>
         </div>
-
-        <!-- Cards dos veículos detectados -->
         <div id="if-veiculos-wrap" style="margin-top:16px;"></div>
-
         <button class="btn-primary" onclick="submitImportOS()" style="margin-top:12px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-          Enviar OS para cada veículo
+          Enviar OS
         </button>
       </div>
     </div>
@@ -536,37 +405,35 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: ADMIN LOGIN
-════════════════════════════════════════ -->
-<div class="modal-overlay" id="admin-login-modal">
+<!-- MODAL: LOGIN ADMIN -->
+<div class="modal-overlay" id="modal-admin-login">
   <div class="modal-box">
     <div class="modal-title">🔐 Área do Administrador</div>
     <div class="modal-sub">Digite a senha para acessar.</div>
-    <form onsubmit="confirmAdminLogin(); return false;">
-      <input type="password" class="modal-input" id="admin-login-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
+    <form onsubmit="confirmarLoginAdmin(); return false;">
+      <input type="password" class="modal-input" id="admin-senha-input" placeholder="••••••" maxlength="6" inputmode="numeric" autocomplete="off">
       <div class="modal-btns">
-        <button type="button" class="btn-cancel" onclick="closeAdminLoginModal()">Cancelar</button>
+        <button type="button" class="btn-cancel" onclick="fecharModalAdmin()">Cancelar</button>
         <button type="submit" class="btn-confirm" style="background:var(--admin);">Entrar</button>
       </div>
     </form>
-    <p id="admin-login-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+    <p id="admin-senha-erro" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: CONFIRM DELETE
-════════════════════════════════════════ -->
-<div class="modal-overlay" id="delete-modal">
+<!-- MODAL: CONFIRMAR EXCLUSÃO -->
+<div class="modal-overlay" id="modal-delete">
   <div class="modal-box">
-    <div class="modal-title">🔐 Confirmar Exclusão</div>
-    <div class="modal-sub" id="delete-modal-sub">Digite a senha do administrador para confirmar a exclusão.</div>
-    <input type="password" class="modal-input" id="delete-modal-pass" placeholder="••••••" maxlength="6" inputmode="numeric">
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-      <button class="btn-confirm" onclick="confirmDeleteAction()">Excluir</button>
-    </div>
-    <p id="delete-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+    <div class="modal-title">🗑️ Confirmar Exclusão</div>
+    <div class="modal-sub" id="delete-modal-sub">Digite a senha do administrador para excluir.</div>
+    <form onsubmit="confirmarExclusao(); return false;">
+      <input type="password" class="modal-input" id="delete-senha-input" placeholder="••••••" maxlength="6" inputmode="numeric" autocomplete="off">
+      <div class="modal-btns">
+        <button type="button" class="btn-cancel" onclick="fecharModalDelete()">Cancelar</button>
+        <button type="submit" class="btn-confirm">Excluir</button>
+      </div>
+    </form>
+    <p id="delete-senha-erro" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
   </div>
 </div>
 
@@ -574,89 +441,134 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════
+// ════════════════════════════════
 // CONFIGURAÇÃO
-// ════════════════════════════════════════
+// ════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
-
 const ADMIN_PASS = '271659';
-const TECH_CREDENTIALS = {
-  'Glauber': '123456',
-  'Ederson': '123456',
-  'Jonas':   '123456'
-};
-
-// Estado global
-let currentUser = null;
-let currentRole = null;
-let allOrders   = { Glauber: [], Ederson: [], Jonas: [] };
-let pendingDelete = null; // { type: 'single'|'all', id, tech }
-let adminFilter = 'all';
-let pollInterval = null;
-
+const TECH_CREDENTIALS = { 'Glauber': '123456', 'Ederson': '123456', 'Jonas': '123456' };
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
-// ════════════════════════════════════════
+let currentUser  = null;
+let currentRole  = null;
+let allOrders    = { Glauber: [], Ederson: [], Jonas: [] };
+let pendingDelete = null;
+let adminFilter  = 'all';
+let pollInterval = null;
+
+// ════════════════════════════════
+// MODAL ADMIN LOGIN
+// ════════════════════════════════
+function abrirModalAdmin() {
+  document.getElementById('admin-senha-input').value = '';
+  document.getElementById('admin-senha-erro').style.display = 'none';
+  document.getElementById('modal-admin-login').classList.add('open');
+  setTimeout(() => document.getElementById('admin-senha-input').focus(), 150);
+}
+
+function fecharModalAdmin() {
+  document.getElementById('modal-admin-login').classList.remove('open');
+}
+
+function confirmarLoginAdmin() {
+  const pass = document.getElementById('admin-senha-input').value;
+  if (pass === ADMIN_PASS) {
+    fecharModalAdmin();
+    currentUser = 'Admin';
+    currentRole = 'admin';
+    salvarSessao('Admin', 'admin');
+    showAdminScreen();
+  } else {
+    document.getElementById('admin-senha-erro').style.display = 'block';
+    document.getElementById('admin-senha-input').value = '';
+    document.getElementById('admin-senha-input').focus();
+  }
+}
+
+// ════════════════════════════════
+// MODAL DELETE
+// ════════════════════════════════
+function requestDelete(id, tech) {
+  pendingDelete = { type: 'single', id, tech };
+  document.getElementById('delete-modal-sub').textContent = 'Digite a senha para excluir esta ordem.';
+  document.getElementById('delete-senha-input').value = '';
+  document.getElementById('delete-senha-erro').style.display = 'none';
+  document.getElementById('modal-delete').classList.add('open');
+  setTimeout(() => document.getElementById('delete-senha-input').focus(), 150);
+}
+
+function confirmDeleteAll() {
+  pendingDelete = { type: 'all' };
+  document.getElementById('delete-modal-sub').textContent = 'Digite a senha para excluir TODAS as ordens.';
+  document.getElementById('delete-senha-input').value = '';
+  document.getElementById('delete-senha-erro').style.display = 'none';
+  document.getElementById('modal-delete').classList.add('open');
+  setTimeout(() => document.getElementById('delete-senha-input').focus(), 150);
+}
+
+function fecharModalDelete() {
+  document.getElementById('modal-delete').classList.remove('open');
+  pendingDelete = null;
+}
+
+async function confirmarExclusao() {
+  const pass = document.getElementById('delete-senha-input').value;
+  if (pass !== ADMIN_PASS) {
+    document.getElementById('delete-senha-erro').style.display = 'block';
+    document.getElementById('delete-senha-input').value = '';
+    document.getElementById('delete-senha-input').focus();
+    return;
+  }
+  const toDelete = pendingDelete;
+  fecharModalDelete();
+
+  if (toDelete.type === 'single') {
+    setSyncStatus('syncing');
+    setAdminSyncStatus('syncing');
+    const result = await gasRequest({ action: 'deleteOrder', id: toDelete.id, tech: toDelete.tech });
+    if (result.ok) {
+      showToast('Ordem excluída!', 'success');
+      if (currentRole === 'tech') await loadTechOrders();
+      else await loadAllOrders();
+    } else {
+      showToast('Erro ao excluir.', 'error');
+      setSyncStatus('ok'); setAdminSyncStatus('ok');
+    }
+  } else {
+    setAdminSyncStatus('syncing');
+    const result = await gasRequest({ action: 'deleteAll' });
+    if (result.ok) {
+      showToast('Todas as ordens excluídas!', 'success');
+      await loadAllOrders();
+    } else {
+      showToast('Erro ao excluir.', 'error');
+      setAdminSyncStatus('ok');
+    }
+  }
+}
+
+// ════════════════════════════════
 // AUTENTICAÇÃO
-// ════════════════════════════════════════
+// ════════════════════════════════
 function doLogin() {
-  // Normaliza: primeira letra maiúscula, resto minúsculo (ex: "glauber" → "Glauber")
   const raw  = document.getElementById('login-user').value.trim();
   const user = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
   const pass = document.getElementById('login-pass').value;
   const err  = document.getElementById('login-error');
   err.style.display = 'none';
-
   if (!raw)  { showToast('Digite seu nome', 'error'); return; }
   if (!pass) { showToast('Digite sua senha', 'error'); return; }
-  if (TECH_CREDENTIALS[user] !== pass) {
-    err.style.display = 'block';
-    return;
-  }
+  if (TECH_CREDENTIALS[user] !== pass) { err.style.display = 'block'; return; }
   currentUser = user;
   currentRole = 'tech';
-  // Salva sessao no localStorage (expira em 12h)
-  localStorage.setItem('app_tecnico_session', JSON.stringify({
-    user, role: 'tech', ts: Date.now()
-  }));
+  salvarSessao(user, 'tech');
   showTechScreen();
 }
 
-function doAdminLogin() {
-  // Abre modal proprio (prompt() bloqueado no GitHub Pages)
-  document.getElementById('admin-login-pass').value = '';
-  document.getElementById('admin-login-error').style.display = 'none';
-  document.getElementById('admin-login-modal').classList.add('open');
-  setTimeout(() => document.getElementById('admin-login-pass').focus(), 100);
-}
-
-function confirmAdminLogin() {
-  const pass = document.getElementById('admin-login-pass').value;
-  if (pass === ADMIN_PASS) {
-    closeAdminLoginModal();
-    currentUser = 'Admin';
-    currentRole = 'admin';
-    localStorage.setItem('app_tecnico_session', JSON.stringify({
-      user: 'Admin', role: 'admin', ts: Date.now()
-    }));
-    showAdminScreen();
-  } else {
-    document.getElementById('admin-login-error').style.display = 'block';
-    document.getElementById('admin-login-pass').value = '';
-    document.getElementById('admin-login-pass').focus();
-  }
-}
-
-function closeAdminLoginModal() {
-  document.getElementById('admin-login-modal').classList.remove('open');
-}
-
 function doLogout() {
-  // Limpa sessao salva
   localStorage.removeItem('app_tecnico_session');
-  currentUser = null;
-  currentRole = null;
+  currentUser = null; currentRole = null;
   if (pollInterval) clearInterval(pollInterval);
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'none';
@@ -666,14 +578,18 @@ function doLogout() {
   document.getElementById('login-error').style.display = 'none';
 }
 
-// ════════════════════════════════════════
+function salvarSessao(user, role) {
+  localStorage.setItem('app_tecnico_session', JSON.stringify({ user, role, ts: Date.now() }));
+}
+
+// ════════════════════════════════
 // TELAS
-// ════════════════════════════════════════
+// ════════════════════════════════
 function showTechScreen() {
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-admin').style.display = 'none';
   document.getElementById('screen-tech').style.display  = 'block';
-  document.getElementById('tech-avatar').textContent    = currentUser[0];
+  document.getElementById('tech-avatar').textContent = currentUser[0];
   document.getElementById('tech-header-name').textContent = currentUser;
   showTechTab('calendar');
   loadTechOrders();
@@ -693,18 +609,12 @@ function showAdminScreen() {
 
 function showTechTab(tab) {
   ['calendar','orders'].forEach(t => {
-    document.getElementById(`tech-tab-${t}`).classList.toggle('active', t === tab);
-    document.getElementById(`tt-${t}`).classList.toggle('active', t === tab);
+    document.getElementById('tech-tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tt-' + t).classList.toggle('active', t === tab);
   });
 }
 
 function showAdminTab(tab) {
-  ['new-os','import','all-os'].forEach(t => {
-    const el = document.getElementById(`admin-tab-${t}`);
-    const btn = document.getElementById(`at-${t.replace('-os','').replace('new','new').replace('all','all')}`);
-    if (el) el.classList.toggle('active', t === tab);
-  });
-  // fix IDs
   document.getElementById('admin-tab-new-os').classList.toggle('active', tab === 'new-os');
   document.getElementById('admin-tab-import').classList.toggle('active', tab === 'import');
   document.getElementById('admin-tab-all-os').classList.toggle('active', tab === 'all-os');
@@ -714,192 +624,132 @@ function showAdminTab(tab) {
   if (tab === 'all-os') renderAdminOSList();
 }
 
-// ════════════════════════════════════════
-// GOOGLE APPS SCRIPT – COMUNICAÇÃO
-// ════════════════════════════════════════
+// ════════════════════════════════
+// GAS – COMUNICAÇÃO
+// ════════════════════════════════
 async function gasRequest(payload) {
   try {
     const url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
-    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    const res  = await fetch(url, { method: 'GET', redirect: 'follow' });
     const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch(_) {
-      console.error('GAS resposta nao-JSON:', text.slice(0, 200));
-      return { ok: false, error: 'Resposta invalida do servidor' };
-    }
+    try { return JSON.parse(text); }
+    catch(_) { return { ok: false, error: 'Resposta inválida' }; }
   } catch(e) {
-    console.error('GAS Error:', e);
     return { ok: false, error: e.message };
   }
 }
 
-// LOAD – técnico vê apenas suas ordens do mês atual
 async function loadTechOrders() {
   setSyncStatus('syncing');
   const now = new Date();
-  const result = await gasRequest({ action: 'getOrders', tech: currentUser, month: now.getMonth() + 1, year: now.getFullYear() });
+  const result = await gasRequest({ action: 'getOrders', tech: currentUser, month: now.getMonth()+1, year: now.getFullYear() });
   if (result.ok) {
     allOrders[currentUser] = result.data || [];
     renderTechCalendar();
     renderTechOSList();
-    setSyncStatus('ok');
-  } else {
-    setSyncStatus('ok'); // silencioso
   }
+  setSyncStatus('ok');
 }
 
 async function loadAllOrders() {
   setAdminSyncStatus('syncing');
   const now = new Date();
-  const result = await gasRequest({ action: 'getAllOrders', month: now.getMonth() + 1, year: now.getFullYear() });
+  const result = await gasRequest({ action: 'getAllOrders', month: now.getMonth()+1, year: now.getFullYear() });
   if (result.ok) {
     allOrders = result.data || { Glauber: [], Ederson: [], Jonas: [] };
     renderAdminOSList();
-    setAdminSyncStatus('ok');
-  } else {
-    setAdminSyncStatus('ok');
   }
+  setAdminSyncStatus('ok');
 }
 
-function setSyncStatus(status) {
+function setSyncStatus(s) {
   const dot = document.getElementById('sync-dot');
   const lbl = document.getElementById('sync-label');
   if (!dot) return;
-  if (status === 'syncing') {
-    dot.className = 'sync-dot syncing';
-    lbl.textContent = 'Sincronizando...';
-  } else {
-    dot.className = 'sync-dot';
-    lbl.textContent = 'Sincronizado';
-  }
+  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : '');
+  lbl.textContent = s === 'syncing' ? 'Sincronizando...' : 'Sincronizado';
 }
 
-function setAdminSyncStatus(status) {
+function setAdminSyncStatus(s) {
   const dot = document.getElementById('admin-sync-dot');
   const lbl = document.getElementById('admin-sync-label');
   if (!dot) return;
-  if (status === 'syncing') {
-    dot.className = 'sync-dot syncing';
-    lbl.textContent = 'Sincronizando...';
-  } else {
-    dot.className = 'sync-dot';
-    lbl.textContent = 'Sincronizado';
-  }
+  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : '');
+  lbl.textContent = s === 'syncing' ? 'Sincronizando...' : 'Sincronizado';
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════
 // CALENDÁRIO
-// ════════════════════════════════════════
+// ════════════════════════════════
 function renderTechCalendar() {
-  const now = new Date();
-  const year = now.getFullYear();
+  const now   = new Date();
+  const year  = now.getFullYear();
   const month = now.getMonth();
-  document.getElementById('cal-month-label').textContent = `${MONTHS[month]} ${year}`;
-  document.getElementById('orders-month-label').textContent = `Ordens de ${MONTHS[month]}`;
+  document.getElementById('cal-month-label').textContent = MONTHS[month] + ' ' + year;
+  document.getElementById('orders-month-label').textContent = 'Ordens de ' + MONTHS[month];
 
   const grid = document.getElementById('cal-grid');
-  grid.innerHTML = DAYS.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+  grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
 
-  const first = new Date(year, month, 1).getDay();
-  const days  = new Date(year, month + 1, 0).getDate();
-
-  // orders this month
+  const first  = new Date(year, month, 1).getDay();
+  const total  = new Date(year, month+1, 0).getDate();
   const orders = allOrders[currentUser] || [];
 
-  // build date→orders map
   const dateMap = {};
   orders.forEach(o => {
     if (o.data) {
       const d = parseDate(o.data);
       if (d && d.getMonth() === month && d.getFullYear() === year) {
-        const key = d.getDate();
-        if (!dateMap[key]) dateMap[key] = [];
-        dateMap[key].push(o);
+        const k = d.getDate();
+        if (!dateMap[k]) dateMap[k] = 0;
+        dateMap[k]++;
       }
     }
   });
 
-  // blank cells
-  for (let i = 0; i < first; i++) {
-    grid.innerHTML += `<div class="cal-day other-month"></div>`;
-  }
+  for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
 
-  for (let d = 1; d <= days; d++) {
+  for (let d = 1; d <= total; d++) {
     const isToday = d === now.getDate();
-    const dayOrders = dateMap[d] || [];
-    const pendingOrders = orders.filter(o => !o.data || o.data === '');
+    const count   = dateMap[d] || 0;
     let dots = '';
-    if (dayOrders.length > 0) dots += `<div class="dot dot-blue"></div>`.repeat(Math.min(dayOrders.length, 3));
-    grid.innerHTML += `<div class="cal-day${isToday ? ' today' : ''}">
-      <span>${d}</span>
-      ${dots ? `<div class="dots">${dots}</div>` : ''}
-    </div>`;
+    if (count > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(count, 3));
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '"><span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
   }
 
-  // Show pending dot on today if any pending
-  const todayPending = (allOrders[currentUser] || []).filter(o => !o.data || o.data === '');
-  if (todayPending.length > 0) {
-    const todayEl = grid.querySelectorAll('.cal-day.today')[0];
+  // Bolinha amarela no dia de hoje se houver pendentes
+  const pendentes = orders.filter(o => !o.data || o.data.trim() === '');
+  if (pendentes.length > 0) {
+    const todayEl = grid.querySelector('.cal-day.today');
     if (todayEl) {
-      const dotsDiv = todayEl.querySelector('.dots') || (() => { const d = document.createElement('div'); d.className = 'dots'; todayEl.appendChild(d); return d; })();
-      dotsDiv.innerHTML += `<div class="dot dot-yellow"></div>`;
+      let dotsDiv = todayEl.querySelector('.dots');
+      if (!dotsDiv) { dotsDiv = document.createElement('div'); dotsDiv.className = 'dots'; todayEl.appendChild(dotsDiv); }
+      dotsDiv.innerHTML += '<div class="dot dot-yellow"></div>';
     }
   }
 }
 
-function parseDate(str) {
-  if (!str || str === 'undefined' || str === 'null') return null;
-  str = String(str).trim();
-  // DD/MM/YYYY
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
-    const [d,m,y] = str.split('/');
-    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-    return isNaN(dt.getTime()) ? null : dt;
-  }
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    const [y,m,d] = str.split('-');
-    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-    return isNaN(dt.getTime()) ? null : dt;
-  }
-  return null;
-}
-
-
-function formatDateBR(str) {
-  if (!str) return '';
-  const d = parseDate(str);
-  if (!d) return str;
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-}
-
-// ════════════════════════════════════════
+// ════════════════════════════════
 // RENDER OS – TÉCNICO
-// ════════════════════════════════════════
+// ════════════════════════════════
 function renderTechOSList() {
   const list   = document.getElementById('tech-os-list');
   const orders = allOrders[currentUser] || [];
   const now    = new Date();
 
-  // Mostra: sem data (pendentes) + com data no mês atual
   const monthly = orders.filter(o => {
-    const dataStr = (o.data || '').trim();
-    if (!dataStr) return true; // sem data = pendente, sempre aparece
-    const d = parseDate(dataStr);
-    if (!d) return true; // nao conseguiu parsear = mostra tbm
+    const ds = (o.data || '').trim();
+    if (!ds || ds === 'undefined') return true;
+    const d = parseDate(ds);
+    if (!d || isNaN(d.getTime())) return true;
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
   if (monthly.length === 0) {
-    list.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      <p>Nenhuma ordem para este mês.</p>
-    </div>`;
+    list.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhuma ordem para este mês.</p></div>';
     return;
   }
 
-  // sort: with date first
   monthly.sort((a,b) => {
     if (!a.data && !b.data) return 0;
     if (!a.data) return 1;
@@ -908,135 +758,113 @@ function renderTechOSList() {
   });
 
   list.innerHTML = monthly.map(o => {
-    const hasDate   = o.data && o.data.trim() !== '' && o.data !== 'undefined';
-    const badge     = hasDate ? 'badge-scheduled' : 'badge-pending';
-    const badgeTxt  = hasDate ? 'Agendado' : 'Pendente';
-    const cardClass = hasDate ? '' : ' pending';
-    const dateVal   = hasDate ? toInputDate(o.data) : '';
-    const telLimpo  = (o.telefone || '').replace(/\D/g,'');
-    const wppLink   = telLimpo ? 'https://wa.me/55' + telLimpo : '';
-    const mapsLink  = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
-    const dataExib  = hasDate ? formatDateBR(o.data) : 'Sem data definida';
-    const cardId    = 'card-body-' + o.id;
+    const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
+    const badge    = hasDate ? 'badge-scheduled' : 'badge-pending';
+    const badgeTxt = hasDate ? 'Agendado' : 'Pendente';
+    const cardCls  = hasDate ? '' : ' pending';
+    const dateVal  = hasDate ? toInputDate(o.data) : '';
+    const dataExib = hasDate ? formatDateBR(o.data) : 'Sem data definida';
+    const telLimpo = (o.telefone || '').replace(/\D/g,'');
+    const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
+    const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+    const cid      = 'cb-' + o.id;
 
-    return '<div class="os-card' + cardClass + '" style="cursor:pointer;" onclick="toggleCard(\'' + o.id + '\')">' +
+    return '<div class="os-card' + cardCls + '" style="cursor:pointer;" onclick="toggleCard(\'' + o.id + '\')">' +
       '<div class="os-card-header">' +
-        '<div class="os-client">' + escHtml(o.nome) + '</div>' +
+        '<div class="os-client">' + esc(o.nome) + '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;">' +
           '<span class="os-badge ' + badge + '">' + badgeTxt + '</span>' +
-          '<span style="font-size:18px;color:var(--muted);transition:transform .3s;" id="chevron-' + o.id + '">›</span>' +
+          '<span id="chev-' + o.id + '" style="font-size:20px;color:var(--muted);transition:transform .25s;display:inline-block;">›</span>' +
         '</div>' +
       '</div>' +
       '<div class="os-info" style="margin-top:4px;">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
         '<span style="font-size:13px;font-weight:600;color:' + (hasDate ? 'var(--accent)' : 'var(--accent2)') + ';">' + dataExib + '</span>' +
       '</div>' +
-
-      // CORPO EXPANSÍVEL
-      '<div id="' + cardId + '" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">' +
-        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' + escHtml(o.endereco) + '</div>' +
-        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>' + escHtml(o.telefone) + '</div>' +
-        (o.veiculo ? '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + escHtml(o.veiculo) + '</div>' : '') +
-        '<span class="os-type">' + escHtml(o.tipo || 'Instalação') + '</span>' +
-        (o.obs ? '<div class="os-notes">💬 ' + escHtml(o.obs) + '</div>' : '') +
-
-        // BOTÕES WhatsApp + Maps
+      '<div id="' + cid + '" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">' +
+        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' + esc(o.endereco) + '</div>' +
+        '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>' + esc(o.telefone) + '</div>' +
+        (o.veiculo ? '<div class="os-info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' + esc(o.veiculo) + '</div>' : '') +
+        '<span class="os-type">' + esc(o.tipo || 'Instalação') + '</span>' +
+        (o.obs ? '<div class="os-notes">💬 ' + esc(o.obs) + '</div>' : '') +
         '<div style="display:flex;gap:8px;margin-top:12px;">' +
-          (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 12px;background:#25D366;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">' +
-            '<svg viewBox="0 0 24 24" width="17" height="17" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
-            'WhatsApp</a>' : '') +
-          (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 12px;background:#4285F4;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">' +
-            '<svg viewBox="0 0 24 24" width="17" height="17" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' +
-            'Maps</a>' : '') +
+          (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:#25D366;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📱 WhatsApp</a>' : '') +
+          (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:#4285F4;color:white;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📍 Maps</a>' : '') +
         '</div>' +
-
-        // CAMPO DATA EDITÁVEL
         '<div class="os-date-row" onclick="event.stopPropagation()" style="margin-top:10px;">' +
           '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' +
-          '<input type="date" class="os-date-input" value="' + dateVal + '" id="date-' + o.id + '" placeholder="Definir data">' +
-          '<button class="btn-save-date" onclick="event.stopPropagation();saveDate(\'' + o.id + '\',\'' + escAttr(currentUser) + '\')">Salvar</button>' +
-          '<button class="btn-delete" title="Excluir OS" onclick="event.stopPropagation();requestDelete(\'' + o.id + '\',\'' + escAttr(currentUser) + '\')">' +
-            '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>' +
-          '</button>' +
+          '<input type="date" class="os-date-input" value="' + dateVal + '" id="date-' + o.id + '">' +
+          '<button class="btn-save-date" onclick="event.stopPropagation();saveDate(\'' + o.id + '\',\'' + esc(currentUser) + '\')">Salvar</button>' +
+          '<button class="btn-delete" onclick="event.stopPropagation();requestDelete(\'' + o.id + '\',\'' + esc(currentUser) + '\')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
         '</div>' +
       '</div>' +
     '</div>';
   }).join('');
 }
 
-function toInputDate(str) {
-  if (!str) return '';
-  const d = parseDate(str);
-  if (!d) return '';
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function toggleCard(id) {
+  const body  = document.getElementById('cb-' + id);
+  const chev  = document.getElementById('chev-' + id);
+  if (!body) return;
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 async function saveDate(id, tech) {
-  const val = document.getElementById(`date-${id}`).value;
+  const val = document.getElementById('date-' + id).value;
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
-  if (result.ok) {
-    showToast('Data salva!', 'success');
-    await loadTechOrders();
-  } else {
-    showToast('Erro ao salvar data.', 'error');
-    setSyncStatus('ok');
-  }
+  if (result.ok) { showToast('Data salva!', 'success'); await loadTechOrders(); }
+  else { showToast('Erro ao salvar data.', 'error'); setSyncStatus('ok'); }
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════
 // RENDER OS – ADMIN
-// ════════════════════════════════════════
+// ════════════════════════════════
 function filterAdmin(tech) {
   adminFilter = tech;
   document.querySelectorAll('[id^="af-"]').forEach(b => b.style.background = '');
-  document.getElementById(`af-${tech}`) && (document.getElementById(`af-${tech}`).style.background = '#dbeafe');
+  const el = document.getElementById('af-' + tech);
+  if (el) el.style.background = '#dbeafe';
   renderAdminOSList();
 }
 
 function renderAdminOSList() {
   const list = document.getElementById('admin-os-list');
   if (!list) return;
-
-  let items = [];
   const techs = adminFilter === 'all' ? ['Glauber','Ederson','Jonas'] : [adminFilter];
-  techs.forEach(t => {
-    (allOrders[t] || []).forEach(o => items.push({...o, _tech: t}));
-  });
+  let items = [];
+  techs.forEach(t => (allOrders[t] || []).forEach(o => items.push({...o, _tech: t})));
 
   if (items.length === 0) {
-    list.innerHTML = `<div class="empty-state" style="padding:32px 0;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      <p>Nenhuma ordem encontrada.</p>
-    </div>`;
+    list.innerHTML = '<div class="empty-state" style="padding:32px 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhuma ordem encontrada.</p></div>';
     return;
   }
 
   items.sort((a,b) => {
     if (!a.data && !b.data) return 0;
-    if (!a.data) return 1;
-    if (!b.data) return -1;
+    if (!a.data) return 1; if (!b.data) return -1;
     return parseDate(a.data) - parseDate(b.data);
   });
 
-  list.innerHTML = items.map(o => `
-    <div class="admin-os-item">
-      <div class="admin-os-info">
-        <div class="admin-os-name">${escHtml(o.nome)}</div>
-        <div class="admin-os-meta">${(o.data && o.data.trim() && o.data !== 'undefined') ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data'} · ${escHtml(o.tipo||'Instalação')} · ${escHtml(o.telefone||'')}</div>
-        <div class="admin-os-meta" style="margin-top:2px;">📍 ${escHtml(o.endereco||'')}</div>
-      </div>
-      <span class="tech-badge tech-${o._tech.toLowerCase()}">${o._tech}</span>
-      <button class="btn-delete" title="Excluir" onclick="requestDelete('${o.id}','${o._tech}')">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-      </button>
-    </div>
-  `).join('');
+  list.innerHTML = items.map(o => {
+    const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
+    return '<div class="admin-os-item">' +
+      '<div class="admin-os-info">' +
+        '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
+        '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
+        '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
+      '</div>' +
+      '<span class="tech-badge tech-' + o._tech.toLowerCase() + '">' + o._tech + '</span>' +
+      '<button class="btn-delete" onclick="requestDelete(\'' + o.id + '\',\'' + o._tech + '\')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+    '</div>';
+  }).join('');
 }
 
-// ════════════════════════════════════════
-// SUBMETER OS
-// ════════════════════════════════════════
+// ════════════════════════════════
+// SUBMETER OS – MANUAL
+// ════════════════════════════════
 async function submitOS() {
   const nome    = document.getElementById('f-nome').value.trim();
   const tel     = document.getElementById('f-tel').value.trim();
@@ -1046,51 +874,11 @@ async function submitOS() {
   const data    = document.getElementById('f-data').value;
   const veiculo = document.getElementById('f-veiculo').value.trim();
   const obs     = document.getElementById('f-obs').value.trim();
-
-  if (!nome || !tel || !end || !tecnico) {
-    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
-  }
-
-  const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() };
+  if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
   setAdminSyncStatus('syncing');
-  const result = await gasRequest(os);
-  if (result.ok) {
-    showToast(`OS enviada para ${tecnico}!`, 'success');
-    clearForm();
-    await loadAllOrders();
-  } else {
-    showToast('Erro ao enviar OS.', 'error');
-    setAdminSyncStatus('ok');
-  }
-}
-
-async function submitImportOS() {
-  const nome    = document.getElementById('if-nome').value.trim();
-  const tel     = document.getElementById('if-tel').value.trim();
-  const end     = document.getElementById('if-end').value.trim();
-  const tipo    = document.getElementById('if-tipo').value;
-  const tecnico = document.getElementById('if-tecnico').value;
-  const data    = document.getElementById('if-data').value;
-  const veiculo = document.getElementById('if-veiculo').value.trim();
-  const obs     = document.getElementById('if-obs').value.trim();
-
-  if (!nome || !tel || !end || !tecnico) {
-    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
-  }
-
-  const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() };
-  setAdminSyncStatus('syncing');
-  const result = await gasRequest(os);
-  if (result.ok) {
-    showToast(`OS enviada para ${tecnico}!`, 'success');
-    document.getElementById('paste-area').value = '';
-    document.getElementById('parsed-preview').style.display = 'none';
-    document.getElementById('import-form').style.display = 'none';
-    await loadAllOrders();
-  } else {
-    showToast('Erro ao enviar OS.', 'error');
-    setAdminSyncStatus('ok');
-  }
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() });
+  if (result.ok) { showToast('OS enviada para ' + tecnico + '!', 'success'); clearForm(); await loadAllOrders(); }
+  else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
 }
 
 function clearForm() {
@@ -1100,110 +888,89 @@ function clearForm() {
   document.getElementById('f-tecnico').value = '';
 }
 
-// ════════════════════════════════════════
+// ════════════════════════════════
 // IMPORTAR MENSAGEM
-// ════════════════════════════════════════
+// ════════════════════════════════
 function parseMessage() {
   const txt = document.getElementById('paste-area').value.trim();
   if (!txt) { showToast('Cole a mensagem primeiro', 'error'); return; }
 
-  // ── Campos gerais
   const nome      = (txt.match(/nome[:\s]+(.+)/i) || txt.match(/cliente[:\s]+(.+)/i) || [])[1];
   const telefone  = (txt.match(/tel(?:efone)?[:\s]+(.+)/i) || txt.match(/whatsapp[:\s]+(.+)/i) || txt.match(/(\(?\d{2}\)?[\s.]?\d[\s.]?\d{4}[-.\s]?\d{4})/) || [])[1];
   const endereco  = (txt.match(/endere[çc]o[:\s]+(.+)/i) || txt.match(/local[:\s]+(.+)/i) || [])[1];
-  const referencia = (txt.match(/(?:ponto de refer[eê]ncia|refer[eê]ncia)[:\s]+(.+)/i) || [])[1];
+  const ref       = (txt.match(/(?:ponto de refer[eê]ncia|refer[eê]ncia)[:\s]+(.+)/i) || [])[1];
   const dataM     = txt.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
   let dataISO = '';
   if (dataM) {
     const dm = dataM[1].match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-    if (dm) {
-      const y = dm[3].length === 2 ? '20' + dm[3] : dm[3];
-      dataISO = y + '-' + dm[2].padStart(2,'0') + '-' + dm[1].padStart(2,'0');
-    }
+    if (dm) { const y = dm[3].length===2 ? '20'+dm[3] : dm[3]; dataISO = y+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0'); }
   }
 
-  // ── Múltiplos veículos
-  // Captura blocos: "Veículo N: Modelo
-GNV: X | Rastreio: Y"
+  // Múltiplos veículos
   const veiculos = [];
-  const linhas   = txt.split('\n');
+  const linhas = txt.split('\n');
   for (let i = 0; i < linhas.length; i++) {
-    const mVei = linhas[i].match(/ve[íi]culo\s*\d*\s*[:\s]+(.+)/i);
-    if (mVei) {
-      const modelo = mVei[1].trim();
+    const mV = linhas[i].match(/ve[íi]culo\s*\d*\s*[:\s]+(.+)/i);
+    if (mV) {
+      const modelo = mV[1].trim();
       let gnv = '', rastreio = '';
-      // Linha seguinte pode ter "GNV: X | Rastreio: Y"
-      if (i + 1 < linhas.length) {
-        const mInfo = linhas[i+1].match(/GNV[:\s]+(.+?)\s*\|\s*Rastreio[:\s]+(.+)/i);
-        if (mInfo) { gnv = mInfo[1].trim(); rastreio = mInfo[2].trim(); i++; }
+      if (i+1 < linhas.length) {
+        const mI = linhas[i+1].match(/GNV[:\s]+(.+?)\s*\|\s*Rastreio[:\s]+(.+)/i);
+        if (mI) { gnv = mI[1].trim(); rastreio = mI[2].trim(); i++; }
       }
-      const obsVei = [gnv ? 'GNV: ' + gnv : '', rastreio ? 'Rastreio: ' + rastreio : ''].filter(Boolean).join(' | ');
-      veiculos.push({ modelo, obs: obsVei });
+      const obsV = [gnv ? 'GNV: '+gnv : '', rastreio ? 'Rastreio: '+rastreio : ''].filter(Boolean).join(' | ');
+      veiculos.push({ modelo, obs: obsV });
     }
   }
-
-  // Fallback: campo simples
   if (veiculos.length === 0) {
-    const vSimples = (txt.match(/ve[íi]culo[:\s]+(.+)/i) || txt.match(/carro[:\s]+(.+)/i) || txt.match(/modelo[:\s]+(.+)/i) || [])[1];
-    if (vSimples) veiculos.push({ modelo: vSimples.trim(), obs: '' });
+    const vS = (txt.match(/ve[íi]culo[:\s]+(.+)/i) || txt.match(/carro[:\s]+(.+)/i) || txt.match(/modelo[:\s]+(.+)/i) || [])[1];
+    if (vS) veiculos.push({ modelo: vS.trim(), obs: '' });
   }
 
-  // ── Preencher campos gerais
-  document.getElementById('if-nome').value = (nome || '').trim();
-  document.getElementById('if-tel').value  = (telefone || '').trim();
-  document.getElementById('if-end').value  = (endereco || '').trim();
-  document.getElementById('if-obs').value  = (referencia || '').trim();
+  document.getElementById('if-nome').value = (nome||'').trim();
+  document.getElementById('if-tel').value  = (telefone||'').trim();
+  document.getElementById('if-end').value  = (endereco||'').trim();
+  document.getElementById('if-obs').value  = (ref||'').trim();
   document.getElementById('if-data').value = dataISO;
 
-  // ── Renderizar cards de veículos
   const wrap = document.getElementById('if-veiculos-wrap');
   if (veiculos.length > 0) {
-    // Guarda count em campo oculto
     let html = '<input type="hidden" id="if-v-count" value="' + veiculos.length + '">';
-    html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px;">🚗 ' + veiculos.length + ' veículo(s) detectado(s) — 1 OS por veículo:</div>';
-    veiculos.forEach((v, i) => {
+    html += '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:10px;">🚗 ' + veiculos.length + ' veículo(s) — 1 OS por veículo:</div>';
+    veiculos.forEach((v,i) => {
       html += '<div style="background:#f0f4ff;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #c7d7ff;">' +
         '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px;">Veículo ' + (i+1) + '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-          '<div class="form-field"><label>Modelo</label>' +
-            '<input type="text" id="if-v-modelo-' + i + '" value="' + escHtml(v.modelo) + '"></div>' +
-          '<div class="form-field"><label>Tipo de Serviço</label>' +
-            '<select id="if-v-tipo-' + i + '">' +
-              '<option value="Instalação">Instalação</option>' +
-              '<option value="Manutenção">Manutenção</option>' +
-              '<option value="Remoção">Remoção</option>' +
-              '<option value="Substituição">Substituição</option>' +
-            '</select></div>' +
+          '<div class="form-field"><label>Modelo</label><input type="text" id="if-v-modelo-' + i + '" value="' + esc(v.modelo) + '"></div>' +
+          '<div class="form-field"><label>Tipo</label><select id="if-v-tipo-' + i + '"><option>Instalação</option><option>Manutenção</option><option>Remoção</option><option>Substituição</option></select></div>' +
         '</div>' +
-        (v.obs ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;">ℹ️ ' + escHtml(v.obs) + '</div>' : '') +
-        '<input type="hidden" id="if-v-obs-' + i + '" value="' + escHtml(v.obs) + '">' +
+        (v.obs ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;">ℹ️ ' + esc(v.obs) + '</div>' : '') +
+        '<input type="hidden" id="if-v-obs-' + i + '" value="' + esc(v.obs) + '">' +
       '</div>';
     });
     wrap.innerHTML = html;
   } else {
-    // Sem veículos detectados — campo manual
-    wrap.innerHTML = '<input type="hidden" id="if-v-count" value="0">' +
-      '<div class="form-field"><label>Veículo / Placa</label>' +
-      '<input type="text" id="if-veiculo-manual" placeholder="Ex: Gol / ABC-1234"></div>';
+    wrap.innerHTML = '<input type="hidden" id="if-v-count" value="0"><div class="form-field"><label>Veículo / Placa</label><input type="text" id="if-veiculo-manual" placeholder="Ex: Gol / ABC-1234"></div>';
   }
 
-  // ── Preview resumido
   const preview = document.getElementById('parsed-preview');
   preview.style.display = 'block';
   preview.innerHTML =
-    '<p>✅ <strong>Dados importados' + (veiculos.length > 1 ? ' — ' + veiculos.length + ' veículos detectados' : '') + ':</strong></p>' +
-    (nome     ? '<p>👤 <strong>Nome:</strong> ' + escHtml((nome||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Nome não identificado</p>') +
-    (telefone ? '<p>📞 <strong>Telefone:</strong> ' + escHtml((telefone||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Telefone não identificado</p>') +
-    (endereco ? '<p>📍 <strong>Endereço:</strong> ' + escHtml((endereco||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Endereço não identificado</p>') +
-    (referencia ? '<p>📌 <strong>Referência:</strong> ' + escHtml(referencia.trim()) + '</p>' : '') +
-    (veiculos.length > 0 ? '<p>🚗 <strong>Veículos:</strong> ' + veiculos.map(v => v.modelo).join(', ') + '</p>' : '') +
-    (dataISO ? '<p>📅 <strong>Data:</strong> ' + formatDateBR(dataISO) + '</p>' : '<p style="color:#b45309">📅 Sem data — técnico poderá definir depois</p>');
+    '<p>✅ <strong>Dados importados' + (veiculos.length>1 ? ' — '+veiculos.length+' veículos' : '') + ':</strong></p>' +
+    (nome ? '<p>👤 <strong>Nome:</strong> ' + esc((nome||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Nome não identificado</p>') +
+    (telefone ? '<p>📞 <strong>Telefone:</strong> ' + esc((telefone||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Telefone não identificado</p>') +
+    (endereco ? '<p>📍 <strong>Endereço:</strong> ' + esc((endereco||'').trim()) + '</p>' : '<p style="color:#ef4444">⚠️ Endereço não identificado</p>') +
+    (ref ? '<p>📌 <strong>Referência:</strong> ' + esc(ref.trim()) + '</p>' : '') +
+    (veiculos.length>0 ? '<p>🚗 <strong>Veículos:</strong> ' + veiculos.map(v=>v.modelo).join(', ') + '</p>' : '') +
+    (dataISO ? '<p>📅 <strong>Data:</strong> ' + formatDateBR(dataISO) + '</p>' : '<p style="color:#b45309">📅 Sem data</p>');
 
   document.getElementById('import-form').style.display = 'block';
-  showToast(veiculos.length > 1 ? veiculos.length + ' veículos detectados! Selecione o técnico.' : 'Dados importados! Selecione o técnico.', 'success');
+  showToast(veiculos.length>1 ? veiculos.length+' veículos detectados! Selecione o técnico.' : 'Dados importados! Selecione o técnico.', 'success');
 }
 
-
+// ════════════════════════════════
+// SUBMETER OS – IMPORTADA
+// ════════════════════════════════
 async function submitImportOS() {
   const nome    = document.getElementById('if-nome').value.trim();
   const tel     = document.getElementById('if-tel').value.trim();
@@ -1212,54 +979,34 @@ async function submitImportOS() {
   const data    = document.getElementById('if-data').value;
   const tecnico = document.getElementById('if-tecnico').value;
 
-  if (!nome || !tel || !end || !tecnico) {
-    showToast('Preencha os campos obrigatórios (*)', 'error'); return;
-  }
+  if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
 
   const countEl = document.getElementById('if-v-count');
-  const count   = countEl ? parseInt(countEl.value) : 0;
+  const count   = countEl ? parseInt(countEl.value) || 0 : 0;
 
-  // Sem veículos detectados → usa campo manual
+  setAdminSyncStatus('syncing');
+
   if (count === 0) {
     const vManual = document.getElementById('if-veiculo-manual');
     const veiculo = vManual ? vManual.value.trim() : '';
-    const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end,
-                 tipo: 'Instalação', data, veiculo, obs, id: genId() };
-    setAdminSyncStatus('syncing');
-    const result = await gasRequest(os);
-    if (result.ok) {
-      showToast('OS enviada para ' + tecnico + '!', 'success');
-      resetImportForm();
-      await loadAllOrders();
-    } else {
-      showToast('Erro ao enviar OS.', 'error');
-      setAdminSyncStatus('ok');
-    }
+    const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo: 'Instalação', data, veiculo, obs, id: genId() });
+    if (result.ok) { showToast('OS enviada para ' + tecnico + '!', 'success'); resetImportForm(); await loadAllOrders(); }
+    else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
     return;
   }
 
-  // Envia 1 OS por veículo
-  setAdminSyncStatus('syncing');
   let erros = 0;
   for (let i = 0; i < count; i++) {
-    const modelo  = document.getElementById('if-v-modelo-' + i)?.value.trim() || '';
+    const modelo  = (document.getElementById('if-v-modelo-' + i)?.value || '').trim();
     const tipo    = document.getElementById('if-v-tipo-' + i)?.value || 'Instalação';
-    const vObs    = document.getElementById('if-v-obs-' + i)?.value.trim() || '';
+    const vObs    = (document.getElementById('if-v-obs-' + i)?.value || '').trim();
     const obsFull = [obs, vObs].filter(Boolean).join(' | ');
-    const os = { action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end,
-                 tipo, data, veiculo: modelo, obs: obsFull, id: genId() };
-    const result = await gasRequest(os);
+    const result  = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: modelo, obs: obsFull, id: genId() });
     if (!result.ok) erros++;
   }
 
-  if (erros === 0) {
-    showToast(count + ' OS enviadas para ' + tecnico + '!', 'success');
-    resetImportForm();
-    await loadAllOrders();
-  } else {
-    showToast(erros + ' OS com erro. Tente novamente.', 'error');
-    setAdminSyncStatus('ok');
-  }
+  if (erros === 0) { showToast(count + ' OS enviadas para ' + tecnico + '!', 'success'); resetImportForm(); await loadAllOrders(); }
+  else { showToast(erros + ' OS com erro.', 'error'); setAdminSyncStatus('ok'); }
 }
 
 function resetImportForm() {
@@ -1269,245 +1016,84 @@ function resetImportForm() {
   document.getElementById('if-veiculos-wrap').innerHTML = '';
 }
 
-// ════════════════════════════════════════
-// DELETAR OS
-// ════════════════════════════════════════
-function requestDelete(id, tech) {
-  pendingDelete = { type: 'single', id, tech };
-  document.getElementById('delete-modal-sub').textContent = 'Digite a senha do administrador para excluir esta ordem de serviço.';
-  document.getElementById('delete-modal-pass').value = '';
-  document.getElementById('delete-error').style.display = 'none';
-  document.getElementById('delete-modal').classList.add('open');
-}
-
-function confirmDeleteAll() {
-  pendingDelete = { type: 'all' };
-  document.getElementById('delete-modal-sub').textContent = 'Digite a senha do administrador para excluir TODAS as ordens de serviço.';
-  document.getElementById('delete-modal-pass').value = '';
-  document.getElementById('delete-error').style.display = 'none';
-  document.getElementById('delete-modal').classList.add('open');
-}
-
-function closeDeleteModal() {
-  document.getElementById('delete-modal').classList.remove('open');
-  pendingDelete = null;
-}
-
-async function confirmDeleteAction() {
-  const pass = document.getElementById('delete-modal-pass').value;
-  if (pass !== ADMIN_PASS) {
-    document.getElementById('delete-error').style.display = 'block';
-    return;
-  }
-  // Guarda referencia antes de fechar modal
-  const toDelete = pendingDelete;
-  closeDeleteModal();
-
-  if (toDelete.type === 'single') {
-    setAdminSyncStatus('syncing');
-    setSyncStatus('syncing');
-    const result = await gasRequest({ action: 'deleteOrder', id: toDelete.id, tech: toDelete.tech });
-    if (result.ok) {
-      showToast('Ordem excluída!', 'success');
-      if (currentRole === 'tech') await loadTechOrders();
-      else await loadAllOrders();
-    } else {
-      showToast('Erro ao excluir.', 'error');
-    }
-  } else if (toDelete.type === 'all') {
-    setAdminSyncStatus('syncing');
-    const result = await gasRequest({ action: 'deleteAll' });
-    if (result.ok) {
-      showToast('Todas as ordens foram excluídas!', 'success');
-      await loadAllOrders();
-    } else {
-      showToast('Erro ao excluir.', 'error');
-    }
-  }
-  pendingDelete = null;
-}
-
-// ════════════════════════════════════════
+// ════════════════════════════════
 // UTILITÁRIOS
-// ════════════════════════════════════════
-function toggleCard(id) {
-  const body    = document.getElementById('card-body-' + id);
-  const chevron = document.getElementById('chevron-' + id);
-  if (!body) return;
-  const open = body.style.display === 'block';
-  body.style.display    = open ? 'none' : 'block';
-  chevron.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+// ════════════════════════════════
+function parseDate(str) {
+  if (!str || str === 'undefined' || str === 'null') return null;
+  str = String(str).trim();
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) {
+    const [d,m,y] = str.split('/');
+    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y,m,d] = str.split('-');
+    const dt = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  return null;
 }
 
-function genId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function formatDateBR(str) {
+  if (!str) return '';
+  const d = parseDate(str);
+  if (!d) return str;
+  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 }
 
-function escHtml(str) {
+function toInputDate(str) {
+  if (!str) return '';
+  const d = parseDate(str);
+  if (!d) return '';
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function escAttr(str) {
-  return escHtml(str);
-}
-
-function showToast(msg, type = '') {
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
+  t.textContent = msg; t.className = 'toast ' + type + ' show';
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Enter no campo nome → foca na senha (o form cuida do Enter na senha)
+// Enter no campo nome → foca na senha
 document.getElementById('login-user').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); document.getElementById('login-pass').focus(); }
 });
 
-// ════════════════════════════════════════
-// AUTO-DETECÇÃO DE VIRADA DE MÊS
-// ════════════════════════════════════════
+// ════════════════════════════════
+// INICIALIZAÇÃO
+// ════════════════════════════════
 (function init() {
-  // ── Virada de mês
-  const stored = localStorage.getItem('app_tecnico_month');
+  // Virada de mês
   const now = new Date();
   const current = now.getFullYear() + '-' + now.getMonth();
-  if (stored && stored !== current) {
-    localStorage.setItem('app_tecnico_month', current);
-  } else if (!stored) {
-    localStorage.setItem('app_tecnico_month', current);
-  }
+  const stored  = localStorage.getItem('app_tecnico_month');
+  if (stored !== current) localStorage.setItem('app_tecnico_month', current);
 
-  // ── Restaurar sessao salva (sem pedir senha novamente)
-  const SESSION_TTL_TECH  = 12 * 60 * 60 * 1000; // 12 horas
-  const SESSION_TTL_ADMIN =  4 * 60 * 60 * 1000; //  4 horas
+  // Restaurar sessão
   try {
     const raw = localStorage.getItem('app_tecnico_session');
     if (raw) {
       const sess = JSON.parse(raw);
-      const ttl  = sess.role === 'admin' ? SESSION_TTL_ADMIN : SESSION_TTL_TECH;
-      if (sess.ts && (Date.now() - sess.ts) < ttl) {
-        // Sessao ainda valida
+      const TTL  = sess.role === 'admin' ? 4*60*60*1000 : 12*60*60*1000;
+      if (sess.ts && (Date.now() - sess.ts) < TTL) {
         currentUser = sess.user;
         currentRole = sess.role;
-        if (sess.role === 'admin') {
-          showAdminScreen();
-        } else {
-          showTechScreen();
-        }
-        return; // nao mostra login
-      } else {
-        localStorage.removeItem('app_tecnico_session');
+        if (sess.role === 'admin') showAdminScreen();
+        else showTechScreen();
+        return;
       }
     }
-  } catch(_) {
-    localStorage.removeItem('app_tecnico_session');
-  }
-  // Sem sessao valida — mostra tela de login normalmente
+  } catch(_) {}
+  localStorage.removeItem('app_tecnico_session');
 })();
 </script>
-
-<!-- ════════════════════════════════════════
-     GOOGLE APPS SCRIPT (cole no GAS)
-
-function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  if (data.action === 'saveOrder') {
-    const sheet = ss.getSheetByName(data.tech);
-    sheet.appendRow([
-      data.id,
-      data.nome,
-      data.telefone,
-      data.endereco,
-      data.tipo,
-      data.data || '',
-      data.veiculo || '',
-      data.obs || '',
-      new Date().toLocaleDateString('pt-BR')
-    ]);
-    return ok({});
-  }
-  
-  if (data.action === 'getOrders') {
-    const sheet = ss.getSheetByName(data.tech);
-    const rows = sheet.getDataRange().getValues().slice(1);
-    const orders = rows.map(r => ({
-      id: r[0], nome: r[1], telefone: r[2], endereco: r[3],
-      tipo: r[4], data: r[5], veiculo: r[6], obs: r[7]
-    })).filter(o => {
-      if (!o.data) return true;
-      const d = new Date(o.data.split('/').reverse().join('-') + 'T12:00:00');
-      return d.getMonth()+1 == data.month && d.getFullYear() == data.year;
-    });
-    return ok(orders);
-  }
-  
-  if (data.action === 'getAllOrders') {
-    const result = {};
-    ['Glauber','Ederson','Jonas'].forEach(name => {
-      const sheet = ss.getSheetByName(name);
-      if (!sheet) { result[name] = []; return; }
-      const rows = sheet.getDataRange().getValues().slice(1);
-      result[name] = rows.map(r => ({
-        id: r[0], nome: r[1], telefone: r[2], endereco: r[3],
-        tipo: r[4], data: r[5], veiculo: r[6], obs: r[7]
-      }));
-    });
-    return ok(result);
-  }
-  
-  if (data.action === 'updateDate') {
-    const sheet = ss.getSheetByName(data.tech);
-    const rows = sheet.getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) {
-      if (rows[i][0] == data.id) {
-        const dateStr = data.data ? formatDate(data.data) : '';
-        sheet.getRange(i+1, 6).setValue(dateStr);
-        break;
-      }
-    }
-    return ok({});
-  }
-  
-  if (data.action === 'deleteOrder') {
-    const sheet = ss.getSheetByName(data.tech);
-    const rows = sheet.getDataRange().getValues();
-    for (let i = 1; i < rows.length; i++) {
-      if (rows[i][0] == data.id) {
-        sheet.deleteRow(i+1);
-        break;
-      }
-    }
-    return ok({});
-  }
-  
-  if (data.action === 'deleteAll') {
-    ['Glauber','Ederson','Jonas'].forEach(name => {
-      const sheet = ss.getSheetByName(name);
-      if (sheet && sheet.getLastRow() > 1) {
-        sheet.deleteRows(2, sheet.getLastRow()-1);
-      }
-    });
-    return ok({});
-  }
-  
-  return ok({});
-}
-
-function formatDate(isoStr) {
-  if (!isoStr) return '';
-  const [y,m,d] = isoStr.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-function ok(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, data }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-════════════════════════════════════════ -->
 </body>
 </html>
