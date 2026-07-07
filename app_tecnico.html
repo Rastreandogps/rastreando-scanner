@@ -834,30 +834,50 @@ function renderTechOSList() {
           '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
         '</div>' +
 
-        // ── VEÍCULOS em destaque (separados por |)
+        // ── VEÍCULOS em destaque
         (o.veiculo ? (function() {
-          // Separa veículos pelo separador ' || ' (duplo pipe entre veículos)
-          // O ' | ' simples é preservado dentro das descrições (GNV | Rastreio)
+          // Separa veículos pelo separador ' || ' (duplo pipe)
+          // O ' | ' simples dentro de cada veículo (GNV | Rastreio) é preservado
           const lista = o.veiculo.includes(' || ')
             ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean)
             : [o.veiculo.trim()];
+
           const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+
           if (lista.length <= 1) {
-            return '<div style="display:flex;align-items:center;gap:8px;background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
-              svgCar + '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.veiculo.trim()) + '</span></div>';
+            // Veículo único — exibe modelo em cima, info (GNV/Rastreio) abaixo
+            const partes = o.veiculo.trim().split(' | ');
+            const modelo = partes[0] || '';
+            const info   = partes.slice(1).join(' · ') || '';
+            return '<div style="background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:10px;">' +
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                svgCar +
+                '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span>' +
+              '</div>' +
+              (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:19px;">' + esc(info) + '</div>' : '') +
+            '</div>';
           }
+
+          // Múltiplos veículos
           return '<div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-bottom:10px;">' +
             lista.map(function(v, i) {
-              return '<div style="display:flex;align-items:flex-start;gap:8px;' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
-                '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;padding-top:1px;">' +
-                  svgCar +
-                  '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
+              const partes = v.split(' | ');
+              const modelo = partes[0] || '';
+              const info   = partes.slice(1).join(' · ') || '';
+              return '<div style="' + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:1px solid #dbeafe;' : '') + '">' +
+                '<div style="display:flex;align-items:center;gap:6px;">' +
+                  '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
+                    svgCar +
+                    '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
+                  '</div>' +
+                  '<span style="font-size:13px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span>' +
                 '</div>' +
-                '<span style="font-size:13px;font-weight:700;color:var(--primary);line-height:1.4;">' + esc(v) + '</span>' +
+                (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:36px;">' + esc(info) + '</div>' : '') +
               '</div>';
             }).join('') +
           '</div>';
         })() : '') +
+
         // ── DATA em destaque
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
           '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;flex:1;">' +
