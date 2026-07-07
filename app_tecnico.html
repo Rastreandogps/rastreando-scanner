@@ -810,9 +810,13 @@ function renderTechOSList() {
     }
 
     const borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
-    const badgeHtml   = hasDate
-      ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
-      : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Pendente</span>';
+    const tipoTag   = o.tipo ? '<span style="background:#eff6ff;color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
+    const badgeHtml  = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
+      (hasDate
+        ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
+        : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Pendente</span>') +
+      tipoTag +
+    '</div>';
 
     return (
       '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;">' +
@@ -868,16 +872,8 @@ function renderTechOSList() {
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
 
-        // ── GAVETA (obs + tipo) — só aparece se tiver conteúdo
-        ((o.obs || o.tipo)
-          ? '<div class="card-toggle" data-cid="' + o.id + '" style="text-align:center;margin-top:8px;cursor:pointer;padding:2px 0;">' +
-              '<span id="chev-' + o.id + '" style="font-size:14px;color:var(--muted);display:inline-block;transition:transform .25s;">▾ mais detalhes</span>' +
-            '</div>' +
-            '<div id="' + cid + '" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:10px;">' +
-              (o.tipo ? '<span style="font-size:12px;font-weight:600;color:var(--accent);background:#eff6ff;padding:3px 10px;border-radius:6px;">' + esc(o.tipo) + '</span>' : '') +
-              (o.obs ? '<div style="font-size:13px;color:var(--muted);margin-top:8px;font-style:italic;">💬 ' + esc(o.obs) + '</div>' : '') +
-            '</div>'
-          : '') +
+        // ── OBSERVAÇÕES (se houver)
+        (o.obs ? '<div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;padding:6px 10px;background:#f8fafc;border-radius:8px;">💬 ' + esc(o.obs) + '</div>' : '') +
 
       '</div>'
     );
