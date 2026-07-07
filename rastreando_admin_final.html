@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Rastreando GPS — Admin</title>
+<meta name="theme-color" content="#0a0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#0a0e14;--bg-card:#141a24;--bg-card2:#1a212d;
+  --cyan:#00e5ff;--text:#e8eaed;--text-dim:#8b96a5;--text-muted:#4a5568;
+  --green:#00c853;--yellow:#ffb300;--red:#e8002d;--blue:#1e88e5;
+  --border:#232c38;--border2:#2d3748;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{padding:16px 16px 48px}
+.wrap{max-width:540px;margin:0 auto}
+
+/* LOGIN */
+#loginScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.login-box{width:100%;max-width:340px}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo h1{font-size:22px;font-weight:800}
+.login-logo h1 span{color:var(--cyan)}
+.login-logo p{color:var(--text-dim);font-size:13px;margin-top:6px}
+.login-field{margin-bottom:14px}
+.login-field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.login-field input{
+  width:100%;background:var(--bg-card);border:1px solid var(--border2);
+  color:var(--text);padding:14px 16px;border-radius:12px;font-size:16px;outline:none;
+}
+.login-field input:focus{border-color:var(--cyan)}
+.btn-primary{
+  width:100%;background:var(--cyan);color:#04222a;border:none;
+  border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;
+  transition:opacity .15s,transform .15s;margin-top:6px;
+}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.5;cursor:default}
+.btn-secondary{
+  width:100%;background:var(--bg-card);color:var(--text-dim);
+  border:1px solid var(--border2);border-radius:12px;padding:12px;
+  font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;
+}
+#loginErr{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+
+/* HEADER */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0 20px;
+}
+header h1{font-size:17px;font-weight:800}
+header h1 span{color:var(--cyan)}
+.sync-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 6px var(--green);
+  transition:background .3s,box-shadow .3s;
+}
+.sync-dot.syncing{background:var(--yellow);box-shadow:0 0 6px var(--yellow);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--red);box-shadow:0 0 6px var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-logout{
+  font-size:11px;color:var(--text-dim);cursor:pointer;
+  background:var(--bg-card);border:1px solid var(--border2);
+  padding:4px 10px;border-radius:8px;
+}
+
+/* CARD */
+.card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:14px;padding:18px;margin-bottom:16px;
+}
+.card-title{font-size:14px;font-weight:700;color:var(--cyan);margin-bottom:14px}
+
+/* FIELDS */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--bg-card2);border:1px solid var(--border2);
+  color:var(--text);padding:12px 14px;border-radius:10px;
+  font-size:14px;outline:none;transition:border-color .2s;
+  font-family:inherit;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--cyan)}
+.field textarea{resize:vertical;min-height:120px;line-height:1.5}
+.field select option{background:var(--bg-card)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* TECNICO SELECT PILLS */
+.tec-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.tec-pill{
+  padding:8px 18px;border-radius:20px;border:1px solid var(--border2);
+  background:var(--bg-card2);color:var(--text-dim);font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .15s;
+}
+.tec-pill.active{background:var(--cyan);color:#04222a;border-color:var(--cyan)}
+
+/* PARSED PREVIEW */
+.preview-block{
+  background:var(--bg-card2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;margin-bottom:10px;
+}
+.preview-row{
+  display:flex;gap:8px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:13px;
+}
+.preview-row:last-child{border-bottom:none}
+.preview-label{color:var(--text-dim);min-width:100px;flex-shrink:0;font-size:12px}
+.preview-value{color:var(--text);word-break:break-word}
+
+.veiculo-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.vtab{
+  padding:5px 12px;border-radius:16px;border:1px solid var(--border2);
+  background:var(--bg-card2);color:var(--text-dim);font-size:12px;
+  font-weight:600;cursor:pointer;transition:all .15s;
+}
+.vtab.active{background:var(--yellow);color:#1a1a00;border-color:var(--yellow)}
+
+.warn-box{
+  background:rgba(232,0,45,.08);border:1px solid rgba(232,0,45,.3);
+  border-radius:10px;padding:10px 14px;margin-bottom:10px;
+  font-size:13px;color:var(--red);
+}
+
+/* OS LIST */
+.os-mini{
+  padding:10px 0;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:10px;
+}
+.os-mini:last-child{border-bottom:none}
+.os-mini-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;
+}
+.dot-p{background:var(--yellow)}
+.dot-d{background:var(--blue)}
+.os-mini-info{flex:1;min-width:0}
+.os-mini-nome{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.os-mini-sub{font-size:11px;color:var(--text-dim);margin-top:2px}
+.os-mini-data{font-size:11px;color:var(--text-muted);white-space:nowrap}
+
+.tec-section{margin-bottom:20px}
+.tec-section h3{
+  font-size:13px;font-weight:700;color:var(--cyan);
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;
+}
+.tec-badge{
+  font-size:11px;background:var(--bg-card2);color:var(--text-dim);
+  border:1px solid var(--border2);border-radius:10px;padding:2px 8px;font-weight:600;
+}
+
+.empty{text-align:center;color:var(--text-dim);font-size:13px;padding:20px 0}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--bg-card2);border:1px solid var(--border);
+  color:var(--text);padding:11px 18px;border-radius:10px;
+  font-size:13px;opacity:0;transition:opacity .25s,transform .25s;
+  pointer-events:none;z-index:300;max-width:90%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--green)}
+.toast.fail{border-color:var(--red)}
+
+.info-box{
+  background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);
+  border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--cyan);
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Rastreando <span>GPS</span></h1>
+      <p>Painel Administrativo</p>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••" inputmode="numeric">
+    </div>
+    <button class="btn-primary" id="btnLogin">Entrar</button>
+    <div id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+<div class="wrap">
+
+  <header>
+    <h1>Admin <span>Rastreando</span></h1>
+    <div class="header-right">
+      <div class="sync-dot" id="syncDot"></div>
+      <div class="btn-logout" id="btnLogout">Sair</div>
+    </div>
+  </header>
+
+  <!-- ── IMPORTAR MENSAGEM ── -->
+  <div class="card">
+    <div class="card-title">📲 Importar mensagem do cliente</div>
+
+    <div class="field">
+      <label>Cole a mensagem do WhatsApp</label>
+      <textarea id="msgInput" placeholder="Olá! Acabei de agendar a instalação..."></textarea>
+    </div>
+    <button class="btn-primary" id="btnParse" style="margin-bottom:12px">🔍 Analisar mensagem</button>
+
+    <div id="parseResult" style="display:none">
+      <div class="info-box" id="parseInfo"></div>
+
+      <!-- seletor de veículo (quando houver mais de 1) -->
+      <div id="veiculoTabs" style="display:none">
+        <div class="field"><label>Selecione o veículo</label></div>
+        <div class="veiculo-tabs" id="veiculoTabsRow"></div>
+      </div>
+
+      <!-- preview dos dados -->
+      <div class="preview-block" id="previewBlock"></div>
+
+      <!-- data/hora agendamento -->
+      <div class="row2">
+        <div class="field">
+          <label>Data do agendamento</label>
+          <input type="date" id="pData">
+        </div>
+        <div class="field">
+          <label>Hora</label>
+          <input type="time" id="pHora">
+        </div>
+      </div>
+
+      <!-- escolher técnico -->
+      <div class="field">
+        <label>Técnico responsável</label>
+        <div class="tec-pills" id="tecPills"></div>
+      </div>
+
+      <button class="btn-primary" id="btnEnviar">✅ Enviar para o técnico</button>
+      <button class="btn-secondary" id="btnLimpar">Limpar</button>
+    </div>
+  </div>
+
+  <!-- ── OS POR TÉCNICO ── -->
+  <div class="card">
+    <div class="card-title">📋 Ordens de Serviço</div>
+    <div id="osListAdmin"></div>
+  </div>
+
+</div><!-- /wrap -->
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwDk2FER9rlbsJXxufDVhTUWDdMG_GIfAy8zKy2tE7VMbNOCwz7deEV1KhJL8xGOng/exec';
+const ADMIN_SENHA = '271659';
+const POLL_MS = 30000;
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let tecnicos = [];
+let allOS = {};       // { Glauber: [...], Eberson: [...] }
+let parsedData = null;
+let selectedVeiculoIdx = 0;
+let selectedTecnico = '';
+let pollTimer = null;
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+(function init() {
+  const saved = localStorage.getItem('rg_admin_auth');
+  if (saved === ADMIN_SENHA) {
+    startApp();
+  }
+  document.getElementById('btnLogin').addEventListener('click', doLogin);
+  document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('btnLogout').addEventListener('click', doLogout);
+  document.getElementById('btnParse').addEventListener('click', parseMsg);
+  document.getElementById('btnEnviar').addEventListener('click', enviarOS);
+  document.getElementById('btnLimpar').addEventListener('click', limpar);
+})();
+
+// ══════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+  const senha = document.getElementById('loginPass').value.trim();
+  const errEl = document.getElementById('loginErr');
+  if (senha !== ADMIN_SENHA) { errEl.textContent = 'Senha incorreta.'; return; }
+  localStorage.setItem('rg_admin_auth', senha);
+  startApp();
+}
+
+function doLogout() {
+  localStorage.removeItem('rg_admin_auth');
+  if(pollTimer) clearInterval(pollTimer);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function startApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  carregarTecnicos();
+  carregarTodasOS();
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(carregarTodasOS, POLL_MS);
+}
+
+// ══════════════════════════════════════════════════════════
+// SYNC
+// ══════════════════════════════════════════════════════════
+function setSyncStatus(st) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot'+(st==='syncing'?' syncing':st==='error'?' error':'');
+}
+
+async function carregarTecnicos() {
+  try {
+    const res = await fetch(`${GAS_URL}?action=getTecnicos&senha=${ADMIN_SENHA}`);
+    const data = await res.json();
+    if(data.erro) throw new Error(data.erro);
+    tecnicos = data.tecnicos || [];
+    renderTecPills();
+  } catch(err) {
+    console.error('Erro ao carregar técnicos:', err);
+    // fallback caso o GAS ainda não esteja configurado
+    tecnicos = ['Glauber','Eberson','Jonas'];
+    renderTecPills();
+  }
+}
+
+async function carregarTodasOS() {
+  setSyncStatus('syncing');
+  try {
+    const promises = tecnicos.map(tec =>
+      fetch(`${GAS_URL}?action=getOS&tecnico=${encodeURIComponent(tec)}&senha=${ADMIN_SENHA}`)
+        .then(r=>r.json())
+        .then(d=>({ tec, os: d.os||[] }))
+        .catch(()=>({ tec, os:[] }))
+    );
+    const results = await Promise.all(promises);
+    allOS = {};
+    results.forEach(r => { allOS[r.tec] = r.os; });
+    renderOSAdmin();
+    setSyncStatus('ok');
+  } catch(err) {
+    setSyncStatus('error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// PARSER DE MENSAGEM
+// ══════════════════════════════════════════════════════════
+function parseMsg() {
+  const raw = document.getElementById('msgInput').value.trim();
+  if (!raw) { showToast('Cole a mensagem primeiro.','fail'); return; }
+
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const get = (prefix) => {
+    const line = lines.find(l => l.toLowerCase().startsWith(prefix.toLowerCase()));
+    return line ? line.slice(prefix.length).trim() : '';
+  };
+
+  const nome     = get('Nome:');
+  const telefone = get('Telefone:');
+  const endereco = get('Endereço:');
+  const refLine  = get('Ponto de referência:');
+  const pedidoId = get('ID do pedido:');
+
+  // extrai veículos
+  const veiculos = [];
+  lines.forEach(line => {
+    const m = line.match(/^Veículo\s*\d+:\s*(.+)$/i);
+    if(!m) return;
+    const veiTxt = m[1].trim();
+    // extrai GNV e Rastreio do mesmo bloco ou da linha seguinte
+    // procura "GNV: ... | Rastreio: ..."
+    const infoM = line.match(/GNV:\s*(Sim|Não)\s*\|\s*Rastreio:\s*(.+)/i);
+    // ou busca nas próximas linhas
+    let gnv = '', rastreio = '';
+    if(infoM) {
+      gnv = infoM[1];
+      rastreio = infoM[2].trim();
+    } else {
+      // busca linha GNV/Rastreio associada ao índice do veículo
+      const veiIdx = lines.indexOf(line);
+      for(let i=veiIdx+1; i<Math.min(veiIdx+4, lines.length); i++) {
+        const infoLine = lines[i].match(/GNV:\s*(Sim|Não)\s*\|\s*Rastreio:\s*(.+)/i);
+        if(infoLine) { gnv=infoLine[1]; rastreio=infoLine[2].trim(); break; }
+      }
+    }
+    veiculos.push({ veiculo: veiTxt.split(/\s*GNV:/)[0].trim(), gnv: gnv||'Não', rastreio: rastreio||'Sem bloqueio' });
+  });
+
+  // fallback: se não encontrou veículos com o padrão, tenta Veículo 1 na própria linha
+  if(!veiculos.length) {
+    showToast('Não encontrei veículos na mensagem.','fail');
+    return;
+  }
+
+  parsedData = { nome, telefone, endereco, ponto_referencia: refLine, pedido_id: pedidoId, veiculos };
+  selectedVeiculoIdx = 0;
+
+  renderParseResult();
+}
+
+function renderParseResult() {
+  document.getElementById('parseResult').style.display = 'block';
+
+  const v = parsedData.veiculos;
+  const info = document.getElementById('parseInfo');
+  info.textContent = `✅ ${v.length} veículo(s) encontrado(s) para ${parsedData.nome || '—'}`;
+
+  // tabs de veículos
+  if(v.length > 1) {
+    document.getElementById('veiculoTabs').style.display = 'block';
+    const row = document.getElementById('veiculoTabsRow');
+    row.innerHTML = v.map((vi,i) =>
+      `<div class="vtab${i===selectedVeiculoIdx?' active':''}" onclick="selectVeiculo(${i})">Veículo ${i+1}</div>`
+    ).join('');
+  } else {
+    document.getElementById('veiculoTabs').style.display = 'none';
+  }
+
+  renderPreview();
+}
+
+function selectVeiculo(idx) {
+  selectedVeiculoIdx = idx;
+  document.querySelectorAll('.vtab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  renderPreview();
+}
+
+function renderPreview() {
+  if(!parsedData) return;
+  const vei = parsedData.veiculos[selectedVeiculoIdx];
+  const rows = [
+    ['👤 Nome',         parsedData.nome],
+    ['📞 Telefone',     parsedData.telefone],
+    ['📍 Endereço',     parsedData.endereco],
+    ['🗺️ Referência',   parsedData.ponto_referencia],
+    ['🚗 Veículo',      vei.veiculo],
+    ['⛽ GNV',          vei.gnv],
+    ['📡 Rastreio',     vei.rastreio],
+    ['🆔 Pedido',       parsedData.pedido_id],
+  ].filter(r=>r[1]);
+
+  document.getElementById('previewBlock').innerHTML = rows.map(([l,v]) =>
+    `<div class="preview-row">
+      <div class="preview-label">${l}</div>
+      <div class="preview-value">${esc(v)}</div>
+    </div>`
+  ).join('');
+
+  // data/hora default = hoje
+  if(!document.getElementById('pData').value) {
+    const now = new Date();
+    document.getElementById('pData').value = now.toISOString().slice(0,10);
+    document.getElementById('pHora').value = now.toTimeString().slice(0,5);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TECNICO PILLS
+// ══════════════════════════════════════════════════════════
+function renderTecPills() {
+  const container = document.getElementById('tecPills');
+  container.innerHTML = tecnicos.map(t =>
+    `<div class="tec-pill${t===selectedTecnico?' active':''}" onclick="selectTecnico('${t}')">${t}</div>`
+  ).join('');
+}
+
+function selectTecnico(nome) {
+  selectedTecnico = nome;
+  document.querySelectorAll('.tec-pill').forEach(p=>p.classList.toggle('active',p.textContent===nome));
+}
+
+// ══════════════════════════════════════════════════════════
+// ENVIAR OS
+// ══════════════════════════════════════════════════════════
+async function enviarOS() {
+  if(!parsedData) { showToast('Analise uma mensagem primeiro.','fail'); return; }
+  if(!selectedTecnico) { showToast('Selecione um técnico.','fail'); return; }
+
+  const vei  = parsedData.veiculos[selectedVeiculoIdx];
+  const data = document.getElementById('pData').value;
+  const hora = document.getElementById('pHora').value;
+  const dataFmt = data ? data.split('-').reverse().join('/') : '';
+
+  const btn = document.getElementById('btnEnviar');
+  btn.textContent = 'Enviando...'; btn.disabled = true;
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        action: 'saveOS',
+        tecnico: selectedTecnico,
+        senha: ADMIN_SENHA,
+        os: {
+          data_agendada:     dataFmt,
+          hora_agendada:     hora,
+          cliente_nome:      parsedData.nome,
+          cliente_telefone:  parsedData.telefone,
+          endereco:          parsedData.endereco,
+          ponto_referencia:  parsedData.ponto_referencia,
+          veiculo:           vei.veiculo,
+          gnv:               vei.gnv,
+          rastreio:          vei.rastreio,
+          pedido_id:         parsedData.pedido_id,
+        }
+      })
+    });
+    const d = await res.json();
+    if(d.erro) throw new Error(d.erro);
+
+    showToast(`✅ OS enviada para ${selectedTecnico}!`,'ok');
+
+    // se havia mais de 1 veículo, pergunta se quer enviar os demais
+    const restantes = parsedData.veiculos.length - 1;
+    if(restantes > 0) {
+      const next = parsedData.veiculos.findIndex((v,i)=>i!==selectedVeiculoIdx);
+      if(next>=0) { selectVeiculo(next); }
+    } else {
+      limpar();
+    }
+
+    carregarTodasOS();
+  } catch(err) {
+    showToast('Erro: '+err.message,'fail');
+  } finally {
+    btn.textContent = '✅ Enviar para o técnico'; btn.disabled = false;
+  }
+}
+
+function limpar() {
+  parsedData = null;
+  selectedVeiculoIdx = 0;
+  document.getElementById('msgInput').value = '';
+  document.getElementById('parseResult').style.display = 'none';
+  document.getElementById('pData').value = '';
+  document.getElementById('pHora').value = '';
+}
+
+// ══════════════════════════════════════════════════════════
+// LISTA OS (ADMIN VIEW)
+// ══════════════════════════════════════════════════════════
+function renderOSAdmin() {
+  const container = document.getElementById('osListAdmin');
+
+  if(!tecnicos.length) {
+    container.innerHTML = '<div class="empty">Nenhum técnico cadastrado.</div>';
+    return;
+  }
+
+  container.innerHTML = tecnicos.map(tec => {
+    const os = (allOS[tec] || []).slice().sort((a,b)=>parseDate(b.data_agendada)-parseDate(a.data_agendada));
+    const total     = os.length;
+    const pendentes = os.filter(o=>o.status!=='contato_realizado').length;
+
+    return `
+    <div class="tec-section">
+      <h3>
+        👤 ${esc(tec)}
+        <span class="tec-badge">${total} OS · ${pendentes} pendente${pendentes!==1?'s':''}</span>
+      </h3>
+      ${!os.length
+        ? '<div class="empty">Nenhuma OS.</div>'
+        : os.map(o => {
+            const isPend = o.status !== 'contato_realizado';
+            return `
+            <div class="os-mini">
+              <div class="os-mini-dot ${isPend?'dot-p':'dot-d'}"></div>
+              <div class="os-mini-info">
+                <div class="os-mini-nome">${esc(o.cliente_nome)||'—'}</div>
+                <div class="os-mini-sub">${esc(o.veiculo)||'—'} · ${esc(o.rastreio)||'—'}</div>
+              </div>
+              <div class="os-mini-data">${o.data_agendada||'—'}<br><span style="font-size:10px;color:var(--text-muted)">${o.hora_agendada||''}</span></div>
+            </div>`;
+          }).join('')
+      }
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════
+function esc(str) {
+  return String(str||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function parseDate(str) {
+  if(!str) return new Date(0);
+  const [d,m,y] = str.split('/');
+  return new Date(`${y}-${m}-${d}`);
+}
+
+function showToast(msg, kind) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show'+(kind?' '+kind:'');
+  setTimeout(()=>{ t.className='toast'; }, 2800);
+}
+</script>
+</body>
+</html>
