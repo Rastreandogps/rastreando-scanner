@@ -261,6 +261,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar">📅 Calendário</button>
     <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders">📋 Ordens</button>
+    <button class="tab-btn" onclick="showTechTab('done')" id="tt-done">✅ Concluídos</button>
   </div>
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
@@ -280,6 +281,11 @@
     <div class="section-title" id="orders-month-label"></div>
     <div id="tech-os-list"></div>
   </div>
+  <div id="tech-tab-done" class="screen" style="padding-top:20px;background:#e8eef8;min-height:100vh;">
+    <div class="section-title">Serviços Concluídos</div>
+    <div id="tech-done-list"></div>
+  </div>
+
 </div>
 
 <!-- TELA DO ADMIN -->
@@ -614,10 +620,11 @@ function showAdminScreen() {
 }
 
 function showTechTab(tab) {
-  ['calendar','orders'].forEach(t => {
+  ['calendar','orders','done'].forEach(t => {
     document.getElementById('tech-tab-' + t).classList.toggle('active', t === tab);
     document.getElementById('tt-' + t).classList.toggle('active', t === tab);
   });
+  if (tab === 'done') renderDoneList();
 }
 
 function showAdminTab(tab) {
@@ -715,22 +722,26 @@ function renderTechCalendar() {
     dateMap[k].push(o.id);
   });
 
-  const pendentes = orders.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined');
+  const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined'));
 
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
 
   for (let d = 1; d <= total; d++) {
     const isToday  = d === now.getDate();
     const ids      = dateMap[d] || [];
+    // Bolinha amarela aparece APENAS no dia de hoje se houver pendentes
+    // (nunca em dias passados, nunca em dias futuros — fica sempre "hoje")
     const temPend  = isToday && pendentes.length > 0;
     let dots = '';
     if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(ids.length, 3));
     if (temPend)         dots += '<div class="dot dot-yellow"></div>';
 
-    // Se tem ordens nesse dia, torna clicável via data-ids (evita problema de aspas)
-    const dataIds = ids.length > 0 ? ' data-ids="' + ids.join('|') + '"' : '';
-    const calCursor = ids.length > 0 ? ' style="cursor:pointer;"' : '';
-    const calClass  = ids.length > 0 ? ' cal-clickable' : '';
+    // Clicável se tem OS agendadas OU se é hoje com pendentes
+    const clicavel  = ids.length > 0 || temPend;
+    const allIds    = temPend ? [...ids, ...pendentes.map(o => o.id)] : ids;
+    const dataIds   = clicavel ? ' data-ids="' + allIds.join('|') + '"' : '';
+    const calCursor = clicavel ? ' style="cursor:pointer;"' : '';
+    const calClass  = clicavel ? ' cal-clickable' : '';
 
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + '>' +
       '<span>' + d + '</span>' +
@@ -766,7 +777,7 @@ function renderCalDayCards(ids) {
              d.getMonth() === hoje.getMonth() &&
              d.getFullYear() === hoje.getFullYear();
     });
-    const pendentes = orders.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined');
+    const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined'));
     // Junta: primeiro as de hoje, depois as pendentes (sem duplicar)
     const ids_hoje = new Set(deHoje.map(o => o.id));
     selecionadas = [...deHoje, ...pendentes.filter(o => !ids_hoje.has(o.id))];
@@ -902,7 +913,9 @@ function renderTechOSList() {
   const orders = allOrders[currentUser] || [];
   const now    = new Date();
 
+  // Só mostra ordens ativas (não concluídas)
   const monthly = orders.filter(o => {
+    if (o.status === 'concluido') return false;
     const ds = (o.data || '').trim();
     if (!ds || ds === 'undefined') return true;
     const d = parseDate(ds);
@@ -1052,6 +1065,9 @@ function renderTechOSList() {
           '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
+        '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
+        '</button>' +
 
       '</div>'
     );
@@ -1379,6 +1395,52 @@ function toInputDate(str) {
 }
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// Marcar OS como concluída
+async function cardConcluir(btn) {
+  const id   = btn.getAttribute('data-id');
+  const tech = btn.getAttribute('data-tech');
+  if (!id || !tech) return;
+  setSyncStatus('syncing');
+  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
+  if (result.ok) {
+    showToast('Serviço concluído! ✅', 'success');
+    await loadTechOrders();
+    renderDoneList();
+  } else {
+    showToast('Erro ao concluir.', 'error');
+    setSyncStatus('ok');
+  }
+}
+
+// Renderizar lista de concluídos
+function renderDoneList() {
+  const list   = document.getElementById('tech-done-list');
+  if (!list) return;
+  const orders = allOrders[currentUser] || [];
+  const done   = orders.filter(o => o.status === 'concluido');
+
+  if (done.length === 0) {
+    list.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhum serviço concluído ainda.</p></div>';
+    return;
+  }
+
+  list.innerHTML = done.map(o => {
+    const telLimpo = (o.telefone || '').replace(/\D/g,'');
+    const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
+    return '<div class="os-card" style="border-left:4px solid var(--success);padding:16px 18px;opacity:.85;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+          '<span style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</span>' +
+          (wppLink ? '<a href="' + wppLink + '" target="_blank" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;"><svg viewBox="0 0 24 24" width="15" height="15" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg></a>' : '') +
+        '</div>' +
+        '<span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Concluído</span>' +
+      '</div>' +
+      (o.veiculo ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+      '<div style="font-size:12px;color:var(--muted);">📅 ' + (o.data ? formatDateBR(o.data) : 'Sem data') + ' · ' + esc(o.tipo || '') + '</div>' +
+    '</div>';
+  }).join('');
+}
 
 // Reatribuir OS para outro técnico (admin)
 async function adminReatribuir(btn) {
