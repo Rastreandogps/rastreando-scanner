@@ -357,6 +357,7 @@
     <button class="tab-btn admin-tab" onclick="showAdminTab('all-os')" id="at-all">📋 Todas as OS</button>
     <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view">👁️ Técnico</button>
     <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done">✅ Concluídos</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos">🔐 Acessos</button>
   </div>
 
   <!-- NOVA OS -->
@@ -486,6 +487,25 @@
       <!-- Filtro por técnico -->
       <div id="admin-done-filter-btns" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
       <div id="admin-done-list"></div>
+    </div>
+  </div>
+
+  <!-- ACESSOS DOS TÉCNICOS -->
+  <div id="admin-tab-acessos" class="screen">
+    <div class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h3 style="margin:0;">🔐 Histórico de Acessos</h3>
+        <button type="button" class="btn-parse" onclick="loadAcessos()" style="padding:7px 14px;">🔄 Atualizar</button>
+      </div>
+      <!-- Filtro por técnico -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn-parse" onclick="filterAcessos('all')" id="afa-all" style="padding:7px 14px;">Todos</button>
+      </div>
+      <div id="admin-acessos-list">
+        <div class="empty-state" style="padding:32px 0;">
+          <p>Clique em Atualizar para carregar.</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -792,6 +812,8 @@ function showTechScreen() {
   document.getElementById('screen-admin').style.display = 'none';
   document.getElementById('screen-tech').style.display  = 'block';
   document.getElementById('tech-avatar').textContent = currentUser[0];
+  // Registrar login silenciosamente
+  registrarLogin(currentUser);
   document.getElementById('tech-header-name').textContent = currentUser;
   showTechTab('calendar');
   loadTechOrders();
@@ -823,12 +845,15 @@ function showAdminTab(tab) {
   document.getElementById('admin-tab-all-os').classList.toggle('active', tab === 'all-os');
   document.getElementById('admin-tab-view-tech').classList.toggle('active', tab === 'view-tech');
   document.getElementById('admin-tab-done-os').classList.toggle('active', tab === 'done-os');
+  document.getElementById('admin-tab-acessos').classList.toggle('active', tab === 'acessos');
   document.getElementById('at-new').classList.toggle('active', tab === 'new-os');
   document.getElementById('at-all').classList.toggle('active', tab === 'all-os');
   document.getElementById('at-view').classList.toggle('active', tab === 'view-tech');
   document.getElementById('at-done').classList.toggle('active', tab === 'done-os');
+  document.getElementById('at-acessos').classList.toggle('active', tab === 'acessos');
   if (tab === 'all-os') renderAdminOSList();
   if (tab === 'done-os') loadAdminDoneOrders();
+  if (tab === 'acessos') loadAcessos();
 }
 
 // ════════════════════════════════
@@ -1726,6 +1751,86 @@ function toInputDate(str) {
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+// ── ADMIN: HISTÓRICO DE ACESSOS
+let todosAcessos = [];
+let acessoFilter = 'all';
+
+async function loadAcessos() {
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest({ action: 'getLogins' });
+  if (result.ok) {
+    todosAcessos = result.data || [];
+    renderAcessos();
+    // Gerar botões de filtro dinâmicos
+    const wrap = document.getElementById('admin-acessos-list').previousElementSibling;
+    if (wrap) {
+      wrap.innerHTML = '<button class="btn-parse" onclick="filterAcessos(&quot;all&quot;)" id="afa-all" style="padding:7px 14px;">Todos</button>' +
+        TECH_NAMES.map(n => '<button class="btn-parse" onclick="filterAcessos(&quot;' + n + '&quot;)" id="afa-' + n + '" style="padding:7px 14px;">' + n + '</button>').join('');
+    }
+  }
+  setAdminSyncStatus('ok');
+}
+
+function filterAcessos(tech) {
+  acessoFilter = tech;
+  document.querySelectorAll('[id^="afa-"]').forEach(b => b.style.background = '');
+  const el = document.getElementById('afa-' + tech);
+  if (el) { el.style.background = '#dbeafe'; el.style.color = '#1d4ed8'; }
+  renderAcessos();
+}
+
+function renderAcessos() {
+  const list = document.getElementById('admin-acessos-list');
+  if (!list) return;
+
+  let items = acessoFilter === 'all'
+    ? todosAcessos
+    : todosAcessos.filter(a => a.tech === acessoFilter);
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhum acesso registrado ainda.</p></div>';
+    return;
+  }
+
+  // Agrupar por data
+  const porData = {};
+  items.forEach(a => {
+    if (!porData[a.data]) porData[a.data] = [];
+    porData[a.data].push(a);
+  });
+
+  // Ordenar datas (mais recente primeiro)
+  const datas = Object.keys(porData).sort((a, b) => {
+    const [da, ma, ya] = a.split('/').map(Number);
+    const [db, mb, yb] = b.split('/').map(Number);
+    return new Date(yb, mb-1, db) - new Date(ya, ma-1, da);
+  });
+
+  const CORES_TECH = { };
+  TECH_NAMES.forEach((n, i) => {
+    const cores = ['#dbeafe|#1e40af','#fee2e2|#991b1b','#d1fae5|#065f46','#fef3c7|#92400e','#f3e8ff|#6b21a8'];
+    CORES_TECH[n] = (cores[i] || cores[0]).split('|');
+  });
+
+  list.innerHTML = datas.map(data => {
+    const acessosDia = porData[data].slice().reverse(); // mais recente primeiro
+    return '<div style="margin-bottom:16px;">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📅 ' + data + '</div>' +
+      acessosDia.map(a => {
+        const [bg, fg] = CORES_TECH[a.tech] || ['#f0f4ff','#1a2744'];
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06);">' +
+          '<div style="width:34px;height:34px;border-radius:50%;background:' + bg + ';color:' + fg + ';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">' + esc(a.tech[0]) + '</div>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:13px;font-weight:700;color:var(--primary);">' + esc(a.tech) + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);">Entrou às ' + esc(a.hora) + '</div>' +
+          '</div>' +
+          '<span style="font-size:11px;font-weight:700;background:' + bg + ';color:' + fg + ';padding:3px 8px;border-radius:20px;">🟢 Online</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }).join('');
+}
+
 // ── ADMIN: CONCLUÍDOS
 let adminDoneFilter  = 'all';
 
@@ -1817,6 +1922,14 @@ async function adminReverter(id, tech) {
     showToast('Erro ao reverter.', 'error');
     setAdminSyncStatus('ok');
   }
+}
+
+// Registra login do técnico no GAS
+async function registrarLogin(tech) {
+  const agora = new Date();
+  const hora  = String(agora.getHours()).padStart(2,'0') + ':' + String(agora.getMinutes()).padStart(2,'0');
+  const data  = String(agora.getDate()).padStart(2,'0') + '/' + String(agora.getMonth()+1).padStart(2,'0') + '/' + agora.getFullYear();
+  await gasRequest({ action: 'logLogin', tech, hora, data });
 }
 
 // Registra no GAS quando o técnico clica no botão de mensagem pré-pronta
@@ -2210,7 +2323,7 @@ document.getElementById('login-user').addEventListener('keydown', e => {
 
     // ── Admin
     if (document.getElementById('screen-admin').style.display !== 'none') {
-      const tabs = ['new-os', 'all-os', 'view-tech', 'done-os'];
+      const tabs = ['new-os', 'all-os', 'view-tech', 'done-os', 'acessos'];
       const atual = tabs.find(t => {
         const el = document.getElementById('admin-tab-' + t);
         return el && el.classList.contains('active');
