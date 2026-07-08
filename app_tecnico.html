@@ -530,6 +530,38 @@
   </div>
 </div>
 
+<!-- MODAL: EDITAR OS -->
+<div class="modal-overlay" id="modal-edit-os">
+  <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">✏️ Editar Ordem de Serviço</div>
+    <input type="hidden" id="edit-os-id">
+    <input type="hidden" id="edit-os-tech">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+      <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="edit-nome"></div>
+      <div class="form-field"><label>Telefone *</label><input type="tel" id="edit-tel"></div>
+      <div class="form-field"><label>Endereço *</label><input type="text" id="edit-end"></div>
+      <div class="form-field"><label>Veículo</label><input type="text" id="edit-veiculo"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-field">
+          <label>Tipo</label>
+          <select id="edit-tipo">
+            <option value="Instalação">Instalação</option>
+            <option value="Manutenção">Manutenção</option>
+            <option value="Remoção">Remoção</option>
+            <option value="Substituição">Substituição</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Data</label><input type="date" id="edit-data"></div>
+      </div>
+      <div class="form-field"><label>Observações</label><textarea id="edit-obs" rows="2" style="resize:vertical;"></textarea></div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button type="button" class="btn-cancel" onclick="fecharModalEdit()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="confirmarEdit()" style="background:var(--admin);">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: CONFIRMAR CONCLUSÃO -->
 <div class="modal-overlay" id="modal-concluir">
   <div class="modal-box">
@@ -1384,6 +1416,7 @@ function renderAdminOSList() {
           '<option value="Jonas"' + (o._tech==='Jonas'?' selected':'') + '>Jonas</option>' +
         '</select>' +
         '<button class="btn-save-date" onclick="adminReatribuir(this)" title="Confirmar reatribuição" style="padding:6px 10px;font-size:12px;">✔</button>' +
+        '<button onclick="abrirModalEdit(\'' + o.id + '\',\'' + o._tech + '\')" title="Editar OS" style="padding:6px 10px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;cursor:pointer;font-size:13px;">✏️</button>' +
         '<button class="btn-delete" onclick="adminDelete(this)" data-id="' + o.id + '" data-tech="' + o._tech + '" title="Excluir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
       '</div>' +
       (o.msgLog
@@ -1861,6 +1894,54 @@ function renderDoneList() {
       '</button>' +
     '</div>';
   }).join('');
+}
+
+// ── EDITAR OS
+function abrirModalEdit(id, tech) {
+  // Buscar OS no allOrders
+  const o = (allOrders[tech] || []).find(x => x.id === id);
+  if (!o) { showToast('OS não encontrada', 'error'); return; }
+
+  document.getElementById('edit-os-id').value    = id;
+  document.getElementById('edit-os-tech').value  = tech;
+  document.getElementById('edit-nome').value     = o.nome    || '';
+  document.getElementById('edit-tel').value      = o.telefone|| '';
+  document.getElementById('edit-end').value      = o.endereco|| '';
+  document.getElementById('edit-veiculo').value  = o.veiculo || '';
+  document.getElementById('edit-tipo').value     = o.tipo    || 'Instalação';
+  document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
+  document.getElementById('edit-obs').value      = o.obs     || '';
+
+  document.getElementById('modal-edit-os').classList.add('open');
+}
+
+function fecharModalEdit() {
+  document.getElementById('modal-edit-os').classList.remove('open');
+}
+
+async function confirmarEdit() {
+  const id      = document.getElementById('edit-os-id').value;
+  const tech    = document.getElementById('edit-os-tech').value;
+  const nome    = document.getElementById('edit-nome').value.trim();
+  const tel     = document.getElementById('edit-tel').value.trim();
+  const end     = document.getElementById('edit-end').value.trim();
+  const veiculo = document.getElementById('edit-veiculo').value.trim();
+  const tipo    = document.getElementById('edit-tipo').value;
+  const data    = document.getElementById('edit-data').value;
+  const obs     = document.getElementById('edit-obs').value.trim();
+
+  if (!nome || !tel || !end) { showToast('Preencha os campos obrigatórios', 'error'); return; }
+
+  fecharModalEdit();
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs });
+  if (result.ok) {
+    showToast('OS atualizada!', 'success');
+    await loadAllOrders();
+  } else {
+    showToast('Erro ao salvar.', 'error');
+    setAdminSyncStatus('ok');
+  }
 }
 
 // Reatribuir OS para outro técnico (admin)
