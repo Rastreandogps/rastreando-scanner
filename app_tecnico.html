@@ -1402,26 +1402,37 @@ function renderAdminOSList() {
     const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
     const techLC = o._tech.toLowerCase();
     const bgCard = dataOk ? '' : 'background:#fffbeb;border-color:#fde68a;';
-    return '<div class="admin-os-item" style="flex-wrap:wrap;gap:8px;' + bgCard + '">' +
-      '<div class="admin-os-info" style="min-width:0;flex:1;">' +
-        '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
-        '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
-        '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
+    return '<div class="admin-os-item" style="flex-direction:column;gap:10px;' + bgCard + '">' +
+
+      // ── LINHA 1: info + badge técnico + reatribuição
+      '<div style="display:flex;align-items:flex-start;gap:10px;">' +
+        '<div class="admin-os-info" style="min-width:0;flex:1;">' +
+          '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
+          '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
+          '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
+        '</div>' +
+        // Só o select de técnico no canto direito
+        '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">' +
+          '<select class="admin-reassign-sel" data-id="' + o.id + '" data-tech="' + o._tech + '" style="padding:5px 8px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;cursor:pointer;">' +
+            '<option value="Glauber"' + (o._tech==='Glauber'?' selected':'') + '>Glauber</option>' +
+            '<option value="Eberson"' + (o._tech==='Eberson'?' selected':'') + '>Eberson</option>' +
+            '<option value="Jonas"' + (o._tech==='Jonas'?' selected':'') + '>Jonas</option>' +
+          '</select>' +
+        '</div>' +
       '</div>' +
-      // Reatribuição: select + botão confirmar
-      '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
-        '<select class="admin-reassign-sel" data-id="' + o.id + '" data-tech="' + o._tech + '" style="padding:5px 8px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;cursor:pointer;" title="Reatribuir técnico">' +
-          '<option value="Glauber"' + (o._tech==='Glauber'?' selected':'') + '>Glauber</option>' +
-          '<option value="Eberson"' + (o._tech==='Eberson'?' selected':'') + '>Eberson</option>' +
-          '<option value="Jonas"' + (o._tech==='Jonas'?' selected':'') + '>Jonas</option>' +
-        '</select>' +
-        '<button class="btn-save-date" onclick="adminReatribuir(this)" title="Confirmar reatribuição" style="padding:6px 10px;font-size:12px;">✔</button>' +
-        '<button onclick="abrirModalEdit(\'' + o.id + '\',\'' + o._tech + '\')" title="Editar OS" style="padding:6px 10px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;cursor:pointer;font-size:13px;">✏️</button>' +
-        '<button class="btn-delete" onclick="adminDelete(this)" data-id="' + o.id + '" data-tech="' + o._tech + '" title="Excluir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
-      '</div>' +
+
+      // ── LINHA 2: log de mensagem
       (o.msgLog
-        ? '<div style="display:flex;align-items:center;gap:5px;margin-top:6px;padding:5px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
-        : '<div style="display:flex;align-items:center;gap:5px;margin-top:6px;padding:5px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
+        ? '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
+        : '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
+
+      // ── LINHA 3: botões de ação
+      '<div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">' +
+        '<button class="btn-save-date" onclick="adminReatribuir(this)" style="flex:1;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;">✔ Confirmar técnico</button>' +
+        '<button onclick="abrirModalEdit(\'' + o.id + '\',\'' + o._tech + '\')" style="flex:1;padding:8px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">✏️ Editar</button>' +
+        '<button class="btn-delete" onclick="adminDelete(this)" data-id="' + o.id + '" data-tech="' + o._tech + '" title="Excluir" style="padding:8px 12px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+      '</div>' +
+
     '</div>';
   }).join('');
 }
