@@ -1691,6 +1691,9 @@ async function adminVerTecnico(tech) {
         '<div class="admin-os-meta"><span style="' + dataStyle + '">📅 ' + dataLabel + '</span> · ' + esc(o.tipo||'') + '</div>' +
         '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
         (o.veiculo ? '<div class="admin-os-meta">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+        (o.msgLog
+          ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
       '</div>' +
     '</div>';
   }).join('');
