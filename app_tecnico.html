@@ -2131,6 +2131,55 @@ document.getElementById('login-user').addEventListener('keydown', e => {
 // ════════════════════════════════
 // INICIALIZAÇÃO
 // ════════════════════════════════
+// ════════════════════════════════
+// SWIPE — navegação por arrastar o dedo
+// ════════════════════════════════
+(function initSwipe() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const THRESHOLD = 60;  // pixels mínimos para considerar swipe
+  const VERTICAL  = 80;  // se movimento vertical for maior que isso, ignora
+
+  document.addEventListener('touchstart', function(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+
+    // Ignora se movimento vertical for dominante (scroll)
+    if (Math.abs(dy) > VERTICAL) return;
+    if (Math.abs(dx) < THRESHOLD) return;
+
+    const dir = dx < 0 ? 'left' : 'right'; // left = próxima, right = anterior
+
+    // ── Técnico
+    if (document.getElementById('screen-tech').style.display !== 'none') {
+      const tabs  = ['calendar', 'orders', 'done'];
+      const ativos = tabs.filter(t => document.getElementById('tech-tab-' + t));
+      const atual  = ativos.find(t => document.getElementById('tech-tab-' + t).classList.contains('active'));
+      const idx    = ativos.indexOf(atual);
+      if (dir === 'left'  && idx < ativos.length - 1) showTechTab(ativos[idx + 1]);
+      if (dir === 'right' && idx > 0)                 showTechTab(ativos[idx - 1]);
+      return;
+    }
+
+    // ── Admin
+    if (document.getElementById('screen-admin').style.display !== 'none') {
+      const tabs = ['new-os', 'all-os', 'view-tech', 'done-os'];
+      const atual = tabs.find(t => {
+        const el = document.getElementById('admin-tab-' + t);
+        return el && el.classList.contains('active');
+      });
+      const idx = tabs.indexOf(atual);
+      if (dir === 'left'  && idx < tabs.length - 1) showAdminTab(tabs[idx + 1]);
+      if (dir === 'right' && idx > 0)                showAdminTab(tabs[idx - 1]);
+    }
+  }, { passive: true });
+})();
+
 (function init() {
   // Virada de mês
   const now = new Date();
