@@ -870,7 +870,7 @@ async function loadAllOrders() {
   // Carrega TODAS as ordens (sem filtro de mês — o filtro é feito no frontend)
   const result = await gasRequest({ action: 'getAllOrders' });
   if (result.ok) {
-    allOrders = result.data || { Glauber: [], Eberson: [], Jonas: [] };
+    allOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
     inicializarFiltroMes();
     renderAdminOSList();
     atualizarContadores();
@@ -1372,7 +1372,7 @@ function inicializarFiltroMes() {
   const now  = new Date();
   const meses = new Set();
   meses.add(now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'));
-  ['Glauber','Eberson','Jonas'].forEach(t => {
+  TECH_NAMES.forEach(t => {
     (allOrders[t] || []).forEach(o => {
       if (o.data && o.data.trim() && o.data !== 'undefined') {
         const d = parseDate(o.data);
@@ -1408,10 +1408,10 @@ function filterAdmin(tech) {
 }
 
 function atualizarContadores() {
-  const total = ['Glauber','Eberson','Jonas'].reduce((s,t) => s + (allOrders[t]||[]).length, 0);
+  const total = TECH_NAMES.reduce((s,t) => s + (allOrders[t]||[]).length, 0);
   const elAll = document.getElementById('af-all');
   if (elAll) elAll.textContent = 'Todos' + (total > 0 ? ' (' + total + ')' : '');
-  ['Glauber','Eberson','Jonas'].forEach(t => {
+  TECH_NAMES.forEach(t => {
     const el = document.getElementById('af-' + t);
     const n  = (allOrders[t] || []).length;
     if (el) el.textContent = t + (n > 0 ? ' (' + n + ')' : '');
@@ -1421,7 +1421,7 @@ function atualizarContadores() {
 function renderAdminOSList() {
   const list = document.getElementById('admin-os-list');
   if (!list) return;
-  const techs  = adminFilter === 'all' ? ['Glauber','Eberson','Jonas'] : [adminFilter];
+  const techs  = adminFilter === 'all' ? TECH_NAMES : [adminFilter];
   const busca  = (document.getElementById('admin-search')?.value || '').toLowerCase().trim();
   let items = [];
   techs.forEach(t => (allOrders[t] || []).forEach(o => items.push({...o, _tech: t})));
@@ -1724,10 +1724,10 @@ async function loadAdminDoneOrders() {
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'getAllDoneOrders' });
   if (result.ok) {
-    allDoneOrders = result.data || { Glauber: [], Eberson: [], Jonas: [] };
+    allDoneOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
     renderAdminDoneList();
     // Atualizar contador na aba
-    const total = ['Glauber','Eberson','Jonas'].reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
+    const total = TECH_NAMES.reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
     const el = document.getElementById('admin-done-count');
     if (el) el.textContent = total + ' serviço(s) concluído(s)';
   }
@@ -1745,18 +1745,18 @@ function filterDone(tech) {
 function renderAdminDoneList() {
   const list  = document.getElementById('admin-done-list');
   if (!list) return;
-  const techs = adminDoneFilter === 'all' ? ['Glauber','Eberson','Jonas'] : [adminDoneFilter];
+  const techs = adminDoneFilter === 'all' ? TECH_NAMES : [adminDoneFilter];
   let items   = [];
   techs.forEach(t => (allDoneOrders[t] || []).forEach(o => items.push({...o, _tech: t})));
 
   // Atualizar contadores nos filtros
-  ['Glauber','Eberson','Jonas'].forEach(t => {
+  TECH_NAMES.forEach(t => {
     const el = document.getElementById('afd-' + t);
     const n  = (allDoneOrders[t] || []).length;
     if (el) el.textContent = t + (n > 0 ? ' (' + n + ')' : '');
   });
   const elAll = document.getElementById('afd-all');
-  const tot   = ['Glauber','Eberson','Jonas'].reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
+  const tot   = TECH_NAMES.reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
   if (elAll) elAll.textContent = 'Todos' + (tot > 0 ? ' (' + tot + ')' : '');
 
   if (items.length === 0) {
