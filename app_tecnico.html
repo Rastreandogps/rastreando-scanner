@@ -684,20 +684,14 @@ function confirmarLoginAdmin() {
 // ════════════════════════════════
 function requestDelete(id, tech) {
   pendingDelete = { type: 'single', id, tech };
-  document.getElementById('delete-modal-sub').textContent = 'Digite a senha para excluir esta ordem.';
-  document.getElementById('delete-senha-input').value = '';
-  document.getElementById('delete-senha-erro').style.display = 'none';
+  document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir esta ordem de serviço?';
   document.getElementById('modal-delete').classList.add('open');
-  setTimeout(() => document.getElementById('delete-senha-input').focus(), 150);
 }
 
 function confirmDeleteAll() {
   pendingDelete = { type: 'all' };
-  document.getElementById('delete-modal-sub').textContent = 'Digite a senha para excluir TODAS as ordens.';
-  document.getElementById('delete-senha-input').value = '';
-  document.getElementById('delete-senha-erro').style.display = 'none';
+  document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir TODAS as ordens de serviço?';
   document.getElementById('modal-delete').classList.add('open');
-  setTimeout(() => document.getElementById('delete-senha-input').focus(), 150);
 }
 
 function fecharModalDelete() {
@@ -1537,15 +1531,18 @@ function renderAdminOSList() {
 // SUBMETER OS – MANUAL
 // ════════════════════════════════
 async function submitOS() {
-  // Só executa se pelo menos nome E técnico foram preenchidos manualmente
+  // Não executa se o painel de importação está aberto
+  const importPanel = document.getElementById('import-panel');
+  if (importPanel && importPanel.style.display === 'block') return;
+  // Não executa se o formulário manual estiver oculto
+  const manualWrap = document.getElementById('manual-form-wrap');
+  if (manualWrap && manualWrap.style.display === 'none') return;
+
   const nome    = document.getElementById('f-nome').value.trim();
   const tel     = document.getElementById('f-tel').value.trim();
   const end     = document.getElementById('f-end').value.trim();
   const tipo    = document.getElementById('f-tipo').value;
   const tecnico = document.getElementById('f-tecnico').value;
-  // Proteção extra: não executa se o painel de importação está aberto e ativo
-  const importPanel = document.getElementById('import-panel');
-  if (importPanel && importPanel.style.display === 'block') return;
   const data    = document.getElementById('f-data').value;
   const veiculo = document.getElementById('f-veiculo').value.trim();
   const obs     = document.getElementById('f-obs').value.trim();
