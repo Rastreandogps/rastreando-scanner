@@ -1172,9 +1172,13 @@ function renderTechOSList() {
   }
 
   monthly.sort((a,b) => {
-    if (!a.data && !b.data) return 0;
-    if (!a.data) return 1;
-    if (!b.data) return -1;
+    const aPend = !a.data || a.data.trim() === '' || a.data === 'undefined';
+    const bPend = !b.data || b.data.trim() === '' || b.data === 'undefined';
+    // Pendentes primeiro
+    if (aPend && !bPend) return -1;
+    if (!aPend && bPend) return 1;
+    // Entre dois pendentes ou dois agendados, ordena por data crescente
+    if (aPend && bPend) return 0;
     return parseDate(a.data) - parseDate(b.data);
   });
 
