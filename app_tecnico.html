@@ -97,9 +97,10 @@
     position: sticky; top: 72px; z-index: 90;
   }
   .tab-btn {
-    padding: 13px 20px; border: none; background: none; font-size: 13px; font-weight: 600;
+    padding: 12px 0; border: none; background: none; font-size: 20px;
     color: var(--muted); cursor: pointer; white-space: nowrap;
     border-bottom: 3px solid transparent; margin-bottom: -2px;
+    flex: 1; text-align: center;
   }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-btn.admin-tab.active { color: var(--admin); border-bottom-color: var(--admin); }
@@ -308,9 +309,9 @@
     </div>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar">📅 Calendário</button>
-    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders">📋 Ordens</button>
-    <button class="tab-btn" onclick="showTechTab('done')" id="tt-done">✅ Concluídos</button>
+    <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar" title="Calendário">📅</button>
+    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders" title="Ordens">📋</button>
+    <button class="tab-btn" onclick="showTechTab('done')" id="tt-done" title="Concluídos">✅</button>
   </div>
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
@@ -353,11 +354,11 @@
     </div>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new">➕ Nova OS</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('all-os')" id="at-all">📋 Todas as OS</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view">👁️ Técnico</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done">✅ Concluídos</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos">🔐 Acessos</button>
+    <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new" title="Nova OS">➕</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('all-os')" id="at-all" title="Todas as OS">📋</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view" title="Ver Técnico">👁️</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done" title="Concluídos">✅</button>
+    <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos" title="Acessos">🔐</button>
   </div>
 
   <!-- NOVA OS -->
