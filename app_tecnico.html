@@ -391,9 +391,6 @@
               <label>Técnico Responsável *</label>
               <select id="if-tecnico">
                 <option value="">Selecione...</option>
-                <option value="Glauber">Glauber</option>
-                <option value="Eberson">Eberson</option>
-                <option value="Jonas">Jonas</option>
               </select>
             </div>
           </div>
@@ -429,9 +426,6 @@
           <label>Técnico Responsável *</label>
           <select id="f-tecnico">
             <option value="">Selecione...</option>
-            <option value="Glauber">Glauber</option>
-            <option value="Eberson">Eberson</option>
-            <option value="Jonas">Jonas</option>
           </select>
         </div>
       </div>
@@ -477,12 +471,7 @@
       </div>
 
       <!-- Filtro por técnico -->
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <button class="btn-parse" onclick="filterAdmin('all')" id="af-all" style="padding:7px 14px;">Todos</button>
-        <button class="btn-parse" onclick="filterAdmin('Glauber')" id="af-Glauber" style="padding:7px 14px;">Glauber</button>
-        <button class="btn-parse" onclick="filterAdmin('Eberson')" id="af-Eberson" style="padding:7px 14px;">Eberson</button>
-        <button class="btn-parse" onclick="filterAdmin('Jonas')" id="af-Jonas" style="padding:7px 14px;">Jonas</button>
-      </div>
+      <div id="admin-filter-btns" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
 
       <div id="admin-os-list"></div>
     </div>
@@ -495,12 +484,7 @@
         <div class="sync-indicator" id="admin-done-count" style="font-size:13px;font-weight:600;color:var(--success);"></div>
       </div>
       <!-- Filtro por técnico -->
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <button class="btn-parse" onclick="filterDone('all')" id="afd-all" style="padding:7px 14px;">Todos</button>
-        <button class="btn-parse" onclick="filterDone('Glauber')" id="afd-Glauber" style="padding:7px 14px;">Glauber</button>
-        <button class="btn-parse" onclick="filterDone('Eberson')" id="afd-Eberson" style="padding:7px 14px;">Eberson</button>
-        <button class="btn-parse" onclick="filterDone('Jonas')" id="afd-Jonas" style="padding:7px 14px;">Jonas</button>
-      </div>
+      <div id="admin-done-filter-btns" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
       <div id="admin-done-list"></div>
     </div>
   </div>
@@ -510,11 +494,7 @@
     <div class="admin-section">
       <h3>👁️ Visualizar Calendário do Técnico</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Selecione um técnico para ver o calendário e as ordens dele.</p>
-      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="admin-tech-btn" data-tech="Glauber" onclick="adminVerTecnico('Glauber')" style="flex:1;padding:12px;background:#dbeafe;color:#1e40af;border:2px solid #bfdbfe;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Glauber</button>
-        <button class="admin-tech-btn" data-tech="Eberson" onclick="adminVerTecnico('Eberson')" style="flex:1;padding:12px;background:#fee2e2;color:#991b1b;border:2px solid #fecaca;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Eberson</button>
-        <button class="admin-tech-btn" data-tech="Jonas"   onclick="adminVerTecnico('Jonas')"   style="flex:1;padding:12px;background:#d1fae5;color:#065f46;border:2px solid #a7f3d0;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">Jonas</button>
-      </div>
+      <div id="admin-view-tech-btns" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"></div>
       <!-- Calendário do técnico selecionado -->
       <div id="admin-view-tech-content" style="display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -620,14 +600,30 @@ const BUILD_VERSION = '2026-07-07-v2';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659';
-const TECH_CREDENTIALS = { 'Glauber': '123456', 'Eberson': '123456', 'Jonas': '123456' };
+
+// ════════════════════════════════════════
+// ✏️ CONFIGURAÇÃO DE TÉCNICOS
+// Para adicionar/remover/renomear técnicos,
+// edite APENAS esta lista.
+// Lembre-se de criar/renomear a aba na planilha também!
+// ════════════════════════════════════════
+const TECNICOS = [
+  { nome: 'Glauber', senha: '123456' },
+  { nome: 'Eberson', senha: '123456' },
+  { nome: 'Jonas',   senha: '123456' },
+];
+
+// Gerado automaticamente a partir de TECNICOS — não edite abaixo
+const TECH_CREDENTIALS = Object.fromEntries(TECNICOS.map(t => [t.nome, t.senha]));
+const TECH_NAMES = TECNICOS.map(t => t.nome);
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DAYS   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 let currentUser  = null;
 let currentRole  = null;
-let allOrders    = { Glauber: [], Eberson: [], Jonas: [] };
-let doneOrders   = { Glauber: [], Eberson: [], Jonas: [] };
+let allOrders  = Object.fromEntries(TECH_NAMES.map(n => [n, []]));
+let doneOrders = Object.fromEntries(TECH_NAMES.map(n => [n, []]));
+let allDoneOrders = Object.fromEntries(TECH_NAMES.map(n => [n, []]));
 let pendingDelete = null;
 let adminFilter   = 'all';
 let adminMesFiltro = ''; // 'YYYY-MM' ou '' para todos
@@ -754,6 +750,43 @@ function salvarSessao(user, role) {
 // ════════════════════════════════
 // TELAS
 // ════════════════════════════════
+// Gera todos os elementos dinâmicos baseados em TECNICOS
+function gerarElementosDinamicos() {
+  const optsTec = TECH_NAMES.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+
+  // Selects de técnico nos formulários
+  ['f-tecnico', 'if-tecnico'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<option value="">Selecione...</option>' + optsTec;
+  });
+
+  // Filtros Todas as OS
+  const btnAll = document.getElementById('admin-filter-btns');
+  if (btnAll) {
+    btnAll.innerHTML = '<button class="btn-parse" onclick="filterAdmin(&quot;all&quot;)" id="af-all" style="padding:7px 14px;">Todos</button>' +
+      TECH_NAMES.map(n => '<button class="btn-parse" onclick="filterAdmin(&quot;' + n + '&quot;)" id="af-' + n + '" style="padding:7px 14px;">' + n + '</button>').join('');
+  }
+
+  // Filtros Concluídos
+  const btnDone = document.getElementById('admin-done-filter-btns');
+  if (btnDone) {
+    btnDone.innerHTML = '<button class="btn-parse" onclick="filterDone(&quot;all&quot;)" id="afd-all" style="padding:7px 14px;">Todos</button>' +
+      TECH_NAMES.map(n => '<button class="btn-parse" onclick="filterDone(&quot;' + n + '&quot;)" id="afd-' + n + '" style="padding:7px 14px;">' + n + '</button>').join('');
+  }
+
+  // Botões aba Técnico
+  const CORES = ['#dbeafe|#1e40af|#bfdbfe','#fee2e2|#991b1b|#fecaca','#d1fae5|#065f46|#a7f3d0','#fef3c7|#92400e|#fde68a','#f3e8ff|#6b21a8|#e9d5ff'];
+  const btnView = document.getElementById('admin-view-tech-btns');
+  if (btnView) {
+    btnView.innerHTML = TECH_NAMES.map((n, i) => {
+      const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
+      return '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="flex:1;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">' + n + '</button>';
+    }).join('');
+  }
+
+  // Login seletor de técnico na tela de login (não existe mais, usa texto livre)
+}
+
 function showTechScreen() {
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-admin').style.display = 'none';
@@ -770,6 +803,7 @@ function showAdminScreen() {
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'block';
+  gerarElementosDinamicos();
   showAdminTab('new-os');
   loadAllOrders();
   if (pollInterval) clearInterval(pollInterval);
@@ -1442,9 +1476,7 @@ function renderAdminOSList() {
         // Só o select de técnico no canto direito
         '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">' +
           '<select class="admin-reassign-sel" data-id="' + o.id + '" data-tech="' + o._tech + '" style="padding:5px 8px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;cursor:pointer;">' +
-            '<option value="Glauber"' + (o._tech==='Glauber'?' selected':'') + '>Glauber</option>' +
-            '<option value="Eberson"' + (o._tech==='Eberson'?' selected':'') + '>Eberson</option>' +
-            '<option value="Jonas"' + (o._tech==='Jonas'?' selected':'') + '>Jonas</option>' +
+            TECH_NAMES.map(n => '<option value="' + n + '"' + (o._tech===n?' selected':'') + '>' + n + '</option>').join('') +
           '</select>' +
         '</div>' +
       '</div>' +
@@ -1686,7 +1718,7 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 
 // ── ADMIN: CONCLUÍDOS
 let adminDoneFilter  = 'all';
-let allDoneOrders    = { Glauber: [], Eberson: [], Jonas: [] };
+
 
 async function loadAdminDoneOrders() {
   setAdminSyncStatus('syncing');
