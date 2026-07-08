@@ -1037,7 +1037,17 @@ function renderCardInline(o) {
   const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
   let veiculoHtml = '';
   if (o.veiculo) {
-    const lista = o.veiculo.includes(' || ') ? o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean) : [o.veiculo.trim()];
+    // Detecta formato novo ' || ' ou formato antigo ') | Modelo maiúsculo'
+    let lista;
+    if (o.veiculo.includes(' || ')) {
+      lista = o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
+    } else if (/\)\s*\|\s*[A-Z]/.test(o.veiculo)) {
+      lista = o.veiculo.split(/\)\s*\|\s*(?=[A-Z])/).map((v, i, arr) =>
+        i < arr.length - 1 ? v.trim() + ')' : v.trim()
+      ).filter(Boolean);
+    } else {
+      lista = [o.veiculo.trim()];
+    }
     if (lista.length <= 1) {
       const partes = o.veiculo.trim().split(' | ');
       const modelo = partes[0] || '';
