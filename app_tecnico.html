@@ -760,7 +760,8 @@ async function gasRequest(payload) {
 async function loadTechOrders() {
   setSyncStatus('syncing');
   const now = new Date();
-  const result = await gasRequest({ action: 'getOrders', tech: currentUser, month: now.getMonth()+1, year: now.getFullYear() });
+  // Busca todas as ordens ativas (sem filtro de mês no GAS — o filtro é feito no frontend)
+  const result = await gasRequest({ action: 'getOrders', tech: currentUser });
   if (result.ok) {
     allOrders[currentUser] = result.data || [];
     renderTechCalendar();
@@ -1024,14 +1025,20 @@ function renderTechOSList() {
   const orders = allOrders[currentUser] || [];
   const now    = new Date();
 
-  // Só mostra ordens ativas (não concluídas)
+  // Mostra ordens ativas (não concluídas):
+  // - Sem data (pendentes): sempre aparecem
+  // - Do mês atual: aparecem normalmente
+  // - De meses anteriores NÃO concluídas: continuam aparecendo até serem concluídas
   const monthly = orders.filter(o => {
-    if (o.status === 'concluido') return false;
+    if (o.status === 'concluido') return false; // concluídas nunca aparecem aqui
     const ds = (o.data || '').trim();
-    if (!ds || ds === 'undefined') return true;
+    if (!ds || ds === 'undefined') return true; // pendentes sempre aparecem
     const d = parseDate(ds);
     if (!d || isNaN(d.getTime())) return true;
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    // Se for do mês atual ou de meses anteriores (não concluída = pendente de resolução)
+    const eMesAtual  = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    const eMesPassado = d < new Date(now.getFullYear(), now.getMonth(), 1); // antes do início deste mês
+    return eMesAtual || eMesPassado;
   });
 
   if (monthly.length === 0) {
