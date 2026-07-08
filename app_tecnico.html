@@ -534,6 +534,17 @@
 
 </div>
 
+<!-- MODAL: MOTIVACIONAL -->
+<div class="modal-overlay" id="modal-motivacional" style="background:rgba(0,0,0,.6);">
+  <div class="modal-box" style="text-align:center;max-width:340px;">
+    <div style="font-size:40px;margin-bottom:12px;" id="motiv-emoji"></div>
+    <div style="font-size:16px;font-weight:700;color:var(--primary);line-height:1.5;margin-bottom:20px;" id="motiv-frase"></div>
+    <button type="button" onclick="fecharMotivacional()" style="width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+      💪 Bora trabalhar!
+    </button>
+  </div>
+</div>
+
 <!-- MODAL: LOGIN ADMIN -->
 <div class="modal-overlay" id="modal-admin-login">
   <div class="modal-box">
@@ -815,6 +826,8 @@ function showTechScreen() {
   loadTechOrders();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(loadTechOrders, 30000);
+  // Popup motivacional ao entrar
+  setTimeout(mostrarMotivacional, 600);
 }
 
 function showAdminScreen() {
@@ -1005,6 +1018,15 @@ function renderCalDayCards(ids) {
     const ids_hoje = new Set(deHoje.map(o => o.id));
     selecionadas = [...deHoje, ...pendentes.filter(o => !ids_hoje.has(o.id))];
   }
+
+  // Pendentes primeiro
+  selecionadas.sort((a, b) => {
+    const aPend = !a.data || a.data.trim() === '' || a.data === 'undefined';
+    const bPend = !b.data || b.data.trim() === '' || b.data === 'undefined';
+    if (aPend && !bPend) return -1;
+    if (!aPend && bPend) return 1;
+    return 0;
+  });
 
   // Título do bloco
   const hojeStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
@@ -1936,6 +1958,38 @@ async function adminReverter(id, tech) {
     showToast('Erro ao reverter.', 'error');
     setAdminSyncStatus('ok');
   }
+}
+
+// ── POPUP MOTIVACIONAL
+const FRASES_MOTIV = [
+  { emoji: '🚀', texto: 'Que a força esteja com você… e também o Senhor!' },
+  { emoji: '📍', texto: 'Deus é fiel. O GPS pode errar, mas Ele nunca erra o caminho.' },
+  { emoji: '😄', texto: 'Antes de sair, ore. Depois, ligue o rastreador.' },
+  { emoji: '😂', texto: 'O Senhor é o meu pastor e nada me faltará. Nem sinal de internet!' },
+  { emoji: '❤️', texto: 'Faça tudo com amor, pois o amor nunca falha. — 1 Co 13:8' },
+  { emoji: '✨', texto: 'Deus transforma dias comuns em dias extraordinários para quem confia Nele.' },
+  { emoji: '💡', texto: 'Seja luz onde você for. Você representa algo maior do que o trabalho.' },
+  { emoji: '🏆', texto: 'O Senhor recompensa o homem que trabalha com integridade. — Pv 11:3' },
+  { emoji: '🙏', texto: 'Antes de sair, ore. Deus conhece cada endereço que você vai visitar hoje.' },
+  { emoji: '👨‍👩‍👧', texto: 'Sua dedicação ao trabalho honra a Deus e bençoa sua família.' },
+  { emoji: '💪', texto: 'Com Deus, nenhum caminho é longo demais e nenhum desafio é grande demais.' },
+  { emoji: '🤝', texto: 'O Senhor é fiel. O que Ele prometeu, Ele cumprirá. — 1 Ts 5:24' },
+  { emoji: '⭐', texto: 'Que o favor de Deus vá à sua frente em cada visita de hoje.' },
+  { emoji: '🛠️', texto: 'Trabalhe como se estivesse servindo ao Senhor, não aos homens. — Cl 3:23' },
+  { emoji: '👁️', texto: 'Deus vê o seu esforço, mesmo quando mais ninguém vê.' },
+  { emoji: '🌟', texto: 'Cada cliente que você atende é uma oportunidade de mostrar o amor de Deus em ação.' },
+];
+
+function mostrarMotivacional() {
+  const frases = FRASES_MOTIV;
+  const f = frases[Math.floor(Math.random() * frases.length)];
+  document.getElementById('motiv-emoji').textContent = f.emoji;
+  document.getElementById('motiv-frase').textContent = f.texto;
+  document.getElementById('modal-motivacional').classList.add('open');
+}
+
+function fecharMotivacional() {
+  document.getElementById('modal-motivacional').classList.remove('open');
 }
 
 // Registra login do técnico no GAS
