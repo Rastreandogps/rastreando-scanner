@@ -667,6 +667,10 @@
   </div>
 </div>
 
+<!-- OVERLAY para remover destaque -->
+<div id="destaque-overlay" onclick="limparDestaqueOverlay()"
+  style="display:none;position:fixed;inset:0;z-index:50;background:transparent;cursor:pointer;"></div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1059,14 +1063,18 @@ function calDayClick(ids) {
 }
 
 function limparDestaqueCalendario() {
+  // Esconder overlay
+  const ov = document.getElementById('destaque-overlay');
+  if (ov) ov.style.display = 'none';
   // Remove destaque dos dias
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   document.querySelectorAll('.cal-clickable-admin').forEach(d => {
     d.style.background = '';
     d.style.borderRadius = '';
     d.style.outline = '';
+    d.classList.remove('cal-day-selected');
   });
-  // Remove destaque dos cards
+  // Remove destaque dos cards técnico
   destacarCardsOrdens(null);
   // Remove destaque cards admin
   document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
@@ -1075,6 +1083,11 @@ function limparDestaqueCalendario() {
     c.style.pointerEvents = 'auto';
     c.style.userSelect    = 'auto';
   });
+}
+
+function limparDestaqueOverlay() {
+  _calDayAtivo = null;
+  limparDestaqueCalendario();
 }
 
 function destacarCardsOrdens(ids) {
@@ -1090,14 +1103,21 @@ function destacarCardsOrdens(ids) {
     });
     return;
   }
+  // Mostrar overlay para capturar clique fora
+  const ov = document.getElementById('destaque-overlay');
+  if (ov) ov.style.display = 'block';
+
   let primeiro = null;
   todos.forEach(card => {
     const cardId = card.id.replace('os-card-', '');
     const match  = ids.includes(cardId);
     card.style.opacity       = match ? '1'     : '0.25';
     card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
-    card.style.pointerEvents = match ? 'auto'  : 'none'; // trava cliques
+    card.style.pointerEvents = match ? 'auto'  : 'none';
     card.style.userSelect    = match ? 'auto'  : 'none';
+    // Cards destacados ficam acima do overlay
+    card.style.position      = match ? 'relative' : '';
+    card.style.zIndex        = match ? '51' : '';
     card.style.boxShadow     = match
       ? '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)'
       : '';
@@ -1485,29 +1505,7 @@ function toggleCard(id) {
   if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
-// Clicar fora dos cards destacados remove o destaque
-// capture:true garante que roda antes de qualquer outro listener
-document.addEventListener('click', function(e) {
-  if (!_calDayAtivo) return;
-  // Verificar se clicou dentro de algo relevante
-  const dentroCardDestacado = e.target.closest('.os-card[id^="os-card-"]');
-  const dentroCalendario    = e.target.closest('.cal-clickable, .cal-clickable-admin, .cal-day');
-  const dentroCardAdmin     = e.target.closest('#admin-tech-os-list > div');
-  const dentroBtnTabBar     = e.target.closest('.tab-btn');
-
-  // Se clicou numa aba (mudou de tela), limpar também
-  if (dentroBtnTabBar) {
-    _calDayAtivo = null;
-    limparDestaqueCalendario();
-    return;
-  }
-
-  // Se clicou fora de tudo relevante, limpar
-  if (!dentroCardDestacado && !dentroCalendario && !dentroCardAdmin) {
-    _calDayAtivo = null;
-    limparDestaqueCalendario();
-  }
-}, true); // capture:true — roda antes dos outros listeners
+// Remoção do destaque via overlay (mais confiável que detectar clique fora)
 
 // Listener delegado para os cards expansíveis (evita problema de aspas inline)
 document.addEventListener('click', function(e) {
