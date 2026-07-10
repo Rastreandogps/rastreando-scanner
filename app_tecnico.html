@@ -1486,16 +1486,28 @@ function toggleCard(id) {
 }
 
 // Clicar fora dos cards destacados remove o destaque
+// capture:true garante que roda antes de qualquer outro listener
 document.addEventListener('click', function(e) {
-  if (_calDayAtivo) {
-    const dentroCard = e.target.closest('.os-card[id^="os-card-"]');
-    const dentroCalendario = e.target.closest('.cal-clickable, .cal-clickable-admin');
-    if (!dentroCard && !dentroCalendario) {
-      _calDayAtivo = null;
-      limparDestaqueCalendario();
-    }
+  if (!_calDayAtivo) return;
+  // Verificar se clicou dentro de algo relevante
+  const dentroCardDestacado = e.target.closest('.os-card[id^="os-card-"]');
+  const dentroCalendario    = e.target.closest('.cal-clickable, .cal-clickable-admin, .cal-day');
+  const dentroCardAdmin     = e.target.closest('#admin-tech-os-list > div');
+  const dentroBtnTabBar     = e.target.closest('.tab-btn');
+
+  // Se clicou numa aba (mudou de tela), limpar também
+  if (dentroBtnTabBar) {
+    _calDayAtivo = null;
+    limparDestaqueCalendario();
+    return;
   }
-});
+
+  // Se clicou fora de tudo relevante, limpar
+  if (!dentroCardDestacado && !dentroCalendario && !dentroCardAdmin) {
+    _calDayAtivo = null;
+    limparDestaqueCalendario();
+  }
+}, true); // capture:true — roda antes dos outros listeners
 
 // Listener delegado para os cards expansíveis (evita problema de aspas inline)
 document.addEventListener('click', function(e) {
