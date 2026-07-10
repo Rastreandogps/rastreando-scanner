@@ -1868,7 +1868,8 @@ function renderAcessos() {
 }
 
 // ── ADMIN: CONCLUÍDOS
-let adminDoneFilter  = 'all';
+let adminDoneFilter     = 'all';
+let adminTechSelecionado = '';
 
 
 async function loadAdminDoneOrders() {
@@ -1945,6 +1946,23 @@ function renderAdminDoneList() {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+// Admin conclui OS diretamente — reflete em todo o ecossistema
+async function adminConcluirOS(id, tech) {
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
+  if (result.ok) {
+    showToast('OS concluída! ✅', 'success');
+    // Recarrega tudo para refletir em todos os lugares
+    await loadAllOrders();
+    await loadAdminDoneOrders();
+    // Recarrega a view do técnico selecionado
+    if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
+  } else {
+    showToast('Erro ao concluir.', 'error');
+    setAdminSyncStatus('ok');
+  }
 }
 
 async function adminReverter(id, tech) {
@@ -2074,6 +2092,7 @@ function montarMsgPrePronta(o, wppLink) {
 
 // ── Admin: visualizar calendário de um técnico
 async function adminVerTecnico(tech) {
+  adminTechSelecionado = tech;
   // Destacar botão selecionado
   document.querySelectorAll('.admin-tech-btn').forEach(b => {
     b.style.opacity = b.getAttribute('data-tech') === tech ? '1' : '0.45';
@@ -2162,6 +2181,11 @@ async function adminVerTecnico(tech) {
         (o.msgLog
           ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
+      '</div>' +
+      '<div style="padding-top:8px;border-top:1px solid var(--border);margin-top:6px;">' +
+        '<button onclick="adminConcluirOS(' + JSON.stringify(o.id) + ',' + JSON.stringify(adminTechSelecionado) + ')" style="width:100%;padding:9px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
+        '</button>' +
       '</div>' +
     '</div>';
   }).join('');
