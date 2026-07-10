@@ -531,7 +531,7 @@
   </div>
 
   <!-- VER TÉCNICO -->
-  <div id="admin-tab-view-tech" class="screen">
+  <div id="admin-tab-view-tech" class="screen" style="background:#e8eef8;min-height:100vh;">
     <div class="admin-section">
       <h3>👁️ Visualizar Calendário do Técnico</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Selecione um técnico para ver o calendário e as ordens dele.</p>
@@ -2577,7 +2577,9 @@ async function adminVerTecnico(tech) {
     const tech   = adminTechSelecionado;
 
     return (
-      '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.05);">' +
+      '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:14px;' +
+        'border:1px solid rgba(59,130,246,.12);' +
+        'box-shadow:0 4px 6px rgba(0,0,0,.04),0 10px 20px rgba(0,0,0,.06),0 0 0 1px rgba(59,130,246,.06),0 0 16px rgba(59,130,246,.10);">' +
 
         // ── Linha 1: nome + WPP + badge data
         (function() {
