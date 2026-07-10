@@ -1975,19 +1975,44 @@ function renderAdminDoneList() {
 // Reatribuir OS direto na aba Técnico
 async function adminReatribuirDireto(id, techOld, techNew) {
   setAdminSyncStatus('syncing');
-  const os = (allOrders[techOld] || []).find(o => o.id === id);
-  if (!os) { showToast('OS não encontrada.', 'error'); return; }
-  const r1 = await gasRequest({ action: 'saveOrder', tech: techNew,
+
+  // Buscar a OS em todas as fontes disponíveis
+  let os = (allOrders[techOld] || []).find(o => o.id === id);
+  if (!os) {
+    // Tentar buscar direto do GAS
+    const fetch = await gasRequest({ action: 'getOrders', tech: techOld });
+    if (fetch.ok) os = (fetch.data || []).find(o => o.id === id);
+  }
+  if (!os) { showToast('OS não encontrada. Tente atualizar.', 'error'); setAdminSyncStatus('ok'); return; }
+
+  // Converter data para ISO se vier em BR (dd/MM/yyyy → yyyy-MM-dd)
+  let dataISO = '';
+  if (os.data && os.data.trim() && os.data !== 'undefined') {
+    const d = parseDate(os.data);
+    if (d) dataISO = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  // 1. Salvar na nova aba
+  const r1 = await gasRequest({
+    action: 'saveOrder', tech: techNew, id: os.id,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
-    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: os.obs, id: os.id });
-  if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
+    tipo: os.tipo || 'Instalação', data: dataISO,
+    veiculo: os.veiculo || '', obs: os.obs || ''
+  });
+  if (!r1.ok) {
+    showToast('Erro ao mover OS: ' + (r1.error || ''), 'error');
+    setAdminSyncStatus('ok');
+    return;
+  }
+
+  // 2. Apagar da aba antiga
   const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
   if (r2.ok) {
-    showToast('OS movida para ' + techNew + '!', 'success');
+    showToast('OS movida para ' + techNew + '! ✅', 'success');
     await loadAllOrders();
     if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
   } else {
-    showToast('Movida mas erro ao remover original.', 'error');
+    showToast('Salva no destino mas erro ao remover original.', 'error');
     await loadAllOrders();
   }
 }
