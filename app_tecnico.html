@@ -667,15 +667,8 @@
   </div>
 </div>
 
-<!-- OVERLAY + botão X para remover destaque -->
-<div id="destaque-overlay" onclick="limparDestaqueOverlay()"
-  style="display:none;position:fixed;inset:0;z-index:50;background:transparent;cursor:pointer;"></div>
-<button id="destaque-fechar" onclick="limparDestaqueOverlay()"
-  style="display:none;position:fixed;bottom:90px;right:20px;z-index:52;
-         width:44px;height:44px;border-radius:50%;border:none;
-         background:#ef4444;color:white;font-size:20px;font-weight:700;
-         cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,.5);
-         display:none;align-items:center;justify-content:center;">✕</button>
+
+
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -1070,10 +1063,6 @@ function calDayClick(ids) {
 
 function limparDestaqueCalendario() {
   // Esconder overlay
-  const ov = document.getElementById('destaque-overlay');
-  if (ov) ov.style.display = 'none';
-  const xBtn = document.getElementById('destaque-fechar');
-  if (xBtn) xBtn.style.display = 'none';
   // Remove destaque dos dias
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   document.querySelectorAll('.cal-clickable-admin').forEach(d => {
@@ -1093,10 +1082,6 @@ function limparDestaqueCalendario() {
   });
 }
 
-function limparDestaqueOverlay() {
-  _calDayAtivo = null;
-  limparDestaqueCalendario();
-}
 
 function destacarCardsOrdens(ids) {
   const todos = document.querySelectorAll('.os-card[id^="os-card-"]');
@@ -1111,7 +1096,6 @@ function destacarCardsOrdens(ids) {
     });
     return;
   }
-  // Técnico: sem overlay, sem X
 
   let primeiro = null;
   todos.forEach(card => {
@@ -1548,8 +1532,6 @@ document.addEventListener('click', function(e) {
     calDayAdmin.style.outline = '2px solid var(--accent)';
     calDayAdmin.classList.add('cal-day-selected');
     // Mostrar overlay e X no admin
-    const ov = document.getElementById('destaque-overlay');
-    if (ov) ov.style.display = 'block';
     const xBtn = document.getElementById('destaque-fechar');
     if (xBtn) xBtn.style.display = 'flex';
     // Destacar cards na lista
