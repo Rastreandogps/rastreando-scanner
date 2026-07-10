@@ -97,11 +97,13 @@
     position: sticky; top: 72px; z-index: 90;
   }
   .tab-btn {
-    padding: 12px 0; border: none; background: none; font-size: 20px;
+    padding: 10px 0; border: none; background: none; font-size: 20px;
     color: var(--muted); cursor: pointer; white-space: nowrap;
     border-bottom: 3px solid transparent; margin-bottom: -2px;
-    flex: 1; text-align: center;
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    transition: color .15s;
   }
+  .tab-btn:hover { color: var(--accent); }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-btn.admin-tab.active { color: var(--admin); border-bottom-color: var(--admin); }
 
@@ -244,6 +246,7 @@
     display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-overlay.open { display: flex; }
+  body.modal-open { overflow: hidden; touch-action: none; }
   .modal-box { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
   .modal-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
   .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
@@ -309,9 +312,26 @@
     </div>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar" title="Calendário">📅</button>
-    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders" title="Ordens">📋</button>
-    <button class="tab-btn" onclick="showTechTab('done')" id="tt-done" title="Concluídos">✅</button>
+    <!-- 📅 Calendário -->
+    <button class="tab-btn active" onclick="showTechTab('calendar')" id="tt-calendar" title="Calendário">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </button>
+    <!-- 📋 Ordens -->
+    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders" title="Ordens">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </button>
+    <!-- ✅ Concluídos -->
+    <button class="tab-btn" onclick="showTechTab('done')" id="tt-done" title="Concluídos">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    </button>
   </div>
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
@@ -354,11 +374,38 @@
     </div>
   </div>
   <div class="tab-bar">
-    <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new" title="Nova OS">➕</button>
-
-    <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view" title="Ver Técnico">👁️</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done" title="Concluídos">✅</button>
-    <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos" title="Acessos">🔐</button>
+    <!-- ➕ Nova OS -->
+    <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new" title="Nova OS">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+    </button>
+    <!-- 🗓️ Técnico / Agenda -->
+    <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view" title="Ver Técnico">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <line x1="8" y1="14" x2="8" y2="14" stroke-width="3" stroke-linecap="round"/>
+        <line x1="12" y1="14" x2="12" y2="14" stroke-width="3" stroke-linecap="round"/>
+        <line x1="16" y1="14" x2="16" y2="14" stroke-width="3" stroke-linecap="round"/>
+        <line x1="8" y1="18" x2="8" y2="18" stroke-width="3" stroke-linecap="round"/>
+        <line x1="12" y1="18" x2="12" y2="18" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <!-- ✅ Concluídos -->
+    <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done" title="Concluídos">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </button>
+    <!-- 🔐 Acessos -->
+    <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos" title="Acessos">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </button>
   </div>
 
   <!-- NOVA OS -->
@@ -641,12 +688,13 @@ let pollInterval = null;
 function abrirModalAdmin() {
   document.getElementById('admin-senha-input').value = '';
   document.getElementById('admin-senha-erro').style.display = 'none';
-  document.getElementById('modal-admin-login').classList.add('open');
+  document.getElementById('modal-admin-login').classList.add('open'); lockScroll();
   setTimeout(() => document.getElementById('admin-senha-input').focus(), 150);
 }
 
 function fecharModalAdmin() {
   document.getElementById('modal-admin-login').classList.remove('open');
+  unlockScroll();
 }
 
 function confirmarLoginAdmin() {
@@ -670,17 +718,22 @@ function confirmarLoginAdmin() {
 function requestDelete(id, tech) {
   pendingDelete = { type: 'single', id, tech };
   document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir esta ordem de serviço?';
-  document.getElementById('modal-delete').classList.add('open');
+  document.getElementById('modal-delete').classList.add('open'); lockScroll();
 }
 
 function confirmDeleteAll() {
   pendingDelete = { type: 'all' };
   document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir TODAS as ordens de serviço?';
-  document.getElementById('modal-delete').classList.add('open');
+  document.getElementById('modal-delete').classList.add('open'); lockScroll();
 }
+
+// Helpers para travar/destravar scroll do fundo
+function lockScroll()   { document.body.classList.add('modal-open'); }
+function unlockScroll() { document.body.classList.remove('modal-open'); }
 
 function fecharModalDelete() {
   document.getElementById('modal-delete').classList.remove('open');
+  unlockScroll();
   pendingDelete = null;
 }
 
@@ -763,13 +816,6 @@ function gerarElementosDinamicos() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">Selecione...</option>' + optsTec;
   });
-
-  // Filtros Todas as OS
-  const btnAll = document.getElementById('admin-filter-btns');
-  if (btnAll) {
-    btnAll.innerHTML = '<button class="btn-parse" onclick="filterAdmin(&quot;all&quot;)" id="af-all" style="padding:7px 14px;">Todos</button>' +
-      TECH_NAMES.map(n => '<button class="btn-parse" onclick="filterAdmin(&quot;' + n + '&quot;)" id="af-' + n + '" style="padding:7px 14px;">' + n + '</button>').join('');
-  }
 
   // Filtros Concluídos
   const btnDone = document.getElementById('admin-done-filter-btns');
@@ -879,9 +925,6 @@ async function loadAllOrders() {
   const result = await gasRequest({ action: 'getAllOrders' });
   if (result.ok) {
     allOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
-    inicializarFiltroMes();
-    renderAdminOSList();
-    atualizarContadores();
   }
   setAdminSyncStatus('ok');
 }
@@ -1133,7 +1176,7 @@ function renderCardInline(o) {
     '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
       '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
       '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
-      '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
+      '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDateAndRefreshCal(this)">Salvar</button>' +
     '</div>' +
   '</div>';
 }
@@ -1415,6 +1458,26 @@ function cardDelete(btn) {
   requestDelete(id, tech);
 }
 
+// Salva data e atualiza calendário (usado nos cards do calendário)
+async function cardSaveDateAndRefreshCal(btn) {
+  const container = btn.parentElement;
+  const input = container.querySelector('.card-date-input');
+  if (!input) return;
+  const id   = input.getAttribute('data-id');
+  const tech = input.getAttribute('data-tech');
+  if (!id || !tech) return;
+  const val = input.value;
+  setSyncStatus('syncing');
+  const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
+  if (result.ok) {
+    showToast('Data salva! ✅', 'success');
+    await loadTechOrders(); // recarrega tudo — calendário + ordens
+  } else {
+    showToast('Erro ao salvar data.', 'error');
+    setSyncStatus('ok');
+  }
+}
+
 async function saveDate(id, tech) {
   // Busca o input pelo data-id (novo card usa data-attributes)
   const input = document.querySelector('.card-date-input[data-id="' + id + '"]');
@@ -1458,34 +1521,27 @@ function inicializarFiltroMes() {
 }
 
 function mudarMesFiltro() {
-  const sel = document.getElementById('admin-mes-filtro');
-  adminMesFiltro = sel ? sel.value : '';
-  renderAdminOSList();
+  // aba removida — sem ação
 }
 
 function filterAdmin(tech) {
+  // Aba all-os removida — função mantida para não quebrar referências
   adminFilter = tech;
-  document.querySelectorAll('[id^="af-"]').forEach(b => {
-    b.style.background = '';
-    b.style.color = '';
-  });
-  const el = document.getElementById('af-' + tech);
-  if (el) { el.style.background = '#dbeafe'; el.style.color = '#1d4ed8'; }
-  renderAdminOSList();
 }
 
 function atualizarContadores() {
+  // Atualiza contadores onde existirem (aba all-os removida, sem erros)
   const total = TECH_NAMES.reduce((s,t) => s + (allOrders[t]||[]).length, 0);
   const elAll = document.getElementById('af-all');
   if (elAll) elAll.textContent = 'Todos' + (total > 0 ? ' (' + total + ')' : '');
   TECH_NAMES.forEach(t => {
     const el = document.getElementById('af-' + t);
-    const n  = (allOrders[t] || []).length;
-    if (el) el.textContent = t + (n > 0 ? ' (' + n + ')' : '');
+    if (el) { const n = (allOrders[t]||[]).length; el.textContent = t + (n > 0 ? ' (' + n + ')' : ''); }
   });
 }
 
 function renderAdminOSList() {
+  // Aba removida — retorna silenciosamente
   const list = document.getElementById('admin-os-list');
   if (!list) return;
   const techs  = adminFilter === 'all' ? TECH_NAMES : [adminFilter];
@@ -1791,7 +1847,25 @@ let todosAcessos = [];
 let acessoFilter = 'all';
 
 async function limparHistoricoAcessos() {
-  if (!confirm('Apagar todo o histórico de acessos?')) return;
+  // Usar modal de confirmação em vez de confirm() que pode ser bloqueado
+  if (!window.__confirmLimpar) {
+    window.__confirmLimpar = true;
+    const ok = await new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = '<div style="background:white;border-radius:16px;padding:24px;max-width:300px;width:90%;text-align:center;">' +
+        '<div style="font-size:16px;font-weight:700;margin-bottom:8px;">🗑️ Limpar Histórico</div>' +
+        '<div style="font-size:13px;color:#64748b;margin-bottom:20px;">Apagar todo o histórico de acessos?</div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button id="confirm-no" style="flex:1;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-weight:600;">Cancelar</button>' +
+          '<button id="confirm-yes" style="flex:1;padding:10px;border:none;border-radius:10px;background:#ef4444;color:white;cursor:pointer;font-weight:600;">Apagar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+      overlay.querySelector('#confirm-yes').onclick = () => { document.body.removeChild(overlay); window.__confirmLimpar = false; resolve(true); };
+      overlay.querySelector('#confirm-no').onclick  = () => { document.body.removeChild(overlay); window.__confirmLimpar = false; resolve(false); };
+    });
+    if (!ok) return;
+  } else { return; }
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'clearLogins' });
   if (result.ok) {
@@ -2072,11 +2146,12 @@ function mostrarMotivacional() {
   const f = frases[Math.floor(Math.random() * frases.length)];
   document.getElementById('motiv-emoji').textContent = f.emoji;
   document.getElementById('motiv-frase').textContent = f.texto;
-  document.getElementById('modal-motivacional').classList.add('open');
+  document.getElementById('modal-motivacional').classList.add('open'); lockScroll();
 }
 
 function fecharMotivacional() {
   document.getElementById('modal-motivacional').classList.remove('open');
+  unlockScroll();
 }
 
 // Registra login do técnico no GAS
@@ -2248,11 +2323,18 @@ async function adminVerTecnico(tech) {
     return (
       '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.05);">' +
 
-        // ── Linha 1: nome + badge data
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
-          '<div style="font-size:14px;font-weight:700;color:var(--primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
-          '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
-        '</div>' +
+        // ── Linha 1: nome + WPP + badge data
+        (function() {
+          const tel     = (o.telefone || '').replace(/\D/g,'');
+          const wppLink = tel ? 'https://wa.me/55' + tel : '';
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+            '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+            (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+            '</a>' : '') +
+            '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
+          '</div>';
+        })() +
 
         // ── Linha 2: veículo
         (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:5px 8px;margin-bottom:6px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
@@ -2299,11 +2381,12 @@ function cardConcluir(btn) {
   pendingConcluir = { id, tech };
   document.getElementById('concluir-nome').textContent    = o ? o.nome    : '';
   document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
-  document.getElementById('modal-concluir').classList.add('open');
+  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
 }
 
 function fecharModalConcluir() {
   document.getElementById('modal-concluir').classList.remove('open');
+  unlockScroll();
   pendingConcluir = null;
 }
 
@@ -2369,9 +2452,14 @@ function renderDoneList() {
 }
 
 // ── EDITAR OS
-function abrirModalEdit(id, tech) {
+async function abrirModalEdit(id, tech) {
   // Buscar OS no allOrders
-  const o = (allOrders[tech] || []).find(x => x.id === id);
+  let o = (allOrders[tech] || []).find(x => x.id === id);
+  if (!o) {
+    // Fallback: buscar direto do GAS
+    const r = await gasRequest({ action: 'getOrders', tech });
+    if (r.ok) o = (r.data || []).find(x => x.id === id);
+  }
   if (!o) { showToast('OS não encontrada', 'error'); return; }
 
   document.getElementById('edit-os-id').value    = id;
@@ -2384,11 +2472,12 @@ function abrirModalEdit(id, tech) {
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
   document.getElementById('edit-obs').value      = o.obs     || '';
 
-  document.getElementById('modal-edit-os').classList.add('open');
+  document.getElementById('modal-edit-os').classList.add('open'); lockScroll();
 }
 
 function fecharModalEdit() {
   document.getElementById('modal-edit-os').classList.remove('open');
+  unlockScroll();
 }
 
 async function confirmarEdit() {
