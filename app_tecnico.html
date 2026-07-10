@@ -128,6 +128,7 @@
     align-items: center; justify-content: center; font-size: 12px; gap: 2px;
   }
   .cal-day.today { background: #eff6ff; font-weight: 700; color: var(--accent); }
+  .cal-day.cal-day-selected { background: #dbeafe !important; border-radius: 8px; outline: 2px solid var(--accent); }
   .cal-day.other-month { opacity: .3; }
   .cal-day .dots { display: flex; gap: 2px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; }
@@ -1030,8 +1031,44 @@ function renderTechCalendar() {
 
 // Clique num dia do calendário → vai para aba Ordens e abre o(s) card(s)
 function calDayClick(ids) {
-  // Não muda de aba — mostra os cards abaixo do calendário
+  // Mostrar cards abaixo do calendário
   renderCalDayCards(ids);
+  // Destacar visualmente os dias no calendário
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
+  if (ids) {
+    document.querySelectorAll('.cal-clickable').forEach(d => {
+      const raw = d.getAttribute('data-ids');
+      if (raw && ids.some(id => raw.split('|').includes(id))) {
+        d.classList.add('cal-day-selected');
+      }
+    });
+  }
+  // Destacar cards na aba Ordens
+  destacarCardsOrdens(ids);
+}
+
+function destacarCardsOrdens(ids) {
+  const todos = document.querySelectorAll('.os-card[id^="os-card-"]');
+  if (!ids || ids.length === 0) {
+    // Remover destaque
+    todos.forEach(c => { c.style.opacity = '1'; c.style.transform = 'scale(1)'; });
+    return;
+  }
+  let primeiro = null;
+  todos.forEach(card => {
+    const cardId = card.id.replace('os-card-', '');
+    const match  = ids.includes(cardId);
+    card.style.opacity   = match ? '1' : '0.35';
+    card.style.transform = match ? 'scale(1.01)' : 'scale(1)';
+    card.style.boxShadow = match
+      ? '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)'
+      : '';
+    if (match && !primeiro) primeiro = card;
+  });
+  // Scroll suave até o primeiro card destacado
+  if (primeiro) {
+    setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  }
 }
 
 function renderCalDayCards(ids) {
@@ -1284,7 +1321,7 @@ function renderTechOSList() {
     '</div>';
 
     return (
-      '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + (hasDate ? 'white' : '#fffbeb') + ';">' +
+      '<div class="os-card' + cardCls + '" id="os-card-' + o.id + '" data-os-date="' + (o.data||'') + '" style="border-left:4px solid ' + borderColor + ';transition:opacity .3s,box-shadow .3s;padding:16px 18px;background:' + (hasDate ? 'white' : '#fffbeb') + ';">' +
 
         // ── CABEÇALHO: nome + whatsapp juntos + badges
         '<div style="margin-bottom:12px;">' +
@@ -1417,11 +1454,35 @@ document.addEventListener('click', function(e) {
     e.stopPropagation();
     toggleCard(div.getAttribute('data-cid'));
   }
-  // Listener para dias do calendário
+  // Listener para dias do calendário do técnico
   const calDay = e.target.closest('.cal-clickable');
   if (calDay) {
     const raw = calDay.getAttribute('data-ids');
     if (raw) calDayClick(raw.split('|'));
+  }
+  // Listener para dias do calendário do admin
+  const calDayAdmin = e.target.closest('.cal-clickable-admin');
+  if (calDayAdmin) {
+    const raw = calDayAdmin.getAttribute('data-admin-ids');
+    if (!raw) return;
+    const ids = raw.split('|').filter(Boolean);
+    // Destacar dia
+    document.querySelectorAll('.cal-clickable-admin').forEach(d => d.style.background = '');
+    calDayAdmin.style.background = '#dbeafe';
+    calDayAdmin.style.borderRadius = '8px';
+    calDayAdmin.style.outline = '2px solid var(--accent)';
+    // Destacar cards na lista
+    const cards = document.querySelectorAll('#admin-tech-os-list > div');
+    let primeiro = null;
+    cards.forEach(card => {
+      const id = card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
+                 card.querySelector('.admin-del-tech-btn')?.getAttribute('data-id');
+      const match = id && ids.includes(id);
+      card.style.opacity   = match ? '1' : '0.3';
+      card.style.transform = match ? 'scale(1.01)' : 'scale(1)';
+      if (match && !primeiro) primeiro = card;
+    });
+    if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   }
   // Listener para botão concluir admin na aba Técnico
   const concluirBtn = e.target.closest('.admin-concluir-btn');
@@ -2537,7 +2598,19 @@ async function adminVerTecnico(tech) {
     let dots = '';
     if (count > 0)  dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(count, 3));
     if (temPend)    dots += '<div class="dot dot-yellow"></div>';
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + '">' +
+    const idsStr = Object.keys(dateMapAdmin).includes(String(d))
+      ? orders.filter(o => {
+          if (!o.data || o.status === 'concluido') return false;
+          const dd = parseDate(o.data);
+          return dd && dd.getDate() === d && dd.getMonth() === month && dd.getFullYear() === year;
+        }).map(o => o.id).join('|')
+      : '';
+    const clicavelAdmin = count > 0 || temPendAdmin;
+    const allIdsAdmin   = temPendAdmin
+      ? [...orders.filter(o => !o.data || o.data.trim()==='' || o.data==='undefined').map(o=>o.id), ...(idsStr ? idsStr.split('|') : [])].join('|')
+      : idsStr;
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavelAdmin ? ' cal-clickable-admin' : '') + '"' +
+      (clicavelAdmin ? ' data-admin-ids="' + allIdsAdmin + '" style="cursor:pointer;"' : '') + '>' +
       '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
   }
 
