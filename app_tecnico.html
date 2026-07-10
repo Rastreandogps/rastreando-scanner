@@ -1030,10 +1030,21 @@ function renderTechCalendar() {
 }
 
 // Clique num dia do calendário → vai para aba Ordens e abre o(s) card(s)
+let _calDayAtivo = null; // IDs do dia atualmente selecionado
+
 function calDayClick(ids) {
+  // Se clicar no mesmo dia, remove destaque
+  const idsKey = ids ? ids.join(',') : '';
+  if (_calDayAtivo === idsKey) {
+    _calDayAtivo = null;
+    limparDestaqueCalendario();
+    return;
+  }
+  _calDayAtivo = idsKey;
+
   // Mostrar cards abaixo do calendário
   renderCalDayCards(ids);
-  // Destacar visualmente os dias no calendário
+  // Destacar dia no calendário
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   if (ids) {
     document.querySelectorAll('.cal-clickable').forEach(d => {
@@ -1045,6 +1056,23 @@ function calDayClick(ids) {
   }
   // Destacar cards na aba Ordens
   destacarCardsOrdens(ids);
+}
+
+function limparDestaqueCalendario() {
+  // Remove destaque dos dias
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
+  document.querySelectorAll('.cal-clickable-admin').forEach(d => {
+    d.style.background = '';
+    d.style.borderRadius = '';
+    d.style.outline = '';
+  });
+  // Remove destaque dos cards
+  destacarCardsOrdens(null);
+  // Remove destaque cards admin
+  document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
+    c.style.opacity = '1';
+    c.style.transform = 'scale(1)';
+  });
 }
 
 function destacarCardsOrdens(ids) {
@@ -1466,11 +1494,23 @@ document.addEventListener('click', function(e) {
     const raw = calDayAdmin.getAttribute('data-admin-ids');
     if (!raw) return;
     const ids = raw.split('|').filter(Boolean);
-    // Destacar dia
-    document.querySelectorAll('.cal-clickable-admin').forEach(d => d.style.background = '');
+    // Toggle: se clicar no mesmo dia, remove destaque
+    const jaAtivo = calDayAdmin.classList.contains('cal-day-selected');
+    document.querySelectorAll('.cal-clickable-admin').forEach(d => {
+      d.style.background = ''; d.style.borderRadius = ''; d.style.outline = '';
+      d.classList.remove('cal-day-selected');
+    });
+    if (jaAtivo) {
+      // Remove destaque dos cards e sai
+      document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
+        c.style.opacity = '1'; c.style.transform = 'scale(1)';
+      });
+      return;
+    }
     calDayAdmin.style.background = '#dbeafe';
     calDayAdmin.style.borderRadius = '8px';
     calDayAdmin.style.outline = '2px solid var(--accent)';
+    calDayAdmin.classList.add('cal-day-selected');
     // Destacar cards na lista
     const cards = document.querySelectorAll('#admin-tech-os-list > div');
     let primeiro = null;
