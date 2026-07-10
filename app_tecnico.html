@@ -496,7 +496,10 @@
     <div class="admin-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <h3 style="margin:0;">🔐 Histórico de Acessos</h3>
-        <button type="button" class="btn-parse" onclick="loadAcessos()" style="padding:7px 14px;">🔄 Atualizar</button>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-parse" onclick="loadAcessos()" style="padding:7px 14px;">🔄 Atualizar</button>
+          <button type="button" class="btn-danger-outline" onclick="limparHistoricoAcessos()" style="padding:7px 14px;font-size:12px;">🗑️ Limpar</button>
+        </div>
       </div>
       <!-- Filtro por técnico -->
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
@@ -1786,6 +1789,20 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 // ── ADMIN: HISTÓRICO DE ACESSOS
 let todosAcessos = [];
 let acessoFilter = 'all';
+
+async function limparHistoricoAcessos() {
+  if (!confirm('Apagar todo o histórico de acessos?')) return;
+  setAdminSyncStatus('syncing');
+  const result = await gasRequest({ action: 'clearLogins' });
+  if (result.ok) {
+    todosAcessos = [];
+    renderAcessos();
+    showToast('Histórico limpo!', 'success');
+  } else {
+    showToast('Erro ao limpar.', 'error');
+  }
+  setAdminSyncStatus('ok');
+}
 
 async function loadAcessos() {
   setAdminSyncStatus('syncing');
