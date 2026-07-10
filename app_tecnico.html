@@ -725,7 +725,11 @@ async function confirmarExclusao() {
     if (result.ok) {
       showToast('Ordem excluída!', 'success');
       if (currentRole === 'tech') await loadTechOrders();
-      else await loadAllOrders();
+      else {
+        await loadAllOrders();
+        // Recarrega view do técnico se estiver na aba Técnico
+        if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
+      }
     } else {
       showToast('Erro ao excluir.', 'error');
       setSyncStatus('ok'); setAdminSyncStatus('ok');
@@ -1390,6 +1394,13 @@ document.addEventListener('click', function(e) {
     const id   = concluirBtn.getAttribute('data-id');
     const tech = concluirBtn.getAttribute('data-tech');
     if (id && tech) adminConcluirOS(id, tech);
+  }
+  // Listener para botão excluir admin na aba Técnico
+  const delTechBtn = e.target.closest('.admin-del-tech-btn');
+  if (delTechBtn) {
+    const id   = delTechBtn.getAttribute('data-id');
+    const tech = delTechBtn.getAttribute('data-tech');
+    if (id && tech) requestDelete(id, tech);
   }
 });
 
@@ -2220,7 +2231,10 @@ async function adminVerTecnico(tech) {
           : '<div style="font-size:10px;color:#b45309;margin-bottom:8px;">⚠️ Mensagem não enviada</div>') +
 
         // ── Botão concluir compacto
-        '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(adminTechSelecionado) + '" style="width:100%;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(adminTechSelecionado) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+          '<button class="admin-del-tech-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(adminTechSelecionado) + '" style="padding:7px 12px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;cursor:pointer;" title="Excluir OS"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+        '</div>' +
 
       '</div>'
     );
