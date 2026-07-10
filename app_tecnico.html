@@ -1070,25 +1070,35 @@ function limparDestaqueCalendario() {
   destacarCardsOrdens(null);
   // Remove destaque cards admin
   document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
-    c.style.opacity = '1';
-    c.style.transform = 'scale(1)';
+    c.style.opacity       = '1';
+    c.style.transform     = 'scale(1)';
+    c.style.pointerEvents = 'auto';
+    c.style.userSelect    = 'auto';
   });
 }
 
 function destacarCardsOrdens(ids) {
   const todos = document.querySelectorAll('.os-card[id^="os-card-"]');
   if (!ids || ids.length === 0) {
-    // Remover destaque
-    todos.forEach(c => { c.style.opacity = '1'; c.style.transform = 'scale(1)'; });
+    // Remover destaque — restaurar tudo
+    todos.forEach(c => {
+      c.style.opacity       = '1';
+      c.style.transform     = 'scale(1)';
+      c.style.pointerEvents = 'auto';
+      c.style.userSelect    = 'auto';
+      c.style.boxShadow     = '';
+    });
     return;
   }
   let primeiro = null;
   todos.forEach(card => {
     const cardId = card.id.replace('os-card-', '');
     const match  = ids.includes(cardId);
-    card.style.opacity   = match ? '1' : '0.35';
-    card.style.transform = match ? 'scale(1.01)' : 'scale(1)';
-    card.style.boxShadow = match
+    card.style.opacity       = match ? '1'     : '0.25';
+    card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
+    card.style.pointerEvents = match ? 'auto'  : 'none'; // trava cliques
+    card.style.userSelect    = match ? 'auto'  : 'none';
+    card.style.boxShadow     = match
       ? '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)'
       : '';
     if (match && !primeiro) primeiro = card;
@@ -1475,6 +1485,18 @@ function toggleCard(id) {
   if (chev) chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
+// Clicar fora dos cards destacados remove o destaque
+document.addEventListener('click', function(e) {
+  if (_calDayAtivo) {
+    const dentroCard = e.target.closest('.os-card[id^="os-card-"]');
+    const dentroCalendario = e.target.closest('.cal-clickable, .cal-clickable-admin');
+    if (!dentroCard && !dentroCalendario) {
+      _calDayAtivo = null;
+      limparDestaqueCalendario();
+    }
+  }
+});
+
 // Listener delegado para os cards expansíveis (evita problema de aspas inline)
 document.addEventListener('click', function(e) {
   const div = e.target.closest('.card-toggle');
@@ -1518,8 +1540,10 @@ document.addEventListener('click', function(e) {
       const id = card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
                  card.querySelector('.admin-del-tech-btn')?.getAttribute('data-id');
       const match = id && ids.includes(id);
-      card.style.opacity   = match ? '1' : '0.3';
-      card.style.transform = match ? 'scale(1.01)' : 'scale(1)';
+      card.style.opacity       = match ? '1'    : '0.25';
+      card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
+      card.style.pointerEvents = match ? 'auto' : 'none';
+      card.style.userSelect    = match ? 'auto' : 'none';
       if (match && !primeiro) primeiro = card;
     });
     if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
