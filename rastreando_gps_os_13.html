@@ -246,6 +246,7 @@
     display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-overlay.open { display: flex; }
+  body.modal-open { overflow: hidden; touch-action: none; }
   .modal-box { background: white; border-radius: 20px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
   .modal-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
   .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
@@ -687,12 +688,13 @@ let pollInterval = null;
 function abrirModalAdmin() {
   document.getElementById('admin-senha-input').value = '';
   document.getElementById('admin-senha-erro').style.display = 'none';
-  document.getElementById('modal-admin-login').classList.add('open');
+  document.getElementById('modal-admin-login').classList.add('open'); lockScroll();
   setTimeout(() => document.getElementById('admin-senha-input').focus(), 150);
 }
 
 function fecharModalAdmin() {
   document.getElementById('modal-admin-login').classList.remove('open');
+  unlockScroll();
 }
 
 function confirmarLoginAdmin() {
@@ -716,17 +718,22 @@ function confirmarLoginAdmin() {
 function requestDelete(id, tech) {
   pendingDelete = { type: 'single', id, tech };
   document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir esta ordem de serviço?';
-  document.getElementById('modal-delete').classList.add('open');
+  document.getElementById('modal-delete').classList.add('open'); lockScroll();
 }
 
 function confirmDeleteAll() {
   pendingDelete = { type: 'all' };
   document.getElementById('delete-modal-sub').textContent = 'Tem certeza que deseja excluir TODAS as ordens de serviço?';
-  document.getElementById('modal-delete').classList.add('open');
+  document.getElementById('modal-delete').classList.add('open'); lockScroll();
 }
+
+// Helpers para travar/destravar scroll do fundo
+function lockScroll()   { document.body.classList.add('modal-open'); }
+function unlockScroll() { document.body.classList.remove('modal-open'); }
 
 function fecharModalDelete() {
   document.getElementById('modal-delete').classList.remove('open');
+  unlockScroll();
   pendingDelete = null;
 }
 
@@ -2139,11 +2146,12 @@ function mostrarMotivacional() {
   const f = frases[Math.floor(Math.random() * frases.length)];
   document.getElementById('motiv-emoji').textContent = f.emoji;
   document.getElementById('motiv-frase').textContent = f.texto;
-  document.getElementById('modal-motivacional').classList.add('open');
+  document.getElementById('modal-motivacional').classList.add('open'); lockScroll();
 }
 
 function fecharMotivacional() {
   document.getElementById('modal-motivacional').classList.remove('open');
+  unlockScroll();
 }
 
 // Registra login do técnico no GAS
@@ -2373,11 +2381,12 @@ function cardConcluir(btn) {
   pendingConcluir = { id, tech };
   document.getElementById('concluir-nome').textContent    = o ? o.nome    : '';
   document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
-  document.getElementById('modal-concluir').classList.add('open');
+  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
 }
 
 function fecharModalConcluir() {
   document.getElementById('modal-concluir').classList.remove('open');
+  unlockScroll();
   pendingConcluir = null;
 }
 
@@ -2463,11 +2472,12 @@ async function abrirModalEdit(id, tech) {
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
   document.getElementById('edit-obs').value      = o.obs     || '';
 
-  document.getElementById('modal-edit-os').classList.add('open');
+  document.getElementById('modal-edit-os').classList.add('open'); lockScroll();
 }
 
 function fecharModalEdit() {
   document.getElementById('modal-edit-os').classList.remove('open');
+  unlockScroll();
 }
 
 async function confirmarEdit() {
