@@ -1730,7 +1730,132 @@ function parseMessage() {
     (dataISO ? '<p>📅 <strong>Data:</strong> ' + formatDateBR(dataISO) + '</p>' : '<p style="color:#b45309">📅 Sem data</p>');
 
   document.getElementById('import-form').style.display = 'block';
+
+  // Guardar dados para o card de confirmação do cliente
+  window._importDados = {
+    nome:      (nome||'').trim(),
+    telefone:  (telefone||'').trim(),
+    endereco:  (endereco||'').trim(),
+    ref:       (ref||'').trim(),
+    veiculos:  veiculos,
+    dataISO:   dataISO
+  };
+
+  // Mostrar card de confirmação ao cliente
+  renderCardConfirmacao();
+
   showToast(veiculos.length>1 ? veiculos.length+' veículos detectados! Selecione o técnico.' : 'Dados importados! Selecione o técnico.', 'success');
+}
+
+// ── Card de confirmação para o cliente (só admin)
+function renderCardConfirmacao() {
+  const d = window._importDados;
+  if (!d) return;
+
+  // Verificar se tem bloqueio em algum veículo
+  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('bloqueio'));
+
+  let wrap = document.getElementById('card-confirmacao-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'card-confirmacao-wrap';
+    const panel = document.getElementById('import-panel');
+    if (panel) panel.appendChild(wrap);
+  }
+
+  wrap.innerHTML =
+    '<div style="margin-top:20px;border-top:2px dashed var(--border);padding-top:16px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">' +
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--admin)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+        '<span style="font-size:14px;font-weight:700;color:var(--admin);">Mensagem de confirmação ao cliente</span>' +
+      '</div>' +
+
+      // Campo valor da instalação
+      '<div style="background:#f0f4ff;border-radius:12px;padding:14px;margin-bottom:12px;">' +
+        '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">💰 Valor da instalação</label>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="font-size:15px;font-weight:700;color:var(--primary);">R$</span>' +
+          '<input type="number" id="valor-instalacao" placeholder="Ex: 150" step="0.01" min="0"' +
+            ' style="flex:1;padding:10px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-weight:700;outline:none;" ' +
+            ' oninput="renderCardConfirmacao()">' +
+        '</div>' +
+        (temBloqueio ?
+          '<div style="margin-top:10px;padding:10px;background:#dbeafe;border-radius:8px;">' +
+            '<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">📋 Mensalidade (com bloqueio)</div>' +
+            '<div style="display:flex;gap:8px;font-size:13px;font-weight:600;color:var(--primary);">' +
+              '<span>R$59,90/mês</span>' +
+              '<span style="color:#10b981;">• R$54,90 pagando até o vencimento</span>' +
+            '</div>' +
+          '</div>'
+          : '<div style="margin-top:10px;padding:10px;background:#dbeafe;border-radius:8px;">' +
+            '<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">📋 Mensalidade (sem bloqueio)</div>' +
+            '<div style="font-size:13px;font-weight:600;color:var(--primary);">R$39,90/mês</div>' +
+          '</div>'
+        ) +
+      '</div>' +
+
+      // Preview da mensagem
+      '<div style="background:#f0fdf4;border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid #bbf7d0;">' +
+        '<div style="font-size:11px;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📱 Preview da mensagem</div>' +
+        '<div id="preview-msg-cliente" style="font-size:12px;color:#1a2744;line-height:1.7;white-space:pre-wrap;"></div>' +
+      '</div>' +
+
+      // Botão WhatsApp
+      '<button onclick="enviarConfirmacaoCliente()" style="width:100%;padding:13px;background:#25D366;color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">' +
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+        '📲 Enviar confirmação ao cliente' +
+      '</button>' +
+    '</div>';
+
+  // Atualizar preview da mensagem
+  atualizarPreviewMsg();
+}
+
+function atualizarPreviewMsg() {
+  const d = window._importDados;
+  if (!d) return;
+  const preview = document.getElementById('preview-msg-cliente');
+  if (!preview) return;
+
+  const valorInput = document.getElementById('valor-instalacao');
+  const valor = valorInput ? parseFloat(valorInput.value) : 0;
+  const valorStr = valor > 0 ? 'R$' + valor.toFixed(2).replace('.', ',') : '____';
+
+  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('bloqueio'));
+  const mensalidade = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
+  const desconto    = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
+
+  const primeiroNome = d.nome.split(' ')[0];
+  const veiculosTxt = d.veiculos.length > 0
+    ? d.veiculos.map((v, i) => '    ' + (d.veiculos.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 ') + v.modelo + (v.obs ? '\n       ↳ ' + v.obs : '')).join('\n')
+    : '    🚗 ____';
+
+  const dataStr = d.dataISO ? '\n📅 *Data agendada:* ' + formatDateBR(d.dataISO) : '';
+
+  const msg =
+    'Olá, *' + primeiroNome + '*! 😊\n\n' +
+    '✅ *Seu agendamento foi confirmado!*\n\n' +
+    '📍 *Endereço:* ' + d.endereco + (d.ref ? '\n📌 *Ref.:* ' + d.ref : '') + '\n\n' +
+    '*Veículo(s):*\n' + veiculosTxt + '\n' + dataStr + '\n\n' +
+    '💰 *Valores:*\n' +
+    '    🔧 Instalação: *' + valorStr + '*\n' +
+    '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
+    'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
+    '*Rastreando GPS* 📍\n' +
+    '_(21) 9 8088-6087_';
+
+  preview.textContent = msg;
+  window._msgConfirmacao = msg;
+  window._telConfirmacao = d.telefone;
+}
+
+function enviarConfirmacaoCliente() {
+  atualizarPreviewMsg();
+  const tel = (window._telConfirmacao || '').replace(/\D/g, '');
+  const msg = window._msgConfirmacao || '';
+  if (!tel) { showToast('Telefone do cliente não identificado', 'error'); return; }
+  if (!msg)  { showToast('Mensagem vazia', 'error'); return; }
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // ════════════════════════════════
