@@ -1381,6 +1381,13 @@ document.addEventListener('click', function(e) {
     const raw = calDay.getAttribute('data-ids');
     if (raw) calDayClick(raw.split('|'));
   }
+  // Listener para botão concluir admin na aba Técnico
+  const concluirBtn = e.target.closest('.admin-concluir-btn');
+  if (concluirBtn) {
+    const id   = concluirBtn.getAttribute('data-id');
+    const tech = concluirBtn.getAttribute('data-tech');
+    if (id && tech) adminConcluirOS(id, tech);
+  }
 });
 
 // Funções auxiliares para evitar problema de aspas nos onclick inline
@@ -2161,33 +2168,45 @@ async function adminVerTecnico(tech) {
     const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
     const hoje   = new Date();
     const amanha = new Date(); amanha.setDate(hoje.getDate()+1);
-    let dataLabel = dataOk ? formatDateBR(o.data) : '⏳ Sem data';
-    let dataStyle = 'color:var(--muted)';
+    let dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
+    let dataBg    = dataOk ? '#dbeafe' : '#fef3c7';
+    let dataFg    = dataOk ? '#1d4ed8' : '#b45309';
     if (dataOk) {
       const dp = parseDate(o.data);
       if (dp) {
         const eHoje   = dp.getDate()===hoje.getDate()   && dp.getMonth()===hoje.getMonth()   && dp.getFullYear()===hoje.getFullYear();
         const eAmanha = dp.getDate()===amanha.getDate() && dp.getMonth()===amanha.getMonth() && dp.getFullYear()===amanha.getFullYear();
-        if (eHoje)   { dataLabel = 'Hoje';   dataStyle = 'color:#ef4444;font-weight:700'; }
-        else if (eAmanha) { dataLabel = 'Amanhã'; dataStyle = 'color:#b45309;font-weight:700'; }
+        if (eHoje)   { dataLabel = 'Hoje';   dataBg = '#fee2e2'; dataFg = '#ef4444'; }
+        else if (eAmanha) { dataLabel = 'Amanhã'; dataBg = '#fef3c7'; dataFg = '#b45309'; }
       }
     }
-    return '<div class="admin-os-item" style="' + (!dataOk ? 'background:#fffbeb;border-color:#fde68a;' : '') + 'flex-wrap:wrap;">' +
-      '<div class="admin-os-info" style="flex:1;min-width:0;">' +
-        '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
-        '<div class="admin-os-meta"><span style="' + dataStyle + '">📅 ' + dataLabel + '</span> · ' + esc(o.tipo||'') + '</div>' +
-        '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
-        (o.veiculo ? '<div class="admin-os-meta">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+    const bgCard = !dataOk ? 'background:#fffbeb;' : '';
+
+    return (
+      '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.05);">' +
+
+        // ── Linha 1: nome + badge data
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
+          '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
+        '</div>' +
+
+        // ── Linha 2: veículo em destaque
+        (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:5px 8px;margin-bottom:6px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+
+        // ── Linha 3: endereço + tipo compacto
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📍 ' + esc(o.endereco||'') + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+
+        // ── Linha 4: log mensagem compacto
         (o.msgLog
-          ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
-          : '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding:4px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
-      '</div>' +
-      '<div style="padding-top:8px;border-top:1px solid var(--border);margin-top:6px;">' +
-        '<button onclick="adminConcluirOS(' + JSON.stringify(o.id) + ',' + JSON.stringify(adminTechSelecionado) + ')" style="width:100%;padding:9px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-          '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
-        '</button>' +
-      '</div>' +
-    '</div>';
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:8px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          : '<div style="font-size:10px;color:#b45309;margin-bottom:8px;">⚠️ Mensagem não enviada</div>') +
+
+        // ── Botão concluir compacto
+        '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(adminTechSelecionado) + '" style="width:100%;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+
+      '</div>'
+    );
   }).join('');
 }
 
