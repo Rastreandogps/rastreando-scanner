@@ -1111,11 +1111,7 @@ function destacarCardsOrdens(ids) {
     });
     return;
   }
-  // Mostrar overlay para capturar clique fora
-  const ov = document.getElementById('destaque-overlay');
-  if (ov) ov.style.display = 'block';
-  const xBtn = document.getElementById('destaque-fechar');
-  if (xBtn) xBtn.style.display = 'flex';
+  // Técnico: sem overlay, sem X
 
   let primeiro = null;
   todos.forEach(card => {
@@ -1543,16 +1539,19 @@ document.addEventListener('click', function(e) {
       d.classList.remove('cal-day-selected');
     });
     if (jaAtivo) {
-      // Remove destaque dos cards e sai
-      document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
-        c.style.opacity = '1'; c.style.transform = 'scale(1)';
-      });
+      _calDayAtivo = null;
+      limparDestaqueCalendario();
       return;
     }
     calDayAdmin.style.background = '#dbeafe';
     calDayAdmin.style.borderRadius = '8px';
     calDayAdmin.style.outline = '2px solid var(--accent)';
     calDayAdmin.classList.add('cal-day-selected');
+    // Mostrar overlay e X no admin
+    const ov = document.getElementById('destaque-overlay');
+    if (ov) ov.style.display = 'block';
+    const xBtn = document.getElementById('destaque-fechar');
+    if (xBtn) xBtn.style.display = 'flex';
     // Destacar cards na lista
     const cards = document.querySelectorAll('#admin-tech-os-list > div');
     let primeiro = null;
@@ -1564,6 +1563,8 @@ document.addEventListener('click', function(e) {
       card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
       card.style.pointerEvents = match ? 'auto' : 'none';
       card.style.userSelect    = match ? 'auto' : 'none';
+      card.style.position      = match ? 'relative' : '';
+      card.style.zIndex        = match ? '51' : '';
       if (match && !primeiro) primeiro = card;
     });
     if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
