@@ -1777,7 +1777,7 @@ function renderCardConfirmacao() {
           '<span style="font-size:15px;font-weight:700;color:var(--primary);">R$</span>' +
           '<input type="number" id="valor-instalacao" placeholder="Ex: 150" step="0.01" min="0"' +
             ' style="flex:1;padding:10px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-weight:700;outline:none;" ' +
-            ' oninput="renderCardConfirmacao()">' +
+            ' oninput="atualizarPreviewMsg()">' +
         '</div>' +
         (temBloqueio ?
           '<div style="margin-top:10px;padding:10px;background:#dbeafe;border-radius:8px;">' +
