@@ -2598,16 +2598,17 @@ async function adminVerTecnico(tech) {
     let dots = '';
     if (count > 0)  dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(count, 3));
     if (temPend)    dots += '<div class="dot dot-yellow"></div>';
-    const idsStr = Object.keys(dateMapAdmin).includes(String(d))
+    // IDs das ordens deste dia (para interatividade)
+    const idsStr = count > 0
       ? orders.filter(o => {
           if (!o.data || o.status === 'concluido') return false;
           const dd = parseDate(o.data);
           return dd && dd.getDate() === d && dd.getMonth() === month && dd.getFullYear() === year;
         }).map(o => o.id).join('|')
       : '';
-    const clicavelAdmin = count > 0 || temPendAdmin;
-    const allIdsAdmin   = temPendAdmin
-      ? [...orders.filter(o => !o.data || o.data.trim()==='' || o.data==='undefined').map(o=>o.id), ...(idsStr ? idsStr.split('|') : [])].join('|')
+    const clicavelAdmin = count > 0 || temPend;
+    const allIdsAdmin   = temPend
+      ? [...pendentes.map(o => o.id), ...(idsStr ? idsStr.split('|') : [])].join('|')
       : idsStr;
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavelAdmin ? ' cal-clickable-admin' : '') + '"' +
       (clicavelAdmin ? ' data-admin-ids="' + allIdsAdmin + '" style="cursor:pointer;"' : '') + '>' +
