@@ -501,10 +501,8 @@
           <button type="button" class="btn-danger-outline" onclick="limparHistoricoAcessos()" style="padding:7px 14px;font-size:12px;">🗑️ Limpar</button>
         </div>
       </div>
-      <!-- Filtro por técnico -->
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <button class="btn-parse" onclick="filterAcessos('all')" id="afa-all" style="padding:7px 14px;">Todos</button>
-      </div>
+      <!-- Filtro por técnico (gerado dinamicamente) -->
+      <div id="admin-acessos-filter-btns" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
       <div id="admin-acessos-list">
         <div class="empty-state" style="padding:32px 0;">
           <p>Clique em Atualizar para carregar.</p>
@@ -1822,7 +1820,7 @@ async function loadAcessos() {
     todosAcessos = result.data || [];
     renderAcessos();
     // Gerar botões de filtro dinâmicos
-    const wrap = document.getElementById('admin-acessos-list').previousElementSibling;
+    const wrap = document.getElementById('admin-acessos-filter-btns');
     if (wrap) {
       wrap.innerHTML = '<button class="btn-parse" onclick="filterAcessos(&quot;all&quot;)" id="afa-all" style="padding:7px 14px;">Todos</button>' +
         TECH_NAMES.map(n => '<button class="btn-parse" onclick="filterAcessos(&quot;' + n + '&quot;)" id="afa-' + n + '" style="padding:7px 14px;">' + n + '</button>').join('');
