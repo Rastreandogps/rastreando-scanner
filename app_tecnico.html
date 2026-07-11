@@ -2393,28 +2393,10 @@ function enviarConfirmacaoAgendamento(id, tech) {
   const mensalidade  = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
   const desconto     = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
 
-  // Valor da instalação salvo na OS
-  let valorFinal = os.valorInstalacao && parseFloat(os.valorInstalacao) > 0
-    ? parseFloat(os.valorInstalacao)
-    : null;
-
-  // Se não tem valor, pedir ao admin
-  if (!valorFinal) {
-    const input = prompt('💰 Informe o valor da instalação (R$):');
-    if (input === null) return; // cancelou
-    valorFinal = parseFloat(input.replace(',','.'));
-    if (!isNaN(valorFinal) && valorFinal > 0) {
-      // Salvar na OS para futuras referências
-      gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech, valor: String(valorFinal) });
-      if (allOrders[tech]) {
-        const osLocal = allOrders[tech].find(o => o.id === id);
-        if (osLocal) osLocal.valorInstalacao = String(valorFinal);
-      }
-    }
-  }
-
-  const valorStr = valorFinal && !isNaN(valorFinal) && valorFinal > 0
-    ? 'R$' + valorFinal.toFixed(2).replace('.',',')
+  // Valor da instalação salvo na OS — usa direto, sem prompt
+  const valorNum = os.valorInstalacao ? parseFloat(os.valorInstalacao) : 0;
+  const valorStr = valorNum > 0
+    ? 'R$' + valorNum.toFixed(2).replace('.',',')
     : '____';
 
   // Veículos
