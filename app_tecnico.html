@@ -2909,9 +2909,6 @@ async function adminVerTecnico(tech) {
         })() +
 
         // ── Linha 4: log mensagem
-        (o.valorInstalacao
-          ? '<div style="display:inline-flex;align-items:center;gap:4px;background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
-          : '') +
         (o.msgLog
           ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:8px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:8px;">⚠️ Mensagem não enviada</div>') +
