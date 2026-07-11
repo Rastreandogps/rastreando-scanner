@@ -2813,13 +2813,24 @@ async function adminVerTecnico(tech) {
         else if (eAmanha) { dataLabel = 'Amanhã'; dataBg = '#fef3c7'; dataFg = '#b45309'; }
       }
     }
-    const bgCard = !dataOk ? 'background:#fffbeb;' : '';
-    const tech   = adminTechSelecionado;
+  // Cores por tipo de OS
+    const tipoAdmin = (o.tipo || '').toLowerCase();
+    let borderLed, bgCard;
+    if (tipoAdmin.includes('manut')) {
+      borderLed = 'rgba(245,158,11,.4),0 0 28px rgba(245,158,11,.55),0 0 55px rgba(245,158,11,.2)';
+      bgCard = 'background:#fffbeb;border:1px solid rgba(245,158,11,.3);';
+    } else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) {
+      borderLed = 'rgba(239,68,68,.4),0 0 28px rgba(239,68,68,.55),0 0 55px rgba(239,68,68,.2)';
+      bgCard = 'background:#fff5f5;border:1px solid rgba(239,68,68,.3);';
+    } else {
+      borderLed = 'rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
+      bgCard = !dataOk ? 'background:#fffbeb;border:1px solid rgba(245,158,11,.25);' : '';
+    }
+    const tech = adminTechSelecionado;
 
     return (
       '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
-        'border:1px solid rgba(59,130,246,.25);' +
-        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 1px rgba(59,130,246,.2),0 0 20px rgba(59,130,246,.35),0 0 40px rgba(59,130,246,.12);">' +
+        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';">' +
 
         // ── Linha 1: nome + WPP + badge data
         (function() {
