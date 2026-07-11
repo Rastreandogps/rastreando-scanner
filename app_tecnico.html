@@ -2564,15 +2564,36 @@ function montarMsgPrePronta(o, wppLink) {
     else    dataStr = formatDateBR(o.data);
   }
 
+  // Adaptar texto ao tipo de serviço
+  const tipo = (o.tipo || '').toLowerCase();
+  let acaoVerbo, acaoNome, acaoData;
+  if (tipo.includes('manut')) {
+    acaoVerbo = 'agendarmos a manutenção';
+    acaoNome  = 'manutenção';
+    acaoData  = dataStr
+      ? '\n\n📅 Podemos agendar a manutenção para *' + dataStr + '*?'
+      : '\n\n📅 Qual seria o melhor dia para realizarmos a manutenção?';
+  } else if (tipo.includes('retir') || tipo.includes('remo')) {
+    acaoVerbo = 'agendarmos a retirada';
+    acaoNome  = 'retirada';
+    acaoData  = dataStr
+      ? '\n\n📅 Podemos agendar a retirada para *' + dataStr + '*?'
+      : '\n\n📅 Qual seria o melhor dia para realizarmos a retirada?';
+  } else {
+    acaoVerbo = 'agendarmos a instalação';
+    acaoNome  = 'instalação';
+    acaoData  = dataStr
+      ? '\n\n📅 Podemos agendar para *' + dataStr + '*?'
+      : '\n\n📅 Qual seria o melhor dia para realizarmos a instalação?';
+  }
+
   const msg =
     'Olá! Me chamo *' + tecnico + '*, técnico prestador da *Rastreando GPS*, tudo bem? 😊\n\n' +
-    'Estou entrando em contato para agendarmos a instalação do rastreador' +
+    'Estou entrando em contato para ' + acaoVerbo + ' do rastreador' +
     (listaVeiculos.length > 1 ? ' dos veículos:' : ':') + '\n\n' +
     veiculoBloco +
     (endereco ? '\n\n📍 Seu endereço é *' + endereco + '*, correto?' : '') +
-    (dataStr
-      ? '\n\n📅 Podemos agendar para *' + dataStr + '*?'
-      : '\n\n📅 Qual seria o melhor dia para realizarmos a instalação?');
+    acaoData;
 
   return 'https://wa.me/55' + telLimpo + '?text=' + encodeURIComponent(msg);
 }
