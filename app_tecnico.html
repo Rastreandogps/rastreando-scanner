@@ -670,6 +670,10 @@
 
 
 
+<!-- OVERLAY admin para toque fora -->
+<div id="destaque-overlay" onclick="_calDayAtivo=null;limparDestaqueCalendario();"
+  style="display:none;position:fixed;inset:0;z-index:50;background:transparent;-webkit-tap-highlight-color:transparent;"></div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1077,6 +1081,8 @@ function calDayClick(ids) {
 
 function limparDestaqueCalendario() {
   // Esconder overlay
+  const ov = document.getElementById('destaque-overlay');
+  if (ov) ov.style.display = 'none';
   // Remove destaque dos dias
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   document.querySelectorAll('.cal-clickable-admin').forEach(d => {
@@ -1551,6 +1557,9 @@ document.addEventListener('click', function(e) {
     calDayAdmin.style.borderRadius = '8px';
     calDayAdmin.style.outline = '2px solid var(--accent)';
     calDayAdmin.classList.add('cal-day-selected');
+    // Mostrar overlay para toque fora
+    const ov = document.getElementById('destaque-overlay');
+    if (ov) ov.style.display = 'block';
     // Mostrar overlay e X no admin
     const xBtn = document.getElementById('destaque-fechar');
     if (xBtn) xBtn.style.display = 'flex';
