@@ -1535,17 +1535,18 @@ document.addEventListener('click', function(e) {
     const raw = calDayAdmin.getAttribute('data-admin-ids');
     if (!raw) return;
     const ids = raw.split('|').filter(Boolean);
-    // Toggle: se clicar no mesmo dia, remove destaque
-    const jaAtivo = calDayAdmin.classList.contains('cal-day-selected');
+    // Toggle usando _calDayAtivo como referência (mais confiável)
+    const idsKey = ids.join(',');
     document.querySelectorAll('.cal-clickable-admin').forEach(d => {
       d.style.background = ''; d.style.borderRadius = ''; d.style.outline = '';
       d.classList.remove('cal-day-selected');
     });
-    if (jaAtivo) {
+    if (_calDayAtivo === idsKey) {
       _calDayAtivo = null;
       limparDestaqueCalendario();
       return;
     }
+    _calDayAtivo = idsKey;
     calDayAdmin.style.background = '#dbeafe';
     calDayAdmin.style.borderRadius = '8px';
     calDayAdmin.style.outline = '2px solid var(--accent)';
