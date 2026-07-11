@@ -1220,8 +1220,26 @@ function renderCardInline(o) {
     if (dp) { diaExib = DIAS[dp.getDay()]; dataExib = formatDateBR(o.data); }
   }
 
-  const borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
-  const tipoTag = o.tipo ? '<span style="background:#eff6ff;color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
+  // Cores por tipo de OS
+  const tipo = (o.tipo || '').toLowerCase();
+  let borderColor, cardBg, tipoTagBg, tipoTagFg;
+  if (tipo.includes('manut')) {
+    // Manutenção → amarelo
+    borderColor = '#f59e0b';
+    cardBg      = hasDate ? '#fffbeb' : '#fef3c7';
+    tipoTagBg   = '#fef3c7'; tipoTagFg = '#b45309';
+  } else if (tipo.includes('retir') || tipo.includes('remo')) {
+    // Retirada / Remoção → vermelho
+    borderColor = '#ef4444';
+    cardBg      = hasDate ? '#fff5f5' : '#fee2e2';
+    tipoTagBg   = '#fee2e2'; tipoTagFg = '#b91c1c';
+  } else {
+    // Instalação → azul (padrão)
+    borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
+    cardBg      = hasDate ? 'white' : '#fffbeb';
+    tipoTagBg   = '#eff6ff'; tipoTagFg = 'var(--accent)';
+  }
+  const tipoTag = o.tipo ? '<span style="background:' + tipoTagBg + ';color:' + tipoTagFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
   const badgeHtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
     (hasDate
       ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
@@ -1270,7 +1288,7 @@ function renderCardInline(o) {
     }
   }
 
-  return '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + (hasDate ? 'white' : '#fffbeb') + ';margin-bottom:14px;">' +
+  return '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + cardBg + ';margin-bottom:14px;">' +
     // Nome + WPP
     '<div style="margin-bottom:12px;">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
@@ -1384,7 +1402,17 @@ function renderTechOSList() {
       }
     }
 
-    const borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
+      // Cores por tipo de OS
+  const tipoInline = (o.tipo || '').toLowerCase();
+  let borderColor, cardBg;
+  if (tipoInline.includes('manut')) {
+    borderColor = '#f59e0b'; cardBg = hasDate ? '#fffbeb' : '#fef3c7';
+  } else if (tipoInline.includes('retir') || tipoInline.includes('remo')) {
+    borderColor = '#ef4444'; cardBg = hasDate ? '#fff5f5' : '#fee2e2';
+  } else {
+    borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
+    cardBg = hasDate ? 'white' : '#fffbeb';
+  }
     const tipoTag   = o.tipo ? '<span style="background:#eff6ff;color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
     const badgeHtml  = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
       (hasDate
@@ -1394,7 +1422,7 @@ function renderTechOSList() {
     '</div>';
 
     return (
-      '<div class="os-card' + cardCls + '" id="os-card-' + o.id + '" data-os-date="' + (o.data||'') + '" style="border-left:4px solid ' + borderColor + ';transition:opacity .3s,box-shadow .3s;padding:16px 18px;background:' + (hasDate ? 'white' : '#fffbeb') + ';">' +
+      '<div class="os-card' + cardCls + '" id="os-card-' + o.id + '" data-os-date="' + (o.data||'') + '" style="border-left:4px solid ' + borderColor + ';transition:opacity .3s,box-shadow .3s;padding:16px 18px;background:' + cardBg + ';">' +
 
         // ── CABEÇALHO: nome + whatsapp juntos + badges
         '<div style="margin-bottom:12px;">' +
