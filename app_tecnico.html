@@ -1047,6 +1047,7 @@ function calDayClick(ids) {
 
   // Mostrar cards abaixo do calendário
   renderCalDayCards(ids);
+
   // Destacar dia no calendário
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   if (ids) {
@@ -1057,8 +1058,21 @@ function calDayClick(ids) {
       }
     });
   }
-  // Destacar cards na aba Ordens
-  destacarCardsOrdens(ids);
+
+  // Destacar cards abaixo do calendário (cal-day-cards)
+  setTimeout(() => {
+    const calCards = document.querySelectorAll('#cal-day-cards .os-card');
+    let primeiro = null;
+    calCards.forEach(card => {
+      if (!primeiro) primeiro = card;
+      // Todos os cards mostrados são do dia clicado — todos destacados
+      card.style.transition = 'box-shadow .3s, transform .3s';
+      card.style.boxShadow  = '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
+      card.style.transform  = 'scale(1.01)';
+    });
+    // Scroll até o primeiro card
+    if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 80);
 }
 
 function limparDestaqueCalendario() {
@@ -1071,8 +1085,13 @@ function limparDestaqueCalendario() {
     d.style.outline = '';
     d.classList.remove('cal-day-selected');
   });
-  // Remove destaque dos cards técnico
+  // Remove destaque dos cards técnico (aba Ordens)
   destacarCardsOrdens(null);
+  // Remove destaque dos cards do calendário
+  document.querySelectorAll('#cal-day-cards .os-card').forEach(c => {
+    c.style.boxShadow = '';
+    c.style.transform = 'scale(1)';
+  });
   // Remove destaque cards admin
   document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
     c.style.opacity       = '1';
