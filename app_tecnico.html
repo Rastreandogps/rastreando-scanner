@@ -432,6 +432,16 @@
             <div class="form-field"><label>Observações / Ponto de referência</label><textarea id="if-obs" rows="2"></textarea></div>
           </div>
           <div class="form-row">
+            <div class="form-field">
+              <label>💰 Valor da Instalação</label>
+              <div style="display:flex;align-items:center;gap:6px;border:2px solid var(--border);border-radius:10px;padding:0 12px;background:white;">
+                <span style="font-weight:700;color:var(--primary);">R$</span>
+                <input type="number" id="if-valor" placeholder="0,00" step="0.01" min="0"
+                  style="flex:1;border:none;outline:none;padding:10px 0;font-size:15px;font-weight:600;">
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
             <div class="form-field"><label>Data de Instalação</label><input type="date" id="if-data"></div>
             <div class="form-field">
               <label>Técnico Responsável *</label>
@@ -482,6 +492,17 @@
       <div class="form-row single">
         <div class="form-field"><label>Observações</label><textarea id="f-obs" rows="3" placeholder="Informações adicionais..."></textarea></div>
       </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>💰 Valor da Instalação</label>
+          <div style="display:flex;align-items:center;gap:6px;border:2px solid var(--border);border-radius:10px;padding:0 12px;background:white;">
+            <span style="font-weight:700;color:var(--primary);">R$</span>
+            <input type="number" id="f-valor" placeholder="0,00" step="0.01" min="0"
+              style="flex:1;border:none;outline:none;padding:12px 0;font-size:15px;font-weight:600;">
+          </div>
+        </div>
+      </div>
+
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button type="button" class="btn-primary" onclick="submitOS()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
@@ -1598,6 +1619,13 @@ document.addEventListener('click', function(e) {
     const tech = delTechBtn.getAttribute('data-tech');
     if (id && tech) requestDelete(id, tech);
   }
+  // Listener para botão confirmar agendamento ao cliente
+  const confirmarAgBtn = e.target.closest('.admin-confirmar-ag-btn');
+  if (confirmarAgBtn) {
+    const id   = confirmarAgBtn.getAttribute('data-id');
+    const tech = confirmarAgBtn.getAttribute('data-tech');
+    if (id && tech) enviarConfirmacaoAgendamento(id, tech);
+  }
   // Listener para botão editar na aba Técnico
   const editViewBtn = e.target.closest('.admin-view-edit-btn');
   if (editViewBtn) {
@@ -1828,14 +1856,18 @@ async function submitOS() {
   const veiculo = document.getElementById('f-veiculo').value.trim();
   const obs     = document.getElementById('f-obs').value.trim();
   if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
+  const valorInst = document.getElementById('f-valor')?.value?.trim() || '';
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: genId() });
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, valorInstalacao: valorInst, id: genId() });
   if (result.ok) { showToast('OS enviada para ' + tecnico + '!', 'success'); clearForm(); await loadAllOrders(); }
   else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
 }
 
 function clearForm() {
-  ['f-nome','f-tel','f-end','f-veiculo','f-obs'].forEach(id => document.getElementById(id).value = '');
+  ['f-nome','f-tel','f-end','f-veiculo','f-obs','f-valor'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('f-data').value = '';
   document.getElementById('f-tipo').value = 'Instalação';
   document.getElementById('f-tecnico').value = '';
@@ -1918,19 +1950,6 @@ function parseMessage() {
     (dataISO ? '<p>📅 <strong>Data:</strong> ' + formatDateBR(dataISO) + '</p>' : '<p style="color:#b45309">📅 Sem data</p>');
 
   document.getElementById('import-form').style.display = 'block';
-
-  // Guardar dados para o card de confirmação do cliente
-  window._importDados = {
-    nome:      (nome||'').trim(),
-    telefone:  (telefone||'').trim(),
-    endereco:  (endereco||'').trim(),
-    ref:       (ref||'').trim(),
-    veiculos:  veiculos,
-    dataISO:   dataISO
-  };
-
-  // Mostrar card de confirmação ao cliente
-  renderCardConfirmacao();
 
   showToast(veiculos.length>1 ? veiculos.length+' veículos detectados! Selecione o técnico.' : 'Dados importados! Selecione o técnico.', 'success');
 }
@@ -2056,6 +2075,7 @@ async function submitImportOS() {
   const end     = document.getElementById('if-end').value.trim();
   const obs     = document.getElementById('if-obs').value.trim();
   const data    = document.getElementById('if-data').value;
+  const valorInst = document.getElementById('if-valor')?.value?.trim() || '';
   const tecnico = document.getElementById('if-tecnico').value;
 
   if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
@@ -2358,6 +2378,61 @@ function renderAdminDoneList() {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+// Confirmar agendamento ao cliente direto do card
+function enviarConfirmacaoAgendamento(id, tech) {
+  const os = (allOrders[tech] || []).find(o => o.id === id);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+
+  const tel = (os.telefone || '').replace(/\D/g, '');
+  if (!tel) { showToast('Telefone não encontrado', 'error'); return; }
+
+  const primeiroNome = (os.nome || '').split(' ')[0];
+  const temBloqueio  = (os.veiculo || '').toLowerCase().includes('bloqueio');
+  const mensalidade  = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
+  const desconto     = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
+
+  // Valor da instalação salvo na OS
+  const valorStr = os.valorInstalacao && parseFloat(os.valorInstalacao) > 0
+    ? 'R$' + parseFloat(os.valorInstalacao).toFixed(2).replace('.',',')
+    : '____';
+
+  // Veículos
+  let veiculosTxt = '';
+  if (os.veiculo) {
+    const lista = os.veiculo.includes(' || ')
+      ? os.veiculo.split(' || ').map(v => v.trim())
+      : [os.veiculo.trim()];
+    veiculosTxt = lista.map((v, i) => {
+      const partes = v.split(' | ');
+      const modelo = partes[0] || v;
+      const info   = partes.slice(1).join(' | ');
+      return '    ' + (lista.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 ') + modelo +
+        (info ? '\n       ↳ ' + info : '');
+    }).join('\n');
+  } else {
+    veiculosTxt = '    🚗 ____';
+  }
+
+  const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
+    ? '\n📅 *Data agendada:* ' + formatDateBR(os.data)
+    : '';
+
+  const msg =
+    'Olá, *' + primeiroNome + '*! 😊\n\n' +
+    '✅ *Seu agendamento foi confirmado!*\n\n' +
+    '📍 *Endereço:* ' + (os.endereco || '') +
+    (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
+    '*Veículo(s):*\n' + veiculosTxt + dataStr + '\n\n' +
+    '💰 *Valores:*\n' +
+    '    🔧 Instalação: *' + valorStr + '*\n' +
+    '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
+    'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
+    '*Rastreando GPS* 📍\n' +
+    '_(21) 9 8088-6087_';
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // Reatribuir OS direto na aba Técnico
@@ -2816,6 +2891,11 @@ async function adminVerTecnico(tech) {
         // ── Linha 2: veículo
         (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:5px 8px;margin-bottom:6px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
 
+        // Valor da instalação
+        (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0
+          ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
+          : '') +
+
         // ── Linha 3: endereço + tipo + Maps
         (function() {
           const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
@@ -2843,6 +2923,15 @@ async function adminVerTecnico(tech) {
           '</select>' +
           '<button class="admin-view-reassign-btn" style="padding:5px 10px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✔</button>' +
         '</div>' +
+
+        // ── Botão confirmar agendamento ao cliente
+        (o.telefone ? (function() {
+          const tel = (o.telefone || '').replace(/\D/g,'');
+          return '<button class="admin-confirmar-ag-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>' +
+            '📲 Confirmar agendamento ao cliente' +
+          '</button>';
+        })() : '') +
 
         // ── Botões: Editar + Concluir + Excluir
         '<div style="display:flex;gap:6px;">' +
