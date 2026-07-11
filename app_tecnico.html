@@ -2773,22 +2773,24 @@ async function adminVerTecnico(tech) {
   setAdminSyncStatus('syncing');
   const now    = new Date();
   const result = await gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() });
+  const resultDone = await gasRequest({ action: 'getDoneOrders', tech });
   setAdminSyncStatus('ok');
 
   const orders = result.ok ? (result.data || []) : [];
+  const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
 
   // Mostrar área
   const wrap = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
   document.getElementById('admin-view-tech-name').textContent = tech;
-  // Calcular total de instalações
-  const totalValor = orders.reduce((s, o) => {
+  // Calcular total apenas das instalações concluídas
+  const totalValor = doneAdmin.reduce((s, o) => {
     if (!o.valorInstalacao) return s;
     const v = parseFloat(o.valorInstalacao);
     return s + (isNaN(v) ? 0 : v);
   }, 0);
   const totalEl = document.getElementById('admin-view-tech-total');
-  if (totalEl) totalEl.textContent = totalValor > 0 ? '💰 Total: R$' + totalValor.toFixed(2).replace('.',',') : '';
+  if (totalEl) totalEl.textContent = totalValor > 0 ? '💰 Total concluído: R$' + totalValor.toFixed(2).replace('.',',') : '';
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
 
   // Renderizar calendário
