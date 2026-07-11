@@ -693,7 +693,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-07-11-v2';
+const BUILD_VERSION = '2026-07-11-v3';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659';
@@ -973,7 +973,6 @@ async function loadAllOrders() {
     allOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
   }
   setAdminSyncStatus('ok');
-  // Atualiza resumo se nenhum técnico estiver selecionado
   if (!adminTechSelecionado) renderResumoGeral();
 }
 
@@ -2319,7 +2318,7 @@ function renderAcessos() {
 
 // ── ADMIN: CONCLUÍDOS
 let adminDoneFilter     = 'all';
-let adminDoneMesFiltro  = ''; // 'YYYY-MM' ou '' para todos
+let adminDoneMesFiltro  = '';
 let adminTechSelecionado = '';
 
 
@@ -2352,14 +2351,12 @@ function gerarFiltroMesDone() {
     });
   });
   const sorted = Array.from(meses).sort().reverse();
-  // Padrão: mês atual
   if (!adminDoneMesFiltro) adminDoneMesFiltro = mesAtual;
   const MN = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   wrap.innerHTML = '<button onclick="filterDoneMes(&quot;&quot;)" id="afdm-all" style="padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Todos</button>' +
     sorted.map(m => {
       const [y, mo] = m.split('-');
-      const label = MN[parseInt(mo)-1] + ' ' + y;
-      return '<button onclick="filterDoneMes(&quot;' + m + '&quot;)" id="afdm-' + m + '" style="padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">' + label + '</button>';
+      return '<button onclick="filterDoneMes(&quot;' + m + '&quot;)" id="afdm-' + m + '" style="padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">' + MN[parseInt(mo)-1] + ' ' + y + '</button>';
     }).join('');
   atualizarDestaqueMesDone();
 }
@@ -2371,12 +2368,10 @@ function filterDoneMes(mes) {
 }
 
 function atualizarDestaqueMesDone() {
-  document.querySelectorAll('[id^="afdm-"]').forEach(b => {
-    b.style.background = 'white'; b.style.color = ''; b.style.borderColor = 'var(--border)';
-  });
+  document.querySelectorAll('[id^="afdm-"]').forEach(b => { b.style.background='white'; b.style.color=''; b.style.borderColor='var(--border)'; });
   const key = adminDoneMesFiltro ? 'afdm-' + adminDoneMesFiltro : 'afdm-all';
   const el = document.getElementById(key);
-  if (el) { el.style.background = '#d1fae5'; el.style.color = '#065f46'; el.style.borderColor = '#6ee7b7'; }
+  if (el) { el.style.background='#d1fae5'; el.style.color='#065f46'; el.style.borderColor='#6ee7b7'; }
 }
 
 function filterDone(tech) {
@@ -2404,7 +2399,7 @@ function renderAdminDoneList() {
     });
   }
 
-  // Atualizar contadores nos filtros de técnico
+  // Atualizar contadores nos filtros
   TECH_NAMES.forEach(t => {
     const el = document.getElementById('afd-' + t);
     const n  = (allDoneOrders[t] || []).length;
@@ -2830,11 +2825,11 @@ function renderResumoGeral() {
   const CORES = ['#dbeafe|#1e40af|#bfdbfe','#fee2e2|#991b1b|#fecaca','#d1fae5|#065f46|#a7f3d0','#fef3c7|#92400e|#fde68a','#f3e8ff|#6b21a8|#e9d5ff'];
   wrap.innerHTML = TECH_NAMES.map((tech, i) => {
     const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
-    const ordens = (allOrders[tech] || []);
+    const ordens    = allOrders[tech] || [];
     const total     = ordens.length;
     const agendadas = ordens.filter(o => o.data && o.data.trim() && o.data !== 'undefined').length;
     const pendentes = ordens.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined').length;
-    return '<div onclick="adminVerTecnico('' + tech + '')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:14px;border:2px solid ' + border + ';cursor:pointer;transition:box-shadow .2s;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
+    return '<div onclick="adminVerTecnico('' + tech + '')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:14px;border:2px solid ' + border + ';cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
       '<div style="width:44px;height:44px;border-radius:50%;background:' + bg + ';color:' + fg + ';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0;">' + tech[0] + '</div>' +
       '<div style="flex:1;">' +
         '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + tech + '</div>' +
@@ -2853,7 +2848,7 @@ function renderResumoGeral() {
 
 async function adminVerTecnico(tech) {
   adminTechSelecionado = tech;
-  // Ocultar resumo geral e mostrar conteúdo do técnico
+  // Ocultar resumo e mostrar conteúdo do técnico
   const resumo = document.getElementById('admin-resumo-geral');
   if (resumo) resumo.style.display = 'none';
   // Destacar botão selecionado
@@ -2865,11 +2860,11 @@ async function adminVerTecnico(tech) {
   // Buscar ordens do técnico
   setAdminSyncStatus('syncing');
   const now    = new Date();
-  const result = await gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() });
+  const result     = await gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() });
   const resultDone = await gasRequest({ action: 'getDoneOrders', tech });
   setAdminSyncStatus('ok');
 
-  const orders = result.ok ? (result.data || []) : [];
+  const orders    = result.ok     ? (result.data     || []) : [];
   const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
 
   // Mostrar área
