@@ -536,7 +536,10 @@
       <!-- Calendário do técnico selecionado -->
       <div id="admin-view-tech-content" style="display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <div id="admin-view-tech-name" style="font-size:16px;font-weight:700;color:var(--primary);"></div>
+          <div id="admin-view-tech-total" style="font-size:13px;font-weight:700;color:#065f46;background:#d1fae5;padding:4px 10px;border-radius:20px;"></div>
+        </div>
           <div style="display:flex;gap:6px;font-size:11px;">
             <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
             <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
@@ -2074,6 +2077,7 @@ function enviarConfirmacaoCliente() {
   if (!tel) { showToast('Telefone do cliente não identificado', 'error'); return; }
   if (!msg)  { showToast('Mensagem vazia', 'error'); return; }
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  // Nota: valor salvo após criar a OS — não há ID ainda neste ponto
 }
 
 // ════════════════════════════════
@@ -2681,13 +2685,26 @@ function atualizarPreviewModalCliente() {
   window._msgModalConfirm = msg;
 }
 
-function enviarConfirmacaoClienteModal() {
+async function enviarConfirmacaoClienteModal() {
   atualizarPreviewModalCliente();
   const os  = _modalConfirmOS;
   if (!os) return;
   const tel = (os.telefone || '').replace(/\D/g, '');
   const msg = window._msgModalConfirm || '';
   if (!tel) { showToast('Telefone não encontrado', 'error'); return; }
+
+  // Salvar valor da instalação na OS
+  const valorInput = document.getElementById('modal-valor-instalacao');
+  const valor = valorInput ? valorInput.value.trim() : '';
+  if (valor) {
+    await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: adminTechSelecionado || os._tech || '', valor });
+    // Atualizar em memória
+    const techKey = adminTechSelecionado || os._tech || '';
+    const osLocal = (allOrders[techKey] || []).find(o => o.id === os.id);
+    if (osLocal) osLocal.valorInstalacao = valor;
+    showToast('Valor salvo! R$' + parseFloat(valor).toFixed(2).replace('.',','), 'success');
+  }
+
   fecharModalConfirmacaoCliente();
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
@@ -2713,6 +2730,14 @@ async function adminVerTecnico(tech) {
   const wrap = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
   document.getElementById('admin-view-tech-name').textContent = tech;
+  // Calcular total de instalações
+  const totalValor = orders.reduce((s, o) => {
+    if (!o.valorInstalacao) return s;
+    const v = parseFloat(o.valorInstalacao);
+    return s + (isNaN(v) ? 0 : v);
+  }, 0);
+  const totalEl = document.getElementById('admin-view-tech-total');
+  if (totalEl) totalEl.textContent = totalValor > 0 ? '💰 Total: R$' + totalValor.toFixed(2).replace('.',',') : '';
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
 
   // Renderizar calendário
@@ -2827,6 +2852,9 @@ async function adminVerTecnico(tech) {
         })() +
 
         // ── Linha 4: log mensagem
+        (o.valorInstalacao
+          ? '<div style="display:inline-flex;align-items:center;gap:4px;background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
+          : '') +
         (o.msgLog
           ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:8px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:8px;">⚠️ Mensagem não enviada</div>') +
