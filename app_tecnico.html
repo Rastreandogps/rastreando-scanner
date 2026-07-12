@@ -2629,7 +2629,7 @@ function enviarOSParaTecnico(id, tech) {
     'Tem uma OS de *' + acaoLabel + '* aqui pra você:\n\n' +
     '👤 *Cliente:* ' + (os.nome || '') + '\n' +
     '📍 *Endereço:* ' + (os.endereco || '') + '\n' +
-    (os.obs ? '📌 *Ref.:* ' + os.obs + '\n' : '') +
+    (os.obs ? '\n📌 *Obs.:* ' + os.obs + '\n' : '\n') +
     veiculoBloco + '\n\n' +
     pergunta + '\n\n' +
     '👇 Veja no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
