@@ -873,10 +873,12 @@ function gerarElementosDinamicos() {
   const CORES = ['#dbeafe|#1e40af|#bfdbfe','#fee2e2|#991b1b|#fecaca','#d1fae5|#065f46|#a7f3d0','#fef3c7|#92400e|#fde68a','#f3e8ff|#6b21a8|#e9d5ff'];
   const btnView = document.getElementById('admin-view-tech-btns');
   if (btnView) {
-    btnView.innerHTML = TECH_NAMES.map((n, i) => {
-      const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
-      return '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="flex:1;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">' + n + '</button>';
-    }).join('');
+    btnView.innerHTML =
+      '<button class="admin-tech-btn" data-tech="todos" onclick="adminVerTodos()" style="flex:1;padding:12px;background:#1a2744;color:white;border:2px solid #3b82f6;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">🗓️ Todos</button>' +
+      TECH_NAMES.map((n, i) => {
+        const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
+        return '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="flex:1;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">' + n + '</button>';
+      }).join('');
   }
 
   // Login seletor de técnico na tela de login (não existe mais, usa texto livre)
@@ -2837,6 +2839,127 @@ function renderResumoGeral() {
         '<div style="font-size:26px;font-weight:800;color:' + fg + ';">' + total + '</div>' +
         '<div style="font-size:10px;font-weight:600;color:var(--muted);">em aberto</div>' +
       '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function adminVerTodos() {
+  adminTechSelecionado = '';
+  // Destacar botão Todos
+  document.querySelectorAll('.admin-tech-btn').forEach(b => {
+    const isTodos = b.getAttribute('data-tech') === 'todos';
+    b.style.opacity   = isTodos ? '1' : '0.45';
+    b.style.transform = isTodos ? 'scale(1.04)' : 'scale(1)';
+  });
+
+  const resumo = document.getElementById('admin-resumo-geral');
+  if (resumo) resumo.style.display = 'none';
+
+  const wrap = document.getElementById('admin-view-tech-content');
+  wrap.style.display = 'block';
+  document.getElementById('admin-view-tech-name').textContent = 'Todos os Técnicos';
+  document.getElementById('admin-view-tech-total').textContent = '';
+
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth();
+  document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[month] + ' — Visão Geral';
+
+  // Cores por técnico
+  const CORES_TECH = ['#3b82f6','#ef4444','#10b981','#f59e0b','#7c3aed'];
+  const grid = document.getElementById('admin-cal-grid');
+  grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
+
+  // Mapa dia → { ids: [], techCores: [] }
+  const dateMap = {};
+  const pendentes = [];
+
+  TECH_NAMES.forEach((tech, ti) => {
+    const cor = CORES_TECH[ti] || '#3b82f6';
+    const orders = allOrders[tech] || [];
+    orders.forEach(o => {
+      if (o.status === 'concluido') return;
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') {
+        pendentes.push({ ...o, _tech: tech, _cor: cor });
+        return;
+      }
+      const d = parseDate(o.data);
+      if (!d || d.getMonth() !== month || d.getFullYear() !== year) return;
+      const k = d.getDate();
+      if (!dateMap[k]) dateMap[k] = { ids: [], cores: [] };
+      dateMap[k].ids.push(o.id);
+      dateMap[k].cores.push(cor);
+    });
+  });
+
+  const first = new Date(year, month, 1).getDay();
+  const total = new Date(year, month+1, 0).getDate();
+  for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
+  for (let d = 1; d <= total; d++) {
+    const isToday  = d === now.getDate();
+    const entrada  = dateMap[d];
+    const temPend  = isToday && pendentes.length > 0;
+    let dots = '';
+    if (entrada) {
+      // Uma bolinha por cor única
+      const coresUnicas = [...new Set(entrada.cores)];
+      coresUnicas.slice(0, 4).forEach(c => {
+        dots += '<div class="dot" style="background:' + c + ';"></div>';
+      });
+    }
+    if (temPend) dots += '<div class="dot dot-yellow"></div>';
+
+    const ids = entrada ? entrada.ids : [];
+    const allIds = temPend ? [...ids, ...pendentes.map(o => o.id)] : ids;
+    const clicavel = allIds.length > 0;
+
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavel ? ' cal-clickable-admin' : '') + '"' +
+      (clicavel ? ' data-admin-ids="' + allIds.join('|') + '" style="cursor:pointer;"' : '') + '>' +
+      '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
+  }
+
+  // Listar todas as OS ativas de todos os técnicos
+  const lista = document.getElementById('admin-tech-os-list');
+  let todasAtivas = [];
+  TECH_NAMES.forEach((tech, ti) => {
+    const cor = CORES_TECH[ti] || '#3b82f6';
+    (allOrders[tech] || []).filter(o => o.status !== 'concluido').forEach(o => {
+      todasAtivas.push({ ...o, _tech: tech, _cor: cor });
+    });
+  });
+
+  if (todasAtivas.length === 0) {
+    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem em aberto.</p></div>';
+    return;
+  }
+
+  todasAtivas.sort((a, b) => {
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1; if (!b.data) return -1;
+    return parseDate(a.data) - parseDate(b.data);
+  });
+
+  lista.innerHTML = todasAtivas.map(o => {
+    const dataOk   = o.data && o.data.trim() && o.data !== 'undefined';
+    const dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
+    const dataBg   = dataOk ? '#dbeafe' : '#fef3c7';
+    const dataFg   = dataOk ? '#1d4ed8' : '#b45309';
+    const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+    const tech     = o._tech;
+    const cor      = o._cor;
+
+    return '<div style="border-radius:14px;padding:14px;margin-bottom:12px;background:white;border-left:4px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.07);">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<div style="flex:1;font-size:14px;font-weight:700;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
+        '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
+        '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + dataLabel + '</span>' +
+      '</div>' +
+      (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:4px 8px;margin-bottom:5px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+        '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(o.endereco||'') + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+        (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
+      '</div>' +
+      (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:8px 10px;margin-top:8px;"><span style="font-size:16px;flex-shrink:0;line-height:1.3;">📌</span><span style="font-size:12px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
     '</div>';
   }).join('');
 }
