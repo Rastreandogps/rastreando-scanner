@@ -1606,7 +1606,8 @@ document.addEventListener('click', function(e) {
     const cards = document.querySelectorAll('#admin-tech-os-list > div');
     let primeiro = null;
     cards.forEach(card => {
-      const id = card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
+      const id = card.getAttribute('data-os-id') ||
+                 card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
                  card.querySelector('.admin-del-tech-btn')?.getAttribute('data-id');
       const match = id && ids.includes(id);
       card.style.opacity       = match ? '1'    : '0.25';
@@ -2948,7 +2949,7 @@ async function adminVerTodos() {
     const tech     = o._tech;
     const cor      = o._cor;
 
-    return '<div style="border-radius:14px;padding:14px;margin-bottom:12px;background:white;border-left:4px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.07);">' +
+    return '<div data-os-id="' + o.id + '" style="border-radius:14px;padding:14px;margin-bottom:12px;background:white;border-left:4px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.07);">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
         '<div style="flex:1;font-size:14px;font-weight:700;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
         '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
