@@ -2589,10 +2589,8 @@ function enviarOSParaTecnico(id, tech) {
       const partes = v.split(' | ');
       const modelo = partes[0] || v;
       const info   = partes.slice(1).join(' | ');
-      return (lista.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 *') + modelo + '*' + (info ? '
-   ↳ ' + info : '');
-    }).join('
-');
+      return (lista.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 *') + modelo + '*' + (info ? '\n   ↳ ' + info : '');
+    }).join('\n');
   } else {
     veiculoBloco = '🚗 _(não informado)_';
   }
@@ -2627,26 +2625,14 @@ function enviarOSParaTecnico(id, tech) {
   }
 
   const msg =
-    'Fala, *' + primeiroNome + '*! 👋
-
-' +
-    'Tem uma OS de *' + acaoLabel + '* aqui pra você:
-
-' +
-    '👤 *Cliente:* ' + (os.nome || '') + '
-' +
-    '📍 *Endereço:* ' + (os.endereco || '') + '
-' +
-    (os.obs ? '📌 *Ref.:* ' + os.obs + '
-' : '') +
-    veiculoBloco + '
-
-' +
-    pergunta + '
-
-' +
-    '👇 Veja no app:
-https://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
+    'Fala, *' + primeiroNome + '*! 👋\n\n' +
+    'Tem uma OS de *' + acaoLabel + '* aqui pra você:\n\n' +
+    '👤 *Cliente:* ' + (os.nome || '') + '\n' +
+    '📍 *Endereço:* ' + (os.endereco || '') + '\n' +
+    (os.obs ? '📌 *Ref.:* ' + os.obs + '\n' : '') +
+    veiculoBloco + '\n\n' +
+    pergunta + '\n\n' +
+    '👇 Veja no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
 
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
