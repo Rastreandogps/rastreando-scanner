@@ -584,10 +584,14 @@
 
 <!-- MODAL: MOTIVACIONAL -->
 <div class="modal-overlay" id="modal-motivacional" style="background:rgba(0,0,0,.6);">
-  <div class="modal-box" style="text-align:center;max-width:340px;">
-    <div style="font-size:40px;margin-bottom:12px;" id="motiv-emoji"></div>
-    <div style="font-size:16px;font-weight:700;color:var(--primary);line-height:1.5;margin-bottom:20px;" id="motiv-frase"></div>
-    <button type="button" onclick="fecharMotivacional()" style="width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+  <div class="modal-box" style="max-width:380px;max-height:80vh;overflow-y:auto;">
+    <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;" id="motiv-titulo"></div>
+    <div id="motiv-os-lista"></div>
+    <div id="motiv-frase-wrap" style="display:none;text-align:center;padding:8px 0 16px;">
+      <div style="font-size:36px;margin-bottom:10px;" id="motiv-emoji"></div>
+      <div style="font-size:15px;font-weight:700;color:var(--primary);line-height:1.6;" id="motiv-frase"></div>
+    </div>
+    <button type="button" onclick="fecharMotivacional()" style="width:100%;padding:13px;background:var(--accent);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;">
       💪 Bora trabalhar!
     </button>
   </div>
@@ -705,11 +709,14 @@ const ADMIN_PASS = '271659';
 // Lembre-se de criar/renomear a aba na planilha também!
 // ════════════════════════════════════════
 const TECNICOS = [
-  { nome: 'Glauber', senha: '123456' },
-  { nome: 'Eberson', senha: '123456' },
-  { nome: 'Jonas',   senha: '123456' },
-  { nome: 'Mateus',  senha: '271659' },
+  { nome: 'Glauber', senha: '123456', tel: '22999229134' },
+  { nome: 'Eberson', senha: '123456', tel: '21970622555' },
+  { nome: 'Jonas',   senha: '123456', tel: '21983799329' },
+  { nome: 'Mateus',  senha: '271659', tel: '' },
 ];
+
+// Mapa nome → telefone do técnico
+const TECH_TEL = Object.fromEntries(TECNICOS.map(t => [t.nome, t.tel || '']));
 
 // Gerado automaticamente a partir de TECNICOS — não edite abaixo
 const TECH_CREDENTIALS = Object.fromEntries(TECNICOS.map(t => [t.nome, t.senha]));
@@ -2562,6 +2569,88 @@ async function adminConcluirOS(id, tech) {
   }
 }
 
+function enviarOSParaTecnico(id, tech) {
+  const os = (allOrders[tech] || []).find(o => o.id === id);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+
+  const tel = TECH_TEL[tech];
+  if (!tel) { showToast('Telefone do técnico não cadastrado', 'error'); return; }
+
+  const primeiroNome = tech.split(' ')[0];
+  const tipo = (os.tipo || '').toLowerCase();
+
+  // Montar bloco de veículos
+  let veiculoBloco = '';
+  if (os.veiculo) {
+    const lista = os.veiculo.includes(' || ')
+      ? os.veiculo.split(' || ').map(v => v.trim())
+      : [os.veiculo.trim()];
+    veiculoBloco = lista.map((v, i) => {
+      const partes = v.split(' | ');
+      const modelo = partes[0] || v;
+      const info   = partes.slice(1).join(' | ');
+      return (lista.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 *') + modelo + '*' + (info ? '
+   ↳ ' + info : '');
+    }).join('
+');
+  } else {
+    veiculoBloco = '🚗 _(não informado)_';
+  }
+
+  // Data
+  const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
+    ? formatDateBR(os.data) : null;
+  const hoje = new Date();
+  let eHoje = false;
+  if (dataStr) {
+    const dp = parseDate(os.data);
+    eHoje = dp && dp.getDate() === hoje.getDate() && dp.getMonth() === hoje.getMonth() && dp.getFullYear() === hoje.getFullYear();
+  }
+
+  // Texto por tipo
+  let acaoLabel, pergunta;
+  if (tipo.includes('manut')) {
+    acaoLabel = 'manutenção';
+    pergunta  = eHoje
+      ? 'Vai dar pra fazer a manutenção dele *hoje*? 🔧'
+      : (dataStr ? 'Consegue fazer a manutenção no dia *' + dataStr + '*? 🔧' : 'Quando você consegue fazer essa manutenção? 🔧');
+  } else if (tipo.includes('retir') || tipo.includes('remo')) {
+    acaoLabel = 'retirada';
+    pergunta  = eHoje
+      ? 'Vai dar pra fazer a retirada *hoje*? 🔩'
+      : (dataStr ? 'Consegue fazer a retirada no dia *' + dataStr + '*? 🔩' : 'Quando você consegue fazer essa retirada? 🔩');
+  } else {
+    acaoLabel = 'instalação';
+    pergunta  = eHoje
+      ? 'Vai dar pra fazer a instalação *hoje*? 📍'
+      : (dataStr ? 'Consegue fazer a instalação no dia *' + dataStr + '*? 📍' : 'Quando você consegue fazer essa instalação? 📍');
+  }
+
+  const msg =
+    'Fala, *' + primeiroNome + '*! 👋
+
+' +
+    'Tem uma OS de *' + acaoLabel + '* aqui pra você:
+
+' +
+    '👤 *Cliente:* ' + (os.nome || '') + '
+' +
+    '📍 *Endereço:* ' + (os.endereco || '') + '
+' +
+    (os.obs ? '📌 *Ref.:* ' + os.obs + '
+' : '') +
+    veiculoBloco + '
+
+' +
+    pergunta + '
+
+' +
+    '👇 Veja no app:
+https://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
 async function adminReverter(id, tech) {
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'ativo' });
@@ -2596,10 +2685,45 @@ const FRASES_MOTIV = [
 ];
 
 function mostrarMotivacional() {
-  const frases = FRASES_MOTIV;
-  const f = frases[Math.floor(Math.random() * frases.length)];
-  document.getElementById('motiv-emoji').textContent = f.emoji;
-  document.getElementById('motiv-frase').textContent = f.texto;
+  const agora   = new Date();
+  const orders  = allOrders[currentUser] || [];
+  const hoje    = orders.filter(o => {
+    if (o.status === 'concluido') return false;
+    if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === agora.getDate() && d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
+  });
+
+  const titulo = document.getElementById('motiv-titulo');
+  const lista  = document.getElementById('motiv-os-lista');
+  const fraseWrap = document.getElementById('motiv-frase-wrap');
+
+  if (hoje.length > 0) {
+    titulo.textContent = '📅 Suas OS para hoje (' + hoje.length + ')';
+    fraseWrap.style.display = 'none';
+    lista.innerHTML = hoje.map(o => {
+      const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+      const tipo = (o.tipo || '').toLowerCase();
+      let cor = '#3b82f6';
+      if (tipo.includes('manut')) cor = '#f59e0b';
+      else if (tipo.includes('retir') || tipo.includes('remo')) cor = '#ef4444';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:#f8fafc;border-radius:12px;margin-bottom:8px;border-left:3px solid ' + cor + ';">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+          (o.veiculo ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">🔑 ' + esc(o.veiculo.split(' || ')[0]) + '</div>' : '') +
+          '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📍 ' + esc(o.endereco || '') + '</div>' +
+        '</div>' +
+        '<span style="font-size:10px;font-weight:700;background:' + cor + '22;color:' + cor + ';padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">' + esc(o.tipo || 'Instalação') + '</span>' +
+      '</div>';
+    }).join('');
+  } else {
+    titulo.textContent = '';
+    lista.innerHTML = '';
+    fraseWrap.style.display = 'block';
+    document.getElementById('motiv-emoji').textContent = '🙏';
+    document.getElementById('motiv-frase').textContent = 'Não temos OS para hoje, mas Deus proverá.';
+  }
+
   document.getElementById('modal-motivacional').classList.add('open'); lockScroll();
 }
 
@@ -2666,36 +2790,48 @@ function montarMsgPrePronta(o, wppLink) {
     }).join('\n');
   }
 
-  // Data formatada
+  // Data formatada + verificar se é hoje
   let dataStr = '';
+  let eHoje = false;
   if (o.data && o.data.trim() && o.data !== 'undefined') {
     const DIAS = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
     const dp = parseDate(o.data);
-    if (dp) dataStr = DIAS[dp.getDay()] + ', dia ' + formatDateBR(o.data);
-    else    dataStr = formatDateBR(o.data);
+    if (dp) {
+      const agora = new Date();
+      eHoje = dp.getDate() === agora.getDate() && dp.getMonth() === agora.getMonth() && dp.getFullYear() === agora.getFullYear();
+      dataStr = eHoje ? formatDateBR(o.data) : formatDateBR(o.data) + ' — ' + DIAS[dp.getDay()];
+    } else {
+      dataStr = formatDateBR(o.data);
+    }
   }
 
   // Adaptar texto ao tipo de serviço
   const tipo = (o.tipo || '').toLowerCase();
   let acaoVerbo, acaoNome, acaoData;
   if (tipo.includes('manut')) {
-    acaoVerbo = 'agendarmos a manutenção';
+    acaoVerbo = eHoje ? 'realizar a manutenção' : 'agendarmos a manutenção';
     acaoNome  = 'manutenção';
-    acaoData  = dataStr
-      ? '\n\n📅 Podemos agendar a manutenção para *' + dataStr + '*?'
-      : '\n\n📅 Qual seria o melhor dia para realizarmos a manutenção?';
+    acaoData  = eHoje
+      ? '\n\n📅 Confirmo que passarei *hoje, dia ' + dataStr + '* para realizar a manutenção!'
+      : dataStr
+        ? '\n\n📅 Podemos agendar a manutenção para *' + dataStr + '*?'
+        : '\n\n📅 Qual seria o melhor dia para realizarmos a manutenção?';
   } else if (tipo.includes('retir') || tipo.includes('remo')) {
-    acaoVerbo = 'agendarmos a retirada';
+    acaoVerbo = eHoje ? 'realizar a retirada' : 'agendarmos a retirada';
     acaoNome  = 'retirada';
-    acaoData  = dataStr
-      ? '\n\n📅 Podemos agendar a retirada para *' + dataStr + '*?'
-      : '\n\n📅 Qual seria o melhor dia para realizarmos a retirada?';
+    acaoData  = eHoje
+      ? '\n\n📅 Confirmo que passarei *hoje, dia ' + dataStr + '* para realizar a retirada!'
+      : dataStr
+        ? '\n\n📅 Podemos agendar a retirada para *' + dataStr + '*?'
+        : '\n\n📅 Qual seria o melhor dia para realizarmos a retirada?';
   } else {
-    acaoVerbo = 'agendarmos a instalação';
+    acaoVerbo = eHoje ? 'realizar a instalação' : 'agendarmos a instalação';
     acaoNome  = 'instalação';
-    acaoData  = dataStr
-      ? '\n\n📅 Podemos agendar para *' + dataStr + '*?'
-      : '\n\n📅 Qual seria o melhor dia para realizarmos a instalação?';
+    acaoData  = eHoje
+      ? '\n\n📅 Confirmo que passarei *hoje, dia ' + dataStr + '* para realizar a instalação!'
+      : dataStr
+        ? '\n\n📅 Podemos agendar para *' + dataStr + '*?'
+        : '\n\n📅 Qual seria o melhor dia para realizarmos a instalação?';
   }
 
   const msg =
@@ -3149,6 +3285,12 @@ async function adminVerTecnico(tech) {
         })() : '') +
 
         // ── Botões: Editar + Concluir + Excluir
+        '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+          '<button onclick="enviarOSParaTecnico(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="width:100%;padding:8px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+            '📋 Enviar OS pro técnico' +
+          '</button>' +
+        '</div>' +
         '<div style="display:flex;gap:6px;">' +
           '<button class="admin-view-edit-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar</button>' +
           '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>' +
