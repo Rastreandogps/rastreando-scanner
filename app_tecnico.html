@@ -3077,7 +3077,7 @@ async function adminVerTodos() {
         '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
         '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + dataLabel + '</span>' +
       '</div>' +
-      (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:4px 8px;margin-bottom:5px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+      renderVeiculosAdmin(o.veiculo) +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(o.endereco||'') + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
@@ -3086,6 +3086,48 @@ async function adminVerTodos() {
       (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:8px 10px;margin-top:8px;"><span style="font-size:16px;flex-shrink:0;line-height:1.3;">📌</span><span style="font-size:12px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
     '</div>';
   }).join('');
+}
+
+function renderVeiculosAdmin(veiculo) {
+  if (!veiculo) return '';
+  const svgCar = '<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" width="13" height="13"><circle cx="8" cy="15" r="5"/><path d="M12.3 11.7L20 4"/><path d="M18 6l2 2"/><path d="M15 9l2 2"/></svg>';
+  let lista;
+  if (veiculo.includes(' || ')) {
+    lista = veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
+  } else if (/\)\s*\|\s*[A-ZÀ-Ú]/.test(veiculo)) {
+    lista = veiculo.split(/\)\s*\|\s*(?=[A-ZÀ-Ú])/).map((v, i, arr) =>
+      i < arr.length - 1 ? v.trim() + ')' : v.trim()
+    ).filter(Boolean);
+  } else {
+    lista = [veiculo.trim()];
+  }
+  if (lista.length <= 1) {
+    const partes = veiculo.trim().split(' | ');
+    const modelo = partes[0] || '';
+    const info   = partes.slice(1).join(' · ') || '';
+    return '<div style="background:#f0f4ff;border-radius:10px;padding:9px 12px;margin-bottom:8px;">' +
+      '<div style="display:flex;align-items:center;gap:6px;">' + svgCar +
+        '<span style="font-size:13px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span>' +
+      '</div>' +
+      (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:19px;">' + esc(info) + '</div>' : '') +
+    '</div>';
+  }
+  return '<div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
+    lista.map(function(v, i) {
+      const partes = v.split(' | ');
+      const modelo = partes[0] || '';
+      const info   = partes.slice(1).join(' · ') || '';
+      return '<div style="' + (i > 0 ? 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(59,130,246,.15);' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' + svgCar +
+            '<span style="font-size:10px;font-weight:800;color:var(--accent);white-space:nowrap;">VEÍ.' + (i+1) + '</span>' +
+          '</div>' +
+          '<span style="font-size:13px;font-weight:700;color:var(--primary);">' + esc(modelo) + '</span>' +
+        '</div>' +
+        (info ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:3px;padding-left:36px;">' + esc(info) + '</div>' : '') +
+      '</div>';
+    }).join('') +
+  '</div>';
 }
 
 async function adminVerTecnico(tech) {
@@ -3230,7 +3272,7 @@ async function adminVerTecnico(tech) {
         })() +
 
         // ── Linha 2: veículo
-        (o.veiculo ? '<div style="font-size:12px;font-weight:600;color:var(--primary);background:#f0f4ff;border-radius:8px;padding:5px 8px;margin-bottom:6px;">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+        renderVeiculosAdmin(o.veiculo) +
 
         // Valor da instalação
         (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0
