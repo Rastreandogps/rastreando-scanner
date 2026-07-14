@@ -2988,8 +2988,7 @@ function renderNotas() {
     return '<div style="background:#fefce8;border:1.5px solid #fde68a;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">' +
       '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Anote aqui..." style="width:100%;min-height:80px;padding:8px;border:none;background:transparent;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:#1a2744;">' + esc(nota.texto) + '</textarea>' +
       '<div style="display:flex;gap:8px;">' +
-        '<button onclick="adicionarNota()" style="flex:1;padding:8px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ OK — Nova nota</button>' +
-        '<button onclick="concluirNota(' + nota.id + ')" style="flex:1;padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+        '<button onclick="concluirNota(' + nota.id + ')" style="width:100%;padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
       '</div>' +
     '</div>';
   }).join('');
