@@ -559,11 +559,11 @@
       <!-- Bloco de notas -->
       <div id="admin-resumo-geral" style="display:block;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">📝 Bloco de notas</div>
+          <div style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Bloco de notas</span></div>
           <div style="font-size:11px;color:var(--muted);" id="admin-notas-status">💾 Salvo</div>
         </div>
         <div id="admin-notas-lista" style="display:flex;flex-direction:column;gap:10px;"></div>
-        <button onclick="adicionarNota()" style="width:100%;margin-top:10px;padding:10px;background:#fefce8;border:2px dashed #fde68a;border-radius:12px;font-size:13px;font-weight:700;color:#92400e;cursor:pointer;">+ Nova nota</button>
+        <button onclick="adicionarNota()" style="width:100%;margin-top:10px;padding:11px;background:white;border:1.5px dashed var(--border);border-radius:12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .2s;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar nota</button>
       </div>
       <!-- Calendário do técnico selecionado -->
       <div id="admin-view-tech-content" style="display:none;">
@@ -2985,10 +2985,16 @@ function renderNotas() {
   const lista = document.getElementById('admin-notas-lista');
   if (!lista) return;
   lista.innerHTML = _notasData.map((nota, i) => {
-    return '<div style="background:#fefce8;border:1.5px solid #fde68a;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">' +
-      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Anote aqui..." style="width:100%;min-height:80px;padding:8px;border:none;background:transparent;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:#1a2744;">' + esc(nota.texto) + '</textarea>' +
-      '<div style="display:flex;gap:8px;">' +
-        '<button onclick="concluirNota(' + nota.id + ')" style="width:100%;padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+    return '<div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">' +
+      '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);">' +
+        '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>' +
+        '<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Nota ' + (i+1) + '</span>' +
+      '</div>' +
+      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Digite sua anotação aqui..." style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.7;color:var(--text);">' + esc(nota.texto) + '</textarea>' +
+      '<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">' +
+        '<button onclick="concluirNota(' + nota.id + ')" style="display:flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--success);border:1.5px solid var(--success);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">' +
+          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Concluído' +
+        '</button>' +
       '</div>' +
     '</div>';
   }).join('');
