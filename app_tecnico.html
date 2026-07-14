@@ -556,10 +556,11 @@
       <h3>👁️ Visualizar Calendário do Técnico</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Selecione um técnico para ver o calendário e as ordens dele.</p>
       <div id="admin-view-tech-btns" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"></div>
-      <!-- Resumo geral quando nenhum técnico selecionado -->
+      <!-- Bloco de notas -->
       <div id="admin-resumo-geral" style="display:block;">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">📊 OS em aberto por técnico</div>
-        <div id="admin-resumo-cards" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📝 Bloco de notas</div>
+        <textarea id="admin-bloco-notas" placeholder="Anote aqui o que não pode esquecer..." style="width:100%;min-height:180px;padding:14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;outline:none;line-height:1.6;color:var(--text);background:#fefce8;" oninput="salvarBlocoNotas()"></textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:right;" id="admin-notas-status">💾 Salvo automaticamente</div>
       </div>
       <!-- Calendário do técnico selecionado -->
       <div id="admin-view-tech-content" style="display:none;">
@@ -883,11 +884,13 @@ function gerarElementosDinamicos() {
   const CORES = ['#dbeafe|#1e40af|#bfdbfe','#fee2e2|#991b1b|#fecaca','#d1fae5|#065f46|#a7f3d0','#fef3c7|#92400e|#fde68a','#f3e8ff|#6b21a8|#e9d5ff'];
   const btnView = document.getElementById('admin-view-tech-btns');
   if (btnView) {
+    const totalGeral = TECH_NAMES.reduce((s,n) => s + (allOrders[n]||[]).length, 0);
     btnView.innerHTML =
-      '<button class="admin-tech-btn" data-tech="todos" onclick="adminVerTodos()" style="flex:1;padding:12px;background:#1a2744;color:white;border:2px solid #3b82f6;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">🗓️ Todos</button>' +
+      '<button class="admin-tech-btn" data-tech="todos" onclick="adminVerTodos()" style="flex:1;padding:12px;background:#1a2744;color:white;border:2px solid #3b82f6;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">🗓️ Todos · ' + totalGeral + '</button>' +
       TECH_NAMES.map((n, i) => {
         const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
-        return '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="flex:1;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">' + n + '</button>';
+        const qtd = (allOrders[n] || []).length;
+        return '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="flex:1;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">' + n + (qtd > 0 ? ' · ' + qtd : '') + '</button>';
       }).join('');
   }
 
@@ -986,6 +989,7 @@ async function loadAllOrders() {
   }
   setAdminSyncStatus('ok');
   if (!adminTechSelecionado) renderResumoGeral();
+  gerarElementosDinamicos();
 }
 
 function setSyncStatus(s) {
@@ -2467,11 +2471,15 @@ function enviarConfirmacaoAgendamento(id, tech) {
   const mensalidade  = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
   const desconto     = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
 
-  // Valor da instalação salvo na OS — usa direto, sem prompt
+  // Valor obrigatório — bloqueia se não preenchido
   const valorNum = os.valorInstalacao ? parseFloat(os.valorInstalacao) : 0;
-  const valorStr = valorNum > 0
-    ? 'R$' + valorNum.toFixed(2).replace('.',',')
-    : '____';
+  if (!os.valorInstalacao || valorNum <= 0) {
+    showToast('⚠️ Informe o valor da instalação antes de enviar!', 'error');
+    // Abrir modal de confirmação para que o admin preencha o valor
+    abrirModalConfirmacaoCliente(id, tech);
+    return;
+  }
+  const valorStr = 'R$' + valorNum.toFixed(2).replace('.',',');
 
   // Veículos
   let veiculosTxt = '';
@@ -2925,17 +2933,20 @@ async function enviarConfirmacaoClienteModal() {
   const msg = window._msgModalConfirm || '';
   if (!tel) { showToast('Telefone não encontrado', 'error'); return; }
 
-  // Salvar valor da instalação na OS
+  // Valor obrigatório
   const valorInput = document.getElementById('modal-valor-instalacao');
   const valor = valorInput ? valorInput.value.trim() : '';
-  if (valor) {
-    await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: adminTechSelecionado || os._tech || '', valor });
-    // Atualizar em memória
-    const techKey = adminTechSelecionado || os._tech || '';
-    const osLocal = (allOrders[techKey] || []).find(o => o.id === os.id);
-    if (osLocal) osLocal.valorInstalacao = valor;
-    showToast('Valor salvo! R$' + parseFloat(valor).toFixed(2).replace('.',','), 'success');
+  if (!valor || parseFloat(valor) <= 0) {
+    showToast('⚠️ Informe o valor da instalação!', 'error');
+    if (valorInput) { valorInput.focus(); valorInput.style.border = '2px solid var(--danger)'; setTimeout(() => { valorInput.style.border = ''; }, 2000); }
+    return;
   }
+
+  // Salvar valor na OS
+  await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: adminTechSelecionado || os._tech || '', valor });
+  const techKey = adminTechSelecionado || os._tech || '';
+  const osLocal = (allOrders[techKey] || []).find(o => o.id === os.id);
+  if (osLocal) osLocal.valorInstalacao = valor;
 
   fecharModalConfirmacaoCliente();
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
@@ -2943,30 +2954,24 @@ async function enviarConfirmacaoClienteModal() {
 
 // ── Admin: visualizar calendário de um técnico
 function renderResumoGeral() {
-  const wrap = document.getElementById('admin-resumo-cards');
-  if (!wrap) return;
-  const CORES = ['#dbeafe|#1e40af|#bfdbfe','#fee2e2|#991b1b|#fecaca','#d1fae5|#065f46|#a7f3d0','#fef3c7|#92400e|#fde68a','#f3e8ff|#6b21a8|#e9d5ff'];
-  wrap.innerHTML = TECH_NAMES.map((tech, i) => {
-    const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
-    const ordens    = allOrders[tech] || [];
-    const total     = ordens.length;
-    const agendadas = ordens.filter(o => o.data && o.data.trim() && o.data !== 'undefined').length;
-    const pendentes = ordens.filter(o => !o.data || o.data.trim() === '' || o.data === 'undefined').length;
-    return '<div onclick="adminVerTecnico(\'' + tech + '\')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:14px;border:2px solid ' + border + ';cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);">' +
-      '<div style="width:44px;height:44px;border-radius:50%;background:' + bg + ';color:' + fg + ';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0;">' + tech[0] + '</div>' +
-      '<div style="flex:1;">' +
-        '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + tech + '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">' +
-          '<span style="font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">📅 ' + agendadas + ' agendada' + (agendadas !== 1 ? 's' : '') + '</span>' +
-          (pendentes > 0 ? '<span style="font-size:11px;font-weight:600;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">⏳ ' + pendentes + ' pendente' + (pendentes !== 1 ? 's' : '') + '</span>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div style="text-align:right;flex-shrink:0;">' +
-        '<div style="font-size:26px;font-weight:800;color:' + fg + ';">' + total + '</div>' +
-        '<div style="font-size:10px;font-weight:600;color:var(--muted);">em aberto</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
+  // Carregar notas salvas
+  try {
+    const nota = localStorage.getItem('admin_bloco_notas') || '';
+    const el = document.getElementById('admin-bloco-notas');
+    if (el && !el.value) el.value = nota;
+  } catch(_) {}
+  // Atualizar contagem nos botões
+  gerarElementosDinamicos();
+}
+
+function salvarBlocoNotas() {
+  const el = document.getElementById('admin-bloco-notas');
+  if (!el) return;
+  try {
+    localStorage.setItem('admin_bloco_notas', el.value);
+    const st = document.getElementById('admin-notas-status');
+    if (st) { st.textContent = '💾 Salvo'; setTimeout(() => { if(st) st.textContent = '💾 Salvo automaticamente'; }, 1500); }
+  } catch(_) {}
 }
 
 async function adminVerTodos() {
