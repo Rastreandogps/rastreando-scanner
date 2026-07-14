@@ -2337,6 +2337,7 @@ function renderAcessos() {
 let adminDoneFilter     = 'all';
 let adminDoneMesFiltro  = '';
 let adminTechSelecionado = '';
+let _doneAdminCache     = {}; // cache: tech → lista de OS concluídas
 
 
 async function loadAdminDoneOrders() {
@@ -3209,15 +3210,24 @@ function renderVeiculosAdmin(veiculo) {
   '</div>';
 }
 
-function enviarResumoDia(tech) {
+async function enviarResumoDia(tech) {
   const tel = TECH_TEL[tech];
   if (!tel) { showToast('Telefone do técnico não cadastrado', 'error'); return; }
 
   const hoje = new Date();
-  const done = allDoneOrders[tech] || [];
+  // Usa cache da última busca, ou allDoneOrders como fallback
+  const done = _doneAdminCache[tech] || allDoneOrders[tech] || [];
+
+  // Se não tiver nada no cache, buscar agora
+  if (done.length === 0 && !_doneAdminCache[tech]) {
+    showToast('Carregando concluídos...', '');
+    const r = await gasRequest({ action: 'getDoneOrders', tech });
+    if (r.ok) { _doneAdminCache[tech] = r.data || []; }
+  }
+  const doneAtualizado = _doneAdminCache[tech] || [];
 
   // Filtrar apenas os concluídos hoje
-  const deHoje = done.filter(o => {
+  const deHoje = doneAtualizado.filter(o => {
     if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
     const d = parseDate(o.data);
     return d && d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
@@ -3285,6 +3295,7 @@ async function adminVerTecnico(tech) {
 
   const orders    = result.ok     ? (result.data     || []) : [];
   const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
+  _doneAdminCache[tech] = doneAdmin; // salva no cache
 
   // Mostrar área
   const wrap = document.getElementById('admin-view-tech-content');
