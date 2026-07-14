@@ -680,6 +680,32 @@
   </div>
 </div>
 
+<!-- MODAL: DESCONTO RESUMO DIA -->
+<div class="modal-overlay" id="modal-desconto-resumo">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-title">💸 Desconto no resumo</div>
+    <div class="modal-sub">Tem algum valor a descontar do técnico hoje? (opcional)</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="form-field">
+        <label>Motivo</label>
+        <input type="text" id="desconto-motivo" placeholder="Ex: Combustível, Empréstimo..." style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;width:100%;outline:none;">
+      </div>
+      <div class="form-field">
+        <label>Valor (R$)</label>
+        <div style="display:flex;align-items:center;gap:6px;border:2px solid var(--border);border-radius:10px;padding:0 12px;background:white;">
+          <span style="font-weight:700;color:var(--primary);">R$</span>
+          <input type="number" id="desconto-valor" placeholder="0,00" step="0.01" min="0"
+            style="flex:1;border:none;outline:none;padding:10px 0;font-size:15px;font-weight:600;">
+        </div>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button type="button" class="btn-cancel" onclick="enviarResumoSemDesconto()">Pular</button>
+      <button type="button" class="btn-confirm" onclick="enviarResumoComDesconto()" style="background:var(--success);">✅ OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: CONFIRMAR EXCLUSÃO -->
 <div class="modal-overlay" id="modal-delete">
   <div class="modal-box">
@@ -2955,7 +2981,8 @@ async function enviarConfirmacaoClienteModal() {
   if (osLocal) osLocal.valorInstalacao = valor;
 
   fecharModalConfirmacaoCliente();
-  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  // Abrir modal de desconto antes de enviar
+  abrirModalDesconto(tech, msg, totalGeral);
 }
 
 // ── Admin: visualizar calendário de um técnico
@@ -3208,6 +3235,50 @@ function renderVeiculosAdmin(veiculo) {
       '</div>';
     }).join('') +
   '</div>';
+}
+
+// Variável temporária para o resumo pendente
+let _resumoPendente = null;
+
+function abrirModalDesconto(tech, msg, totalGeral) {
+  _resumoPendente = { tech, msg, totalGeral };
+  document.getElementById('desconto-motivo').value = '';
+  document.getElementById('desconto-valor').value = '';
+  document.getElementById('modal-desconto-resumo').classList.add('open'); lockScroll();
+  setTimeout(() => document.getElementById('desconto-motivo').focus(), 150);
+}
+
+function enviarResumoSemDesconto() {
+  document.getElementById('modal-desconto-resumo').classList.remove('open'); unlockScroll();
+  if (!_resumoPendente) return;
+  const { tech, msg } = _resumoPendente;
+  const tel = TECH_TEL[tech];
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  _resumoPendente = null;
+}
+
+function enviarResumoComDesconto() {
+  document.getElementById('modal-desconto-resumo').classList.remove('open'); unlockScroll();
+  if (!_resumoPendente) return;
+  const { tech, msg, totalGeral } = _resumoPendente;
+  const tel     = TECH_TEL[tech];
+  const motivo  = document.getElementById('desconto-motivo').value.trim();
+  const valor   = parseFloat(document.getElementById('desconto-valor').value) || 0;
+
+  let msgFinal = msg;
+  if (motivo && valor > 0) {
+    const liquido = totalGeral - valor;
+    // Substituir linha do total por total bruto + desconto + líquido
+    msgFinal = msg.replace(
+      '💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*',
+      '💰 *Total bruto: R$' + totalGeral.toFixed(2).replace('.',',') + '*\n' +
+      '➖ *Desconto — ' + motivo + ': R$' + valor.toFixed(2).replace('.',',') + '*\n' +
+      '💵 *Total líquido: R$' + (liquido > 0 ? liquido : 0).toFixed(2).replace('.',',') + '*'
+    );
+  }
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msgFinal), '_blank');
+  _resumoPendente = null;
 }
 
 async function enviarResumoDia(tech) {
