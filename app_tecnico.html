@@ -3343,7 +3343,7 @@ async function enviarResumoDia(tech) {
     totalStr + '\n\n' +
     '_Rastreando GPS_ 📍';
 
-  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  abrirModalDesconto(tech, msg, totalGeral);
 }
 
 async function adminVerTecnico(tech) {
