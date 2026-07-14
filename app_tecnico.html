@@ -581,7 +581,7 @@
           </div>
         </div>
         <div class="cal-grid" id="admin-cal-grid" style="margin-bottom:16px;"></div>
-        <div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;"></div><button id="admin-resumo-dia-btn" onclick="" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:#25D366;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;"><svg viewBox="0 0 24 24" width="12" height="12" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>📋 Resumo do dia</button></div>
         <div id="admin-tech-os-list"></div>
       </div>
     </div>
@@ -3207,6 +3207,62 @@ function renderVeiculosAdmin(veiculo) {
   '</div>';
 }
 
+function enviarResumoDia(tech) {
+  const tel = TECH_TEL[tech];
+  if (!tel) { showToast('Telefone do técnico não cadastrado', 'error'); return; }
+
+  const hoje = new Date();
+  const done = allDoneOrders[tech] || [];
+
+  // Filtrar apenas os concluídos hoje
+  const deHoje = done.filter(o => {
+    if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
+  });
+
+  if (deHoje.length === 0) {
+    showToast('Nenhum serviço concluído hoje para ' + tech, 'error');
+    return;
+  }
+
+  // Montar linhas por cliente
+  let totalGeral = 0;
+  const linhas = deHoje.map(o => {
+    const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
+    totalGeral += valor;
+    const valorStr = valor > 0 ? ' — *R$' + valor.toFixed(2).replace('.',',') + '*' : '';
+
+    // Montar veículos
+    let veiculos = [];
+    if (o.veiculo) {
+      if (o.veiculo.includes(' || ')) {
+        veiculos = o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
+      } else {
+        veiculos = [o.veiculo.trim()];
+      }
+    }
+    const veiculosLinhas = veiculos.map(v => {
+      const partes = v.split(' | ');
+      const modelo = partes[0] || v;
+      return '   🚗 ' + modelo + (o.tipo ? ' — ' + o.tipo : '');
+    }).join('\n');
+
+    return '✅ *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
+  }).join('\n\n');
+
+  const totalStr = totalGeral > 0 ? '\n\n💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '';
+  const dataStr  = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+
+  const msg =
+    '*' + tech + ', segue o resumo de hoje — ' + dataStr + ' 📋*\n\n' +
+    linhas +
+    totalStr + '\n\n' +
+    '_Rastreando GPS_ 📍';
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
 async function adminVerTecnico(tech) {
   adminTechSelecionado = tech;
   // Ocultar resumo e mostrar conteúdo do técnico
@@ -3259,6 +3315,9 @@ async function adminVerTecnico(tech) {
     else elMes.style.display = 'none';
   }
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
+  // Botão resumo do dia
+  const resumoDiaEl = document.getElementById('admin-resumo-dia-btn');
+  if (resumoDiaEl) { resumoDiaEl.style.display = 'flex'; resumoDiaEl.onclick = () => enviarResumoDia(tech); }
 
   // Renderizar calendário
   const grid  = document.getElementById('admin-cal-grid');
@@ -3411,7 +3470,7 @@ async function adminVerTecnico(tech) {
 
         // ── Botões: Editar + Concluir + Excluir
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
-          '<button onclick="enviarOSParaTecnico(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="width:100%;padding:8px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '<button onclick="enviarOSParaTecnico(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:8px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
             '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '📋 Enviar OS pro técnico' +
           '</button>' +
