@@ -566,7 +566,10 @@
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <div id="admin-view-tech-name" style="font-size:16px;font-weight:700;color:var(--primary);"></div>
-          <div id="admin-view-tech-total" style="font-size:13px;font-weight:700;color:#065f46;background:#d1fae5;padding:4px 10px;border-radius:20px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div id="admin-view-tech-total-dia" style="font-size:12px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:4px 10px;border-radius:20px;display:none;"></div>
+            <div id="admin-view-tech-total-mes" style="font-size:12px;font-weight:700;color:#065f46;background:#d1fae5;padding:4px 10px;border-radius:20px;display:none;"></div>
+          </div>
         </div>
           <div style="display:flex;gap:6px;font-size:11px;">
             <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
@@ -2981,7 +2984,8 @@ async function adminVerTodos() {
   const wrap = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
   document.getElementById('admin-view-tech-name').textContent = 'Todos os Técnicos';
-  document.getElementById('admin-view-tech-total').textContent = '';
+  const _elDia = document.getElementById('admin-view-tech-total-dia'); if(_elDia) _elDia.style.display='none';
+  const _elMes = document.getElementById('admin-view-tech-total-mes'); if(_elMes) _elMes.style.display='none';
 
   const now   = new Date();
   const year  = now.getFullYear();
@@ -3155,14 +3159,32 @@ async function adminVerTecnico(tech) {
   const wrap = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
   document.getElementById('admin-view-tech-name').textContent = tech;
-  // Calcular total apenas das instalações concluídas
-  const totalValor = doneAdmin.reduce((s, o) => {
-    if (!o.valorInstalacao) return s;
+  // Calcular total do mês e do dia
+  const hoje = new Date();
+  let totalMes = 0, totalDia = 0;
+  doneAdmin.forEach(o => {
+    if (!o.valorInstalacao) return;
     const v = parseFloat(o.valorInstalacao);
-    return s + (isNaN(v) ? 0 : v);
-  }, 0);
-  const totalEl = document.getElementById('admin-view-tech-total');
-  if (totalEl) totalEl.textContent = totalValor > 0 ? '💰 Total concluído: R$' + totalValor.toFixed(2).replace('.',',') : '';
+    if (isNaN(v)) return;
+    // Filtrar pelo mês atual
+    if (o.data && o.data.trim() && o.data !== 'undefined') {
+      const d = parseDate(o.data);
+      if (d && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()) {
+        totalMes += v;
+        if (d.getDate() === hoje.getDate()) totalDia += v;
+      }
+    }
+  });
+  const elDia = document.getElementById('admin-view-tech-total-dia');
+  const elMes = document.getElementById('admin-view-tech-total-mes');
+  if (elDia) {
+    if (totalDia > 0) { elDia.textContent = '📅 Hoje: R$' + totalDia.toFixed(2).replace('.',','); elDia.style.display = 'block'; }
+    else elDia.style.display = 'none';
+  }
+  if (elMes) {
+    if (totalMes > 0) { elMes.textContent = '💰 Mês: R$' + totalMes.toFixed(2).replace('.',','); elMes.style.display = 'block'; }
+    else elMes.style.display = 'none';
+  }
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
 
   // Renderizar calendário
