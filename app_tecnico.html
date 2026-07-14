@@ -3257,7 +3257,7 @@ async function enviarResumoDia(tech) {
     const veiculosLinhas = veiculos.map(v => {
       const partes = v.split(' | ');
       const modelo = partes[0] || v;
-      return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo : '');
+      return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
     }).join('\n');
 
     return '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
