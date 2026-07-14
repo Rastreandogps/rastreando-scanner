@@ -3260,7 +3260,7 @@ async function enviarResumoDia(tech) {
       return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo : '');
     }).join('\n');
 
-    return '✅ *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
+    return '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
   }).join('\n\n');
 
   const totalStr = totalGeral > 0 ? '\n\n💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '';
