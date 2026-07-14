@@ -558,9 +558,12 @@
       <div id="admin-view-tech-btns" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"></div>
       <!-- Bloco de notas -->
       <div id="admin-resumo-geral" style="display:block;">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📝 Bloco de notas</div>
-        <textarea id="admin-bloco-notas" placeholder="Anote aqui o que não pode esquecer..." style="width:100%;min-height:180px;padding:14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;resize:vertical;outline:none;line-height:1.6;color:var(--text);background:#fefce8;" oninput="salvarBlocoNotas()"></textarea>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:right;" id="admin-notas-status">💾 Salvo automaticamente</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">📝 Bloco de notas</div>
+          <div style="font-size:11px;color:var(--muted);" id="admin-notas-status">💾 Salvo</div>
+        </div>
+        <div id="admin-notas-lista" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <button onclick="adicionarNota()" style="width:100%;margin-top:10px;padding:10px;background:#fefce8;border:2px dashed #fde68a;border-radius:12px;font-size:13px;font-weight:700;color:#92400e;cursor:pointer;">+ Nova nota</button>
       </div>
       <!-- Calendário do técnico selecionado -->
       <div id="admin-view-tech-content" style="display:none;">
@@ -2953,26 +2956,86 @@ async function enviarConfirmacaoClienteModal() {
 }
 
 // ── Admin: visualizar calendário de um técnico
+// ── BLOCO DE NOTAS
+let _notasData = [];
+
 function renderResumoGeral() {
-  // Carregar notas salvas
-  try {
-    const nota = localStorage.getItem('admin_bloco_notas') || '';
-    const el = document.getElementById('admin-bloco-notas');
-    if (el && !el.value) el.value = nota;
-  } catch(_) {}
-  // Atualizar contagem nos botões
+  carregarNotas();
   gerarElementosDinamicos();
 }
 
-function salvarBlocoNotas() {
-  const el = document.getElementById('admin-bloco-notas');
-  if (!el) return;
+function carregarNotas() {
   try {
-    localStorage.setItem('admin_bloco_notas', el.value);
+    const raw = localStorage.getItem('admin_notas_v2');
+    _notasData = raw ? JSON.parse(raw) : [];
+  } catch(_) { _notasData = []; }
+  if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '' }];
+  renderNotas();
+}
+
+function salvarNotas() {
+  try {
+    localStorage.setItem('admin_notas_v2', JSON.stringify(_notasData));
     const st = document.getElementById('admin-notas-status');
-    if (st) { st.textContent = '💾 Salvo'; setTimeout(() => { if(st) st.textContent = '💾 Salvo automaticamente'; }, 1500); }
+    if (st) { st.textContent = '💾 Salvo'; setTimeout(() => { if(st) st.textContent = '💾 Salvo'; }, 1000); }
   } catch(_) {}
 }
+
+function renderNotas() {
+  const lista = document.getElementById('admin-notas-lista');
+  if (!lista) return;
+  lista.innerHTML = _notasData.map((nota, i) => {
+    return '<div style="background:#fefce8;border:1.5px solid #fde68a;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;">' +
+      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Anote aqui..." style="width:100%;min-height:80px;padding:8px;border:none;background:transparent;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.6;color:#1a2744;">' + esc(nota.texto) + '</textarea>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button onclick="adicionarNota()" style="flex:1;padding:8px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ OK — Nova nota</button>' +
+        '<button onclick="concluirNota(' + nota.id + ')" style="flex:1;padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluído</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function atualizarNota(id, valor) {
+  const nota = _notasData.find(n => n.id === id);
+  if (nota) { nota.texto = valor; salvarNotas(); }
+}
+
+function adicionarNota() {
+  _notasData.push({ id: Date.now(), texto: '' });
+  salvarNotas();
+  renderNotas();
+  // Focar no novo textarea
+  setTimeout(() => {
+    const areas = document.querySelectorAll('[data-nota-id]');
+    if (areas.length) areas[areas.length-1].focus();
+  }, 100);
+}
+
+function concluirNota(id) {
+  const nota = _notasData.find(n => n.id === id);
+  const preview = nota && nota.texto.trim() ? '"' + nota.texto.trim().slice(0,40) + (nota.texto.length > 40 ? '...' : '') + '"' : 'esta nota';
+  // Modal de confirmação
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = '<div style="background:white;border-radius:16px;padding:24px;max-width:320px;width:100%;">' +
+    '<div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:8px;">✅ Concluído?</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Tem certeza que deseja remover ' + esc(preview) + '?</div>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<button id="cn-nao" style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:white;cursor:pointer;font-weight:600;">Cancelar</button>' +
+      '<button id="cn-sim" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--success);color:white;cursor:pointer;font-weight:700;">Remover</button>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cn-sim').onclick = () => {
+    document.body.removeChild(overlay);
+    _notasData = _notasData.filter(n => n.id !== id);
+    if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '' }];
+    salvarNotas();
+    renderNotas();
+  };
+  overlay.querySelector('#cn-nao').onclick = () => document.body.removeChild(overlay);
+}
+
+function salvarBlocoNotas() {} // mantido para compatibilidade
 
 async function adminVerTodos() {
   adminTechSelecionado = '';
