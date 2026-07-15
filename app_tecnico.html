@@ -3091,8 +3091,10 @@ function carregarNotas() {
   try {
     const raw = localStorage.getItem('admin_notas_v2');
     _notasData = raw ? JSON.parse(raw) : [];
+    // Migrar notas antigas que não têm campo link
+    _notasData = _notasData.map(n => ({ id: n.id, texto: n.texto || '', link: n.link || '' }));
   } catch(_) { _notasData = []; }
-  if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '' }];
+  if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '', link: '' }];
   renderNotas();
 }
 
@@ -3137,12 +3139,22 @@ function renderNotas() {
   const lista = document.getElementById('admin-notas-lista');
   if (!lista) return;
   lista.innerHTML = _notasData.map((nota, i) => {
+    const linkHtml = nota.link
+      ? '<a href="' + esc(nota.link) + '" target="_blank" style="display:block;padding:8px 14px;background:#f0f9ff;border-top:1px dashed #bae6fd;font-size:12px;color:var(--accent);word-break:break-all;text-decoration:underline;">' +
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-right:4px;vertical-align:middle;"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>' +
+          esc(nota.link) + '</a>'
+      : '';
     return '<div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">' +
       '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);">' +
         '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>' +
         '<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Nota ' + (i+1) + '</span>' +
       '</div>' +
-      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Digite sua anotação aqui..." style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.7;color:var(--text);">' + esc(nota.texto) + '</textarea>' +
+      '<textarea oninput="atualizarNota(' + nota.id + ',this.value,null)" placeholder="Digite sua anotação aqui..." style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.7;color:var(--text);">' + esc(nota.texto) + '</textarea>' +
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--border);background:#fafafa;">' +
+        '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" style="flex-shrink:0;"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>' +
+        '<input type="url" oninput="atualizarNota(' + nota.id + ',null,this.value)" placeholder="Cole um link aqui (opcional)..." value="' + esc(nota.link) + '" style="flex:1;border:none;background:transparent;font-size:12px;outline:none;color:var(--accent);min-width:0;">' +
+      '</div>' +
+      linkHtml +
       '<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">' +
         '<button onclick="concluirNota(' + nota.id + ')" style="display:flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--success);border:1.5px solid var(--success);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">' +
           '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Concluído' +
@@ -3152,13 +3164,16 @@ function renderNotas() {
   }).join('');
 }
 
-function atualizarNota(id, valor) {
+function atualizarNota(id, texto, link) {
   const nota = _notasData.find(n => n.id === id);
-  if (nota) { nota.texto = valor; salvarNotas(); }
+  if (!nota) return;
+  if (texto !== null) nota.texto = texto;
+  if (link  !== null) nota.link  = link;
+  salvarNotas();
 }
 
 function adicionarNota() {
-  _notasData.push({ id: Date.now(), texto: '' });
+  _notasData.push({ id: Date.now(), texto: '', link: '' });
   salvarNotas();
   renderNotas();
   // Focar no novo textarea
@@ -3185,7 +3200,7 @@ function concluirNota(id) {
   overlay.querySelector('#cn-sim').onclick = () => {
     document.body.removeChild(overlay);
     _notasData = _notasData.filter(n => n.id !== id);
-    if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '' }];
+    if (_notasData.length === 0) _notasData = [{ id: Date.now(), texto: '', link: '' }];
     salvarNotas();
     renderNotas();
   };
