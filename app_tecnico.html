@@ -313,6 +313,13 @@
     50%      { opacity:1; }
   }
 
+    [contenteditable][placeholder].nota-empty:before {
+    content: attr(placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+    display: block;
+  }
+
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .screen { padding: 14px; }
@@ -575,6 +582,12 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
         <h3 style="margin:0;">✅ Serviços Concluídos</h3>
         <div class="sync-indicator" id="admin-done-count" style="font-size:13px;font-weight:600;color:var(--success);"></div>
+      </div>
+      <!-- Campo de busca -->
+      <div style="position:relative;margin-bottom:12px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="admin-done-busca" placeholder="Buscar por nome do cliente..." oninput="renderAdminDoneList()"
+          style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
       </div>
       <!-- Filtro por mês -->
       <div id="admin-done-mes-btns" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
@@ -2517,6 +2530,12 @@ function renderAdminDoneList() {
     });
   }
 
+  // Filtro por nome
+  const busca = (document.getElementById('admin-done-busca')?.value || '').toLowerCase().trim();
+  if (busca) {
+    items = items.filter(o => (o.nome || '').toLowerCase().includes(busca));
+  }
+
   // Atualizar contadores nos filtros
   TECH_NAMES.forEach(t => {
     const el = document.getElementById('afd-' + t);
@@ -3077,6 +3096,36 @@ function carregarNotas() {
   renderNotas();
 }
 
+function linkificar(texto) {
+  return texto.replace(/https?:\/\/[^\s<>"]+/g, function(url) {
+    return '<a href="' + url + '" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;word-break:break-all;">' + url + '</a>';
+  });
+}
+
+function atualizarNotaDiv(el, id) {
+  // Pega texto puro (sem HTML) para salvar
+  const texto = el.innerText || el.textContent || '';
+  const nota = _notasData.find(n => n.id === id);
+  if (nota) { nota.texto = texto; salvarNotas(); }
+  // Re-linkificar após um pequeno delay (não interrompe a digitação)
+  clearTimeout(el._linkTimer);
+  el._linkTimer = setTimeout(() => {
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    el.innerHTML = linkificar(esc(el.innerText));
+    // Tentar restaurar cursor no final
+    if (range) {
+      try {
+        const newRange = document.createRange();
+        newRange.selectNodeContents(el);
+        newRange.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      } catch(_) {}
+    }
+  }, 800);
+}
+
 function salvarNotas() {
   try {
     localStorage.setItem('admin_notas_v2', JSON.stringify(_notasData));
@@ -3089,12 +3138,13 @@ function renderNotas() {
   const lista = document.getElementById('admin-notas-lista');
   if (!lista) return;
   lista.innerHTML = _notasData.map((nota, i) => {
+    const textoHtml = linkificar(esc(nota.texto));
     return '<div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">' +
       '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);">' +
         '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>' +
         '<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Nota ' + (i+1) + '</span>' +
       '</div>' +
-      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" placeholder="Digite sua anotação aqui..." style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.7;color:var(--text);">' + esc(nota.texto) + '</textarea>' +
+      '<div contenteditable="true" data-nota-id="' + nota.id + '" oninput="atualizarNotaDiv(this,' + nota.id + ')" style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;outline:none;line-height:1.7;color:var(--text);word-break:break-word;" placeholder="Digite sua anotação aqui...">' + textoHtml + '</div>' +
       '<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">' +
         '<button onclick="concluirNota(' + nota.id + ')" style="display:flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--success);border:1.5px solid var(--success);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">' +
           '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Concluído' +
@@ -3102,6 +3152,12 @@ function renderNotas() {
       '</div>' +
     '</div>';
   }).join('');
+  // Aplicar placeholder via CSS
+  document.querySelectorAll('[contenteditable][placeholder]').forEach(el => {
+    if (!el.textContent.trim()) el.classList.add('nota-empty');
+    el.addEventListener('focus', () => el.classList.remove('nota-empty'));
+    el.addEventListener('blur',  () => { if (!el.textContent.trim()) el.classList.add('nota-empty'); });
+  });
 }
 
 function atualizarNota(id, valor) {
