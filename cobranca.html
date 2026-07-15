@@ -665,6 +665,7 @@ function renderClients() {
   if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
   if (currentFilter === 'just')    pool = pool.filter(c => c.justificativa && c.justificativa.trim());
   if (currentDateFilter !== 'all') pool = pool.filter(c => formatarData(c.mes) === currentDateFilter);
+  pool.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   renderDateFilterOptions();
 
