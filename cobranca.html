@@ -393,9 +393,12 @@ let importMode = 'AT';
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
 
 // ── CHAVE DE IDENTIDADE ──────────────────────────────────
-// Usada para matching na reimportação: nome + telefone normalizado
+// Normaliza para os últimos 11 dígitos (sem código do país 55)
+// garantindo matching correto entre planilha e clientes salvos
 function clientKey(nome, telefone) {
-  return nome.trim().toLowerCase() + '|' + String(telefone).replace(/\D/g,'');
+  let tel = String(telefone).replace(/\D/g,"");
+  if (tel.startsWith("55") && tel.length > 11) tel = tel.slice(2);
+  return nome.trim().toLowerCase() + "|" + tel;
 }
 
 // ── SELETOR AT / IN ──────────────────────────────────────
