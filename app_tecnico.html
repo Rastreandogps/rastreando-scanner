@@ -2925,7 +2925,7 @@ function enviarMsgFinanceiro() {
   ).join('\n');
 
   const msg =
-    'Olá! Por favor, adicione ' + veiculos.length + ' veículo(s) para o cliente abaixo:\n\n' +
+    '*Por favor, adicione + ' + veiculos.length + ' veículo(s) para o cliente abaixo:*\n\n' +
     '👤 *' + _vexCliente + '*\n' +
     (_vexTelefone ? '📞 ' + _vexTelefone + '\n' : '') +
     '\n' + veiculosStr + '\n\n' +
