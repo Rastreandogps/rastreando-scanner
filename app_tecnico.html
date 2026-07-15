@@ -272,24 +272,12 @@
     border-radius:4px; overflow:visible; position:relative;
   }
   .loading-car {
-    position:absolute; top:-28px; left:-10px;
-    animation: dinoRun 1.4s linear infinite;
+    position:absolute; top:-24px; left:-10px;
+    animation: dinoRun 1.4s linear infinite, dinoBounce .25s ease-in-out infinite alternate;
     font-size:32px; line-height:1;
-    display:flex; flex-direction:column; align-items:center;
+    transform: scaleX(-1);
   }
-  .dino-body {
-    animation: dinoBounce .25s ease-in-out infinite alternate;
-    display:inline-block;
-  }
-  .dino-legs {
-    display:flex; gap:3px; margin-top:-4px;
-    animation: dinoLegs .25s ease-in-out infinite alternate;
-  }
-  .dino-leg {
-    width:4px; height:10px; background:#1a2744; border-radius:2px;
-  }
-  .dino-leg:nth-child(1) { animation: legA .25s ease-in-out infinite alternate; }
-  .dino-leg:nth-child(2) { animation: legB .25s ease-in-out infinite alternate; }
+
   .loading-car-label {
     font-size:13px; font-weight:600; color:var(--muted);
     animation: fadeLabel 1.4s ease-in-out infinite;
@@ -305,15 +293,7 @@
   }
   @keyframes dinoBounce {
     0%   { transform: translateY(0px); }
-    100% { transform: translateY(-4px); }
-  }
-  @keyframes legA {
-    0%   { transform: rotate(-30deg) translateY(0); }
-    100% { transform: rotate(30deg)  translateY(-2px); }
-  }
-  @keyframes legB {
-    0%   { transform: rotate(30deg)  translateY(-2px); }
-    100% { transform: rotate(-30deg) translateY(0); }
+    100% { transform: translateY(-5px); }
   }
   @keyframes trackFill {
     0%   { width:0%; }
@@ -649,13 +629,7 @@
         <div class="loading-car-wrap" id="admin-cal-loading">
           <div class="loading-car-track">
             <div class="loading-track-fill"></div>
-            <div class="loading-car">
-              <div class="dino-body">🦖</div>
-              <div class="dino-legs">
-                <div class="dino-leg"></div>
-                <div class="dino-leg"></div>
-              </div>
-            </div>
+            <div class="loading-car">🦖</div>
           </div>
           <div class="loading-car-label">Carregando ordens... 🏃</div>
         </div>
@@ -1073,10 +1047,7 @@ function getDinoHTML(id, label) {
   return '<div class="loading-car-wrap show" id="' + id + '">' +
     '<div class="loading-car-track">' +
       '<div class="loading-track-fill"></div>' +
-      '<div class="loading-car">' +
-        '<div class="dino-body">🦖</div>' +
-        '<div class="dino-legs"><div class="dino-leg"></div><div class="dino-leg"></div></div>' +
-      '</div>' +
+      '<div class="loading-car">🦖</div>' +
     '</div>' +
     '<div class="loading-car-label">' + label + ' 🏃</div>' +
   '</div>';
