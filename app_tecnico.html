@@ -3102,28 +3102,27 @@ function linkificar(texto) {
   });
 }
 
-function atualizarNotaDiv(el, id) {
-  // Pega texto puro (sem HTML) para salvar
-  const texto = el.innerText || el.textContent || '';
+function renderNotaPreview(el, id) {
   const nota = _notasData.find(n => n.id === id);
-  if (nota) { nota.texto = texto; salvarNotas(); }
-  // Re-linkificar após um pequeno delay (não interrompe a digitação)
-  clearTimeout(el._linkTimer);
-  el._linkTimer = setTimeout(() => {
-    const sel = window.getSelection();
-    const range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
-    el.innerHTML = linkificar(esc(el.innerText));
-    // Tentar restaurar cursor no final
-    if (range) {
-      try {
-        const newRange = document.createRange();
-        newRange.selectNodeContents(el);
-        newRange.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      } catch(_) {}
+  if (!nota) return;
+  const preview = document.getElementById('preview-links-' + id);
+  const temLink = nota.texto.match(/https?:\/\/[^\s]+/);
+  if (temLink) {
+    const html = linkificar(esc(nota.texto).replace(/\n/g, '<br>'));
+    if (preview) {
+      preview.innerHTML = html;
+    } else {
+      // Criar preview se não existir
+      const textarea = el;
+      const div = document.createElement('div');
+      div.id = 'preview-links-' + id;
+      div.style.cssText = 'padding:8px 14px;background:#f0f9ff;border-top:1px dashed #bae6fd;font-size:12px;line-height:1.8;';
+      div.innerHTML = html;
+      textarea.parentNode.insertBefore(div, textarea.nextSibling);
     }
-  }, 800);
+  } else if (preview) {
+    preview.remove();
+  }
 }
 
 function salvarNotas() {
@@ -3138,13 +3137,15 @@ function renderNotas() {
   const lista = document.getElementById('admin-notas-lista');
   if (!lista) return;
   lista.innerHTML = _notasData.map((nota, i) => {
-    const textoHtml = linkificar(esc(nota.texto));
+    const temLink = nota.texto.includes('http');
+    const preview = temLink ? linkificar(esc(nota.texto).split('\n').join('<br>')) : '';
     return '<div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);">' +
       '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f8fafc;border-bottom:1px solid var(--border);">' +
         '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>' +
         '<span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Nota ' + (i+1) + '</span>' +
       '</div>' +
-      '<div contenteditable="true" data-nota-id="' + nota.id + '" oninput="atualizarNotaDiv(this,' + nota.id + ')" style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;outline:none;line-height:1.7;color:var(--text);word-break:break-word;" placeholder="Digite sua anotação aqui...">' + textoHtml + '</div>' +
+      '<textarea data-nota-id="' + nota.id + '" oninput="atualizarNota(' + nota.id + ',this.value)" onblur="renderNotaPreview(this,' + nota.id + ')" placeholder="Digite sua anotação aqui..." style="width:100%;min-height:80px;padding:12px 14px;border:none;background:white;font-size:14px;font-family:inherit;resize:none;outline:none;line-height:1.7;color:var(--text);">' + esc(nota.texto) + '</textarea>' +
+      (temLink ? '<div id="preview-links-' + nota.id + '" style="padding:8px 14px;background:#f0f9ff;border-top:1px dashed #bae6fd;font-size:12px;line-height:1.8;">' + preview + '</div>' : '<div id="preview-links-' + nota.id + '" style="display:none;"></div>') +
       '<div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">' +
         '<button onclick="concluirNota(' + nota.id + ')" style="display:flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--success);border:1.5px solid var(--success);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">' +
           '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Concluído' +
@@ -3152,12 +3153,6 @@ function renderNotas() {
       '</div>' +
     '</div>';
   }).join('');
-  // Aplicar placeholder via CSS
-  document.querySelectorAll('[contenteditable][placeholder]').forEach(el => {
-    if (!el.textContent.trim()) el.classList.add('nota-empty');
-    el.addEventListener('focus', () => el.classList.remove('nota-empty'));
-    el.addEventListener('blur',  () => { if (!el.textContent.trim()) el.classList.add('nota-empty'); });
-  });
 }
 
 function atualizarNota(id, valor) {
