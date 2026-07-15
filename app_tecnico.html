@@ -763,6 +763,26 @@
   </div>
 </div>
 
+<!-- MODAL: VEÍCULOS EXTRAS FINANCEIRO -->
+<div class="modal-overlay" id="modal-veiculos-extra">
+  <div class="modal-box" style="max-width:400px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">🚗 Adicionar veículos</div>
+    <div class="modal-sub" id="modal-vex-cliente"></div>
+    <div id="modal-vex-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <button type="button" onclick="adicionarLinhaVeiculo()" style="width:100%;padding:9px;background:#eff6ff;color:var(--accent);border:2px dashed var(--accent);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Mais um veículo
+    </button>
+    <div id="modal-vex-total" style="margin-top:14px;padding:10px 14px;background:#d1fae5;border-radius:10px;font-size:13px;font-weight:700;color:#065f46;display:none;"></div>
+    <div class="modal-btns" style="margin-top:14px;">
+      <button type="button" class="btn-cancel" onclick="fecharModalVeiculosExtra()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="enviarMsgFinanceiro()" style="background:#25D366;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="white" style="margin-right:4px;vertical-align:middle;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>
+        Enviar no WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: DESCONTO RESUMO DIA -->
 <div class="modal-overlay" id="modal-desconto-resumo">
   <div class="modal-box" style="max-width:380px;">
@@ -2609,7 +2629,10 @@ function renderAdminDoneList() {
       '</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid #bbf7d0;">' +
         '<span style="font-size:11px;font-weight:700;color:var(--success);">✅ Concluído</span>' +
-        '<button onclick="adminReverter(\'' + o.id + '\',\'' + o._tech + '\')" style="padding:5px 12px;background:none;border:1.5px solid var(--muted);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">↩ Reverter</button>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="abrirModalVeiculosExtra(\'' + esc(o.nome) + '\',\'' + esc(o.telefone||'') + '\')" style="padding:5px 10px;background:#eff6ff;color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🚗 + Veículo</button>' +
+          '<button onclick="adminReverter(\'' + o.id + '\',\'' + o._tech + '\')" style="padding:5px 12px;background:none;border:1.5px solid var(--muted);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">↩ Reverter</button>' +
+        '</div>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -2803,6 +2826,113 @@ function enviarOSParaTecnico(id, tech) {
     '👇 Veja no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
 
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ── VEÍCULOS EXTRAS FINANCEIRO
+let _vexCliente = '';
+let _vexTelefone = '';
+let _vexLinhas = 0;
+
+function abrirModalVeiculosExtra(nome, tel) {
+  _vexCliente   = nome;
+  _vexTelefone  = tel;
+  _vexLinhas    = 0;
+  document.getElementById('modal-vex-cliente').textContent = '👤 ' + nome + (tel ? '  •  📞 ' + tel : '');
+  const lista = document.getElementById('modal-vex-lista');
+  lista.innerHTML = '';
+  document.getElementById('modal-vex-total').style.display = 'none';
+  adicionarLinhaVeiculo();
+  document.getElementById('modal-veiculos-extra').classList.add('open'); lockScroll();
+}
+
+function fecharModalVeiculosExtra() {
+  document.getElementById('modal-veiculos-extra').classList.remove('open'); unlockScroll();
+}
+
+function adicionarLinhaVeiculo() {
+  _vexLinhas++;
+  const lista = document.getElementById('modal-vex-lista');
+  const div   = document.createElement('div');
+  div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);';
+  div.innerHTML =
+    '<span style="font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;">Veículo ' + _vexLinhas + '</span>' +
+    '<div style="display:flex;gap:6px;flex:1;">' +
+      '<label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;flex:1;justify-content:center;background:white;" onclick="selecionarBloqueio(this,true)">' +
+        '<input type="radio" name="bloqueio-' + _vexLinhas + '" value="com" style="display:none;"> 🔒 Com bloqueio' +
+      '</label>' +
+      '<label style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;flex:1;justify-content:center;background:white;" onclick="selecionarBloqueio(this,false)">' +
+        '<input type="radio" name="bloqueio-' + _vexLinhas + '" value="sem" style="display:none;"> 📡 Sem bloqueio' +
+      '</label>' +
+    '</div>' +
+    (_vexLinhas > 1 ? '<button type="button" onclick="this.parentElement.remove();atualizarTotalVex()" style="padding:6px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '');
+  lista.appendChild(div);
+  atualizarTotalVex();
+}
+
+function selecionarBloqueio(label, comBloqueio) {
+  const container = label.parentElement;
+  container.querySelectorAll('label').forEach(l => {
+    l.style.background     = 'white';
+    l.style.borderColor    = 'var(--border)';
+    l.style.color          = '';
+  });
+  label.style.background  = comBloqueio ? '#dbeafe' : '#d1fae5';
+  label.style.borderColor = comBloqueio ? '#3b82f6' : '#10b981';
+  label.style.color       = comBloqueio ? '#1d4ed8' : '#065f46';
+  label.querySelector('input').checked = true;
+  atualizarTotalVex();
+}
+
+function atualizarTotalVex() {
+  const lista  = document.getElementById('modal-vex-lista');
+  const totalEl = document.getElementById('modal-vex-total');
+  if (!lista || !totalEl) return;
+  let total = 0;
+  let temSeleção = false;
+  lista.querySelectorAll('input[type=radio]:checked').forEach(radio => {
+    temSeleção = true;
+    total += radio.value === 'com' ? 59.90 : 39.90;
+  });
+  if (temSeleção) {
+    totalEl.style.display = 'block';
+    totalEl.textContent   = '💰 Total adicional: R$' + total.toFixed(2).replace('.',',') + '/mês';
+  } else {
+    totalEl.style.display = 'none';
+  }
+}
+
+function enviarMsgFinanceiro() {
+  const lista = document.getElementById('modal-vex-lista');
+  const linhas = lista.querySelectorAll('[style*="f8fafc"]');
+  let veiculos = [];
+  let total    = 0;
+  let valido   = true;
+
+  linhas.forEach((linha, i) => {
+    const sel = linha.querySelector('input[type=radio]:checked');
+    if (!sel) { valido = false; return; }
+    const com = sel.value === 'com';
+    const val = com ? 59.90 : 39.90;
+    total += val;
+    veiculos.push({ num: i+1, com, val });
+  });
+
+  if (!valido) { showToast('Selecione com ou sem bloqueio para cada veículo', 'error'); return; }
+
+  const veiculosStr = veiculos.map(v =>
+    '🚗 Veículo ' + v.num + ': ' + (v.com ? 'Com bloqueio — R$59,90/mês' : 'Sem bloqueio — R$39,90/mês')
+  ).join('\n');
+
+  const msg =
+    'Olá! Por favor, adicione ' + veiculos.length + ' veículo(s) para o cliente abaixo:\n\n' +
+    '👤 *' + _vexCliente + '*\n' +
+    (_vexTelefone ? '📞 ' + _vexTelefone + '\n' : '') +
+    '\n' + veiculosStr + '\n\n' +
+    '💰 *Total adicional: R$' + total.toFixed(2).replace('.',',') + '/mês*\n\n' +
+    '_Rastreando GPS_ 📍';
+
+  fecharModalVeiculosExtra();
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 
 async function adminReverter(id, tech) {
