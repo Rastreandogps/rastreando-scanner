@@ -613,7 +613,7 @@
         <!-- Carrinho animado de loading -->
         <div class="loading-car-wrap" id="admin-cal-loading">
           <div class="loading-car-track">
-            <div class="loading-car">🚗</div>
+            <div class="loading-car" style="transform:scaleX(-1);">🚗</div>
           </div>
           <div class="loading-car-label">Carregando ordens...</div>
         </div>
@@ -3394,7 +3394,9 @@ async function adminVerTecnico(tech) {
 
   // Buscar ordens do técnico
   setAdminSyncStatus('syncing');
-  // Mostrar carrinho animado
+  // Mostrar área e carrinho animado
+  const wrap      = document.getElementById('admin-view-tech-content');
+  wrap.style.display = 'block';
   const loadingEl = document.getElementById('admin-cal-loading');
   const gridEl    = document.getElementById('admin-cal-grid');
   const listaEl   = document.getElementById('admin-tech-os-list');
@@ -3413,9 +3415,7 @@ async function adminVerTecnico(tech) {
   const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
   _doneAdminCache[tech] = doneAdmin; // salva no cache
 
-  // Mostrar área
-  const wrap = document.getElementById('admin-view-tech-content');
-  wrap.style.display = 'block';
+  // Mostrar área (já exibida acima)
   document.getElementById('admin-view-tech-name').textContent = tech;
   // Calcular total do mês e do dia
   const hoje = new Date();
