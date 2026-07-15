@@ -2853,6 +2853,7 @@ function adicionarLinhaVeiculo() {
   _vexLinhas++;
   const lista = document.getElementById('modal-vex-lista');
   const div   = document.createElement('div');
+  div.className = 'vex-linha';
   div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1.5px solid var(--border);';
   div.innerHTML =
     '<span style="font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;">Veículo ' + _vexLinhas + '</span>' +
@@ -2903,7 +2904,7 @@ function atualizarTotalVex() {
 
 function enviarMsgFinanceiro() {
   const lista = document.getElementById('modal-vex-lista');
-  const linhas = lista.querySelectorAll('[style*="f8fafc"]');
+  const linhas = lista.querySelectorAll('.vex-linha');
   let veiculos = [];
   let total    = 0;
   let valido   = true;
