@@ -261,28 +261,63 @@
   .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-  /* CARRINHO ANIMADO */
+  /* DINOSSAURO ANIMADO */
   .loading-car-wrap {
     display:none; flex-direction:column; align-items:center; justify-content:center;
     padding:40px 20px; gap:16px;
   }
   .loading-car-wrap.show { display:flex; }
   .loading-car-track {
-    width:100%; max-width:280px; height:4px; background:#e2e8f0;
+    width:100%; max-width:280px; height:3px; background:#e2e8f0;
     border-radius:4px; overflow:visible; position:relative;
   }
   .loading-car {
-    position:absolute; top:-14px; left:-10px;
-    animation: carMove 1.6s ease-in-out infinite;
-    font-size:28px; line-height:1;
+    position:absolute; top:-28px; left:-10px;
+    animation: dinoRun 1.4s linear infinite;
+    font-size:32px; line-height:1;
+    display:flex; flex-direction:column; align-items:center;
   }
+  .dino-body {
+    animation: dinoBounce .25s ease-in-out infinite alternate;
+    display:inline-block;
+  }
+  .dino-legs {
+    display:flex; gap:3px; margin-top:-4px;
+    animation: dinoLegs .25s ease-in-out infinite alternate;
+  }
+  .dino-leg {
+    width:4px; height:10px; background:#1a2744; border-radius:2px;
+  }
+  .dino-leg:nth-child(1) { animation: legA .25s ease-in-out infinite alternate; }
+  .dino-leg:nth-child(2) { animation: legB .25s ease-in-out infinite alternate; }
   .loading-car-label {
     font-size:13px; font-weight:600; color:var(--muted);
-    animation: fadeLabel 1.6s ease-in-out infinite;
+    animation: fadeLabel 1.4s ease-in-out infinite;
   }
-  @keyframes carMove {
+  .loading-track-fill {
+    height:100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius:4px;
+    animation: trackFill 1.4s linear infinite;
+  }
+  @keyframes dinoRun {
     0%   { left: -10px; }
-    100% { left: calc(100% - 18px); }
+    100% { left: calc(100% - 10px); }
+  }
+  @keyframes dinoBounce {
+    0%   { transform: translateY(0px); }
+    100% { transform: translateY(-4px); }
+  }
+  @keyframes legA {
+    0%   { transform: rotate(-30deg) translateY(0); }
+    100% { transform: rotate(30deg)  translateY(-2px); }
+  }
+  @keyframes legB {
+    0%   { transform: rotate(30deg)  translateY(-2px); }
+    100% { transform: rotate(-30deg) translateY(0); }
+  }
+  @keyframes trackFill {
+    0%   { width:0%; }
+    100% { width:100%; }
   }
   @keyframes fadeLabel {
     0%,100% { opacity:.5; }
@@ -610,12 +645,19 @@
             <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
           </div>
         </div>
-        <!-- Carrinho animado de loading -->
+        <!-- Dinossauro animado de loading -->
         <div class="loading-car-wrap" id="admin-cal-loading">
           <div class="loading-car-track">
-            <div class="loading-car" style="transform:scaleX(-1);">🚗</div>
+            <div class="loading-track-fill"></div>
+            <div class="loading-car">
+              <div class="dino-body">🦕</div>
+              <div class="dino-legs">
+                <div class="dino-leg"></div>
+                <div class="dino-leg"></div>
+              </div>
+            </div>
           </div>
-          <div class="loading-car-label">Carregando ordens...</div>
+          <div class="loading-car-label">Carregando ordens... 🏃</div>
         </div>
         <div class="cal-grid" id="admin-cal-grid" style="margin-bottom:16px;"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;"></div><button id="admin-resumo-dia-btn" onclick="" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:#25D366;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;"><svg viewBox="0 0 24 24" width="12" height="12" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>📋 Resumo do dia</button></div>
@@ -1027,6 +1069,19 @@ async function gasRequest(payload) {
   }
 }
 
+function getDinoHTML(id, label) {
+  return '<div class="loading-car-wrap show" id="' + id + '">' +
+    '<div class="loading-car-track">' +
+      '<div class="loading-track-fill"></div>' +
+      '<div class="loading-car">' +
+        '<div class="dino-body">🦕</div>' +
+        '<div class="dino-legs"><div class="dino-leg"></div><div class="dino-leg"></div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="loading-car-label">' + label + ' 🏃</div>' +
+  '</div>';
+}
+
 async function loadTechOrders() {
   setSyncStatus('syncing');
   // Busca ordens ativas
@@ -1085,7 +1140,7 @@ function renderTechCalendar() {
   document.getElementById('orders-month-label').textContent = 'Ordens de ' + MONTHS[month];
 
   const grid = document.getElementById('cal-grid');
-  grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
+  grid.innerHTML = getDinoHTML('cal-dino-loading', 'Sincronizando...') + DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
 
   const first  = new Date(year, month, 1).getDay();
   const total  = new Date(year, month+1, 0).getDate();
@@ -1107,6 +1162,10 @@ function renderTechCalendar() {
   const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined'));
 
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
+
+  // Remove dino ao renderizar dias
+  const calDino = document.getElementById('cal-dino-loading');
+  if (calDino) calDino.remove();
 
   for (let d = 1; d <= total; d++) {
     const isToday  = d === now.getDate();
