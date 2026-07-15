@@ -152,21 +152,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-just-clear{background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s}
 .btn-just-clear:active{transform:scale(.96)}
 
-/* ── HISTÓRICO ──────────────────────────────────────── */
-.history-section{margin-top:4px}
-.history-toggle{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;user-select:none}
-.history-toggle-line{flex:1;height:1px;background:var(--border)}
-.history-toggle-label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:6px}
-.history-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.history-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;opacity:.85}
-.history-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.history-name{font-weight:700;font-size:14px;color:var(--text2)}
-.history-value{font-size:12px;font-weight:700;color:var(--muted)}
-.history-date{font-size:11px;color:var(--muted)}
-.history-just{font-size:12px;color:var(--text2);background:var(--purple-dim);border-radius:var(--radius-sm);padding:7px 10px;border:1px solid rgba(156,39,176,.25);line-height:1.5}
-.history-just-label{font-size:10px;font-weight:700;color:var(--purple);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
-.btn-hist-clear{font-size:11px;color:var(--muted2);background:transparent;border:none;cursor:pointer;font-family:var(--font);text-decoration:underline;padding:2px}
-.history-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px 0}
 
 @keyframes cardRemove{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
 .client-card.removing{animation:cardRemove .25s ease forwards}
@@ -359,24 +344,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
     </div>
 
-    <!-- HISTÓRICO -->
-    <div class="history-section" id="historySection" style="display:none">
-      <div class="history-toggle" onclick="toggleHistory()">
-        <div class="history-toggle-line"></div>
-        <div class="history-toggle-label">
-          <span>🗂️ Histórico</span>
-          <span id="historyBadge" style="background:var(--purple);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">0</span>
-          <span id="historyChevron">▼</span>
-        </div>
-        <div class="history-toggle-line"></div>
-      </div>
-      <div id="historyList" style="display:none">
-        <div class="history-list" id="historyCards"></div>
-        <div style="text-align:center;margin-top:8px">
-          <button class="btn-hist-clear" onclick="confirmClearHistory()">🗑️ Limpar histórico completo</button>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -418,12 +385,10 @@ const API_URL    = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7em
 const API_SECRET = 'rastreandogps2025';
 
 let clients = [];
-let history = []; // clientes que saíram da lista mas tinham justificativa
 let currentFilter = 'all';
 let currentDateFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT';
-let historyOpen = false;
 
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
 
@@ -495,8 +460,7 @@ async function importarInadimplentes() {
     clients.forEach(existing => {
       const key = clientKey(existing.nome, existing.telefone);
       if (novosMap.has(key)) {
-        // Ainda está inadimplente
-        // Atualiza dados financeiros mas PRESERVA justificativa, sent, expanded
+        // Ainda está inadimplente na planilha → atualiza dados, preserva tudo
         const fresh = novosMap.get(key);
         clientesMantidos.push({
           ...existing,
@@ -506,21 +470,7 @@ async function importarInadimplentes() {
         });
         novosMap.delete(key); // já processado
       } else {
-        // Sumiu da planilha
-        if (existing.justificativa && existing.justificativa.trim()) {
-          // Tinha justificativa → vai pro histórico
-          history.unshift({
-            id: existing.id,
-            nome: existing.nome,
-            telefone: existing.telefone,
-            valor: existing.valor,
-            mes: existing.mes,
-            justificativa: existing.justificativa,
-            justData: existing.justData,
-            removidoEm: new Date().toLocaleDateString('pt-BR')
-          });
-        }
-        // Sem justificativa → simplesmente remove (pagou e pronto)
+        // Sumiu da planilha → remove sempre, planilha é a fonte da verdade
       }
     });
 
@@ -545,7 +495,6 @@ async function importarInadimplentes() {
     saveToStorage();
 
     const qtd = clients.length;
-    const histNovos = history.length;
     let msg = '✅ ' + qtd + ' cliente' + (qtd !== 1 ? 's' : '') + ' [' + label + '] na lista atual.';
     statusEl.innerHTML = '<div class="import-result" style="display:block">' + msg + '</div>';
     btn.disabled = false;
@@ -745,8 +694,6 @@ function renderClients() {
       ? '<div class="empty-state"><p>Nenhum cliente nesta seleção.</p></div>'
       : pool.map((c,i) => buildCardHTML(c,i)).join('');
   }
-
-  renderHistory();
 }
 
 function buildCardHTML(c, i) {
@@ -861,43 +808,6 @@ function clearJust(id) {
   const ta = document.getElementById('just-' + id);
   if (ta) ta.value = '';
   saveJust(id);
-}
-
-// ── HISTÓRICO ─────────────────────────────────────────────
-function toggleHistory() {
-  historyOpen = !historyOpen;
-  document.getElementById('historyList').style.display = historyOpen ? 'block' : 'none';
-  document.getElementById('historyChevron').textContent = historyOpen ? '▲' : '▼';
-}
-
-function renderHistory() {
-  const section = document.getElementById('historySection');
-  const cards   = document.getElementById('historyCards');
-  const badge   = document.getElementById('historyBadge');
-  if (history.length === 0) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
-  badge.textContent = history.length;
-  cards.innerHTML = history.map(h => `
-    <div class="history-card">
-      <div class="history-card-top">
-        <span class="history-name">${h.nome}</span>
-        <span class="history-value">R$ ${h.valor}</span>
-      </div>
-      <div class="history-date">📅 Venc: ${formatarData(h.mes)} &nbsp;·&nbsp; Saiu em: ${h.removidoEm}</div>
-      <div>
-        <div class="history-just-label">💬 Retorno registrado</div>
-        <div class="history-just">${h.justificativa}</div>
-      </div>
-    </div>`).join('');
-}
-
-function confirmClearHistory() {
-  openModal('Limpar histórico?', 'Todos os ' + history.length + ' registros do histórico serão apagados permanentemente.', () => {
-    history = [];
-    saveToStorage();
-    renderHistory();
-    showToast('🗑️ Histórico limpo');
-  });
 }
 
 // ── AÇÕES DOS CARDS ───────────────────────────────────────
@@ -1016,7 +926,6 @@ function showToast(msg) {
 function saveToStorage() {
   try {
     localStorage.setItem('rg_clients', JSON.stringify(clients));
-    localStorage.setItem('rg_history', JSON.stringify(history));
     localStorage.setItem('rg_fields', JSON.stringify({
       n:  document.getElementById('fNomes').value,
       te: document.getElementById('fTelefones').value,
@@ -1038,9 +947,6 @@ function loadFromStorage() {
         if (c.justData === undefined) c.justData = null;
       });
     }
-    const hs = localStorage.getItem('rg_history');
-    if (hs) history = JSON.parse(hs);
-
     const fl = localStorage.getItem('rg_fields');
     if (fl) {
       const f = JSON.parse(fl);
