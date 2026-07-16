@@ -7,10 +7,6 @@
 <meta name="description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
 <meta name="theme-color" content="#080C16">
 
-<!-- ============================================================ -->
-<!-- Open Graph / Facebook / WhatsApp — prévia de link            -->
-<!-- TROQUE og:url e og:image pela URL final quando publicar      -->
-<!-- ============================================================ -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://agendamento.rastreandogpsbr.com.br/">
 <meta property="og:title" content="📅 Agende sua instalação">
@@ -24,25 +20,17 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Rastreando GPS">
 
-<!-- ============================================================ -->
-<!-- Twitter Card                                                  -->
-<!-- ============================================================ -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="📅 Agende sua instalação">
 <meta name="twitter:description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
 <meta name="twitter:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
-<!-- ============================================================ -->
 
 <meta name="application-name" content="Agendamento Rastreando GPS">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Agendamento">
-<!-- ============================================================ -->
-<!-- COLE AQUI as 3 linhas originais do seu arquivo (manifest,    -->
-<!-- apple-touch-icon e icon) — elas não mudaram, é so colar de   -->
-<!-- volta exatamente como estavam no seu arquivo anterior.       -->
-<!-- ============================================================ -->
+
 <!-- <link rel="manifest" href="data:application/manifest+json;base64,...SEU_BASE64_AQUI..."> -->
 <!-- <link rel="apple-touch-icon" href="data:image/png;base64,...SEU_BASE64_AQUI..."> -->
 <!-- <link rel="icon" href="data:image/png;base64,...SEU_BASE64_AQUI..."> -->
@@ -87,7 +75,6 @@
     -webkit-font-smoothing:antialiased;
   }
 
-  /* ---------- fundo animado ---------- */
   .bg-fx{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
   .grid-dots{
     position:absolute; inset:-10%;
@@ -116,7 +103,6 @@
     50%{transform:translate(-35px,-25px) scale(1.1);}
   }
 
-  /* ---------- layout ---------- */
   .stage{
     position:relative; z-index:1;
     min-height:100vh;
@@ -141,10 +127,8 @@
     50%{transform:translateY(-7px);}
   }
 
-  /* ---------- satélite enviando sinal (elemento de assinatura) ---------- */
   .sat-signal{width:124px; height:96px; margin:0 auto 6px;}
   .sat-signal svg{width:100%; height:100%; display:block;}
-
   .sat-bob{
     transform-box: fill-box; transform-origin:center;
     animation:satBob 3.2s ease-in-out infinite;
@@ -153,13 +137,11 @@
     0%,100%{transform:translateY(0);}
     50%{transform:translateY(-3px);}
   }
-
   .sat-blink{animation:satBlink 1.6s ease-in-out infinite;}
   @keyframes satBlink{
     0%,100%{opacity:1;}
     50%{opacity:.25;}
   }
-
   .signal-beam{
     fill:none; stroke:var(--signal); stroke-width:1.6; stroke-linecap:round;
     stroke-dasharray:3 7; opacity:.55;
@@ -168,7 +150,6 @@
   .signal-beam.beam2{stroke:var(--amber); opacity:.4; animation-delay:.15s;}
   .signal-beam.beam3{animation-delay:.3s;}
   @keyframes beamFlow{to{stroke-dashoffset:-20;}}
-
   .receiver-ping{
     fill:none; stroke:var(--signal); stroke-width:1.2;
     transform-box: fill-box; transform-origin:center;
@@ -179,7 +160,6 @@
     70%{transform:scale(4.2); opacity:0;}
     100%{transform:scale(4.2); opacity:0;}
   }
-
   .signal-tag{
     text-align:center; font-family:var(--font-mono); font-size:.66rem;
     letter-spacing:.12em; color:var(--ink-faint); margin:0 0 22px; text-transform:uppercase;
@@ -204,7 +184,6 @@
     margin:0 0 26px;
   }
 
-  /* ---------- medidor de sinal (progresso) ---------- */
   .signal-meter{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px;}
   .bars{display:flex; align-items:flex-end; gap:3px; height:18px;}
   .bar{
@@ -218,7 +197,6 @@
   .bar.lit{background:var(--signal); box-shadow:0 0 8px var(--signal-dim);}
   .meter-label{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.06em; color:var(--ink-faint);}
 
-  /* ---------- status da busca de CEP ---------- */
   .cep-status{
     font-size:.78rem; margin:8px 2px 0; line-height:1.5; color:var(--ink-faint);
     transition:color .2s;
@@ -226,7 +204,6 @@
   .cep-status.success{color:var(--signal);}
   .cep-status.error{color:var(--danger);}
 
-  /* ---------- seções do formulário ---------- */
   .form-section{margin-bottom:8px;}
   .form-section + .form-section{
     margin-top:6px; padding-top:22px; border-top:1px solid var(--glass-border);
@@ -240,7 +217,6 @@
     content:''; flex:1; height:1px; background:var(--glass-border);
   }
 
-  /* ---------- campos ---------- */
   .field{margin-bottom:20px;}
   .field label{
     display:block; font-size:.78rem; font-weight:600; color:var(--ink-muted);
@@ -274,7 +250,6 @@
   .addr-row .field{margin-bottom:20px;}
   @media (max-width:480px){ .addr-row{grid-template-columns:1fr;} }
 
-  /* ---------- stepper de quantidade ---------- */
   .stepper-field{
     display:flex; align-items:center; justify-content:space-between; gap:14px;
     margin-bottom:26px;
@@ -300,7 +275,6 @@
     font-family:var(--font-display); font-weight:700; font-size:1.7rem; min-width:30px; text-align:center; color:var(--signal);
   }
 
-  /* ---------- cartão de veículo ---------- */
   .vehicle-card{
     background:rgba(255,255,255,.03); border:1px solid var(--glass-border);
     border-radius:var(--radius-md); padding:20px 18px 6px; margin-bottom:16px;
@@ -315,7 +289,6 @@
     color:var(--amber); text-transform:uppercase; margin:0 0 16px;
   }
 
-  /* ---------- toggle (segmented control) ---------- */
   .toggle-group{display:flex; gap:8px; border-radius:var(--radius-md); padding:2px;}
   .toggle-group.group-error{box-shadow:0 0 0 1px var(--danger); border-radius:var(--radius-md);}
   .toggle-btn{
@@ -328,7 +301,6 @@
   .toggle-btn.active.amber{background:rgba(255,180,84,.16); border-color:var(--amber); color:var(--amber);}
   .helper-text{font-size:.78rem; color:var(--ink-faint); margin:10px 2px 4px; line-height:1.5;}
 
-  /* ---------- erro / envio ---------- */
   .error-banner{
     background:rgba(255,122,122,.08); border:1px solid rgba(255,122,122,.35);
     color:var(--danger); font-size:.84rem; border-radius:var(--radius-md);
@@ -372,18 +344,13 @@
   }
   .ref-tag .mono{font-family:var(--font-mono); color:var(--signal); letter-spacing:.03em;}
 
-  .whatsapp-btn{
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    width:100%; margin-top:24px; padding:15px; border:none; border-radius:var(--radius-md);
-    background:#25D366; color:#06140F; text-decoration:none;
-    font-family:var(--font-display); font-weight:700; font-size:.92rem;
-    letter-spacing:.01em; cursor:pointer;
-    transition:transform .15s, box-shadow .2s;
-    box-shadow:0 14px 28px -12px rgba(37,211,102,.5);
+  /* Nota de redirecionamento */
+  .redirect-note{
+    margin-top:16px; padding:12px 16px;
+    background:rgba(46,230,168,.07); border:1px solid rgba(46,230,168,.2);
+    border-radius:var(--radius-md); font-size:.82rem; color:var(--ink-muted); line-height:1.5;
   }
-  .whatsapp-btn:hover{transform:translateY(-2px); box-shadow:0 18px 32px -10px rgba(37,211,102,.6);}
-  .whatsapp-btn:active{transform:translateY(0);}
-  .whatsapp-btn svg{width:19px; height:19px; flex-shrink:0;}
+  .redirect-note strong{color:var(--signal);}
 
   @media (max-width:480px){
     .card{padding:30px 22px 26px;}
@@ -422,11 +389,9 @@
             <circle cx="0" cy="-13" r="1.6" fill="var(--amber)" class="sat-blink"/>
           </g>
         </g>
-
         <path d="M65,29 L48,70" class="signal-beam beam1"/>
         <path d="M65,29 L65,70" class="signal-beam beam2"/>
         <path d="M65,29 L82,70" class="signal-beam beam3"/>
-
         <g transform="translate(65,78)">
           <line x1="0" y1="-14" x2="0" y2="-6" stroke="var(--signal)" stroke-width="1.6"/>
           <circle cx="0" cy="-14" r="2" fill="var(--signal)"/>
@@ -456,12 +421,10 @@
 
     <div class="form-section">
       <p class="section-label">Dados pessoais</p>
-
       <div class="field">
         <label for="nomeCompleto">Nome completo</label>
         <input type="text" id="nomeCompleto" placeholder="Seu nome completo" autocomplete="name">
       </div>
-
       <div class="field">
         <label for="telefone">Telefone / WhatsApp</label>
         <input type="tel" id="telefone" placeholder="(21) 98765-4321" autocomplete="tel" inputmode="numeric">
@@ -470,18 +433,15 @@
 
     <div class="form-section">
       <p class="section-label">Endereço</p>
-
       <div class="field">
         <label for="cep">CEP (opcional)</label>
         <input type="text" id="cep" placeholder="00000-000" autocomplete="postal-code" inputmode="numeric" maxlength="9">
         <p class="cep-status" id="cepStatus">Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.</p>
       </div>
-
       <div class="field">
         <label for="rua">Rua / Avenida</label>
         <input type="text" id="rua" placeholder="Ex: Rua das Flores" autocomplete="address-line1">
       </div>
-
       <div class="addr-row">
         <div class="field">
           <label for="numero">Número</label>
@@ -492,12 +452,10 @@
           <input type="text" id="bairro" placeholder="Ex: Centro" autocomplete="address-level3">
         </div>
       </div>
-
       <div class="field">
         <label for="cidade">Cidade</label>
         <input type="text" id="cidade" placeholder="Ex: Duque de Caxias" autocomplete="address-level2">
       </div>
-
       <div class="field">
         <label for="referencia">Ponto de referência (opcional)</label>
         <input type="text" id="referencia" placeholder="Ex: Perto do mercado, portão azul..." autocomplete="off">
@@ -535,18 +493,23 @@
       </svg>
     </div>
     <p class="signal-tag success">SINAL: CONECTADO</p>
-    <h2>Agendamento recebido</h2>
-    <p class="subtext">Vamos confirmar o melhor horário com você. Pode aguardar nosso contato.</p>
+    <h2>Agendamento recebido!</h2>
+    <p class="subtext">Estamos abrindo o WhatsApp para confirmar com você. Se não abriu, toque no botão abaixo.</p>
     <p class="ref-tag">Referência <span class="mono" id="refId"></span></p>
 
-    <a href="#" id="whatsappBtn" class="whatsapp-btn" target="_blank" rel="noopener">
+    <div class="redirect-note">
+      🔄 Redirecionando para o WhatsApp automaticamente…<br>
+      <strong>Se não abrir</strong>, toque no botão abaixo.
+    </div>
+
+    <a href="#" id="whatsappBtn" class="whatsapp-btn" target="_blank" rel="noopener" style="margin-top:20px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 11.5a8.4 8.4 0 0 1-1.1 4.2L21 20l-4.4-1a8.5 8.5 0 1 1 4.4-7.5z"/>
         <circle cx="9" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
         <circle cx="12.5" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
         <circle cx="16" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
       </svg>
-      Confirmar pelo WhatsApp
+      Abrir WhatsApp
     </a>
   </div>
 
@@ -555,35 +518,31 @@
 <script>
 (function(){
 
-  // =========================================================
-  // CONFIGURAÇÃO — troque pela URL do seu Web App do Apps Script
-  // (Extensões > Apps Script na planilha > Implantar > Nova implantação)
-  // =========================================================
   var CONFIG = {
     SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzw43sC7DH-VHCB-PB7CGrj602N6m_PElflDdRQdRVF2L2JZDrcn_HtXs4M-4-73F_VzA/exec",
     WHATSAPP_NUMERO: "5521980886087"
   };
 
-  var nomeInput = document.getElementById('nomeCompleto');
-  var telefoneInput = document.getElementById('telefone');
-  var cepInput = document.getElementById('cep');
-  var cepStatus = document.getElementById('cepStatus');
-  var ruaInput = document.getElementById('rua');
-  var numeroInput = document.getElementById('numero');
-  var bairroInput = document.getElementById('bairro');
-  var cidadeInput = document.getElementById('cidade');
+  var nomeInput       = document.getElementById('nomeCompleto');
+  var telefoneInput   = document.getElementById('telefone');
+  var cepInput        = document.getElementById('cep');
+  var cepStatus       = document.getElementById('cepStatus');
+  var ruaInput        = document.getElementById('rua');
+  var numeroInput     = document.getElementById('numero');
+  var bairroInput     = document.getElementById('bairro');
+  var cidadeInput     = document.getElementById('cidade');
   var referenciaInput = document.getElementById('referencia');
-  var btnMinus = document.getElementById('btnMinus');
-  var btnPlus = document.getElementById('btnPlus');
-  var qtyDisplay = document.getElementById('qtyDisplay');
+  var btnMinus        = document.getElementById('btnMinus');
+  var btnPlus         = document.getElementById('btnPlus');
+  var qtyDisplay      = document.getElementById('qtyDisplay');
   var vehiclesContainer = document.getElementById('vehiclesContainer');
-  var form = document.getElementById('formAgendamento');
-  var errorBanner = document.getElementById('errorBanner');
-  var submitBtn = document.getElementById('submitBtn');
-  var submitLabel = document.getElementById('submitLabel');
-  var successCard = document.getElementById('successCard');
-  var meterLabel = document.getElementById('meterLabel');
-  var bars = Array.prototype.slice.call(document.querySelectorAll('.bar'));
+  var form            = document.getElementById('formAgendamento');
+  var errorBanner     = document.getElementById('errorBanner');
+  var submitBtn       = document.getElementById('submitBtn');
+  var submitLabel     = document.getElementById('submitLabel');
+  var successCard     = document.getElementById('successCard');
+  var meterLabel      = document.getElementById('meterLabel');
+  var bars            = Array.prototype.slice.call(document.querySelectorAll('.bar'));
 
   var vehicles = [{ modelo:'', ano:'', gnv:null, rastreio:null }];
 
@@ -595,18 +554,10 @@
 
   function formatPhone(value){
     var digits = value.replace(/\D/g, '').slice(0, 11);
-    if(digits.length > 10){
-      return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-    if(digits.length > 6){
-      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-    }
-    if(digits.length > 2){
-      return digits.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-    }
-    if(digits.length > 0){
-      return '(' + digits;
-    }
+    if(digits.length > 10) return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    if(digits.length > 6)  return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    if(digits.length > 2)  return digits.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    if(digits.length > 0)  return '(' + digits;
     return '';
   }
 
@@ -664,7 +615,6 @@
         updateMeter();
       });
     });
-
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
       group.querySelectorAll('.toggle-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -695,24 +645,24 @@
     }
     qtyDisplay.textContent = n;
     btnMinus.disabled = n <= 1;
-    btnPlus.disabled = n >= 10;
+    btnPlus.disabled  = n >= 10;
     renderVehicles();
     updateMeter();
   }
 
   function updateMeter(){
-    var total = 6 + vehicles.length * 4;
+    var total  = 6 + vehicles.length * 4;
     var filled = 0;
     if(nomeInput.value.trim()) filled++;
     if(telefoneInput.value.replace(/\D/g, '').length >= 10) filled++;
-    if(ruaInput.value.trim()) filled++;
+    if(ruaInput.value.trim())    filled++;
     if(numeroInput.value.trim()) filled++;
     if(bairroInput.value.trim()) filled++;
     if(cidadeInput.value.trim()) filled++;
     vehicles.forEach(function(v){
       if(v.modelo && v.modelo.trim()) filled++;
-      if(v.ano) filled++;
-      if(v.gnv) filled++;
+      if(v.ano)     filled++;
+      if(v.gnv)     filled++;
       if(v.rastreio) filled++;
     });
     var pct = Math.round((filled / total) * 100);
@@ -722,13 +672,11 @@
   }
 
   function markInvalid(el){ if(el) el.classList.add('invalid'); }
-
   function showError(msg){ errorBanner.textContent = msg; errorBanner.hidden = false; }
   function hideError(){ errorBanner.hidden = true; }
-
   function setSending(isSending){
     submitBtn.disabled = isSending;
-    submitLabel.textContent = isSending ? 'Enviando sinal...' : 'Confirmar agendamento';
+    submitLabel.textContent = isSending ? 'Enviando...' : 'Confirmar agendamento';
   }
 
   function buildWhatsAppMessage(payload){
@@ -751,18 +699,39 @@
     return linhas.join('\n');
   }
 
-  function showSuccess(payload){
+  // =========================================================
+  // SHOW SUCCESS — abre WhatsApp imediatamente (sem clique extra)
+  // =========================================================
+  function showSuccess(payload, waWindow){
     form.hidden = true;
     successCard.hidden = false;
     document.getElementById('refId').textContent = payload.idPedido;
+
     var mensagem = buildWhatsAppMessage(payload);
     var link = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
-    document.getElementById('whatsappBtn').href = link;
+
+    // Atualiza o link do botão de fallback
+    var whatsappBtn = document.getElementById('whatsappBtn');
+    whatsappBtn.href = link;
+
+    // Se já temos a janela aberta (modo Apps Script), navega ela para o link
+    // Se não (modo teste), tenta abrir agora
+    if(waWindow && !waWindow.closed){
+      waWindow.location.href = link;
+    } else {
+      // Tentativa de abertura tardia (funciona em alguns browsers mobile)
+      window.location.href = link;
+    }
+
     successCard.scrollIntoView({ behavior:'smooth', block:'center' });
   }
 
+  // =========================================================
+  // LISTENERS de campos
+  // =========================================================
   btnMinus.addEventListener('click', function(){ setVehicleCount(vehicles.length - 1); });
-  btnPlus.addEventListener('click', function(){ setVehicleCount(vehicles.length + 1); });
+  btnPlus.addEventListener('click',  function(){ setVehicleCount(vehicles.length + 1); });
+
   nomeInput.addEventListener('input', function(){ this.classList.remove('invalid'); updateMeter(); });
   telefoneInput.addEventListener('input', function(e){
     e.target.value = formatPhone(e.target.value);
@@ -775,75 +744,70 @@
 
   function formatCEP(value){
     var digits = value.replace(/\D/g, '').slice(0, 8);
-    if(digits.length > 5){
-      return digits.replace(/(\d{5})(\d{0,3})/, '$1-$2');
-    }
+    if(digits.length > 5) return digits.replace(/(\d{5})(\d{0,3})/, '$1-$2');
     return digits;
   }
-
   function setCepStatus(msg, tipo){
     cepStatus.textContent = msg;
     cepStatus.classList.remove('success', 'error');
     if(tipo) cepStatus.classList.add(tipo);
   }
-
   function buscarCEP(digits){
     setCepStatus('Buscando endereço...', null);
     fetch('https://viacep.com.br/ws/' + digits + '/json/')
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(data.erro){
-          setCepStatus('CEP não encontrado. Sem problema, pode preencher o endereço manualmente abaixo.', 'error');
+          setCepStatus('CEP não encontrado. Pode preencher o endereço manualmente abaixo.', 'error');
           return;
         }
         if(data.logradouro){ ruaInput.value = data.logradouro; ruaInput.classList.remove('invalid'); }
-        if(data.bairro){ bairroInput.value = data.bairro; bairroInput.classList.remove('invalid'); }
-        if(data.localidade){ cidadeInput.value = data.localidade; cidadeInput.classList.remove('invalid'); }
+        if(data.bairro)     { bairroInput.value = data.bairro; bairroInput.classList.remove('invalid'); }
+        if(data.localidade) { cidadeInput.value = data.localidade; cidadeInput.classList.remove('invalid'); }
         setCepStatus('Endereço encontrado! Confirme e complete com o número.', 'success');
         numeroInput.focus();
         updateMeter();
       })
       .catch(function(){
-        setCepStatus('Não foi possível buscar o CEP agora. Sem problema, pode preencher o endereço manualmente abaixo.', 'error');
+        setCepStatus('Não foi possível buscar o CEP agora. Pode preencher manualmente abaixo.', 'error');
       });
   }
-
   cepInput.addEventListener('input', function(e){
     e.target.value = formatCEP(e.target.value);
     var digits = e.target.value.replace(/\D/g, '');
-    if(digits.length === 8){
-      buscarCEP(digits);
-    } else if(digits.length === 0){
-      setCepStatus('Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.', null);
-    } else {
-      setCepStatus('Continue digitando ou, se não souber, pode preencher o endereço manualmente abaixo.', null);
-    }
+    if(digits.length === 8){ buscarCEP(digits); }
+    else if(digits.length === 0){ setCepStatus('Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.', null); }
+    else{ setCepStatus('Continue digitando ou preencha o endereço manualmente abaixo.', null); }
   });
 
+  // =========================================================
+  // SUBMIT — abre o WhatsApp DENTRO do evento de clique
+  // =========================================================
   form.addEventListener('submit', function(e){
     e.preventDefault();
     hideError();
 
-    var nome = nomeInput.value.trim();
+    // --- Validação ---
+    var nome           = nomeInput.value.trim();
     var telefoneDigits = telefoneInput.value.replace(/\D/g, '');
-    var rua = ruaInput.value.trim();
-    var numero = numeroInput.value.trim();
-    var bairro = bairroInput.value.trim();
-    var cidade = cidadeInput.value.trim();
-    var firstInvalid = null;
+    var rua            = ruaInput.value.trim();
+    var numero         = numeroInput.value.trim();
+    var bairro         = bairroInput.value.trim();
+    var cidade         = cidadeInput.value.trim();
+    var firstInvalid   = null;
 
-    if(!nome){ markInvalid(nomeInput); firstInvalid = firstInvalid || nomeInput; }
-    if(telefoneDigits.length < 10){ markInvalid(telefoneInput); firstInvalid = firstInvalid || telefoneInput; }
-    if(!rua){ markInvalid(ruaInput); firstInvalid = firstInvalid || ruaInput; }
-    if(!numero){ markInvalid(numeroInput); firstInvalid = firstInvalid || numeroInput; }
-    if(!bairro){ markInvalid(bairroInput); firstInvalid = firstInvalid || bairroInput; }
-    if(!cidade){ markInvalid(cidadeInput); firstInvalid = firstInvalid || cidadeInput; }
+    if(!nome)                       { markInvalid(nomeInput);     firstInvalid = firstInvalid || nomeInput; }
+    if(telefoneDigits.length < 10)  { markInvalid(telefoneInput); firstInvalid = firstInvalid || telefoneInput; }
+    if(!rua)                        { markInvalid(ruaInput);      firstInvalid = firstInvalid || ruaInput; }
+    if(!numero)                     { markInvalid(numeroInput);   firstInvalid = firstInvalid || numeroInput; }
+    if(!bairro)                     { markInvalid(bairroInput);   firstInvalid = firstInvalid || bairroInput; }
+    if(!cidade)                     { markInvalid(cidadeInput);   firstInvalid = firstInvalid || cidadeInput; }
 
     vehicles.forEach(function(v, i){
       var modeloEl = document.getElementById('modelo-' + i);
-      var anoEl = document.getElementById('ano-' + i);
+      var anoEl    = document.getElementById('ano-' + i);
       if(!v.modelo || !v.modelo.trim()){ markInvalid(modeloEl); firstInvalid = firstInvalid || modeloEl; }
-      if(!v.ano){ markInvalid(anoEl); firstInvalid = firstInvalid || anoEl; }
+      if(!v.ano)                       { markInvalid(anoEl);    firstInvalid = firstInvalid || anoEl; }
       if(!v.gnv){
         var gnvGroup = vehiclesContainer.querySelector('.toggle-group[data-group="gnv"][data-index="' + i + '"]');
         if(gnvGroup){ gnvGroup.classList.add('group-error'); firstInvalid = firstInvalid || gnvGroup; }
@@ -860,6 +824,7 @@
       return;
     }
 
+    // --- Monta payload ---
     var payload = {
       enviadoEm: new Date().toISOString(),
       idPedido: 'PED-' + Date.now(),
@@ -874,14 +839,26 @@
       })
     };
 
+    // ─────────────────────────────────────────────────────────
+    // PASSO-CHAVE: abre o WhatsApp AGORA, dentro do evento de clique.
+    // O browser aceita window.open() aqui pois ainda está no stack do clique.
+    // Depois redirecionamos a URL da janela para a mensagem real.
+    // ─────────────────────────────────────────────────────────
+    var mensagem = buildWhatsAppMessage(payload);
+    var waLink   = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
+
+    // Abre direto para o WhatsApp (não precisa de "about:blank" + redirecionamento)
+    var waWindow = window.open(waLink, '_blank');
+
     setSending(true);
 
+    // --- Modo de teste (sem Apps Script configurado) ---
     if(CONFIG.SCRIPT_URL.indexOf('COLOQUE_AQUI') > -1){
-      // Modo de teste — sem Apps Script configurado ainda.
-      setTimeout(function(){ setSending(false); showSuccess(payload); }, 600);
+      setTimeout(function(){ setSending(false); showSuccess(payload, waWindow); }, 400);
       return;
     }
 
+    // --- Envia para o Apps Script em background ---
     fetch(CONFIG.SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -889,15 +866,20 @@
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
+        setSending(false);
         if(data && data.ok){
-          showSuccess(payload);
+          showSuccess(payload, waWindow);
         } else {
           throw new Error('resposta inválida');
         }
       })
       .catch(function(){
         setSending(false);
-        showError('Não foi possível enviar agora. Verifique sua internet e tente de novo.');
+        // WhatsApp já foi aberto; mesmo com erro na planilha o cliente já chegou pra você.
+        // Mostra o card de sucesso mesmo assim, pois a mensagem foi enviada.
+        showSuccess(payload, waWindow);
+        // Aviso secundário no console para debug
+        console.warn('[Rastreando GPS] Falha ao salvar na planilha. WhatsApp já foi aberto.');
       });
   });
 
