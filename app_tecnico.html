@@ -4301,9 +4301,10 @@ async function carregarAgendamentos() {
     const veiculosHtml = veiculos.length === 0
       ? '<span style="color:var(--muted);font-size:12px;">Não informado</span>'
       : veiculos.map(function(v, i) {
+          const ano      = v.ano ? ' ' + v.ano : '';
           const gnv      = v.gnv === 'sim' ? ' · GNV' : '';
           const rastreio = v.tipoRastreio === 'com' ? ' · Com bloqueio' : v.tipoRastreio === 'sem' ? ' · Sem bloqueio' : '';
-          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + esc(ano) + '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
         }).join('');
 
     const optsTec = TECH_NAMES.map(function(n) {
