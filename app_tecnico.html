@@ -897,26 +897,26 @@
 
 <!-- MODAL: DESCONTO RESUMO DIA -->
 <div class="modal-overlay" id="modal-desconto-resumo">
-  <div class="modal-box" style="max-width:380px;">
-    <div class="modal-title">💸 Desconto no resumo</div>
-    <div class="modal-sub">Tem algum valor a descontar do técnico hoje? (opcional)</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div class="form-field">
-        <label>Motivo</label>
-        <input type="text" id="desconto-motivo" placeholder="Ex: Combustível, Empréstimo..." style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;width:100%;outline:none;">
-      </div>
-      <div class="form-field">
-        <label>Valor (R$)</label>
-        <div style="display:flex;align-items:center;gap:6px;border:2px solid var(--border);border-radius:10px;padding:0 12px;background:white;">
-          <span style="font-weight:700;color:var(--primary);">R$</span>
-          <input type="number" id="desconto-valor" placeholder="0,00" step="0.01" min="0"
-            style="flex:1;border:none;outline:none;padding:10px 0;font-size:15px;font-weight:600;">
-        </div>
-      </div>
+  <div class="modal-box" style="max-width:400px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">💸 Despesas do dia</div>
+    <div class="modal-sub">Adicione os gastos a descontar do técnico hoje (opcional)</div>
+
+    <!-- Lista de despesas -->
+    <div id="despesas-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+
+    <!-- Botão adicionar despesa -->
+    <button type="button" onclick="adicionarDespesa()" style="width:100%;padding:10px;background:#f0f4ff;border:2px dashed var(--admin);border-radius:10px;color:var(--admin);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
+      + Adicionar despesa
+    </button>
+
+    <!-- Resumo do desconto -->
+    <div id="despesas-resumo" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-top:10px;font-size:13px;color:#92400e;">
+      <div style="display:flex;justify-content:space-between;"><span>Total de despesas:</span><span id="despesas-total-label" style="font-weight:700;">R$ 0,00</span></div>
     </div>
+
     <div class="modal-btns" style="margin-top:16px;">
       <button type="button" class="btn-cancel" onclick="enviarResumoSemDesconto()">Pular</button>
-      <button type="button" class="btn-confirm" onclick="enviarResumoComDesconto()" style="background:var(--success);">✅ OK</button>
+      <button type="button" class="btn-confirm" onclick="enviarResumoComDesconto()" style="background:var(--success);">✅ Confirmar</button>
     </div>
   </div>
 </div>
@@ -1188,7 +1188,7 @@ function showAdminScreen() {
   loadAllOrders();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
-setTimeout(checkNovasOSFormulario, 2000);
+  setTimeout(checkNovasOSFormulario, 2000);
 }
 
 function showTechTab(tab) {
@@ -3718,13 +3718,71 @@ function renderVeiculosAdmin(veiculo) {
 
 // Variável temporária para o resumo pendente
 let _resumoPendente = null;
+let _despesasCounter = 0;
 
 function abrirModalDesconto(tech, msg, totalGeral) {
   _resumoPendente = { tech, msg, totalGeral };
-  document.getElementById('desconto-motivo').value = '';
-  document.getElementById('desconto-valor').value = '';
+  _despesasCounter = 0;
+  document.getElementById('despesas-lista').innerHTML = '';
+  document.getElementById('despesas-resumo').style.display = 'none';
   document.getElementById('modal-desconto-resumo').classList.add('open'); lockScroll();
-  setTimeout(() => document.getElementById('desconto-motivo').focus(), 150);
+  // Já abre com uma linha em branco pra facilitar
+  adicionarDespesa();
+}
+
+function adicionarDespesa() {
+  const id = ++_despesasCounter;
+  const lista = document.getElementById('despesas-lista');
+  const div = document.createElement('div');
+  div.id = 'despesa-row-' + id;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  div.innerHTML =
+    '<input type="text" id="desp-mot-' + id + '" placeholder="Ex: Combustível" oninput="atualizarTotalDespesas()" ' +
+      'style="flex:2;border:2px solid var(--border);border-radius:10px;padding:9px 10px;font-size:13px;outline:none;">' +
+    '<div style="display:flex;align-items:center;gap:4px;border:2px solid var(--border);border-radius:10px;padding:0 8px;background:white;flex:1;">' +
+      '<span style="font-weight:700;color:var(--primary);font-size:13px;">R$</span>' +
+      '<input type="number" id="desp-val-' + id + '" placeholder="0,00" step="0.01" min="0" oninput="atualizarTotalDespesas()" ' +
+        'style="flex:1;border:none;outline:none;padding:9px 0;font-size:13px;font-weight:600;width:60px;">' +
+    '</div>' +
+    '<button type="button" onclick="removerDespesa(' + id + ')" ' +
+      'style="width:32px;height:32px;border-radius:8px;border:none;background:#fee2e2;color:#ef4444;font-size:16px;cursor:pointer;flex-shrink:0;">×</button>';
+  lista.appendChild(div);
+  setTimeout(() => document.getElementById('desp-mot-' + id)?.focus(), 50);
+}
+
+function removerDespesa(id) {
+  const el = document.getElementById('despesa-row-' + id);
+  if (el) el.remove();
+  atualizarTotalDespesas();
+}
+
+function atualizarTotalDespesas() {
+  let total = 0;
+  for (let i = 1; i <= _despesasCounter; i++) {
+    const val = parseFloat(document.getElementById('desp-val-' + i)?.value) || 0;
+    total += val;
+  }
+  const resumo = document.getElementById('despesas-resumo');
+  const label  = document.getElementById('despesas-total-label');
+  if (total > 0) {
+    resumo.style.display = 'block';
+    label.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+  } else {
+    resumo.style.display = 'none';
+  }
+}
+
+function coletarDespesas() {
+  const despesas = [];
+  for (let i = 1; i <= _despesasCounter; i++) {
+    const motEl = document.getElementById('desp-mot-' + i);
+    const valEl = document.getElementById('desp-val-' + i);
+    if (!motEl || !valEl) continue;
+    const motivo = motEl.value.trim();
+    const valor  = parseFloat(valEl.value) || 0;
+    if (motivo && valor > 0) despesas.push({ motivo, valor });
+  }
+  return despesas;
 }
 
 function enviarResumoSemDesconto() {
@@ -3740,19 +3798,21 @@ function enviarResumoComDesconto() {
   document.getElementById('modal-desconto-resumo').classList.remove('open'); unlockScroll();
   if (!_resumoPendente) return;
   const { tech, msg, totalGeral } = _resumoPendente;
-  const tel     = TECH_TEL[tech];
-  const motivo  = document.getElementById('desconto-motivo').value.trim();
-  const valor   = parseFloat(document.getElementById('desconto-valor').value) || 0;
+  const tel      = TECH_TEL[tech];
+  const despesas = coletarDespesas();
 
   let msgFinal = msg;
-  if (motivo && valor > 0) {
-    const liquido = totalGeral - valor;
-    // Substituir linha do total por total bruto + desconto + líquido
+  if (despesas.length > 0) {
+    const totalDespesas = despesas.reduce((s, d) => s + d.valor, 0);
+    const liquido = Math.max(0, totalGeral - totalDespesas);
+    const linhasDespesas = despesas.map(d =>
+      '➖ *' + d.motivo + ': R$' + d.valor.toFixed(2).replace('.', ',') + '*'
+    ).join('\n');
     msgFinal = msg.replace(
-      '💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*',
-      '💰 *Total bruto: R$' + totalGeral.toFixed(2).replace('.',',') + '*\n' +
-      '➖ *Desconto — ' + motivo + ': R$' + valor.toFixed(2).replace('.',',') + '*\n' +
-      '💵 *Total líquido: R$' + (liquido > 0 ? liquido : 0).toFixed(2).replace('.',',') + '*'
+      '💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.', ',') + '*',
+      '💰 *Total bruto: R$' + totalGeral.toFixed(2).replace('.', ',') + '*\n' +
+      linhasDespesas + '\n' +
+      '💵 *Total líquido: R$' + liquido.toFixed(2).replace('.', ',') + '*'
     );
   }
 
