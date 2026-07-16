@@ -4385,6 +4385,8 @@ async function confirmarAgendamentoAba(rowIndex) {
 }
 
 async function ignorarAgendamentoAba(rowIndex) {
+  const confirmar = confirm('Tem certeza que deseja ignorar este agendamento? Ele não aparecerá mais na lista.');
+  if (!confirmar) return;
   await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'ignorado' });
   showToast('Agendamento ignorado.', '');
   carregarAgendamentos();
