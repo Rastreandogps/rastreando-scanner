@@ -4401,11 +4401,17 @@ async function pollCompleto() {
 }
 
 async function checkNovasOSFormulario() {
-  if (document.getElementById('modal-nova-os').classList.contains('open')) return;
   const result = await gasRequest({ action: 'getPendingAgendamentos' });
-  if (!result.ok || !result.data || result.data.length === 0) return;
-  _pendingAgendamentos = result.data;
-  mostrarProximaNovaOS();
+  const pendentes = (result.ok && result.data) ? result.data : [];
+  const badge = document.getElementById('badge-agendamentos');
+  if (badge) {
+    if (pendentes.length > 0) {
+      badge.style.display = 'block';
+      badge.textContent = pendentes.length > 9 ? '9+' : pendentes.length;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
 }
 
 function mostrarProximaNovaOS() {
@@ -4539,7 +4545,7 @@ function fecharModalNovaOS() {
 
     // ── Admin
     if (document.getElementById('screen-admin').style.display !== 'none') {
-      const tabs = ['new-os', 'view-tech', 'done-os', 'acessos'];
+      const tabs = ['new-os', 'agendamentos', 'view-tech', 'done-os', 'acessos'];
       const atual = tabs.find(t => {
         const el = document.getElementById('admin-tab-' + t);
         return el && el.classList.contains('active');
