@@ -319,7 +319,94 @@
     pointer-events: none;
     display: block;
   }
-
+/* ── MODAL NOVA OS DO FORMULÁRIO ── */
+.modal-nova-os {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 60px 16px 24px;
+}
+.modal-nova-os.open { display: flex; }
+.nova-os-box {
+  background: white; border-radius: 20px; width: 100%; max-width: 440px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35); overflow: hidden;
+  animation: slideDown .3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.nova-os-header {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  padding: 20px 22px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.nova-os-pulse {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  animation: pulseRing 1.8s ease-in-out infinite;
+}
+@keyframes pulseRing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,.4); }
+  50%       { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+}
+.nova-os-titulo { color: white; font-weight: 700; font-size: 15px; }
+.nova-os-sub    { color: rgba(255,255,255,.75); font-size: 12px; margin-top: 2px; }
+.nova-os-body   { padding: 18px 22px; }
+.nova-os-campo  { margin-bottom: 10px; }
+.nova-os-campo label {
+  display: block; font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;
+}
+.nova-os-campo .val {
+  font-size: 14px; font-weight: 600; color: var(--primary); line-height: 1.4;
+}
+.nova-os-veiculo-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
+  border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+  margin: 3px 3px 3px 0;
+}
+.nova-os-footer {
+  padding: 14px 22px 20px;
+  display: flex; gap: 10px; border-top: 1px solid var(--border);
+}
+.btn-nova-os-sim {
+  flex: 1; padding: 12px; background: var(--admin); color: white;
+  border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-nova-os-nao {
+  padding: 12px 18px; background: white; color: var(--muted);
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.nova-os-tecnico-wrap {
+  display: flex; gap: 8px; align-items: center; margin-top: 12px;
+  padding: 12px; background: #f8fafc; border-radius: 10px; border: 1px solid var(--border);
+}
+.nova-os-tecnico-wrap label {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; margin: 0;
+}
+.nova-os-tecnico-wrap select {
+  flex: 1; padding: 7px 10px; border: 2px solid var(--border);
+  border-radius: 8px; font-size: 13px; font-weight: 600; outline: none;
+}
+.nova-os-date-wrap {
+  display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  padding: 10px 12px; background: #f8fafc; border-radius: 10px; border: 1px solid var(--border);
+}
+.nova-os-date-wrap label {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; margin: 0;
+}
+.nova-os-date-wrap input[type="date"] {
+  flex: 1; padding: 7px 10px; border: 2px solid var(--border);
+  border-radius: 8px; font-size: 13px; outline: none;
+}
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .screen { padding: 14px; }
@@ -827,7 +914,24 @@
 <!-- OVERLAY admin para toque fora -->
 <div id="destaque-overlay" onclick="_calDayAtivo=null;limparDestaqueCalendario();"
   style="display:none;position:fixed;inset:0;z-index:50;background:transparent;-webkit-tap-highlight-color:transparent;"></div>
-
+  
+<!-- MODAL: NOVA OS DO FORMULÁRIO -->
+<div class="modal-nova-os" id="modal-nova-os">
+  <div class="nova-os-box">
+    <div class="nova-os-header">
+      <div class="nova-os-pulse">📋</div>
+      <div>
+        <div class="nova-os-titulo">Nova OS recebida pelo formulário!</div>
+        <div class="nova-os-sub" id="nova-os-contador">1 agendamento pendente</div>
+      </div>
+    </div>
+    <div class="nova-os-body" id="nova-os-body"></div>
+    <div class="nova-os-footer">
+      <button class="btn-nova-os-nao" onclick="ignorarNovaOS()">Ignorar</button>
+      <button class="btn-nova-os-sim" onclick="confirmarNovaOS()">✅ Adicionar como OS</button>
+    </div>
+  </div>
+</div>
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1045,7 +1149,7 @@ function showTechScreen() {
   showTechTab('calendar');
   loadTechOrders();
   if (pollInterval) clearInterval(pollInterval);
-  pollInterval = setInterval(loadTechOrders, 30000);
+  pollInterval = setInterval(pollCompleto, 30000);
   // Popup motivacional ao entrar
   setTimeout(mostrarMotivacional, 600);
 }
@@ -1058,7 +1162,8 @@ function showAdminScreen() {
   showAdminTab('new-os');
   loadAllOrders();
   if (pollInterval) clearInterval(pollInterval);
-  pollInterval = setInterval(loadAllOrders, 30000);
+  pollInterval = setInterval(pollCompleto, 30000);
+setTimeout(checkNovasOSFormulario, 2000);
 }
 
 function showTechTab(tab) {
@@ -4132,6 +4237,116 @@ document.getElementById('login-user').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); document.getElementById('login-pass').focus(); }
 });
 
+  // ════════════════════════════════
+// INTEGRAÇÃO FORMULÁRIO → APP
+// ════════════════════════════════
+var _pendingAgendamentos = [];
+var _novaOSAtual = null;
+
+async function pollCompleto() {
+  if (currentRole === 'tech')  await loadTechOrders();
+  if (currentRole === 'admin') { await loadAllOrders(); await checkNovasOSFormulario(); }
+}
+
+async function checkNovasOSFormulario() {
+  if (document.getElementById('modal-nova-os').classList.contains('open')) return;
+  const result = await gasRequest({ action: 'getPendingAgendamentos' });
+  if (!result.ok || !result.data || result.data.length === 0) return;
+  _pendingAgendamentos = result.data;
+  mostrarProximaNovaOS();
+}
+
+function mostrarProximaNovaOS() {
+  if (_pendingAgendamentos.length === 0) return;
+  _novaOSAtual = _pendingAgendamentos[0];
+  const contador = document.getElementById('nova-os-contador');
+  if (contador) {
+    contador.textContent = _pendingAgendamentos.length === 1
+      ? '1 agendamento pendente'
+      : _pendingAgendamentos.length + ' agendamentos pendentes';
+  }
+  const veiculos = _novaOSAtual.veiculos || [];
+  let veiculosHtml = '';
+  if (veiculos.length === 0) {
+    veiculosHtml = '<span style="color:var(--muted);font-size:13px;">Não informado</span>';
+  } else {
+    veiculosHtml = veiculos.map(function(v, i) {
+      const gnv      = v.gnv === 'sim' ? ' · GNV' : '';
+      const rastreio = v.tipoRastreio === 'com' ? ' · Com bloqueio' : v.tipoRastreio === 'sem' ? ' · Sem bloqueio' : '';
+      return '<span class="nova-os-veiculo-chip">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') +
+             '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
+    }).join('');
+  }
+  const refFull = _novaOSAtual.pontoReferencia || '';
+  const optsTec = TECH_NAMES.map(function(n) {
+    return '<option value="' + n + '">' + n + '</option>';
+  }).join('');
+  const body = document.getElementById('nova-os-body');
+  if (body) {
+    body.innerHTML =
+      '<div class="nova-os-campo"><label>Cliente</label><div class="val">' + esc(_novaOSAtual.nome || '') + '</div></div>' +
+      '<div class="nova-os-campo"><label>Telefone</label><div class="val">' + esc(_novaOSAtual.telefone || '') + '</div></div>' +
+      '<div class="nova-os-campo"><label>Endereço</label><div class="val">' + esc(_novaOSAtual.endereco || '') +
+        (refFull ? '<br><span style="font-size:12px;color:var(--muted);">📌 ' + esc(refFull) + '</span>' : '') + '</div></div>' +
+      '<div class="nova-os-campo"><label>Veículo(s)</label><div>' + veiculosHtml + '</div></div>' +
+      '<div class="nova-os-tecnico-wrap"><label>Técnico</label><select id="nova-os-tecnico">' + optsTec + '</select></div>' +
+      '<div class="nova-os-date-wrap"><label>Data</label><input type="date" id="nova-os-data"></div>';
+  }
+  document.getElementById('modal-nova-os').classList.add('open');
+  lockScroll();
+}
+
+async function confirmarNovaOS() {
+  if (!_novaOSAtual) return;
+  const tecnico = document.getElementById('nova-os-tecnico')?.value || '';
+  const data    = document.getElementById('nova-os-data')?.value    || '';
+  if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
+  const veiculos = _novaOSAtual.veiculos || [];
+  let veiculoStr = '';
+  if (veiculos.length === 1) {
+    const v = veiculos[0];
+    const obs = 'GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+    veiculoStr = (v.modelo || '') + ' | ' + obs;
+  } else if (veiculos.length > 1) {
+    veiculoStr = veiculos.map(function(v) {
+      const obs = 'GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+      return (v.modelo || '') + ' | ' + obs;
+    }).join(' || ');
+  }
+  setAdminSyncStatus('syncing');
+  const novaId = genId();
+  const result = await gasRequest({
+    action: 'saveOrder', tech: tecnico, id: novaId,
+    nome: _novaOSAtual.nome || '', telefone: _novaOSAtual.telefone || '',
+    endereco: _novaOSAtual.endereco || '', tipo: 'Instalação', data: data,
+    veiculo: veiculoStr, obs: _novaOSAtual.pontoReferencia || ''
+  });
+  if (result.ok) {
+    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'true' });
+    showToast('OS criada para ' + tecnico + '! ✅', 'success');
+    fecharModalNovaOS();
+    await loadAllOrders();
+    _pendingAgendamentos.shift();
+    if (_pendingAgendamentos.length > 0) setTimeout(mostrarProximaNovaOS, 1000);
+  } else {
+    showToast('Erro ao criar OS.', 'error');
+    setAdminSyncStatus('ok');
+  }
+}
+
+async function ignorarNovaOS() {
+  if (!_novaOSAtual) return;
+  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'ignorado' });
+  fecharModalNovaOS();
+  _pendingAgendamentos.shift();
+  if (_pendingAgendamentos.length > 0) setTimeout(mostrarProximaNovaOS, 600);
+}
+
+function fecharModalNovaOS() {
+  document.getElementById('modal-nova-os').classList.remove('open');
+  unlockScroll();
+  _novaOSAtual = null;
+}
 // ════════════════════════════════
 // INICIALIZAÇÃO
 // ════════════════════════════════
