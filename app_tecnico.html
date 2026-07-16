@@ -4270,7 +4270,7 @@ document.getElementById('login-user').addEventListener('keydown', e => {
 async function carregarAgendamentos() {
   const list = document.getElementById('agendamentos-list');
   if (!list) return;
-  list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+  list.innerHTML = getDinoHTML('ag-dino-loading', 'Buscando agendamentos...');
 
   const result = await gasRequest({ action: 'getPendingAgendamentos' });
   if (!result.ok || !result.data) {
@@ -4365,10 +4365,12 @@ async function confirmarAgendamentoAba(rowIndex) {
   let veiculoStr = '';
   if (veiculos.length === 1) {
     const v = veiculos[0];
-    veiculoStr = (v.modelo || '') + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+    const ano = v.ano ? ' ' + v.ano : '';
+    veiculoStr = (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
   } else if (veiculos.length > 1) {
     veiculoStr = veiculos.map(function(v) {
-      return (v.modelo || '') + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+      const ano = v.ano ? ' ' + v.ano : '';
+      return (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
     }).join(' || ');
   }
 
