@@ -1001,10 +1001,13 @@ function salvarSessao(user, role) {
 function gerarElementosDinamicos() {
   const optsTec = TECH_NAMES.map(n => '<option value="' + n + '">' + n + '</option>').join('');
 
-  // Selects de técnico nos formulários
+  // Selects de técnico nos formulários — preserva seleção atual
   ['f-tecnico', 'if-tecnico'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.innerHTML = '<option value="">Selecione...</option>' + optsTec;
+    if (!el) return;
+    const valorAtual = el.value;
+    el.innerHTML = '<option value="">Selecione...</option>' + optsTec;
+    if (valorAtual) el.value = valorAtual;
   });
 
   // Filtros Concluídos
@@ -2030,15 +2033,24 @@ async function submitOS() {
   const tipo    = document.getElementById('f-tipo').value;
   const tecnico = document.getElementById('f-tecnico').value;
   const data    = document.getElementById('f-data').value;
-  const veiculoInputs = document.querySelectorAll('.f-veiculo-item');
+  // Buscar veículos SOMENTE dentro do form manual (não pega inputs da importação)
+  const fvWrap = document.getElementById('f-veiculos-wrap');
+  const veiculoInputs = fvWrap ? fvWrap.querySelectorAll('.f-veiculo-item') : [];
   const veiculosParts = Array.from(veiculoInputs).map(el => el.value.trim()).filter(Boolean);
   const veiculo = veiculosParts.join(' || ');
   const obs     = document.getElementById('f-obs').value.trim();
   if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
   const valorInst = document.getElementById('f-valor')?.value?.trim() || '';
+  const novaId = genId();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, valorInstalacao: valorInst, id: genId() });
-  if (result.ok) { showToast('OS enviada para ' + tecnico + '!', 'success'); clearForm(); await loadAllOrders(); }
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: novaId });
+  if (result.ok) {
+    // Salvar valor separadamente se preenchido
+    if (valorInst) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: valorInst });
+    showToast('OS enviada para ' + tecnico + '!', 'success');
+    clearForm();
+    await loadAllOrders();
+  }
   else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
 }
 
