@@ -4335,6 +4335,13 @@ async function carregarAgendamentos() {
           '<input type="date" id="ag-data-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
         '</div>' +
       '</div>' +
+      '<div style="margin-bottom:10px;">' +
+        '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">💰 Valor da instalação</label>' +
+        '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
+          '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
+          '<input type="number" id="ag-valor-' + ag.rowIndex + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
+        '</div>' +
+      '</div>' +
 
       // Botões
       '<div style="display:flex;gap:8px;">' +
@@ -4365,15 +4372,18 @@ async function confirmarAgendamentoAba(rowIndex) {
     }).join(' || ');
   }
 
+  const valor = document.getElementById('ag-valor-' + rowIndex)?.value || '';
+  const novoId = genId();
   setAdminSyncStatus('syncing');
   const result = await gasRequest({
-    action: 'saveOrder', tech: tecnico, id: genId(),
+    action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
     endereco: ag.endereco || '', tipo: 'Instalação', data: data,
     veiculo: veiculoStr, obs: ag.pontoReferencia || ''
   });
 
   if (result.ok) {
+    if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
     await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true' });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
     await loadAllOrders();
