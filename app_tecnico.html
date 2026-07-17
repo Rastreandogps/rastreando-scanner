@@ -2412,7 +2412,7 @@ function atualizarPreviewMsg() {
     '💰 *Valores:*\n' +
     '    🔧 Instalação: *' + valorStr + '*\n' +
     '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
-    'Em breve nosso técnico entrará em contato para confirmar o horário! 🕒🕗🕤\n\n' +
+    'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
 
@@ -4047,8 +4047,10 @@ async function adminVerTecnico(tech) {
       if (dp) {
         const eHoje   = dp.getDate()===hoje.getDate()   && dp.getMonth()===hoje.getMonth()   && dp.getFullYear()===hoje.getFullYear();
         const eAmanha = dp.getDate()===amanha.getDate() && dp.getMonth()===amanha.getMonth() && dp.getFullYear()===amanha.getFullYear();
-        if (eHoje)   { dataLabel = 'Hoje';   dataBg = '#fee2e2'; dataFg = '#ef4444'; }
+        const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        if (eHoje)        { dataLabel = 'Hoje';   dataBg = '#fee2e2'; dataFg = '#ef4444'; }
         else if (eAmanha) { dataLabel = 'Amanhã'; dataBg = '#fef3c7'; dataFg = '#b45309'; }
+        else              { dataLabel = DIAS_SEMANA[dp.getDay()] + ' · ' + formatDateBR(o.data); }
       }
     }
   // Cores por tipo de OS
