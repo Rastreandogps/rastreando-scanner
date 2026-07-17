@@ -2378,13 +2378,14 @@ function atualizarPreviewMsg() {
     ? d.veiculos.map((v, i) => '    ' + (d.veiculos.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 ') + v.modelo + (v.obs ? '\n       ↳ ' + v.obs : '')).join('\n')
     : '    🚗 ____';
 
-  const dataStr = d.dataISO ? '\n📅 *Data agendada:* ' + formatDateBR(d.dataISO) : '';
+  const dataStr = d.dataISO ? '📅 *Data agendada:* ' + formatDateBR(d.dataISO) + '\n\n' : '';
 
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
-    '✅ *Seu agendamento foi confirmado!*\n\n' +
+    '✅ *Seu agendamento foi confirmado!*\n' +
+    dataStr +
     '📍 *Endereço:* ' + d.endereco + (d.ref ? '\n📌 *Ref.:* ' + d.ref : '') + '\n\n' +
-    '*Veículo(s):*\n' + veiculosTxt + '\n' + dataStr + '\n\n' +
+    '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
     '💰 *Valores:*\n' +
     '    🔧 Instalação: *' + valorStr + '*\n' +
     '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
@@ -2824,15 +2825,16 @@ function enviarConfirmacaoAgendamento(id, tech) {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '\n📅 *Data agendada:* ' + formatDateBR(os.data)
+    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + '\n\n'
     : '';
 
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
-    '✅ *Seu agendamento foi confirmado!*\n\n' +
+    '✅ *Seu agendamento foi confirmado!*\n' +
+    dataStr +
     '📍 *Endereço:* ' + (os.endereco || '') +
     (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
-    '*Veículo(s):*\n' + veiculosTxt + dataStr + '\n\n' +
+    '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
     '💰 *Valores:*\n' +
     '    🔧 Instalação: *' + valorStr + '*\n' +
     '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
@@ -3338,15 +3340,16 @@ function atualizarPreviewModalCliente() {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '\n📅 *Data agendada:* ' + formatDateBR(os.data)
+    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + '\n\n'
     : '';
 
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
-    '✅ *Seu agendamento foi confirmado!*\n\n' +
+    '✅ *Seu agendamento foi confirmado!*\n' +
+    dataStr +
     '📍 *Endereço:* ' + (os.endereco || '') +
     (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
-    '*Veículo(s):*\n' + veiculosTxt + dataStr + '\n\n' +
+    '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
     '💰 *Valores:*\n' +
     '    🔧 Instalação: *' + valorStr + '*\n' +
     '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
