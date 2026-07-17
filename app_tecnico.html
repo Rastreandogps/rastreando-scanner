@@ -852,7 +852,11 @@
       <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="edit-nome"></div>
       <div class="form-field"><label>Telefone *</label><input type="tel" id="edit-tel"></div>
       <div class="form-field"><label>Endereço *</label><input type="text" id="edit-end"></div>
-      <div class="form-field"><label>Veículo</label><input type="text" id="edit-veiculo"></div>
+      <div class="form-field">
+        <label>Veículo(s)</label>
+        <div id="edit-veiculos-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+        <button type="button" onclick="editAdicionarVeiculo()" style="width:100%;padding:8px;background:#f0f4ff;border:2px dashed var(--admin);border-radius:10px;color:var(--admin);font-size:12px;font-weight:700;cursor:pointer;">+ Adicionar veículo</button>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div class="form-field">
           <label>Tipo</label>
@@ -4236,6 +4240,27 @@ function renderDoneList() {
 }
 
 // ── EDITAR OS
+function editAdicionarVeiculo(valor) {
+  if (!window._editVeiculoCount) window._editVeiculoCount = 0;
+  const id   = ++window._editVeiculoCount;
+  const lista = document.getElementById('edit-veiculos-lista');
+  const div  = document.createElement('div');
+  div.id = 'edit-v-row-' + id;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  div.innerHTML =
+    '<input type="text" class="edit-veiculo-input" value="' + (valor || '') + '" placeholder="Ex: Fiat Uno 2020 | GNV: Não" ' +
+      'style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;">' +
+    (id > 1
+      ? '<button type="button" onclick="editRemoverVeiculo(' + id + ')" style="width:32px;height:32px;border-radius:8px;border:none;background:#fee2e2;color:#ef4444;font-size:16px;cursor:pointer;flex-shrink:0;">×</button>'
+      : '<div style="width:32px;flex-shrink:0;"></div>');
+  lista.appendChild(div);
+  if (!valor) setTimeout(() => div.querySelector('input')?.focus(), 50);
+}
+
+function editRemoverVeiculo(id) {
+  document.getElementById('edit-v-row-' + id)?.remove();
+}
+
 async function abrirModalEdit(id, tech) {
   // Buscar OS no allOrders
   let o = (allOrders[tech] || []).find(x => x.id === id);
@@ -4251,11 +4276,18 @@ async function abrirModalEdit(id, tech) {
   document.getElementById('edit-nome').value     = o.nome    || '';
   document.getElementById('edit-tel').value      = o.telefone|| '';
   document.getElementById('edit-end').value      = o.endereco|| '';
-  document.getElementById('edit-veiculo').value  = o.veiculo || '';
   document.getElementById('edit-tipo').value     = o.tipo    || 'Instalação';
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
   document.getElementById('edit-obs').value      = o.obs     || '';
   document.getElementById('edit-valor').value    = o.valorInstalacao || '';
+
+  // Preenche lista dinâmica de veículos
+  window._editVeiculoCount = 0;
+  const lista = document.getElementById('edit-veiculos-lista');
+  lista.innerHTML = '';
+  const veiculos = (o.veiculo || '').split(' || ').map(v => v.trim()).filter(Boolean);
+  if (veiculos.length === 0) veiculos.push('');
+  veiculos.forEach(v => editAdicionarVeiculo(v));
 
   document.getElementById('modal-edit-os').classList.add('open'); lockScroll();
 }
@@ -4271,7 +4303,9 @@ async function confirmarEdit() {
   const nome    = document.getElementById('edit-nome').value.trim();
   const tel     = document.getElementById('edit-tel').value.trim();
   const end     = document.getElementById('edit-end').value.trim();
-  const veiculo = document.getElementById('edit-veiculo').value.trim();
+  // Coleta veículos da lista dinâmica
+  const veiculoItems = document.querySelectorAll('#edit-veiculos-lista .edit-veiculo-input');
+  const veiculo = Array.from(veiculoItems).map(i => i.value.trim()).filter(Boolean).join(' || ');
   const tipo    = document.getElementById('edit-tipo').value;
   const data    = document.getElementById('edit-data').value;
   const obs     = document.getElementById('edit-obs').value.trim();
