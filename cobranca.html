@@ -186,9 +186,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab{flex:1;padding:9px 10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--font);transition:all .2s;text-align:center;line-height:1.3;position:relative}
 .group-tab.active-at{background:var(--red-dim);color:var(--red)}
 .group-tab.active-in{background:var(--orange-dim);color:var(--orange)}
+.group-tab.active-both{background:var(--yellow-dim);color:var(--yellow)}
 .group-tab-count{display:inline-block;background:rgba(255,255,255,.12);border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px;font-weight:800}
 .group-tab.active-at .group-tab-count{background:var(--red);color:#fff}
 .group-tab.active-in .group-tab-count{background:var(--orange);color:#000}
+.group-tab.active-both .group-tab-count{background:var(--yellow);color:#000}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -321,6 +323,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="group-tab" id="gtIN" onclick="switchGroup('IN')">
         🚫 Inadimplentes (IN)<span class="group-tab-count" id="gtCountIN">0</span>
       </button>
+      <button class="group-tab" id="gtBOTH" onclick="switchGroup('BOTH')">
+        ⚠️ AT + IN<span class="group-tab-count" id="gtCountBOTH">0</span>
+      </button>
     </div>
     <div class="stats-row" id="statsRow" style="display:none">
       <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total</div></div>
@@ -408,15 +413,27 @@ let modalCallback = null;
 let importMode = 'AT';
 
 // Getter dinâmico — retorna a lista do grupo ativo
-function currentClients() { return activeGroup === 'AT' ? clientsAT : clientsIN; }
+function currentClients() {
+  if (activeGroup === 'AT')   return clientsAT;
+  if (activeGroup === 'IN')   return clientsIN;
+  return getBothClients(); // BOTH: interseção calculada
+}
 function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
+
+// Calcula a interseção AT ∩ IN pela chave nome+telefone
+function getBothClients() {
+  const keysIN = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
+  return clientsAT.filter(c => keysIN.has(clientKey(c.nome, c.telefone)));
+}
 
 function switchGroup(g) {
   activeGroup = g;
-  const btnAT = document.getElementById('gtAT');
-  const btnIN = document.getElementById('gtIN');
-  btnAT.className = 'group-tab' + (g === 'AT' ? ' active-at' : '');
-  btnIN.className = 'group-tab' + (g === 'IN' ? ' active-in' : '');
+  const btnAT   = document.getElementById('gtAT');
+  const btnIN   = document.getElementById('gtIN');
+  const btnBOTH = document.getElementById('gtBOTH');
+  btnAT.className   = 'group-tab' + (g === 'AT'   ? ' active-at'   : '');
+  btnIN.className   = 'group-tab' + (g === 'IN'   ? ' active-in'   : '');
+  btnBOTH.className = 'group-tab' + (g === 'BOTH' ? ' active-both' : '');
   currentFilter = 'all';
   currentDateFilter = 'all';
   ['All','Pending','Sent','Just'].forEach(x => {
@@ -427,8 +444,9 @@ function switchGroup(g) {
 }
 
 function updateGroupCounts() {
-  document.getElementById('gtCountAT').textContent = clientsAT.length;
-  document.getElementById('gtCountIN').textContent = clientsIN.length;
+  document.getElementById('gtCountAT').textContent   = clientsAT.length;
+  document.getElementById('gtCountIN').textContent   = clientsIN.length;
+  document.getElementById('gtCountBOTH').textContent = getBothClients().length;
 }
 
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); updateGroupCounts(); switchTab('clientes'); });
@@ -729,8 +747,14 @@ function renderClients() {
 
   const totalGeral = clientsAT.length + clientsIN.length;
   if (clients.length === 0) {
-    const label = activeGroup === 'AT' ? '🔴 AT' : '🚫 IN';
-    list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente <strong style="color:var(--yellow)">' + label + '</strong> ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p></div>';
+    let emptyMsg;
+    if (activeGroup === 'BOTH') {
+      emptyMsg = '<p>Nenhum cliente aparece nas duas listas.<br>Importe <strong style="color:var(--yellow)">AT</strong> e <strong style="color:var(--yellow)">IN</strong> para ver a interseção.</p>';
+    } else {
+      const label = activeGroup === 'AT' ? '🔴 AT' : '🚫 IN';
+      emptyMsg = '<p>Nenhum cliente <strong style="color:var(--yellow)">' + label + '</strong> ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p>';
+    }
+    list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>' + emptyMsg + '</div>';
     statsRow.style.display='none'; filterTabs.style.display='none';
     progressWrap.classList.remove('active');
     if (totalGeral === 0) document.getElementById('totalBadge').classList.add('hidden');
@@ -902,6 +926,7 @@ function toggleSent(id) {
 }
 
 function deleteClient(id) {
+  if (activeGroup === 'BOTH') { showToast('Remova da lista AT ou IN'); return; }
   const c = currentClients().find(x=>x.id===id); if(!c) return;
   openModal('Remover cliente?','"'+c.nome+'" será removido da lista.',() => {
     const card = document.getElementById('card-'+id);
@@ -917,6 +942,7 @@ function deleteClient(id) {
 }
 
 function confirmResetSent() {
+  if (activeGroup === 'BOTH') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
   openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
@@ -965,6 +991,7 @@ function copyMsg(id) {
 }
 
 function confirmClear() {
+  if (activeGroup === 'BOTH') { showToast('Limpe pela aba AT ou IN'); return; }
   const label = importMode === 'IN' ? 'IN' : 'AT';
   openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
     if (importMode === 'AT') clientsAT = []; else clientsIN = [];
