@@ -187,10 +187,14 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab.active-at{background:var(--red-dim);color:var(--red)}
 .group-tab.active-in{background:var(--orange-dim);color:var(--orange)}
 .group-tab.active-both{background:var(--yellow-dim);color:var(--yellow)}
+.group-tab.active-canc{background:#1a1a1a;color:#aaa;border-top:2px solid #555}
 .group-tab-count{display:inline-block;background:rgba(255,255,255,.12);border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px;font-weight:800}
 .group-tab.active-at .group-tab-count{background:var(--red);color:#fff}
 .group-tab.active-in .group-tab-count{background:var(--orange);color:#000}
 .group-tab.active-both .group-tab-count{background:var(--yellow);color:#000}
+.group-tab.active-canc .group-tab-count{background:#555;color:#fff}
+.btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #e53935;background:#2a0a0a;color:#e53935;transition:all .2s;width:100%}
+.btn-cancelar-chip:active{transform:scale(.97);background:#e53935;color:#fff}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -318,13 +322,16 @@ body{display:flex;flex-direction:column;min-height:100vh}
   <div class="screen" id="screen-clientes">
     <div class="group-tabs">
       <button class="group-tab active-at" id="gtAT" onclick="switchGroup('AT')">
-        🔴 Atrasados (AT)<span class="group-tab-count" id="gtCountAT">0</span>
+        🔴 AT<span class="group-tab-count" id="gtCountAT">0</span>
       </button>
       <button class="group-tab" id="gtIN" onclick="switchGroup('IN')">
-        🚫 Inadimplentes (IN)<span class="group-tab-count" id="gtCountIN">0</span>
+        🚫 IN<span class="group-tab-count" id="gtCountIN">0</span>
       </button>
       <button class="group-tab" id="gtBOTH" onclick="switchGroup('BOTH')">
-        ⚠️ AT + IN<span class="group-tab-count" id="gtCountBOTH">0</span>
+        ⚠️ AT+IN<span class="group-tab-count" id="gtCountBOTH">0</span>
+      </button>
+      <button class="group-tab" id="gtCANC" onclick="switchGroup('CANC')">
+        🚫 Cancelados<span class="group-tab-count" id="gtCountCANC">0</span>
       </button>
     </div>
     <div class="stats-row" id="statsRow" style="display:none">
@@ -406,7 +413,8 @@ const API_SECRET = 'rastreandogps2025';
 
 let clientsAT = [];
 let clientsIN = [];
-let activeGroup = 'AT'; // grupo visível na aba Clientes
+let clientsCancelados = [];
+let activeGroup = 'AT';
 let currentFilter = 'all';
 let currentDateFilter = 'all';
 let modalCallback = null;
@@ -416,36 +424,47 @@ let importMode = 'AT';
 function currentClients() {
   if (activeGroup === 'AT')   return getATOnly();
   if (activeGroup === 'IN')   return getINOnly();
-  return getBothClients(); // BOTH: interseção calculada
+  if (activeGroup === 'BOTH') return getBothClients();
+  return clientsCancelados;
 }
 function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
 
-// Calcula a interseção AT ∩ IN pela chave nome+telefone
+// Calcula a interseção AT ∩ IN, excluindo já cancelados
 function getBothClients() {
-  const keysIN = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
-  return clientsAT.filter(c => keysIN.has(clientKey(c.nome, c.telefone)));
+  const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
+  const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  return clientsAT.filter(c => {
+    const k = clientKey(c.nome, c.telefone);
+    return keysIN.has(k) && !keysCANC.has(k);
+  });
 }
 
-// AT exclusivo: quem está em AT mas NÃO está em IN
+// AT exclusivo: em AT, não em IN, não cancelado
 function getATOnly() {
-  const keysIN = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
-  return clientsAT.filter(c => !keysIN.has(clientKey(c.nome, c.telefone)));
+  const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
+  const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  return clientsAT.filter(c => {
+    const k = clientKey(c.nome, c.telefone);
+    return !keysIN.has(k) && !keysCANC.has(k);
+  });
 }
 
-// IN exclusivo: quem está em IN mas NÃO está em AT
+// IN exclusivo: em IN, não em AT, não cancelado
 function getINOnly() {
-  const keysAT = new Set(clientsAT.map(c => clientKey(c.nome, c.telefone)));
-  return clientsIN.filter(c => !keysAT.has(clientKey(c.nome, c.telefone)));
+  const keysAT   = new Set(clientsAT.map(c => clientKey(c.nome, c.telefone)));
+  const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  return clientsIN.filter(c => {
+    const k = clientKey(c.nome, c.telefone);
+    return !keysAT.has(k) && !keysCANC.has(k);
+  });
 }
 
 function switchGroup(g) {
   activeGroup = g;
-  const btnAT   = document.getElementById('gtAT');
-  const btnIN   = document.getElementById('gtIN');
-  const btnBOTH = document.getElementById('gtBOTH');
-  btnAT.className   = 'group-tab' + (g === 'AT'   ? ' active-at'   : '');
-  btnIN.className   = 'group-tab' + (g === 'IN'   ? ' active-in'   : '');
-  btnBOTH.className = 'group-tab' + (g === 'BOTH' ? ' active-both' : '');
+  document.getElementById('gtAT').className   = 'group-tab' + (g === 'AT'   ? ' active-at'   : '');
+  document.getElementById('gtIN').className   = 'group-tab' + (g === 'IN'   ? ' active-in'   : '');
+  document.getElementById('gtBOTH').className = 'group-tab' + (g === 'BOTH' ? ' active-both' : '');
+  document.getElementById('gtCANC').className = 'group-tab' + (g === 'CANC' ? ' active-canc' : '');
   currentFilter = 'all';
   currentDateFilter = 'all';
   ['All','Pending','Sent','Just'].forEach(x => {
@@ -459,6 +478,7 @@ function updateGroupCounts() {
   document.getElementById('gtCountAT').textContent   = getATOnly().length;
   document.getElementById('gtCountIN').textContent   = getINOnly().length;
   document.getElementById('gtCountBOTH').textContent = getBothClients().length;
+  document.getElementById('gtCountCANC').textContent = clientsCancelados.length;
 }
 
 window.addEventListener('load', () => { loadFromStorage(); validateFields(); updateGroupCounts(); switchTab('clientes'); });
@@ -810,6 +830,12 @@ function buildCardHTML(c, i) {
       </div>
     </div>`;
 
+  const cancelBtn = activeGroup === 'BOTH'
+    ? `<button class="btn-cancelar-chip" onclick="cancelarChip(${c.id})">✂️ Cancelar chip</button>`
+    : activeGroup === 'CANC'
+    ? `<button class="btn-cancelar-chip" onclick="reativarCliente(${c.id})" style="border-color:var(--green);background:var(--green-dim);color:var(--green)">↩️ Reativar cliente</button>`
+    : '';
+
   return `<div class="client-card${sentClass}${justClass}" id="card-${c.id}" style="animation-delay:${i*.04}s">
     <div class="client-card-head" onclick="toggleCard(${c.id})">
       <div class="client-avatar">${c.sent ? '✓' : initials}</div>
@@ -851,6 +877,7 @@ function buildCardHTML(c, i) {
         </button>
         <button class="btn-copy" onclick="copyMsg(${c.id})" title="Copiar">📋 Copiar mensagem</button>
       </div>
+      ${cancelBtn}
     </div>
   </div>`;
 }
@@ -949,7 +976,7 @@ function toggleSent(id) {
 }
 
 function deleteClient(id) {
-  if (activeGroup === 'BOTH') { showToast('Remova da lista AT ou IN'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use o botão de reativar ou remova pela aba AT/IN'); return; }
   const c = currentClients().find(x=>x.id===id); if(!c) return;
   openModal('Remover cliente?','"'+c.nome+'" será removido da lista.',() => {
     const card = document.getElementById('card-'+id);
@@ -965,7 +992,7 @@ function deleteClient(id) {
 }
 
 function confirmResetSent() {
-  if (activeGroup === 'BOTH') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
   openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
@@ -976,6 +1003,25 @@ function confirmResetSent() {
 function openWhatsAppBlank(id) {
   const c = currentClients().find(x=>x.id===id); if(!c) return;
   window.open('https://wa.me/'+c.telefone,'_blank');
+}
+
+function cancelarChip(id) {
+  const c = getBothClients().find(x=>x.id===id); if(!c) return;
+  openModal('Cancelar chip?', '"'+c.nome+'" será movido para Cancelados.', () => {
+    // Adiciona em cancelados com timestamp
+    clientsCancelados.push({ ...c, canceladoEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
+    saveToStorage(); updateGroupCounts(); renderClients();
+    showToast('✂️ Chip de ' + c.nome.split(' ')[0] + ' cancelado');
+  });
+}
+
+function reativarCliente(id) {
+  const c = clientsCancelados.find(x=>x.id===id); if(!c) return;
+  openModal('Reativar cliente?', '"'+c.nome+'" voltará para a fila AT+IN.', () => {
+    clientsCancelados = clientsCancelados.filter(x=>x.id!==id);
+    saveToStorage(); updateGroupCounts(); renderClients();
+    showToast('↩️ ' + c.nome.split(' ')[0] + ' reativado');
+  });
 }
 
 let pendingConfirmId = null;
@@ -1019,7 +1065,7 @@ function copyMsg(id) {
 }
 
 function confirmClear() {
-  if (activeGroup === 'BOTH') { showToast('Limpe pela aba AT ou IN'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Limpe pela aba AT ou IN'); return; }
   const label = importMode === 'IN' ? 'IN' : 'AT';
   openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
     if (importMode === 'AT') clientsAT = []; else clientsIN = [];
@@ -1054,6 +1100,7 @@ function saveToStorage() {
   try {
     localStorage.setItem('rg_clientsAT', JSON.stringify(clientsAT));
     localStorage.setItem('rg_clientsIN', JSON.stringify(clientsIN));
+    localStorage.setItem('rg_clientsCANC', JSON.stringify(clientsCancelados));
     localStorage.setItem('rg_fields', JSON.stringify({
       n:  document.getElementById('fNomes').value,
       te: document.getElementById('fTelefones').value,
@@ -1082,10 +1129,12 @@ function loadFromStorage() {
       localStorage.removeItem('rg_clients');
       saveToStorage();
     } else {
-      const clAT = localStorage.getItem('rg_clientsAT');
-      const clIN = localStorage.getItem('rg_clientsIN');
-      if (clAT) clientsAT = fixClients(JSON.parse(clAT));
-      if (clIN) clientsIN = fixClients(JSON.parse(clIN));
+      const clAT   = localStorage.getItem('rg_clientsAT');
+      const clIN   = localStorage.getItem('rg_clientsIN');
+      const clCANC = localStorage.getItem('rg_clientsCANC');
+      if (clAT)   clientsAT          = fixClients(JSON.parse(clAT));
+      if (clIN)   clientsIN          = fixClients(JSON.parse(clIN));
+      if (clCANC) clientsCancelados  = fixClients(JSON.parse(clCANC));
     }
     const fl = localStorage.getItem('rg_fields');
     if (fl) {
