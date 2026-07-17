@@ -407,6 +407,29 @@
   flex: 1; padding: 7px 10px; border: 2px solid var(--border);
   border-radius: 8px; font-size: 13px; outline: none;
 }
+  /* Spinner no card de agendamento */
+  .ag-card-loading {
+    opacity: .45;
+    pointer-events: none;
+    position: relative;
+    transition: opacity .2s;
+  }
+  .ag-spinner-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 14px;
+    background: rgba(255,255,255,.35);
+    z-index: 10;
+  }
+  .ag-spinner {
+    width: 38px; height: 38px;
+    border: 4px solid var(--border);
+    border-top-color: var(--admin);
+    border-radius: 50%;
+    animation: agSpin .7s linear infinite;
+  }
+  @keyframes agSpin { to { transform: rotate(360deg); } }
+
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .screen { padding: 14px; }
@@ -4425,6 +4448,17 @@ async function confirmarAgendamentoAba(rowIndex) {
   const data    = document.getElementById('ag-data-' + rowIndex)?.value || '';
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
 
+  // Ativa loading no card
+  const card = document.getElementById('ag-card-' + rowIndex);
+  if (card) {
+    card.classList.add('ag-card-loading');
+    const overlay = document.createElement('div');
+    overlay.className = 'ag-spinner-overlay';
+    overlay.innerHTML = '<div class="ag-spinner"></div>';
+    card.style.position = 'relative';
+    card.appendChild(overlay);
+  }
+
   const veiculos = ag.veiculos || [];
   let veiculoStr = '';
   if (veiculos.length === 1) {
@@ -4455,6 +4489,11 @@ async function confirmarAgendamentoAba(rowIndex) {
     await loadAllOrders();
     carregarAgendamentos();
   } else {
+    // Remove loading em caso de erro
+    if (card) {
+      card.classList.remove('ag-card-loading');
+      card.querySelector('.ag-spinner-overlay')?.remove();
+    }
     showToast('Erro ao criar OS.', 'error');
     setAdminSyncStatus('ok');
   }
