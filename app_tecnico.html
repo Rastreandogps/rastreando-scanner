@@ -984,6 +984,28 @@
     </div>
   </div>
 </div>
+<!-- MODAL: ENVIAR ACESSO AO CLIENTE -->
+<div class="modal-overlay" id="modal-acesso-cliente">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-title">🔐 Enviar acesso ao cliente</div>
+    <div class="modal-sub">Preencha o login do cliente na plataforma</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+      <div class="form-field">
+        <label>Login do cliente</label>
+        <input type="text" id="acesso-login" placeholder="Ex: 21987654321" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;font-weight:600;width:100%;outline:none;">
+      </div>
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px;font-size:12px;color:#0369a1;line-height:1.6;">
+        🔑 Senha padrão: <strong>123456</strong><br>
+        📱 iPhone · Android · 💻 Web
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button type="button" class="btn-cancel" onclick="fecharModalAcesso()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="enviarAcessoCliente()" style="background:#0ea5e9;">📲 Enviar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -2416,7 +2438,7 @@ function atualizarPreviewMsg() {
     '💰 *Valores:*\n' +
     '    🔧 Instalação: *' + valorStr + '*\n' +
     '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
-    'Em breve nosso técnico entrará em contato para confirmar o horário! 🕒🕗🕤\n\n' +
+    'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
 
@@ -4140,6 +4162,13 @@ async function adminVerTecnico(tech) {
             '📋 Enviar OS pro técnico' +
           '</button>' +
         '</div>' +
+
+        // ── Botão enviar acesso ao cliente
+        (o.telefone ? '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+          '<button onclick="abrirModalAcesso(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="width:100%;padding:8px;background:#0ea5e9;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '🔐 Enviar acesso ao cliente' +
+          '</button>' +
+        '</div>' : '') +
         '<div style="display:flex;gap:6px;">' +
           '<button class="admin-view-edit-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar</button>' +
           '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>' +
@@ -4240,6 +4269,47 @@ function renderDoneList() {
 }
 
 // ── EDITAR OS
+// ── MODAL ACESSO AO CLIENTE
+let _acessoOS = null;
+
+function abrirModalAcesso(id, tech) {
+  const os = (allOrders[tech] || []).find(o => o.id === id);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+  _acessoOS = os;
+  document.getElementById('acesso-login').value = '';
+  document.getElementById('modal-acesso-cliente').classList.add('open'); lockScroll();
+  setTimeout(() => document.getElementById('acesso-login').focus(), 150);
+}
+
+function fecharModalAcesso() {
+  document.getElementById('modal-acesso-cliente').classList.remove('open'); unlockScroll();
+  _acessoOS = null;
+}
+
+function enviarAcessoCliente() {
+  const login = document.getElementById('acesso-login').value.trim();
+  if (!login) { showToast('Preencha o login do cliente', 'error'); return; }
+  if (!_acessoOS) return;
+
+  const tel = (_acessoOS.telefone || '').replace(/\D/g, '');
+  if (!tel) { showToast('Telefone do cliente não encontrado', 'error'); return; }
+
+  const msg =
+    '🔐 *ACESSO À PLATAFORMA – RASTREANDO GPS*\n\n' +
+    '👤 *Login:* ' + login + '\n' +
+    '🔑 *Senha:* 123456\n\n' +
+    '📱 *Aplicativo iPhone:*\n' +
+    'https://apps.apple.com/br/app/nobgps-2-0/id6739852876?l=en-GB\n\n' +
+    '📱 *Aplicativo Android:*\n' +
+    'https://play.google.com/store/apps/details?id=br.com.nobgps\n\n' +
+    '💻 *Acesso pelo site:*\n' +
+    'http://web.nobgps.com.br\n\n' +
+    'Qualquer dúvida, estou à disposição! 🚀';
+
+  fecharModalAcesso();
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
 function editAdicionarVeiculo(valor) {
   if (!window._editVeiculoCount) window._editVeiculoCount = 0;
   const id   = ++window._editVeiculoCount;
