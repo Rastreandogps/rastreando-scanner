@@ -221,9 +221,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
 </div>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('dados')" id="tab-dados">📋 Dados</button>
+  <button class="tab active" onclick="switchTab('clientes')" id="tab-clientes">👥 Clientes</button>
   <button class="tab" onclick="switchTab('mensagem')" id="tab-mensagem">✏️ Mensagem</button>
-  <button class="tab" onclick="switchTab('clientes')" id="tab-clientes">👥 Clientes</button>
+  <button class="tab" onclick="switchTab('dados')" id="tab-dados">📋 Dados</button>
 </div>
 
 <div class="main">
@@ -389,9 +389,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
 </div>
 
 <div class="footer-nav">
-  <button class="fnav-btn active" id="fnav-dados" onclick="switchTab('dados')">📋<span>Dados</span></button>
+  <button class="fnav-btn active" id="fnav-clientes" onclick="switchTab('clientes')">👥<span>Clientes</span></button>
   <button class="fnav-btn" id="fnav-mensagem" onclick="switchTab('mensagem')">✏️<span>Mensagem</span></button>
-  <button class="fnav-btn" id="fnav-clientes" onclick="switchTab('clientes')">👥<span>Clientes</span></button>
+  <button class="fnav-btn" id="fnav-dados" onclick="switchTab('dados')">📋<span>Dados</span></button>
 </div>
 
 <div class="toast" id="toast"></div>
