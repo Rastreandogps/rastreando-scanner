@@ -412,10 +412,10 @@ let currentDateFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT';
 
-// Getter dinâmico — retorna a lista do grupo ativo
+// Getter dinâmico — retorna a lista do grupo ativo (com exclusividade)
 function currentClients() {
-  if (activeGroup === 'AT')   return clientsAT;
-  if (activeGroup === 'IN')   return clientsIN;
+  if (activeGroup === 'AT')   return getATOnly();
+  if (activeGroup === 'IN')   return getINOnly();
   return getBothClients(); // BOTH: interseção calculada
 }
 function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
@@ -424,6 +424,18 @@ function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; els
 function getBothClients() {
   const keysIN = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
   return clientsAT.filter(c => keysIN.has(clientKey(c.nome, c.telefone)));
+}
+
+// AT exclusivo: quem está em AT mas NÃO está em IN
+function getATOnly() {
+  const keysIN = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
+  return clientsAT.filter(c => !keysIN.has(clientKey(c.nome, c.telefone)));
+}
+
+// IN exclusivo: quem está em IN mas NÃO está em AT
+function getINOnly() {
+  const keysAT = new Set(clientsAT.map(c => clientKey(c.nome, c.telefone)));
+  return clientsIN.filter(c => !keysAT.has(clientKey(c.nome, c.telefone)));
 }
 
 function switchGroup(g) {
@@ -444,8 +456,8 @@ function switchGroup(g) {
 }
 
 function updateGroupCounts() {
-  document.getElementById('gtCountAT').textContent   = clientsAT.length;
-  document.getElementById('gtCountIN').textContent   = clientsIN.length;
+  document.getElementById('gtCountAT').textContent   = getATOnly().length;
+  document.getElementById('gtCountIN').textContent   = getINOnly().length;
   document.getElementById('gtCountBOTH').textContent = getBothClients().length;
 }
 
