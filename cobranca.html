@@ -182,6 +182,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .footer-nav{background:var(--bg2);border-top:1px solid var(--border);padding:8px 16px;display:flex;justify-content:space-around;align-items:center;position:sticky;bottom:0;z-index:100}
 .fnav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);transition:color .2s;background:none;border:none;font-family:var(--font)}
 .fnav-btn.active{color:var(--yellow)}
+.group-tabs{display:flex;gap:0;background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden;flex-shrink:0}
+.group-tab{flex:1;padding:9px 10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:var(--font);transition:all .2s;text-align:center;line-height:1.3;position:relative}
+.group-tab.active-at{background:var(--red-dim);color:var(--red)}
+.group-tab.active-in{background:var(--orange-dim);color:var(--orange)}
+.group-tab-count{display:inline-block;background:rgba(255,255,255,.12);border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px;font-weight:800}
+.group-tab.active-at .group-tab-count{background:var(--red);color:#fff}
+.group-tab.active-in .group-tab-count{background:var(--orange);color:#000}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -307,6 +314,14 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
   <!-- CLIENTES -->
   <div class="screen" id="screen-clientes">
+    <div class="group-tabs">
+      <button class="group-tab active-at" id="gtAT" onclick="switchGroup('AT')">
+        🔴 Atrasados (AT)<span class="group-tab-count" id="gtCountAT">0</span>
+      </button>
+      <button class="group-tab" id="gtIN" onclick="switchGroup('IN')">
+        🚫 Inadimplentes (IN)<span class="group-tab-count" id="gtCountIN">0</span>
+      </button>
+    </div>
     <div class="stats-row" id="statsRow" style="display:none">
       <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total</div></div>
       <div class="stat-box"><div class="stat-val" id="statEnviados" style="color:var(--green)">0</div><div class="stat-label">Enviados</div></div>
@@ -384,13 +399,39 @@ body{display:flex;flex-direction:column;min-height:100vh}
 const API_URL    = 'https://script.google.com/macros/s/AKfycbytcNWXoxhFawEn4t7emSqMBCKmaPSKDnoxfhZWFKI6If0I_EVoDtVdeT5gaVCGnwda/exec';
 const API_SECRET = 'rastreandogps2025';
 
-let clients = [];
+let clientsAT = [];
+let clientsIN = [];
+let activeGroup = 'AT'; // grupo visível na aba Clientes
 let currentFilter = 'all';
 let currentDateFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT';
 
-window.addEventListener('load', () => { loadFromStorage(); validateFields(); switchTab('clientes'); });
+// Getter dinâmico — retorna a lista do grupo ativo
+function currentClients() { return activeGroup === 'AT' ? clientsAT : clientsIN; }
+function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
+
+function switchGroup(g) {
+  activeGroup = g;
+  const btnAT = document.getElementById('gtAT');
+  const btnIN = document.getElementById('gtIN');
+  btnAT.className = 'group-tab' + (g === 'AT' ? ' active-at' : '');
+  btnIN.className = 'group-tab' + (g === 'IN' ? ' active-in' : '');
+  currentFilter = 'all';
+  currentDateFilter = 'all';
+  ['All','Pending','Sent','Just'].forEach(x => {
+    const el = document.getElementById('ft'+x);
+    if (el) el.classList.toggle('active', x.toLowerCase() === 'all');
+  });
+  renderClients();
+}
+
+function updateGroupCounts() {
+  document.getElementById('gtCountAT').textContent = clientsAT.length;
+  document.getElementById('gtCountIN').textContent = clientsIN.length;
+}
+
+window.addEventListener('load', () => { loadFromStorage(); validateFields(); updateGroupCounts(); switchTab('clientes'); });
 
 // ── CHAVE DE IDENTIDADE ──────────────────────────────────
 // Normaliza para os últimos 11 dígitos (sem código do país 55)
@@ -458,9 +499,10 @@ async function importarInadimplentes() {
       novosMap.set(key, c);
     });
 
-    // Processa clientes existentes
+    // Processa clientes existentes do grupo importado
+    const listaAtual = importMode === 'AT' ? clientsAT : clientsIN;
     const clientesMantidos = [];
-    clients.forEach(existing => {
+    listaAtual.forEach(existing => {
       const key = clientKey(existing.nome, existing.telefone);
       if (novosMap.has(key)) {
         // Ainda está inadimplente na planilha → atualiza dados, preserva tudo
@@ -494,10 +536,15 @@ async function importarInadimplentes() {
       });
     });
 
-    clients = clientesMantidos;
-    saveToStorage();
+    if (importMode === 'AT') clientsAT = clientesMantidos;
+    else                     clientsIN = clientesMantidos;
 
-    const qtd = clients.length;
+    // Sincroniza o grupo visível com o que acabou de ser importado
+    activeGroup = importMode;
+    saveToStorage();
+    updateGroupCounts();
+
+    const qtd = (importMode === 'AT' ? clientsAT : clientsIN).length;
     let msg = '✅ ' + qtd + ' cliente' + (qtd !== 1 ? 's' : '') + ' [' + label + '] na lista atual.';
     statusEl.innerHTML = '<div class="import-result" style="display:block">' + msg + '</div>';
     btn.disabled = false;
@@ -519,7 +566,7 @@ function switchTab(tab) {
   document.getElementById('screen-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('fnav-' + tab).classList.add('active');
-  if (tab === 'clientes') renderClients();
+  if (tab === 'clientes') { updateGroupCounts(); renderClients(); }
   if (tab === 'mensagem') updatePreviews();
 }
 
@@ -554,15 +601,19 @@ function generateClients() {
   const links = parseField(document.getElementById('fLinks').value);
   if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
   if (![tels,meses,vals].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
-  clients = nomes.map((nome, i) => ({
+  const lista = nomes.map((nome, i) => ({
     id: Date.now() + i, nome,
     telefone: formatPhone(tels[i]),
     mes: meses[i], valor: vals[i],
     link: links[i] || '', expanded: false, sent: false,
     justificativa: '', justData: null
   }));
+  // Grava no grupo selecionado no importMode e sincroniza activeGroup
+  if (importMode === 'AT') clientsAT = lista; else clientsIN = lista;
+  activeGroup = importMode;
   saveToStorage();
-  showToast('⚡ ' + clients.length + ' cliente' + (clients.length>1?'s':'') + ' gerado' + (clients.length>1?'s':'') + '!');
+  updateGroupCounts();
+  showToast('⚡ ' + lista.length + ' cliente' + (lista.length>1?'s':'') + ' gerado' + (lista.length>1?'s':'') + '!');
   switchTab('clientes');
 }
 
@@ -607,9 +658,10 @@ function insertVar(v) {
 function updatePreviews() {
   saveTemplate();
   const pc = document.getElementById('previewCard');
-  if (clients.length > 0) {
+  const cl = currentClients();
+  if (cl.length > 0) {
     pc.style.display='block';
-    document.getElementById('previewText').textContent = buildMsg(clients[0]);
+    document.getElementById('previewText').textContent = buildMsg(cl[0]);
   } else { pc.style.display='none'; }
 }
 
@@ -631,7 +683,7 @@ function parseDateBR(str) {
 
 function getUniqueDates() {
   const set = new Set();
-  clients.forEach(c => set.add(formatarData(c.mes)));
+  currentClients().forEach(c => set.add(formatarData(c.mes)));
   return Array.from(set).sort((a,b) => parseDateBR(a) - parseDateBR(b));
 }
 
@@ -640,12 +692,12 @@ function renderDateFilterOptions() {
   const wrap = document.getElementById('dateFilterWrap');
   const clearBtn = document.getElementById('dateFilterClear');
   if (!sel || !wrap) return;
-  if (clients.length === 0) { wrap.style.display='none'; return; }
+  if (currentClients().length === 0) { wrap.style.display='none'; return; }
   wrap.style.display='flex';
   const dates = getUniqueDates();
-  sel.innerHTML = '<option value="all">Todas as datas ('+clients.length+')</option>' +
+  sel.innerHTML = '<option value="all">Todas as datas ('+currentClients().length+')</option>' +
     dates.map(d => {
-      const qtd = clients.filter(c => formatarData(c.mes) === d).length;
+      const qtd = currentClients().filter(c => formatarData(c.mes) === d).length;
       return '<option value="'+d+'">'+d+' ('+qtd+')</option>';
     }).join('');
   if (currentDateFilter !== 'all' && !dates.includes(currentDateFilter)) currentDateFilter = 'all';
@@ -660,6 +712,7 @@ function setDateFilter(v) {
 
 // ── RENDER ────────────────────────────────────────────────
 function renderClients() {
+  const clients = currentClients();
   let pool = [...clients];
   if (currentFilter === 'pending') pool = pool.filter(c => !c.sent);
   if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
@@ -674,17 +727,19 @@ function renderClients() {
   const filterTabs   = document.getElementById('filterTabs');
   const progressWrap = document.getElementById('progressWrap');
 
+  const totalGeral = clientsAT.length + clientsIN.length;
   if (clients.length === 0) {
-    list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p></div>';
+    const label = activeGroup === 'AT' ? '🔴 AT' : '🚫 IN';
+    list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg><p>Nenhum cliente <strong style="color:var(--yellow)">' + label + '</strong> ainda.<br>Use <strong style="color:var(--yellow)">Importar</strong> ou cole em <strong style="color:var(--yellow)">Dados</strong>.</p></div>';
     statsRow.style.display='none'; filterTabs.style.display='none';
     progressWrap.classList.remove('active');
-    document.getElementById('totalBadge').classList.add('hidden');
+    if (totalGeral === 0) document.getElementById('totalBadge').classList.add('hidden');
   } else {
     const sentCount = clients.filter(c => c.sent).length;
     const pct = Math.round((sentCount/clients.length)*100);
     statsRow.style.display='grid'; filterTabs.style.display='flex';
     progressWrap.classList.add('active');
-    document.getElementById('totalBadge').textContent = clients.length;
+    document.getElementById('totalBadge').textContent = totalGeral;
     document.getElementById('totalBadge').classList.remove('hidden');
     document.getElementById('statTotal').textContent = clients.length;
     document.getElementById('statEnviados').textContent = sentCount;
@@ -762,7 +817,7 @@ function onJustInput(id, el) {
 }
 
 function saveJust(id) {
-  const c = clients.find(x => x.id === id); if (!c) return;
+  const c = currentClients().find(x => x.id === id); if (!c) return;
   const ta = document.getElementById('just-' + id); if (!ta) return;
   const txt = ta.value.trim();
   c.justificativa = txt;
@@ -816,13 +871,14 @@ function clearJust(id) {
 
 // ── AÇÕES DOS CARDS ───────────────────────────────────────
 function toggleCard(id) {
-  const c = clients.find(x => x.id===id); if(!c) return;
+  const c = currentClients().find(x => x.id===id); if(!c) return;
   c.expanded = !c.expanded;
   const body = document.getElementById('body-'+id);
   if (body) body.classList.toggle('open', c.expanded);
 }
 
 function toggleSent(id) {
+  const clients = currentClients();
   const c = clients.find(x => x.id===id); if(!c) return;
   c.sent = !c.sent; saveToStorage();
   const card = document.getElementById('card-'+id);
@@ -846,50 +902,61 @@ function toggleSent(id) {
 }
 
 function deleteClient(id) {
-  const c = clients.find(x=>x.id===id); if(!c) return;
+  const c = currentClients().find(x=>x.id===id); if(!c) return;
   openModal('Remover cliente?','"'+c.nome+'" será removido da lista.',() => {
     const card = document.getElementById('card-'+id);
     if (card) {
       card.classList.add('removing');
       setTimeout(()=>{
-        clients = clients.filter(x=>x.id!==id);
-        saveToStorage(); renderClients(); showToast('🗑️ '+c.nome+' removido');
+        if (activeGroup === 'AT') clientsAT = clientsAT.filter(x=>x.id!==id);
+        else clientsIN = clientsIN.filter(x=>x.id!==id);
+        saveToStorage(); updateGroupCounts(); renderClients(); showToast('🗑️ '+c.nome+' removido');
       },250);
     }
   });
 }
 
 function confirmResetSent() {
-  const s = clients.filter(c=>c.sent).length;
+  const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
   openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
-    clients.forEach(c=>{c.sent=false;c.expanded=false;}); saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
+    currentClients().forEach(c=>{c.sent=false;c.expanded=false;}); saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
   });
 }
 
 let pendingConfirmId = null;
+let pendingConfirmGroup = 'AT'; // grupo no momento do clique
 function sendWhatsApp(id) {
-  const c = clients.find(x=>x.id===id); if(!c) return;
+  const c = currentClients().find(x=>x.id===id); if(!c) return;
+  pendingConfirmGroup = activeGroup;
   pendingConfirmId = id;
   window.open('https://wa.me/'+c.telefone+'?text='+encodeURIComponent(buildMsg(c)),'_blank');
 }
 document.addEventListener('visibilitychange',()=>{
   if (document.visibilityState==='visible' && pendingConfirmId!==null) {
-    const c = clients.find(x=>x.id===pendingConfirmId);
-    if (c && !c.sent) showConfirmBanner(c); else pendingConfirmId=null;
+    const lista = pendingConfirmGroup === 'AT' ? clientsAT : clientsIN;
+    const c = lista.find(x=>x.id===pendingConfirmId);
+    if (c && !c.sent) showConfirmBanner(c, pendingConfirmGroup); else pendingConfirmId=null;
   }
 });
-function showConfirmBanner(c) {
+function showConfirmBanner(c, grp) {
+  pendingConfirmGroup = grp || activeGroup;
   const i = c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   document.getElementById('confirmAvatar').textContent=i;
   document.getElementById('confirmName').textContent=c.nome;
   document.getElementById('confirmBanner').classList.add('show');
 }
-function confirmSent() { if(pendingConfirmId===null) return; toggleSent(pendingConfirmId); dismissBanner(); }
+function confirmSent() {
+  if(pendingConfirmId===null) return;
+  // Garante que o activeGroup está alinhado com o grupo do clique
+  activeGroup = pendingConfirmGroup;
+  toggleSent(pendingConfirmId);
+  dismissBanner();
+}
 function dismissBanner() { pendingConfirmId=null; document.getElementById('confirmBanner').classList.remove('show'); }
 
 function copyMsg(id) {
-  const c = clients.find(x=>x.id===id); if(!c) return;
+  const c = currentClients().find(x=>x.id===id); if(!c) return;
   const text = buildMsg(c);
   navigator.clipboard.writeText(text).then(()=>showToast('✅ Mensagem copiada!')).catch(()=>{
     const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta);
@@ -898,14 +965,15 @@ function copyMsg(id) {
 }
 
 function confirmClear() {
-  openModal('Limpar tudo?','Todos os clientes serão apagados.',()=>{
-    clients=[];
+  const label = importMode === 'IN' ? 'IN' : 'AT';
+  openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
+    if (importMode === 'AT') clientsAT = []; else clientsIN = [];
     ['fNomes','fTelefones','fMeses','fValores','fLinks'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('validationMsg').style.display='none';
     document.getElementById('import-status').innerHTML='';
     document.getElementById('btnImportar').innerHTML= importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora';
     document.getElementById('btnImportar').disabled=false;
-    saveToStorage(); renderClients(); showToast('🗑️ Dados apagados');
+    saveToStorage(); updateGroupCounts(); renderClients(); showToast('🗑️ Lista ' + label + ' apagada');
   });
 }
 
@@ -929,7 +997,8 @@ function showToast(msg) {
 // ── STORAGE ───────────────────────────────────────────────
 function saveToStorage() {
   try {
-    localStorage.setItem('rg_clients', JSON.stringify(clients));
+    localStorage.setItem('rg_clientsAT', JSON.stringify(clientsAT));
+    localStorage.setItem('rg_clientsIN', JSON.stringify(clientsIN));
     localStorage.setItem('rg_fields', JSON.stringify({
       n:  document.getElementById('fNomes').value,
       te: document.getElementById('fTelefones').value,
@@ -940,16 +1009,28 @@ function saveToStorage() {
   } catch(e){}
 }
 function saveTemplate() { try{localStorage.setItem('rg_template',document.getElementById('msgTemplate').value);}catch(e){} }
+
+function fixClients(arr) {
+  arr.forEach(c => {
+    if (c.justificativa === undefined) c.justificativa = '';
+    if (c.justData === undefined) c.justData = null;
+  });
+  return arr;
+}
+
 function loadFromStorage() {
   try {
-    const cl = localStorage.getItem('rg_clients');
-    if (cl) {
-      clients = JSON.parse(cl);
-      // Garante campos novos em clientes antigos
-      clients.forEach(c => {
-        if (c.justificativa === undefined) c.justificativa = '';
-        if (c.justData === undefined) c.justData = null;
-      });
+    // Suporte legado: se existir rg_clients (versão antiga), migra para AT
+    const legacy = localStorage.getItem('rg_clients');
+    if (legacy) {
+      clientsAT = fixClients(JSON.parse(legacy));
+      localStorage.removeItem('rg_clients');
+      saveToStorage();
+    } else {
+      const clAT = localStorage.getItem('rg_clientsAT');
+      const clIN = localStorage.getItem('rg_clientsIN');
+      if (clAT) clientsAT = fixClients(JSON.parse(clAT));
+      if (clIN) clientsIN = fixClients(JSON.parse(clIN));
     }
     const fl = localStorage.getItem('rg_fields');
     if (fl) {
@@ -962,8 +1043,9 @@ function loadFromStorage() {
     }
     const tpl = localStorage.getItem('rg_template');
     if (tpl) document.getElementById('msgTemplate').value = tpl;
-    if (clients.length > 0) {
-      document.getElementById('totalBadge').textContent = clients.length;
+    const total = clientsAT.length + clientsIN.length;
+    if (total > 0) {
+      document.getElementById('totalBadge').textContent = total;
       document.getElementById('totalBadge').classList.remove('hidden');
     }
   } catch(e){}
