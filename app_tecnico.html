@@ -4297,8 +4297,7 @@ function abrirResumoUnicaOS(id, tech) {
   }).join('
 ');
 
-  const linha = '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '
-' + veiculosLinhas : '');
+  const linha = '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
 
   const hoje   = new Date();
   const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
