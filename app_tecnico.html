@@ -4294,26 +4294,19 @@ function abrirResumoUnicaOS(id, tech) {
     const partes = v.split(' | ');
     const modelo = partes[0] || v;
     return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
-  }).join('
-');
+  }).join('\n');
 
   const linha = '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
 
   const hoje   = new Date();
   const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
-  const totalStr = valor > 0 ? '
-
-💰 *Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+  const totalStr = valor > 0 ? '\n\n💰 *Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
 
   const msg =
-    '*' + tech + ', segue o serviço avulso — ' + dataStr + ' 📋*
-
-' +
+    '*' + tech + ', segue o serviço avulso — ' + dataStr + ' 📋*\n\n' +
     linha +
-    totalStr + '
-
-' +
+    totalStr + '\n\n' +
     '_Rastreando GPS_ 📍';
 
   abrirModalDesconto(tech, msg, valor);
