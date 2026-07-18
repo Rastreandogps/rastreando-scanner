@@ -2825,6 +2825,7 @@ function renderAdminDoneList() {
       '<div style="display:flex;align-items:center;justify-content:space-between;padding-top:6px;border-top:1px solid #bbf7d0;">' +
         '<span style="font-size:11px;font-weight:700;color:var(--success);">✅ Concluído</span>' +
         '<div style="display:flex;gap:6px;">' +
+          '<button onclick="abrirResumoUnicaOS(\'' + esc(o.id) + '\',\'' + esc(o._tech) + '\')" style="padding:5px 10px;background:#10b981;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">💲</button>' +
           '<button onclick="abrirModalAcessoDone(\'' + esc(o.id) + '\',\'' + esc(o._tech) + '\')" style="padding:5px 10px;background:#0ea5e9;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🔐 Acesso</button>' +
           '<button onclick="abrirModalVeiculosExtra(\'' + esc(o.nome) + '\',\'' + esc(o.telefone||'') + '\')" style="padding:5px 10px;background:#eff6ff;color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🚗 + Veículo</button>' +
           '<button onclick="adminReverter(\'' + o.id + '\',\'' + o._tech + '\')" style="padding:5px 12px;background:none;border:1.5px solid var(--muted);border-radius:8px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;">↩ Reverter</button>' +
@@ -4272,6 +4273,52 @@ function renderDoneList() {
 // ── EDITAR OS
 // ── MODAL ACESSO AO CLIENTE
 let _acessoOS = null;
+
+function abrirResumoUnicaOS(id, tech) {
+  const o = (allDoneOrders[tech] || []).find(o => o.id === id);
+  if (!o) { showToast('OS não encontrada', 'error'); return; }
+
+  const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
+  const valorStr = valor > 0 ? ' — *R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+
+  // Montar veículos
+  let veiculos = [];
+  if (o.veiculo) {
+    if (o.veiculo.includes(' || ')) {
+      veiculos = o.veiculo.split(' || ').map(v => v.trim()).filter(Boolean);
+    } else {
+      veiculos = [o.veiculo.trim()];
+    }
+  }
+  const veiculosLinhas = veiculos.map(v => {
+    const partes = v.split(' | ');
+    const modelo = partes[0] || v;
+    return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
+  }).join('
+');
+
+  const linha = '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '
+' + veiculosLinhas : '');
+
+  const hoje   = new Date();
+  const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
+
+  const totalStr = valor > 0 ? '
+
+💰 *Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+
+  const msg =
+    '*' + tech + ', segue o serviço avulso — ' + dataStr + ' 📋*
+
+' +
+    linha +
+    totalStr + '
+
+' +
+    '_Rastreando GPS_ 📍';
+
+  abrirModalDesconto(tech, msg, valor);
+}
 
 function abrirModalAcessoDone(id, tech) {
   const os = (allDoneOrders[tech] || []).find(o => o.id === id);
