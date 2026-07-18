@@ -3862,9 +3862,12 @@ function enviarResumoComDesconto() {
     const linhasDespesas = despesas.map(d =>
       '➖ *' + d.motivo + ': R$' + d.valor.toFixed(2).replace('.', ',') + '*'
     ).join('\n');
+    // Substitui qualquer variante de "💰 *Total..." (do dia, avulso, etc.)
+    const totalValorStr = totalGeral.toFixed(2).replace('.', ',');
+    const totalRegex = new RegExp('💰 \\*Total[^:]*: R\\$' + totalValorStr.replace('.', '\\.') + '\\*');
     msgFinal = msg.replace(
-      '💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.', ',') + '*',
-      '💰 *Total bruto: R$' + totalGeral.toFixed(2).replace('.', ',') + '*\n' +
+      totalRegex,
+      '💰 *Total bruto: R$' + totalValorStr + '*\n' +
       linhasDespesas + '\n' +
       '💵 *Total líquido: R$' + liquido.toFixed(2).replace('.', ',') + '*'
     );
