@@ -925,7 +925,10 @@
 <!-- MODAL: DESCONTO RESUMO DIA -->
 <div class="modal-overlay" id="modal-desconto-resumo">
   <div class="modal-box" style="max-width:400px;max-height:90vh;overflow-y:auto;">
-    <div class="modal-title">💸 Despesas do dia</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-title" style="margin-bottom:0;">💸 Despesas do dia</div>
+      <button type="button" onclick="fecharModalDesconto()" style="width:32px;height:32px;border:none;background:#f1f5f9;border-radius:8px;font-size:18px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    </div>
     <div class="modal-sub">Adicione os gastos a descontar do técnico hoje (opcional)</div>
 
     <!-- Lista de despesas -->
@@ -3773,6 +3776,12 @@ function renderVeiculosAdmin(veiculo) {
 // Variável temporária para o resumo pendente
 let _resumoPendente = null;
 let _despesasCounter = 0;
+
+function fecharModalDesconto() {
+  document.getElementById('modal-desconto-resumo').classList.remove('open');
+  unlockScroll();
+  _resumoPendente = null;
+}
 
 function abrirModalDesconto(tech, msg, totalGeral) {
   _resumoPendente = { tech, msg, totalGeral };
