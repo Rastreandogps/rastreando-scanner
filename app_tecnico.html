@@ -3016,9 +3016,9 @@ function enviarOSParaTecnico(id, tech) {
   const msg =
     'Fala, *' + primeiroNome + '*! 👋\n\n' +
     'Tem uma OS de *' + acaoLabel + '* aqui pra você:\n\n' +
-    '👤 *Cliente:* ' + (os.nome || '') + '\n' +
-    '📍 *Endereço:* ' + (os.endereco || '') + '\n' +
-    (os.obs ? '\n📌 *Obs.:* ' + os.obs + '\n' : '\n') +
+    '👤 *Cliente:* ' + (os.nome || '') + '\n\n' +
+    '📍 *Endereço:* ' + (os.endereco || '') + '\n\n' +
+    (os.obs ? '📌 *Obs.:* ' + os.obs + '\n\n' : '') +
     veiculoBloco + '\n\n' +
     pergunta + '\n\n' +
     '👇 Veja no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
