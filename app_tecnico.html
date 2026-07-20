@@ -4956,9 +4956,57 @@ async function _geocodificar(endereco) {
   return null;
 }
 
+// ── Dicionário de correções de endereço
+// Abreviações e erros comuns digitados no cadastro
+const _CORRECOES_ENDERECO = [
+  // Cidades da Baixada e RJ
+  [/dq\s*de\s*caxias/gi,          'Duque de Caxias'],
+  [/duq\.?\s*de\s*caxias/gi,       'Duque de Caxias'],
+  [/d\.?\s*caxias/gi,              'Duque de Caxias'],
+  [/saqarema/gi,                   'Saquarema'],
+  [/saquerema/gi,                  'Saquarema'],
+  [/nova\s*igua[çc][aã]/gi,        'Nova Iguaçu'],
+  [/n\.?\s*iguacu/gi,              'Nova Iguaçu'],
+  [/s[aã]o\s*gon[cç]alo/gi,        'São Gonçalo'],
+  [/s\.?\s*gon[cç]alo/gi,          'São Gonçalo'],
+  [/niter[oó]i/gi,                 'Niterói'],
+  [/niterio/gi,                    'Niterói'],
+  [/bel\.?\s*roxo/gi,              'Belford Roxo'],
+  [/sao\s*jo[aã]o\s*meriti/gi,     'São João de Meriti'],
+  [/s\.?\s*j\.?\s*meriti/gi,       'São João de Meriti'],
+  [/queimados/gi,                  'Queimados'],
+  [/serop[eé]dica/gi,              'Seropédica'],
+  [/ja[cp]eragu[aá]/gi,            'Jacarepaguá'],
+  [/maric[aá]/gi,                  'Maricá'],
+  [/araruama/gi,                   'Araruama'],
+  [/cabo\s*frio/gi,                'Cabo Frio'],
+  [/argentina/gi,                  'Rio de Janeiro'], // bairro confundido
+  // Tipos de logradouro
+  [/av\.\s*/gi,                      'Avenida '],
+  [/r\.\s+/gi,                       'Rua '],
+  [/est\.\s*/gi,                     'Estrada '],
+  [/trav\.\s*/gi,                    'Travessa '],
+  // Outros erros comuns
+  [/numero/gi,                     ''],
+  [/n°\s*/gi,                        ''],
+  [/nº\s*/gi,                        ''],
+];
+
+function _corrigirEndereco(endereco) {
+  if (!endereco) return endereco;
+  let end = endereco;
+  _CORRECOES_ENDERECO.forEach(function(par) {
+    end = end.replace(par[0], par[1]);
+  });
+  // Limpar espaços duplos gerados pelas substituições
+  return end.replace(/\s{2,}/g, ' ').trim();
+}
+
 function _montarTentativas(endereco) {
   if (!endereco) return [];
-  const end = endereco.trim();
+  // Aplicar correções antes de montar as tentativas
+  const endCorrigido = _corrigirEndereco(endereco);
+  const end = endCorrigido.trim();
   const tentativas = [];
 
   const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio|engenho|tijuca|jacarepagu|bonsucesso|iraj[aá]|olaria|penha|ramos|ilha do govern/i.test(end);
