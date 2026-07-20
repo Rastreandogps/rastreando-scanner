@@ -112,7 +112,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s}
 .client-card.sent{background:var(--sent);border-color:var(--sent-border)}
 .client-card.has-just{border-left:3px solid var(--purple)}
-.client-card-head{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.client-card-head{padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.client-card-head-top{display:flex;align-items:center;gap:10px}
 .client-avatar{width:40px;height:40px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--yellow);flex-shrink:0;transition:all .3s}
 .client-card.sent .client-avatar{background:var(--green-dim);border-color:var(--green);color:var(--green)}
 .client-info{flex:1;min-width:0}
@@ -122,6 +123,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .client-value{font-weight:700;color:var(--yellow);font-size:13px;flex-shrink:0}
 .client-card.sent .client-value{color:var(--green)}
 .just-chip{font-size:10px;font-weight:700;color:var(--purple);background:var(--purple-dim);border:1px solid var(--purple);border-radius:10px;padding:2px 7px;display:inline-block;margin-top:3px;letter-spacing:.3px}
+.card-head-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap;onclick:event.stopPropagation()}
 .client-body{padding:0 14px 14px;display:none;flex-direction:column;gap:10px}
 .client-body.open{display:flex}
 .msg-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -872,14 +874,16 @@ function buildCardHTML(c, i) {
 
   return `<div class="client-card${sentClass}${justClass}" id="card-${c.id}" style="animation-delay:${i*.04}s">
     <div class="client-card-head" onclick="toggleCard(${c.id})">
-      <div class="client-avatar" ${avatarStyle ? `style="${avatarStyle}"` : ''}>${avatarContent}</div>
-      <div class="client-info">
-        <div class="client-name">${c.nome}</div>
-        <div class="client-bottom-row">
-          <div class="client-sub">📅 ${formatarData(c.mes)}</div>
-          <div class="client-value">R$ ${c.valor}</div>
+      <div class="client-card-head-top">
+        <div class="client-avatar" ${avatarStyle ? `style="${avatarStyle}"` : ''}>${avatarContent}</div>
+        <div class="client-info">
+          <div class="client-name">${c.nome}</div>
+          <div class="client-bottom-row">
+            <div class="client-sub">📅 ${formatarData(c.mes)}</div>
+            <div class="client-value">R$ ${c.valor}</div>
+          </div>
+          ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
         </div>
-        ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
       </div>
       <div class="card-head-actions" onclick="event.stopPropagation()">
         ${cancelBtnHead}
