@@ -832,10 +832,10 @@ function buildCardHTML(c, i) {
   const bodyOpen  = c.expanded ? ' open' : '';
   const justChip  = hasJust ? '<span class="just-chip">💬 Retorno registrado</span>' : '';
 
-  const classifRaw = (c.classificacao || '').toLowerCase().trim();
-  const classifBadge = classifRaw === 'ouro'  ? '<span class="classif-badge classif-ouro">🥇 Ouro</span>'
-                     : classifRaw === 'prata' ? '<span class="classif-badge classif-prata">🥈 Prata</span>'
-                     : classifRaw === 'latão' || classifRaw === 'latao' ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
+  const classifRaw = (c.classificacao || '').toUpperCase();
+  const classifBadge = classifRaw.includes('OURO')  ? '<span class="classif-badge classif-ouro">🥇 Ouro</span>'
+                     : classifRaw.includes('PRATA') ? '<span class="classif-badge classif-prata">🥈 Prata</span>'
+                     : classifRaw.includes('LAT')   ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
                      : '';
 
   const justSection = `
