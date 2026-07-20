@@ -4930,13 +4930,53 @@ function _pinIcon(cor, inicial) {
 }
 
 async function _geocodificar(endereco) {
-  try {
-    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(endereco + ', Rio de Janeiro, Brasil');
-    const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
-    const data = await res.json();
-    if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  } catch(_) {}
+  // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
+  const tentativas = _montarTentativas(endereco);
+  for (const q of tentativas) {
+    try {
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
+      const data = await res.json();
+      if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    } catch(_) {}
+    // Pequeno intervalo entre tentativas
+    await new Promise(r => setTimeout(r, 400));
+  }
   return null;
+}
+
+function _montarTentativas(endereco) {
+  if (!endereco) return [];
+  const end = endereco.trim();
+  const tentativas = [];
+
+  // 1. Endereço completo sem duplicar Brasil/RJ
+  const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio/i.test(end);
+  tentativas.push(end + (jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil'));
+
+  // 2. Limpar complementos (LT, QD, KM, AP, BL, APTO) e tentar de novo
+  const endLimpo = end
+    .replace(/,?\s*(lt|qd|km|ap|apto|bl|bloco|casa|cs)\s*[\d\w-]+/gi, '')
+    .replace(/\s{2,}/g, ' ').trim();
+  if (endLimpo !== end) {
+    tentativas.push(endLimpo + (jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil'));
+  }
+
+  // 3. Extrair só rua + cidade (partes separadas por ' - ')
+  const partes = end.split(/\s*[-–]\s*/);
+  if (partes.length >= 2) {
+    // Pega a rua (primeiro item) + última parte que provavelmente é a cidade
+    const rua    = partes[0].trim();
+    const cidade = partes[partes.length - 1].trim();
+    if (cidade && rua !== cidade) {
+      tentativas.push(rua + ', ' + cidade + ', Brasil');
+    }
+    // 4. Só a cidade/bairro como fallback de última instância
+    tentativas.push(cidade + ', Rio de Janeiro, Brasil');
+  }
+
+  // Remover duplicatas
+  return [...new Set(tentativas)];
 }
 
 function _criarMapa(divId) {
@@ -4996,6 +5036,16 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap) {
   if (bounds.length > 0) {
     try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 }); }
     catch(_) {}
+  }
+
+  // Informar resultado
+  const naoEncontrados = total - bounds.length;
+  if (bounds.length === 0) {
+    showToast('Nenhum endereço localizado no mapa.', 'error');
+  } else if (naoEncontrados > 0) {
+    showToast(bounds.length + ' de ' + total + ' OS plotadas no mapa.', '');
+  } else {
+    showToast('Todas as ' + total + ' OS plotadas! ✅', 'success');
   }
 }
 
