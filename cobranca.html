@@ -195,6 +195,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab.active-canc .group-tab-count{background:#555;color:#fff}
 .btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #e53935;background:#2a0a0a;color:#e53935;transition:all .2s;width:100%}
 .btn-cancelar-chip:active{transform:scale(.97);background:#e53935;color:#fff}
+.classif-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.3px;margin-top:3px}
+.classif-ouro{background:#3a2800;color:#f5c518;border:1px solid #f5c518}
+.classif-prata{background:#1e1e1e;color:#bbb;border:1px solid #888}
+.classif-latao{background:#2a1800;color:#cd7f32;border:1px solid #cd7f32}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -280,6 +284,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="field-wrap">
           <label>Valores (R$)</label>
           <textarea id="fValores" placeholder="59,90&#10;120,00" oninput="autoResize(this);validateFields()"></textarea>
+        </div>
+        <div class="field-wrap" style="grid-column:1/-1">
+          <label>🏅 Classificação <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Ouro, Prata ou Latão)</span></label>
+          <textarea id="fClassif" placeholder="Ouro&#10;Prata&#10;Latão" oninput="autoResize(this)" style="min-height:60px"></textarea>
         </div>
       </div>
       <div style="border-top:1px solid var(--border)">
@@ -561,7 +569,8 @@ async function importarInadimplentes() {
           ...existing,
           valor: fresh.valor,
           mes:   fresh.mes,
-          link:  fresh.link || existing.link
+          link:  fresh.link || existing.link,
+          classificacao: fresh.classificacao || existing.classificacao || ''
         });
         novosMap.delete(key); // já processado
       } else {
@@ -579,6 +588,7 @@ async function importarInadimplentes() {
         mes: c.mes,
         valor: c.valor,
         link: c.link || '',
+        classificacao: c.classificacao || '',
         expanded: false,
         sent: false,
         justificativa: '',
@@ -644,21 +654,23 @@ function validateFields() {
 }
 
 function generateClients() {
-  const nomes = parseField(document.getElementById('fNomes').value);
-  const tels  = parseField(document.getElementById('fTelefones').value);
-  const meses = parseField(document.getElementById('fMeses').value);
-  const vals  = parseField(document.getElementById('fValores').value);
-  const links = parseField(document.getElementById('fLinks').value);
+  const nomes   = parseField(document.getElementById('fNomes').value);
+  const tels    = parseField(document.getElementById('fTelefones').value);
+  const meses   = parseField(document.getElementById('fMeses').value);
+  const vals    = parseField(document.getElementById('fValores').value);
+  const links   = parseField(document.getElementById('fLinks').value);
+  const classif = parseField(document.getElementById('fClassif').value);
   if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
   if (![tels,meses,vals].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
   const lista = nomes.map((nome, i) => ({
     id: Date.now() + i, nome,
     telefone: formatPhone(tels[i]),
     mes: meses[i], valor: vals[i],
-    link: links[i] || '', expanded: false, sent: false,
+    link: links[i] || '',
+    classificacao: classif[i] || '',
+    expanded: false, sent: false,
     justificativa: '', justData: null
   }));
-  // Grava no grupo selecionado no importMode e sincroniza activeGroup
   if (importMode === 'AT') clientsAT = lista; else clientsIN = lista;
   activeGroup = importMode;
   saveToStorage();
@@ -820,6 +832,12 @@ function buildCardHTML(c, i) {
   const bodyOpen  = c.expanded ? ' open' : '';
   const justChip  = hasJust ? '<span class="just-chip">💬 Retorno registrado</span>' : '';
 
+  const classifRaw = (c.classificacao || '').toLowerCase().trim();
+  const classifBadge = classifRaw === 'ouro'  ? '<span class="classif-badge classif-ouro">🥇 Ouro</span>'
+                     : classifRaw === 'prata' ? '<span class="classif-badge classif-prata">🥈 Prata</span>'
+                     : classifRaw === 'latão' || classifRaw === 'latao' ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
+                     : '';
+
   const justSection = `
     <div class="just-section">
       <div class="just-section-label">💬 Retorno do cliente ${hasJust && c.justData ? '<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:auto">'+c.justData+'</span>' : ''}</div>
@@ -851,7 +869,7 @@ function buildCardHTML(c, i) {
           <div class="client-sub">📅 ${formatarData(c.mes)}</div>
           <div class="client-value">R$ ${c.valor}</div>
         </div>
-        ${justChip}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>
       </div>
       <div class="card-head-actions" onclick="event.stopPropagation()">
         ${cancelBtnHead}
@@ -1123,6 +1141,7 @@ function fixClients(arr) {
   arr.forEach(c => {
     if (c.justificativa === undefined) c.justificativa = '';
     if (c.justData === undefined) c.justData = null;
+    if (c.classificacao === undefined) c.classificacao = '';
   });
   return arr;
 }
