@@ -4263,6 +4263,16 @@ function renderDoneList() {
     return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
+  // Ordenar por data decrescente (mais recente primeiro)
+  done.sort((a, b) => {
+    const da = parseDate(a.data);
+    const db = parseDate(b.data);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return db - da;
+  });
+
   // Calcular e exibir faturamento
   const totalFaturado = done.reduce((s, o) => s + (o.valorInstalacao ? parseFloat(o.valorInstalacao) || 0 : 0), 0);
   const elValor = document.getElementById('tech-faturamento-valor');
