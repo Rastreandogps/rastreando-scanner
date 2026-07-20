@@ -5047,7 +5047,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
     if (!coord) continue;
 
-    const cor    = _corTech(o._tech || o.tecnico || '');
+    const cor    = modo === 'car' ? '#ef4444' : _corTech(o._tech || o.tecnico || '');
     const ini    = (o._tech || o.tecnico || '?')[0].toUpperCase();
     const tipo   = o.tipo || 'Instalação';
     const tipoCor = tipo.toLowerCase().includes('manut') ? '#f59e0b' : tipo.toLowerCase().includes('remo') || tipo.toLowerCase().includes('retir') ? '#ef4444' : '#10b981';
