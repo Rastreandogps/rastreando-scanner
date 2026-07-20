@@ -5072,6 +5072,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   }
 
   const bounds = [];
+  const _rotasPorTech = {}; // acumula coords por técnico para rota
 
   // 1. Buscar coordenadas já salvas no cache (GAS)
   if (labelEl) labelEl.textContent = 'Buscando cache de coordenadas...';
@@ -5183,11 +5184,19 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
     bounds.push([coord.lat, coord.lng]);
 
+    // Acumular por técnico para desenhar rota depois
+    const _techKey = o._tech || '__tech__';
+    if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data });
+
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
   }
 
   if (loadingWrap) loadingWrap.classList.add('hide');
+
+  // Desenhar rotas otimizadas por técnico
+  _desenharRotas(map, _rotasPorTech, modo);
   if (bounds.length > 0) {
     try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 }); }
     catch(_) {}
@@ -5210,6 +5219,83 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const _msg = bounds.length + ' OS plotada' + (bounds.length !== 1 ? 's' : '') + ' · atualizado às ' + _ts;
   if (_tsEl1) _tsEl1.textContent = _msg;
   if (_tsEl2) _tsEl2.textContent = _msg;
+}
+
+// ── Algoritmo do vizinho mais próximo (Nearest Neighbor)
+// Ordena os pontos minimizando a distância total percorrida
+function _nearestNeighbor(pontos) {
+  if (pontos.length <= 2) return pontos;
+  const visitados = new Array(pontos.length).fill(false);
+  const rota = [];
+  // Começar pelo ponto mais ao norte (menor lat = mais ao sul no RJ,
+  // então pegamos o de menor índice como ponto de partida)
+  let atual = 0;
+  visitados[atual] = true;
+  rota.push(pontos[atual]);
+
+  for (let passo = 1; passo < pontos.length; passo++) {
+    let menorDist = Infinity;
+    let proximo = -1;
+    for (let j = 0; j < pontos.length; j++) {
+      if (visitados[j]) continue;
+      // Distância euclidiana (suficiente para ordenação relativa)
+      const dlat = pontos[atual].lat - pontos[j].lat;
+      const dlng = pontos[atual].lng - pontos[j].lng;
+      const dist = Math.sqrt(dlat * dlat + dlng * dlng);
+      if (dist < menorDist) { menorDist = dist; proximo = j; }
+    }
+    if (proximo === -1) break;
+    visitados[proximo] = true;
+    rota.push(pontos[proximo]);
+    atual = proximo;
+  }
+  return rota;
+}
+
+function _desenharRotas(map, rotasPorTech, modo) {
+  // No modo 'car' (técnico) só tem um técnico — linha vermelha
+  // No modo 'inicial' (admin) cada técnico tem sua cor
+  Object.keys(rotasPorTech).forEach(function(tech) {
+    const pontos = rotasPorTech[tech];
+    if (pontos.length < 2) return; // menos de 2 pontos não forma rota
+
+    // Filtrar só OS com data de hoje ou futura (não plotar rota de OS sem data)
+    const hoje = new Date();
+    const comData = pontos.filter(function(p) {
+      if (!p.data || p.data.trim() === '' || p.data === 'undefined') return false;
+      const d = parseDate(p.data);
+      return d && d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    });
+    if (comData.length < 2) return;
+
+    // Ordenar pelo algoritmo do vizinho mais próximo
+    const rotaOtimizada = _nearestNeighbor(comData);
+    const latlngs = rotaOtimizada.map(function(p) { return [p.lat, p.lng]; });
+
+    // Cor da linha
+    const cor = modo === 'car' ? '#ef4444' : (_corTech(tech === '__tech__' ? '' : tech));
+
+    // Linha tracejada com setas de direção
+    L.polyline(latlngs, {
+      color: cor,
+      weight: 3,
+      opacity: 0.75,
+      dashArray: '8, 6',
+    }).addTo(map);
+
+    // Numerinhos de ordem sobre cada ponto
+    rotaOtimizada.forEach(function(p, i) {
+      L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="width:18px;height:18px;border-radius:50%;background:white;border:2px solid ' + cor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:' + cor + ';box-shadow:0 1px 4px rgba(0,0,0,.2);">' + (i + 1) + '</div>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+        zIndexOffset: -100, // fica abaixo dos pins principais
+      }).addTo(map);
+    });
+  });
 }
 
 function recarregarMapaTecnico() {
