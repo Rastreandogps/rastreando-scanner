@@ -520,6 +520,12 @@
     <div id="tech-os-list"></div>
   </div>
   <div id="tech-tab-done" class="screen" style="padding-top:20px;background:#e8eef8;min-height:100vh;">
+    <!-- Card de faturamento mensal -->
+    <div id="tech-faturamento-card" style="margin:0 0 16px 0;background:linear-gradient(135deg,#065f46,#10b981);border-radius:16px;padding:20px;box-shadow:0 4px 16px rgba(16,185,129,.3);">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Faturamento do mês</div>
+      <div id="tech-faturamento-valor" style="font-size:32px;font-weight:800;color:white;letter-spacing:-1px;">R$ 0,00</div>
+      <div id="tech-faturamento-qtd" style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;">0 serviços concluídos</div>
+    </div>
     <div class="section-title">Serviços Concluídos</div>
     <div id="tech-done-list"></div>
   </div>
@@ -4256,6 +4262,13 @@ function renderDoneList() {
     const d = parseDate(o.data);
     return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
+
+  // Calcular e exibir faturamento
+  const totalFaturado = done.reduce((s, o) => s + (o.valorInstalacao ? parseFloat(o.valorInstalacao) || 0 : 0), 0);
+  const elValor = document.getElementById('tech-faturamento-valor');
+  const elQtd   = document.getElementById('tech-faturamento-qtd');
+  if (elValor) elValor.textContent = 'R$ ' + totalFaturado.toFixed(2).replace('.', ',');
+  if (elQtd)   elQtd.textContent   = done.length + ' serviço' + (done.length !== 1 ? 's' : '') + ' concluído' + (done.length !== 1 ? 's' : '');
 
   if (done.length === 0) {
     list.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhum serviço concluído ainda.</p></div>';
