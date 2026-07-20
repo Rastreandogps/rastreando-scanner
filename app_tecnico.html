@@ -1021,6 +1021,18 @@
   </div>
 </div>
 
+<!-- MODAL: CONFIRMAÇÃO ORDEM DO DIA -->
+<div class="modal-overlay" id="modal-confirm-ordem">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="modal-title" style="font-size:16px;">📋 Confirmar ordem</div>
+    <div id="modal-confirm-ordem-msg" class="modal-sub" style="font-size:14px;margin-bottom:20px;"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="cancelarOrdemDia()">Cancelar</button>
+      <button type="button" class="btn-confirm" onclick="confirmarOrdemDia()" style="background:var(--admin);">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: DESCONTO RESUMO DIA -->
 <div class="modal-overlay" id="modal-desconto-resumo">
   <div class="modal-box" style="max-width:400px;max-height:90vh;overflow-y:auto;">
@@ -4931,8 +4943,32 @@ function fecharModalNovaOS() {
 
 // ════════════════════════════════════════
 // ── ORDEM DO DIA
-async function definirOrdemDia(id, tech, ordem, btn) {
-  // Atualizar visual imediatamente
+// Guarda pendência de ordem aguardando confirmação
+let _ordemPendente = null;
+
+function definirOrdemDia(id, tech, ordem, btn) {
+  const nomeEl = btn.closest('[style*="border-left"]');
+  const nome = nomeEl ? (nomeEl.querySelector('[style*="font-size:15px"]') || {}).textContent || '' : '';
+  const label = ordem === 0 ? 'remover a ordem' : 'definir ' + ordem + 'ª posição';
+
+  _ordemPendente = { id, tech, ordem, btn };
+
+  // Montar modal de confirmação
+  document.getElementById('modal-confirm-ordem-msg').textContent =
+    'Confirma ' + label + (nome ? ' para ' + nome.trim() + '?' : '?');
+  document.getElementById('modal-confirm-ordem').classList.add('open');
+  lockScroll();
+}
+
+async function confirmarOrdemDia() {
+  if (!_ordemPendente) return;
+  const { id, tech, ordem, btn } = _ordemPendente;
+  _ordemPendente = null;
+
+  document.getElementById('modal-confirm-ordem').classList.remove('open');
+  unlockScroll();
+
+  // Atualizar visual dos botões
   const wrap = btn.parentElement;
   wrap.querySelectorAll('button').forEach(function(b) {
     b.style.background = '#e2e8f0';
@@ -4950,17 +4986,13 @@ async function definirOrdemDia(id, tech, ordem, btn) {
     if (os) os.ordemDia = ordem;
   }
 
-  // Atualizar badge do nome no card
-  const card = btn.closest('[style*="border-left"]');
-  if (card) {
-    const badge = card.querySelector('.ordem-badge');
-    if (badge) {
-      badge.textContent = ordem > 0 ? ordem : '';
-      badge.style.display = ordem > 0 ? 'inline-flex' : 'none';
-    }
-  }
-
   showToast(ordem === 0 ? 'Ordem removida' : ordem + 'ª posição definida ✅', 'success');
+}
+
+function cancelarOrdemDia() {
+  _ordemPendente = null;
+  document.getElementById('modal-confirm-ordem').classList.remove('open');
+  unlockScroll();
 }
 
 // MAPA — Leaflet + Nominatim
@@ -5234,6 +5266,24 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(o.endereco || '') + '</div>' +
       // Observações
       (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
+      // Botão confirmar endereço com cliente (só no mapa do técnico)
+      (modo === 'car' && o.telefone ? (function() {
+        const _tel    = (o.telefone || '').replace(/\D/g,'');
+        const _nome   = (o.nome || '').split(' ')[0];
+        const _tipo   = (o.tipo || 'instalação').toLowerCase();
+        const _data   = (o.data && o.data.trim() && o.data !== 'undefined') ? ' no dia *' + formatDateBR(o.data) + '*' : '';
+        const _obs    = o.obs && o.obs.trim() ? '\n📌 *Ref.:* ' + o.obs : '';
+        const _msg    = 'Olá, *' + _nome + '*! 😊\n\n' +
+          'Passando para *confirmar o endereço* da sua ' + _tipo + _data + ':\n\n' +
+          '📍 *' + (o.endereco || '') + '*' + _obs + '\n\n' +
+          'Está correto? ✅\n\n' +
+          '_Rastreando GPS_ 📍';
+        const _wpp = 'https://wa.me/55' + _tel + '?text=' + encodeURIComponent(_msg);
+        return '<a href="' + _wpp + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:8px;background:#25D366;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;margin-bottom:8px;">' +
+          '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+          'Confirmar endereço com cliente' +
+        '</a>';
+      })() : '') +
       // Rodapé: tipo + botão navegar
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + tipoCor + '22;color:' + tipoCor + ';">' + esc(tipo) + '</span>' +
