@@ -2853,19 +2853,27 @@ function enviarConfirmacaoAgendamento(id, tech) {
   if (!tel) { showToast('Telefone não encontrado', 'error'); return; }
 
   const primeiroNome = (os.nome || '').split(' ')[0];
+  const tipo = (os.tipo || 'Instalação').toLowerCase();
+  const ehInstalacao = !tipo.includes('manut') && !tipo.includes('retir') && !tipo.includes('remo');
   const temBloqueio  = (os.veiculo || '').toLowerCase().includes('bloqueio');
-  const mensalidade  = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
-  const desconto     = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
 
-  // Valor obrigatório — bloqueia se não preenchido
-  const valorNum = os.valorInstalacao ? parseFloat(os.valorInstalacao) : 0;
-  if (!os.valorInstalacao || valorNum <= 0) {
-    showToast('⚠️ Informe o valor da instalação antes de enviar!', 'error');
-    // Abrir modal de confirmação para que o admin preencha o valor
-    abrirModalConfirmacaoCliente(id, tech);
-    return;
+  // Valor obrigatório apenas para instalação
+  let blocoValores = '';
+  if (ehInstalacao) {
+    const valorNum = os.valorInstalacao ? parseFloat(os.valorInstalacao) : 0;
+    if (!os.valorInstalacao || valorNum <= 0) {
+      showToast('⚠️ Informe o valor da instalação antes de enviar!', 'error');
+      abrirModalConfirmacaoCliente(id, tech);
+      return;
+    }
+    const valorStr    = 'R$' + valorNum.toFixed(2).replace('.',',');
+    const mensalidade = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
+    const desconto    = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
+    blocoValores =
+      '💰 *Valores:*\n' +
+      '    🔧 Instalação: *' + valorStr + '*\n' +
+      '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n';
   }
-  const valorStr = 'R$' + valorNum.toFixed(2).replace('.',',');
 
   // Veículos
   let veiculosTxt = '';
@@ -2888,16 +2896,17 @@ function enviarConfirmacaoAgendamento(id, tech) {
     ? '📅 *Data agendada:* ' + formatDateBR(os.data) + '\n\n'
     : '';
 
+  // Confirmação varia por tipo
+  const tipoLabel = tipo.includes('manut') ? 'manutenção' : tipo.includes('retir') || tipo.includes('remo') ? 'retirada' : 'instalação';
+
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
-    '✅ *Seu agendamento foi confirmado!*\n' +
+    '✅ *Seu agendamento de ' + tipoLabel + ' foi confirmado!*\n' +
     dataStr +
     '📍 *Endereço:* ' + (os.endereco || '') +
     (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
-    '💰 *Valores:*\n' +
-    '    🔧 Instalação: *' + valorStr + '*\n' +
-    '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
+    blocoValores +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
