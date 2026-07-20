@@ -4921,7 +4921,7 @@ function _corTech(nome) {
 
 function _pinIcon(cor, inicial, modo) {
   const inner = modo === 'car'
-    ? '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'
+    ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>'
     : '<span style="font-size:13px;font-weight:700;color:white;">' + inicial + '</span>';
   return L.divIcon({
     className: '',
@@ -4953,32 +4953,49 @@ function _montarTentativas(endereco) {
   const end = endereco.trim();
   const tentativas = [];
 
-  // 1. Endereço completo sem duplicar Brasil/RJ
-  const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio/i.test(end);
-  tentativas.push(end + (jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil'));
+  const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio|engenho|tijuca|jacarepagu|bonsucesso|iraj[aá]|olaria|penha|ramos|ilha do govern/i.test(end);
+  const sufixoRJ = jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil';
 
-  // 2. Limpar complementos (LT, QD, KM, AP, BL, APTO) e tentar de novo
+  // 1. Endereço completo
+  tentativas.push(end + sufixoRJ);
+
+  // 2. Substituir "número" por extenso e limpar complementos
   const endLimpo = end
-    .replace(/,?\s*(lt|qd|km|ap|apto|bl|bloco|casa|cs)\s*[\d\w-]+/gi, '')
+    .replace(/n[uú]mero\s+/gi, '')
+    .replace(/,?\s*(lt|qd|km|ap|apto|bl|bloco|casa|cs|lote|quadra)\s*[\d\w-]*/gi, '')
     .replace(/\s{2,}/g, ' ').trim();
   if (endLimpo !== end) {
-    tentativas.push(endLimpo + (jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil'));
+    tentativas.push(endLimpo + sufixoRJ);
   }
 
-  // 3. Extrair só rua + cidade (partes separadas por ' - ')
-  const partes = end.split(/\s*[-–]\s*/);
-  if (partes.length >= 2) {
-    // Pega a rua (primeiro item) + última parte que provavelmente é a cidade
-    const rua    = partes[0].trim();
-    const cidade = partes[partes.length - 1].trim();
-    if (cidade && rua !== cidade) {
-      tentativas.push(rua + ', ' + cidade + ', Brasil');
-    }
-    // 4. Só a cidade/bairro como fallback de última instância
+  // 3. Separador traço: "Rua X - Bairro - Cidade"
+  const partesDash = end.split(/\s*[-–]\s*/);
+  if (partesDash.length >= 2) {
+    const rua    = partesDash[0].trim();
+    const cidade = partesDash[partesDash.length - 1].trim();
+    if (rua !== cidade) tentativas.push(rua + ', ' + cidade + ', Brasil');
     tentativas.push(cidade + ', Rio de Janeiro, Brasil');
   }
 
-  // Remover duplicatas
+  // 4. Sem separador: "Rua X número N Bairro" — extrai bairro (últimas palavras sem dígito)
+  if (partesDash.length === 1) {
+    const palavras = endLimpo.split(/\s+/);
+    // Pega palavras do final que não são números como bairro
+    let bairro = [];
+    for (let i = palavras.length - 1; i >= 0; i--) {
+      if (/^\d/.test(palavras[i])) break;
+      bairro.unshift(palavras[i]);
+      if (bairro.length >= 4) break;
+    }
+    if (bairro.length > 0) {
+      const bairroStr = bairro.join(' ');
+      tentativas.push(bairroStr + ', Rio de Janeiro, Brasil');
+      // Rua + bairro
+      const ruaMatch = endLimpo.match(/^(rua|av|avenida|estr|estrada|trav|pca|pra[cç]a|rod|rodovia)[^0-9]+/i);
+      if (ruaMatch) tentativas.push(ruaMatch[0].trim() + ', ' + bairroStr + ', Brasil');
+    }
+  }
+
   return [...new Set(tentativas)];
 }
 
@@ -5060,9 +5077,14 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 }
 
 async function iniciarMapaTecnico() {
-  // Já iniciado — não refaz
-  if (_mapaTechIniciado) return;
-  _mapaTechIniciado = true;
+  // Se já existe mapa, destruir e recriar para pegar OS atualizadas
+  if (_leafletMapTech) {
+    try { _leafletMapTech.remove(); } catch(_) {}
+    _leafletMapTech = null;
+  }
+  document.getElementById('leaflet-map-tech').innerHTML = '';
+  document.getElementById('map-loading-tech').classList.remove('hide');
+  document.getElementById('map-progress-tech').style.width = '0%';
 
   // Garantir que Leaflet está carregado
   if (typeof L === 'undefined') {
@@ -5085,8 +5107,14 @@ async function iniciarMapaTecnico() {
 }
 
 async function iniciarMapaAdmin() {
-  if (_mapaAdminIniciado) return;
-  _mapaAdminIniciado = true;
+  // Se já existe mapa, destruir e recriar para pegar OS atualizadas
+  if (_leafletMapAdmin) {
+    try { _leafletMapAdmin.remove(); } catch(_) {}
+    _leafletMapAdmin = null;
+  }
+  document.getElementById('leaflet-map-admin').innerHTML = '';
+  document.getElementById('map-loading-admin').classList.remove('hide');
+  document.getElementById('map-progress-admin').style.width = '0%';
 
   if (typeof L === 'undefined') {
     document.getElementById('map-label-admin').textContent = 'Carregando biblioteca do mapa...';
@@ -5150,6 +5178,10 @@ setTimeout(carregarLeaflet, 5000);
   }, { passive: true });
 
   document.addEventListener('touchend', function(e) {
+    // Ignorar se o toque começou dentro do mapa (Leaflet)
+    const mapaAtivo = document.querySelector('.leaflet-container');
+    if (mapaAtivo && mapaAtivo.contains(e.target)) return;
+
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
 
