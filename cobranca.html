@@ -869,7 +869,7 @@ function buildCardHTML(c, i) {
           <div class="client-sub">📅 ${formatarData(c.mes)}</div>
           <div class="client-value">R$ ${c.valor}</div>
         </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>
+        ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
       </div>
       <div class="card-head-actions" onclick="event.stopPropagation()">
         ${cancelBtnHead}
@@ -1131,7 +1131,8 @@ function saveToStorage() {
       te: document.getElementById('fTelefones').value,
       m:  document.getElementById('fMeses').value,
       v:  document.getElementById('fValores').value,
-      l:  document.getElementById('fLinks').value
+      l:  document.getElementById('fLinks').value,
+      cl: document.getElementById('fClassif').value
     }));
   } catch(e){}
 }
@@ -1170,6 +1171,7 @@ function loadFromStorage() {
       document.getElementById('fMeses').value      = f.m  || '';
       document.getElementById('fValores').value    = f.v  || '';
       document.getElementById('fLinks').value      = f.l  || '';
+      document.getElementById('fClassif').value    = f.cl || '';
     }
     const tpl = localStorage.getItem('rg_template');
     if (tpl) document.getElementById('msgTemplate').value = tpl;
