@@ -5017,15 +5017,34 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
   const bounds = [];
 
+  // 1. Buscar coordenadas já salvas no cache (GAS)
+  if (labelEl) labelEl.textContent = 'Buscando cache de coordenadas...';
+  const enderecos = listaOS.map(o => o.endereco).filter(Boolean);
+  let cacheCoord = {};
+  try {
+    const cacheRes = await gasRequest({ action: 'getCoordenadas', enderecos });
+    if (cacheRes.ok) cacheCoord = cacheRes.data || {};
+  } catch(_) {}
+
   for (let i = 0; i < total; i++) {
     const o    = listaOS[i];
     const pct  = Math.round(((i + 1) / total) * 100);
-    if (labelEl)   labelEl.textContent   = 'Localizando ' + (i + 1) + ' de ' + total + '...';
+    if (labelEl)    labelEl.textContent    = 'Localizando ' + (i + 1) + ' de ' + total + '...';
     if (progressEl) progressEl.style.width = pct + '%';
 
     if (!o.endereco || o.endereco.trim() === '') continue;
 
-    const coord = await _geocodificar(o.endereco);
+    // 2. Usar cache se disponível — não chama Nominatim
+    let coord = cacheCoord[o.endereco] || null;
+
+    if (!coord) {
+      // 3. Geocodificar e salvar no cache para a próxima vez
+      coord = await _geocodificar(o.endereco);
+      if (coord) {
+        gasRequest({ action: 'salvarCoordenadas', endereco: o.endereco, lat: coord.lat, lng: coord.lng });
+      }
+    }
+
     if (!coord) continue;
 
     const cor    = _corTech(o._tech || o.tecnico || '');
