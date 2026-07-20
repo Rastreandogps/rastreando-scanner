@@ -572,7 +572,8 @@ async function importarInadimplentes() {
           valor: fresh.valor,
           mes:   fresh.mes,
           link:  fresh.link || existing.link,
-          classificacao: fresh.classificacao || existing.classificacao || ''
+          classificacao: fresh.classificacao || existing.classificacao || '',
+          pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || '')
         });
         novosMap.delete(key); // já processado
       } else {
@@ -591,6 +592,7 @@ async function importarInadimplentes() {
         valor: c.valor,
         link: c.link || '',
         classificacao: c.classificacao || '',
+        pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
         expanded: false,
         sent: false,
         justificativa: '',
@@ -835,10 +837,23 @@ function buildCardHTML(c, i) {
   const justChip  = hasJust ? '<span class="just-chip">💬 Retorno registrado</span>' : '';
 
   const classifRaw = (c.classificacao || '').toUpperCase();
-  const classifBadge = classifRaw.includes('OURO')  ? '<span class="classif-badge classif-ouro">🥇 Ouro</span>'
-                     : classifRaw.includes('PRATA') ? '<span class="classif-badge classif-prata">🥈 Prata</span>'
-                     : classifRaw.includes('LAT')   ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
-                     : '';
+  const pontuacao = (c.pontuacao !== undefined && c.pontuacao !== '' && c.pontuacao !== null)
+    ? c.pontuacao : null;
+  const pontColor = classifRaw.includes('OURO')  ? 'var(--yellow)'
+                  : classifRaw.includes('PRATA') ? '#bbb'
+                  : classifRaw.includes('LAT')   ? '#cd7f32'
+                  : 'var(--muted)';
+  const pontBg    = classifRaw.includes('OURO')  ? 'var(--yellow-dim)'
+                  : classifRaw.includes('PRATA') ? '#1e1e1e'
+                  : classifRaw.includes('LAT')   ? 'var(--orange-dim)'
+                  : 'var(--bg3)';
+  const pontBorder= classifRaw.includes('OURO')  ? '#f5c518'
+                  : classifRaw.includes('PRATA') ? '#888'
+                  : classifRaw.includes('LAT')   ? '#cd7f32'
+                  : 'var(--border2)';
+  const classifBadge = pontuacao !== null
+    ? `<span class="classif-badge" style="background:${pontBg};color:${pontColor};border-color:${pontBorder}">⭐ ${pontuacao} pts</span>`
+    : '';
 
   const avatarStyle = classifRaw.includes('OURO')  ? 'background:#3a2800;border:2px solid #f5c518'
                     : classifRaw.includes('PRATA') ? 'background:#1e1e1e;border:2px solid #aaa'
@@ -1185,6 +1200,7 @@ function fixClients(arr) {
     if (c.justificativa === undefined) c.justificativa = '';
     if (c.justData === undefined) c.justData = null;
     if (c.classificacao === undefined) c.classificacao = '';
+    if (c.pontuacao === undefined) c.pontuacao = '';
   });
   return arr;
 }
