@@ -1224,11 +1224,9 @@ function showTechScreen() {
   registrarLogin(currentUser);
   document.getElementById('tech-header-name').textContent = currentUser;
   showTechTab('calendar');
-  loadTechOrders();
+  loadTechOrders(true);
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
-  // Popup motivacional ao entrar
-  setTimeout(mostrarMotivacional, 600);
 }
 
 function showAdminScreen() {
@@ -1293,7 +1291,7 @@ function getDinoHTML(id, label) {
   '</div>';
 }
 
-async function loadTechOrders() {
+async function loadTechOrders(showMotivacional = false) {
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
@@ -1310,6 +1308,8 @@ async function loadTechOrders() {
     renderDoneList();
   }
   setSyncStatus('ok');
+  // Popup motivacional só na primeira carga, após dados chegarem
+  if (showMotivacional) mostrarMotivacional();
 }
 
 async function loadAllOrders() {
