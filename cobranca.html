@@ -848,13 +848,13 @@ function buildCardHTML(c, i) {
       </div>
     </div>`;
 
-  const cancelBtn = (activeGroup === 'BOTH' || activeGroup === 'IN')
+  const cancelBtn = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
     ? `<button class="btn-cancelar-chip" onclick="cancelarChip(${c.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelar chip</button>`
     : activeGroup === 'CANC'
     ? `<button class="btn-cancelar-chip" onclick="reativarCliente(${c.id})" style="border-color:var(--green);background:var(--green-dim);color:var(--green)">↩️ Reativar cliente</button>`
     : '';
 
-  const cancelBtnHead = (activeGroup === 'BOTH' || activeGroup === 'IN')
+  const cancelBtnHead = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
     ? `<button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#2a0a0a;border:1.5px solid #e53935;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
     : activeGroup === 'CANC'
     ? `<button onclick="event.stopPropagation();reativarCliente(${c.id})" title="Reativar cliente" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">↩️</button>`
