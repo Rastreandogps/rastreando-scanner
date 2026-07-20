@@ -840,14 +840,42 @@ function buildCardHTML(c, i) {
                      : classifRaw.includes('LAT')   ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
                      : '';
 
-  const avatarStyle = classifRaw.includes('OURO')  ? 'background:#3a2800;border:2px solid #f5c518;color:#f5c518;font-size:20px'
-                    : classifRaw.includes('PRATA') ? 'background:#1e1e1e;border:2px solid #888;color:#bbb;font-size:20px'
-                    : classifRaw.includes('LAT')   ? 'background:#2a1800;border:2px solid #cd7f32;color:#cd7f32;font-size:20px'
+  const avatarStyle = classifRaw.includes('OURO')  ? 'background:#3a2800;border:2px solid #f5c518'
+                    : classifRaw.includes('PRATA') ? 'background:#1e1e1e;border:2px solid #aaa'
+                    : classifRaw.includes('LAT')   ? 'background:#2a1800;border:2px solid #cd7f32'
                     : '';
+
+  const svgOuro = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="15" width="20" height="5" rx="1.5" fill="#f5c518" stroke="#b8960c" stroke-width=".6"/>
+    <rect x="4" y="10" width="16" height="5" rx="1.5" fill="#ffd740" stroke="#b8960c" stroke-width=".6"/>
+    <rect x="6" y="5"  width="12" height="5" rx="1.5" fill="#ffe680" stroke="#b8960c" stroke-width=".6"/>
+    <rect x="2" y="15" width="20" height="1.2" rx=".6" fill="#ffe066" opacity=".5"/>
+    <rect x="4" y="10" width="16" height="1.2" rx=".6" fill="#ffe066" opacity=".5"/>
+    <rect x="6" y="5"  width="12" height="1.2" rx=".6" fill="#ffe066" opacity=".5"/>
+  </svg>`;
+
+  const svgPrata = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="10" r="7" fill="#888" stroke="#ccc" stroke-width="1.2"/>
+    <circle cx="12" cy="10" r="5" fill="#bbb" stroke="#ddd" stroke-width=".8"/>
+    <text x="12" y="14" text-anchor="middle" font-size="7" font-weight="900" fill="#555" font-family="Arial">2</text>
+    <path d="M8 17 L6 23 L12 20 L18 23 L16 17" fill="#888" stroke="#aaa" stroke-width=".8" stroke-linejoin="round"/>
+  </svg>`;
+
+  const svgLatao = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="7" y="3" width="10" height="16" rx="3" fill="#cd7f32" stroke="#a0611f" stroke-width=".8"/>
+    <rect x="7" y="3" width="10" height="4" rx="2" fill="#e8a050" stroke="#a0611f" stroke-width=".8"/>
+    <ellipse cx="12" cy="3.5" rx="5" ry="1.5" fill="#f0b870"/>
+    <rect x="9" y="8" width="6" height=".8" rx=".4" fill="#a0611f" opacity=".6"/>
+    <rect x="9" y="10" width="6" height=".8" rx=".4" fill="#a0611f" opacity=".6"/>
+    <rect x="9" y="12" width="6" height=".8" rx=".4" fill="#a0611f" opacity=".6"/>
+    <ellipse cx="12" cy="19" rx="5" ry="1.2" fill="#b06a20" stroke="#a0611f" stroke-width=".5"/>
+    <rect x="10" y="20" width="4" height="3" rx=".5" fill="#cd7f32" stroke="#a0611f" stroke-width=".6"/>
+  </svg>`;
+
   const avatarContent = c.sent ? '✓'
-                      : classifRaw.includes('OURO')  ? '🥇'
-                      : classifRaw.includes('PRATA') ? '🥈'
-                      : classifRaw.includes('LAT')   ? '🥉'
+                      : classifRaw.includes('OURO')  ? svgOuro
+                      : classifRaw.includes('PRATA') ? svgPrata
+                      : classifRaw.includes('LAT')   ? svgLatao
                       : initials;
 
   const justSection = `
