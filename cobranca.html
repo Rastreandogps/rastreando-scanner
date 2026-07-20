@@ -838,6 +838,16 @@ function buildCardHTML(c, i) {
                      : classifRaw.includes('LAT')   ? '<span class="classif-badge classif-latao">🥉 Latão</span>'
                      : '';
 
+  const avatarStyle = classifRaw.includes('OURO')  ? 'background:#3a2800;border:2px solid #f5c518;color:#f5c518;font-size:20px'
+                    : classifRaw.includes('PRATA') ? 'background:#1e1e1e;border:2px solid #888;color:#bbb;font-size:20px'
+                    : classifRaw.includes('LAT')   ? 'background:#2a1800;border:2px solid #cd7f32;color:#cd7f32;font-size:20px'
+                    : '';
+  const avatarContent = c.sent ? '✓'
+                      : classifRaw.includes('OURO')  ? '🥇'
+                      : classifRaw.includes('PRATA') ? '🥈'
+                      : classifRaw.includes('LAT')   ? '🥉'
+                      : initials;
+
   const justSection = `
     <div class="just-section">
       <div class="just-section-label">💬 Retorno do cliente ${hasJust && c.justData ? '<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:auto">'+c.justData+'</span>' : ''}</div>
@@ -862,7 +872,7 @@ function buildCardHTML(c, i) {
 
   return `<div class="client-card${sentClass}${justClass}" id="card-${c.id}" style="animation-delay:${i*.04}s">
     <div class="client-card-head" onclick="toggleCard(${c.id})">
-      <div class="client-avatar">${c.sent ? '✓' : initials}</div>
+      <div class="client-avatar" ${avatarStyle ? `style="${avatarStyle}"` : ''}>${avatarContent}</div>
       <div class="client-info">
         <div class="client-name">${c.nome}</div>
         <div class="client-bottom-row">
