@@ -5047,7 +5047,21 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
     if (!coord) continue;
 
-    const cor    = modo === 'car' ? '#ef4444' : _corTech(o._tech || o.tecnico || '');
+    let cor;
+    if (modo === 'car') {
+      // Verde = hoje, Amarelo = sem data (pendente), Vermelho = outros dias
+      const _hoje = new Date();
+      const _dp   = o.data && o.data.trim() && o.data !== 'undefined' ? parseDate(o.data) : null;
+      if (!_dp) {
+        cor = '#f59e0b'; // amarelo — pendente sem data
+      } else if (_dp.getDate() === _hoje.getDate() && _dp.getMonth() === _hoje.getMonth() && _dp.getFullYear() === _hoje.getFullYear()) {
+        cor = '#10b981'; // verde — hoje
+      } else {
+        cor = '#ef4444'; // vermelho — outro dia
+      }
+    } else {
+      cor = _corTech(o._tech || o.tecnico || '');
+    }
     const ini    = (o._tech || o.tecnico || '?')[0].toUpperCase();
     const tipo   = o.tipo || 'Instalação';
     const tipoCor = tipo.toLowerCase().includes('manut') ? '#f59e0b' : tipo.toLowerCase().includes('remo') || tipo.toLowerCase().includes('retir') ? '#ef4444' : '#10b981';
