@@ -5164,7 +5164,9 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       // Veículos
       veiculoHtml +
       // Endereço
-      '<div style="font-size:11px;color:#64748b;margin-bottom:10px;">📍 ' + esc(o.endereco || '') + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(o.endereco || '') + '</div>' +
+      // Observações
+      (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
       // Rodapé: tipo + botão navegar
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + tipoCor + '22;color:' + tipoCor + ';">' + esc(tipo) + '</span>' +
