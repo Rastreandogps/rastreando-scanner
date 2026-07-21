@@ -225,6 +225,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .classif-prata{background:#f0f0f0;color:#555;border:1px solid #aaa}
 .classif-latao{background:#fff0e6;color:#a0611f;border:1px solid #cd7f32}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.search-wrap{display:none;align-items:center;gap:8px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px}
+.search-wrap.visible{display:flex}
+.search-input{flex:1;background:transparent;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--text)}
+.search-input::placeholder{color:var(--muted)}
+.search-clear{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0;line-height:1;display:none}
+.search-clear.visible{display:block}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
 .date-filter-select{flex:1;min-width:140px;background:var(--bg3);border:1.5px solid var(--border2);color:var(--text);font-family:var(--font);font-size:13px;font-weight:700;padding:8px 12px;border-radius:20px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none}
@@ -351,6 +357,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
     </div>
+    <div class="search-wrap" id="searchWrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="Buscar cliente..." oninput="onSearch(this.value)">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
     <div class="filter-tabs" id="filterTabs" style="display:none">
       <button class="filter-tab active" id="ftAll" onclick="setFilter('all')">Todos</button>
       <button class="filter-tab" id="ftPending" onclick="setFilter('pending')">⏳ Pendentes</button>
@@ -450,6 +461,7 @@ let clientsCancelados = [];
 let clientsRetirada   = [];
 let activeGroup = 'AT';
 let currentFilter = 'all';
+let currentSearch = '';
 let currentDateFilter = 'all';
 let currentClassifFilter = 'all';
 let modalCallback = null;
@@ -509,6 +521,11 @@ function switchGroup(g) {
   currentFilter = 'all';
   currentDateFilter = 'all';
   currentClassifFilter = 'all';
+  currentSearch = '';
+  const si = document.getElementById('searchInput');
+  if (si) si.value = '';
+  const sc = document.getElementById('searchClear');
+  if (sc) sc.classList.remove('visible');
   const zpc = document.getElementById('zeroPtsCheck');
   if (zpc) zpc.checked = false;
   ['All','Pending','Sent','Just'].forEach(x => {
@@ -810,6 +827,22 @@ function setClassifFilter(v) {
   renderClients();
 }
 
+function onSearch(val) {
+  currentSearch = val.trim();
+  const sc = document.getElementById('searchClear');
+  if (sc) sc.classList.toggle('visible', currentSearch.length > 0);
+  renderClients();
+}
+
+function clearSearch() {
+  currentSearch = '';
+  const si = document.getElementById('searchInput');
+  if (si) si.value = '';
+  const sc = document.getElementById('searchClear');
+  if (sc) sc.classList.remove('visible');
+  renderClients();
+}
+
 // ── RENDER ────────────────────────────────────────────────
 function renderClients() {
   const clients = currentClients();
@@ -832,6 +865,10 @@ function renderClients() {
   if (zeroPtsCheck && zeroPtsCheck.checked) {
     pool = pool.filter(c => (parseFloat(c.pontuacao) || 0) === 0);
   }
+  if (currentSearch) {
+    const q = currentSearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    pool = pool.filter(c => c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q));
+  }
   pool.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   renderDateFilterOptions();
@@ -853,12 +890,16 @@ function renderClients() {
     list.innerHTML = '<div class="empty-state"><svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>' + emptyMsg + '</div>';
     statsRow.style.display='none'; filterTabs.style.display='none';
     progressWrap.classList.remove('active');
+    const sw2 = document.getElementById('searchWrap');
+    if (sw2) sw2.classList.remove('visible');
     if (totalGeral === 0) document.getElementById('totalBadge').classList.add('hidden');
   } else {
     const sentCount = clients.filter(c => c.sent).length;
     const pct = Math.round((sentCount/clients.length)*100);
     statsRow.style.display='grid'; filterTabs.style.display='flex';
     progressWrap.classList.add('active');
+    const sw = document.getElementById('searchWrap');
+    if (sw) sw.classList.add('visible');
     document.getElementById('totalBadge').textContent = totalGeral;
     document.getElementById('totalBadge').classList.remove('hidden');
     document.getElementById('statTotal').textContent = clients.length;
