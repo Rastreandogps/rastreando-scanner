@@ -1031,12 +1031,28 @@ function confirmLimparRetornos() {
   if (comRetorno === 0) { showToast('Nenhum retorno registrado'); return; }
   openModal(
     '⚠️ Limpar todos os retornos?',
-    comRetorno + ' cliente' + (comRetorno > 1 ? 's' : '') + ' terão seus retornos apagados. Esta ação não pode ser desfeita.',
+    comRetorno + ' cliente' + (comRetorno > 1 ? 's' : '') + ' terão seus retornos apagados para todos os dispositivos.',
     () => {
-      currentClients().forEach(c => { c.justificativa = ''; c.justData = null; });
+      // Apaga localmente
+      const afetados = currentClients().filter(c => c.justificativa && c.justificativa.trim());
+      afetados.forEach(c => { c.justificativa = ''; c.justData = null; });
       saveToStorage();
       renderClients();
-      showToast('💬 Retornos apagados');
+      // Apaga na planilha — envia um por um silenciosamente
+      afetados.forEach(c => {
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            secret: API_SECRET,
+            action: 'salvarRetorno',
+            nome: c.nome,
+            telefone: c.telefone,
+            retorno: '',
+            dataRetorno: ''
+          })
+        }).catch(() => {});
+      });
+      showToast('💬 Retornos apagados em todos os dispositivos');
     }
   );
 }
