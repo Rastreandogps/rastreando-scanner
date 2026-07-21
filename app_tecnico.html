@@ -4758,8 +4758,9 @@ async function carregarAgendamentos() {
   }).join('');
 }
 
-async function confirmarAgendamentoAba(rowIndex) {
-  const ag = (await gasRequest({ action: 'getPendingAgendamentos' })).data?.find(a => a.rowIndex === rowIndex);
+async async function confirmarAgendamentoAba(rowIndex) {
+  const result = await gasRequest({ action: 'getPendingAgendamentos' });
+  const ag = (result.data || []).find(a => a.rowIndex === rowIndex);
   if (!ag) { showToast('Agendamento não encontrado.', 'error'); return; }
 
   const tecnico = document.getElementById('ag-tec-' + rowIndex)?.value || '';
