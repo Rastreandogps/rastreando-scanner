@@ -109,7 +109,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
 /* ── CARDS DE CLIENTE ──────────────────────────────────── */
 .clients-list{display:flex;flex-direction:column;gap:10px}
-.client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s}
+.client-card{background:var(--card);border:2px solid #f5e642;border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s;box-shadow:0 0 6px rgba(245,230,66,.18)}
 .client-card.sent{background:var(--sent);border-color:var(--sent-border)}
 .client-card.has-just{border-left:3px solid var(--purple)}
 .client-card-head{padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
@@ -965,10 +965,6 @@ function buildCardHTML(c, i) {
       </div>
     </div>
     <div class="client-body${bodyOpen}" id="body-${c.id}">
-      <div>
-        <div class="msg-preview-label">Prévia da mensagem</div>
-        <div class="msg-preview" data-id="${c.id}">${msg}</div>
-      </div>
       ${justSection}
       <div class="action-row">
         <button class="btn-whatsapp" onclick="sendWhatsApp(${c.id})" title="WhatsApp com mensagem" style="background:#e3f2fd;color:#1d9bf0;border:1.5px solid #1d9bf0">
