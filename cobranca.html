@@ -153,6 +153,27 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .btn-just-save:active{transform:scale(.96);opacity:.85}
 .btn-just-clear{background:transparent;color:var(--muted);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s}
 .btn-just-clear:active{transform:scale(.96)}
+/* Agenda / Calendário */
+.agenda-header{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px}
+.agenda-mes{font-size:17px;font-weight:800;color:var(--text)}
+.agenda-nav{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text);font-family:var(--font)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:4px 0;letter-spacing:.5px}
+.cal-day{position:relative;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:background .15s}
+.cal-day:hover{background:var(--bg3)}
+.cal-day.empty{pointer-events:none}
+.cal-day.hoje{background:var(--yellow-dim);color:var(--yellow);font-weight:800}
+.cal-day.tem-compromisso .cal-dot{display:block}
+.cal-day.selecionado{background:var(--purple-dim);border:2px solid var(--purple);color:var(--purple)}
+.cal-dot{display:none;width:6px;height:6px;border-radius:50%;background:var(--purple);position:absolute;bottom:4px}
+.agenda-clientes{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.agenda-empty{text-align:center;color:var(--muted);font-size:13px;padding:24px 0}
+.agenda-dia-label{font-size:13px;font-weight:700;color:var(--purple);margin-bottom:2px}
+/* Seletor de data compromisso no card */
+.compromisso-wrap{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.compromisso-label{font-size:11px;font-weight:700;color:var(--purple);letter-spacing:.5px;text-transform:uppercase}
+.compromisso-input{background:var(--bg3);border:1.5px solid rgba(156,39,176,.4);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:13px;padding:8px 11px;outline:none;width:100%;transition:border-color .2s}
+.compromisso-input:focus{border-color:var(--purple)}
 
 
 @keyframes cardRemove{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(60px)}}
@@ -229,6 +250,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 <div class="tabs">
   <button class="tab active" onclick="switchTab('clientes')" id="tab-clientes">👥 Clientes</button>
   <button class="tab" onclick="switchTab('mensagem')" id="tab-mensagem">✏️ Mensagem</button>
+  <button class="tab" onclick="switchTab('agenda')" id="tab-agenda">📅 Agenda</button>
   <button class="tab" onclick="switchTab('dados')" id="tab-dados">📋 Dados</button>
 </div>
 
@@ -378,9 +400,25 @@ body{display:flex;flex-direction:column;min-height:100vh}
   </div>
 </div>
 
+  <!-- AGENDA -->
+  <div class="screen" id="screen-agenda">
+    <div class="section-card" style="padding:14px">
+      <div class="agenda-header">
+        <button class="agenda-nav" onclick="agendaMesAnterior()">‹</button>
+        <span class="agenda-mes" id="agendaMesLabel"></span>
+        <button class="agenda-nav" onclick="agendaProximoMes()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="agenda-clientes" id="agendaClientes">
+      <div class="agenda-empty">Selecione um dia para ver os compromissos</div>
+    </div>
+  </div>
+
 <div class="footer-nav">
   <button class="fnav-btn active" id="fnav-clientes" onclick="switchTab('clientes')">👥<span>Clientes</span></button>
   <button class="fnav-btn" id="fnav-mensagem" onclick="switchTab('mensagem')">✏️<span>Mensagem</span></button>
+  <button class="fnav-btn" id="fnav-agenda" onclick="switchTab('agenda')">📅<span>Agenda</span></button>
   <button class="fnav-btn" id="fnav-dados" onclick="switchTab('dados')">📋<span>Dados</span></button>
 </div>
 
@@ -560,7 +598,8 @@ async function importarInadimplentes() {
           pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || ''),
           // Retorno da planilha tem prioridade se vier preenchido
           justificativa: fresh.retorno || existing.justificativa || '',
-          justData: fresh.dataRetorno || existing.justData || null
+          justData: fresh.dataRetorno || existing.justData || null,
+          dataCompromisso: fresh.dataCompromisso || existing.dataCompromisso || ''
         });
         novosMap.delete(key); // já processado
       } else {
@@ -582,6 +621,7 @@ async function importarInadimplentes() {
         pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
         justificativa: c.retorno || '',
         justData: c.dataRetorno || null,
+        dataCompromisso: c.dataCompromisso || '',
         expanded: false,
         sent: false,
       });
@@ -619,6 +659,7 @@ function switchTab(tab) {
   document.getElementById('fnav-' + tab).classList.add('active');
   if (tab === 'clientes') { updateGroupCounts(); renderClients(); }
   if (tab === 'mensagem') updatePreviews();
+  if (tab === 'agenda')   renderAgenda();
 }
 
 // ── PARSE MANUAL ─────────────────────────────────────────
@@ -852,6 +893,10 @@ function buildCardHTML(c, i) {
     <div class="just-section">
       <div class="just-section-label">💬 Retorno do cliente ${hasJust && c.justData ? '<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:auto">'+c.justData+'</span>' : ''}</div>
       <textarea class="just-textarea" id="just-${c.id}" placeholder="Ex: Vai pagar na sexta, disse que já está no banco..." oninput="onJustInput(${c.id},this)">${c.justificativa || ''}</textarea>
+      <div class="compromisso-wrap">
+        <label class="compromisso-label">📅 Data do compromisso de pagamento</label>
+        <input type="date" class="compromisso-input" id="comp-${c.id}" value="${c.dataCompromisso || ''}" onchange="saveCompromisso(${c.id},this.value)">
+      </div>
       <div class="just-save-row">
         <button class="btn-just-save" onclick="saveJust(${c.id})">💾 Salvar</button>
         ${hasJust ? `<button class="btn-just-clear" onclick="clearJust(${c.id})">Apagar retorno</button>` : ''}
@@ -975,6 +1020,128 @@ function clearJust(id) {
   const ta = document.getElementById('just-' + id);
   if (ta) ta.value = '';
   saveJust(id);
+}
+
+function clearJust(id) {
+  const ta = document.getElementById('just-' + id);
+  if (ta) ta.value = '';
+  saveJust(id);
+}
+
+function saveCompromisso(id, valor) {
+  const c = currentClients().find(x => x.id === id); if (!c) return;
+  c.dataCompromisso = valor || '';
+  saveToStorage();
+  // Envia para planilha
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      secret: API_SECRET,
+      action: 'salvarRetorno',
+      nome: c.nome,
+      telefone: c.telefone,
+      retorno: c.justificativa || '',
+      dataRetorno: c.justData || '',
+      dataCompromisso: valor || ''
+    })
+  }).catch(() => {});
+  showToast(valor ? '📅 Compromisso salvo: ' + formatarDataBR(valor) : '📅 Compromisso removido');
+}
+
+function formatarDataBR(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return (d||'')+'/'+(m||'')+'/'+(y||'');
+}
+
+// ── AGENDA / CALENDÁRIO ───────────────────────────────────
+let agendaAno  = new Date().getFullYear();
+let agendaMes  = new Date().getMonth();
+let agendaDiaSel = null;
+
+function renderAgenda() {
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('agendaMesLabel').textContent = meses[agendaMes] + ' ' + agendaAno;
+
+  // Coleta todas as datas de compromisso de todas as listas
+  const todasListas = [...clientsAT, ...clientsIN, ...clientsCancelados];
+  const diasComComp = new Set();
+  todasListas.forEach(c => { if (c.dataCompromisso) diasComComp.add(c.dataCompromisso); });
+
+  const grid = document.getElementById('calGrid');
+  const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  let html = dias.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  const primeiroDia = new Date(agendaAno, agendaMes, 1).getDay();
+  const totalDias   = new Date(agendaAno, agendaMes + 1, 0).getDate();
+  const hoje = new Date();
+  const hojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+
+  for (let i = 0; i < primeiroDia; i++) html += '<div class="cal-day empty"></div>';
+  for (let d = 1; d <= totalDias; d++) {
+    const isoDate = agendaAno + '-' + String(agendaMes+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const temComp = diasComComp.has(isoDate);
+    const isHoje  = isoDate === hojeStr;
+    const isSel   = isoDate === agendaDiaSel;
+    html += `<div class="cal-day${temComp?' tem-compromisso':''}${isHoje?' hoje':''}${isSel?' selecionado':''}" onclick="agendaSelectDia('${isoDate}')">
+      ${d}<div class="cal-dot"></div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  renderAgendaClientes();
+}
+
+function agendaSelectDia(iso) {
+  agendaDiaSel = agendaDiaSel === iso ? null : iso;
+  renderAgenda();
+}
+
+function agendaMesAnterior() {
+  agendaMes--; if (agendaMes < 0) { agendaMes = 11; agendaAno--; }
+  agendaDiaSel = null; renderAgenda();
+}
+function agendaProximoMes() {
+  agendaMes++; if (agendaMes > 11) { agendaMes = 0; agendaAno++; }
+  agendaDiaSel = null; renderAgenda();
+}
+
+function renderAgendaClientes() {
+  const el = document.getElementById('agendaClientes');
+  if (!agendaDiaSel) {
+    el.innerHTML = '<div class="agenda-empty">Selecione um dia para ver os compromissos</div>';
+    return;
+  }
+  const todasListas = [...clientsAT, ...clientsIN, ...clientsCancelados];
+  const clientes = todasListas.filter(c => c.dataCompromisso === agendaDiaSel);
+  if (clientes.length === 0) {
+    el.innerHTML = '<div class="agenda-empty">Nenhum compromisso em ' + formatarDataBR(agendaDiaSel) + '</div>';
+    return;
+  }
+  el.innerHTML = '<div class="agenda-dia-label">📅 ' + formatarDataBR(agendaDiaSel) + ' — ' + clientes.length + ' compromisso' + (clientes.length>1?'s':'') + '</div>' +
+    clientes.map(c => {
+      const classifRaw = (c.classificacao||'').toUpperCase();
+      const medalha = classifRaw.includes('OURO') ? '🥇' : classifRaw.includes('PRATA') ? '🥈' : classifRaw.includes('LAT') ? '🥉' : '';
+      const grupo = clientsAT.find(x=>x.id===c.id) ? 'AT' : clientsIN.find(x=>x.id===c.id) ? 'IN' : 'Cancelado';
+      return `<div class="client-card" style="border-color:var(--purple)">
+        <div class="client-card-head" style="cursor:default">
+          <div class="client-card-head-top">
+            <div class="client-avatar" style="font-size:20px">${medalha || c.nome.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
+            <div class="client-info">
+              <div class="client-name">${c.nome}</div>
+              <div class="client-bottom-row">
+                <div class="client-sub">📱 ${c.telefone}</div>
+                <div class="client-value">R$ ${c.valor}</div>
+              </div>
+              ${c.justificativa ? `<div style="font-size:12px;color:var(--purple);margin-top:4px">💬 ${c.justificativa}</div>` : ''}
+            </div>
+            <span style="font-size:10px;font-weight:700;padding:3px 7px;border-radius:10px;background:var(--bg3);color:var(--muted);flex-shrink:0">${grupo}</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button onclick="window.open('https://wa.me/'+('${c.telefone}'.startsWith('55')?'':'55')+'${c.telefone}','_blank')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1.5px solid var(--green);background:var(--green-dim);color:var(--green);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)">📱 WhatsApp</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
 }
 
 // ── AÇÕES DOS CARDS ───────────────────────────────────────
@@ -1175,6 +1342,7 @@ function fixClients(arr) {
     if (c.justData === undefined) c.justData = null;
     if (c.classificacao === undefined) c.classificacao = '';
     if (c.pontuacao === undefined) c.pontuacao = '';
+    if (c.dataCompromisso === undefined) c.dataCompromisso = '';
   });
   return arr;
 }
