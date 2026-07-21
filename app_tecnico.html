@@ -4758,7 +4758,7 @@ async function carregarAgendamentos() {
   }).join('');
 }
 
-async async function confirmarAgendamentoAba(rowIndex) {
+async function confirmarAgendamentoAba(rowIndex) {
   const result = await gasRequest({ action: 'getPendingAgendamentos' });
   const ag = (result.data || []).find(a => a.rowIndex === rowIndex);
   if (!ag) { showToast('Agendamento não encontrado.', 'error'); return; }
@@ -4794,14 +4794,14 @@ async async function confirmarAgendamentoAba(rowIndex) {
   const valor = document.getElementById('ag-valor-' + rowIndex)?.value || '';
   const novoId = genId();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({
+  const resultSave = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
     endereco: ag.endereco || '', tipo: 'Instalação', data: data,
     veiculo: veiculoStr, obs: ag.pontoReferencia || ''
   });
 
-  if (result.ok) {
+  if (resultSave.ok) {
     if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
     await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true' });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
