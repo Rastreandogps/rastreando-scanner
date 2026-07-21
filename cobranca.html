@@ -374,6 +374,17 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </select>
       <button class="date-filter-clear" id="dateFilterClear" onclick="setDateFilter('all')">✕ Limpar</button>
     </div>
+    <div class="date-filter-wrap" id="classifFilterWrap" style="display:none">
+      <span class="date-filter-label">🏅 Classificação:</span>
+      <select class="date-filter-select" id="classifFilterSelect" onchange="setClassifFilter(this.value)">
+        <option value="all">Todas</option>
+        <option value="ouro">🥇 Ouro</option>
+        <option value="prata">🥈 Prata</option>
+        <option value="latao">🥉 Latão</option>
+        <option value="sem">Sem classificação</option>
+      </select>
+      <button class="date-filter-clear" id="classifFilterClear" onclick="setClassifFilter('all')" style="display:none">✕ Limpar</button>
+    </div>
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
@@ -427,6 +438,7 @@ let clientsCancelados = [];
 let activeGroup = 'AT';
 let currentFilter = 'all';
 let currentDateFilter = 'all';
+let currentClassifFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT';
 
@@ -477,6 +489,7 @@ function switchGroup(g) {
   document.getElementById('gtCANC').className = 'group-tab' + (g === 'CANC' ? ' active-canc' : '');
   currentFilter = 'all';
   currentDateFilter = 'all';
+  currentClassifFilter = 'all';
   ['All','Pending','Sent','Just'].forEach(x => {
     const el = document.getElementById('ft'+x);
     if (el) el.classList.toggle('active', x.toLowerCase() === 'all');
@@ -769,10 +782,27 @@ function renderDateFilterOptions() {
   if (currentDateFilter !== 'all' && !dates.includes(currentDateFilter)) currentDateFilter = 'all';
   sel.value = currentDateFilter;
   clearBtn.style.display = currentDateFilter !== 'all' ? 'block' : 'none';
+
+  // Filtro de classificação
+  const cfWrap   = document.getElementById('classifFilterWrap');
+  const cfSel    = document.getElementById('classifFilterSelect');
+  const cfClear  = document.getElementById('classifFilterClear');
+  if (cfWrap && cfSel) {
+    cfWrap.style.display = 'flex';
+    cfSel.value = currentClassifFilter;
+    cfClear.style.display = currentClassifFilter !== 'all' ? 'block' : 'none';
+  }
 }
 
 function setDateFilter(v) {
   currentDateFilter = v;
+  renderClients();
+}
+
+function setClassifFilter(v) {
+  currentClassifFilter = v;
+  const cfClear = document.getElementById('classifFilterClear');
+  if (cfClear) cfClear.style.display = v !== 'all' ? 'block' : 'none';
   renderClients();
 }
 
@@ -784,6 +814,16 @@ function renderClients() {
   if (currentFilter === 'sent')    pool = pool.filter(c => c.sent);
   if (currentFilter === 'just')    pool = pool.filter(c => c.justificativa && c.justificativa.trim());
   if (currentDateFilter !== 'all') pool = pool.filter(c => formatarData(c.mes) === currentDateFilter);
+  if (currentClassifFilter !== 'all') {
+    pool = pool.filter(c => {
+      const r = (c.classificacao || '').toUpperCase();
+      if (currentClassifFilter === 'ouro')  return r.includes('OURO');
+      if (currentClassifFilter === 'prata') return r.includes('PRATA');
+      if (currentClassifFilter === 'latao') return r.includes('LAT');
+      if (currentClassifFilter === 'sem')   return !r.includes('OURO') && !r.includes('PRATA') && !r.includes('LAT');
+      return true;
+    });
+  }
   pool.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   renderDateFilterOptions();
