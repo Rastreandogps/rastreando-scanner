@@ -211,11 +211,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab.active-in{background:var(--orange-dim);color:var(--orange)}
 .group-tab.active-both{background:var(--yellow-dim);color:var(--yellow)}
 .group-tab.active-canc{background:#1a1a1a;color:#aaa;border-top:2px solid #555}
+.group-tab.active-ret{background:var(--orange-dim);color:var(--orange);border-top:2px solid var(--orange)}
 .group-tab-count{display:inline-block;background:rgba(255,255,255,.12);border-radius:10px;padding:1px 6px;font-size:11px;margin-left:4px;font-weight:800}
 .group-tab.active-at .group-tab-count{background:var(--red);color:#fff}
 .group-tab.active-in .group-tab-count{background:var(--orange);color:#000}
 .group-tab.active-both .group-tab-count{background:var(--yellow);color:#000}
 .group-tab.active-canc .group-tab-count{background:#555;color:#fff}
+.group-tab.active-ret .group-tab-count{background:var(--orange);color:#000}
 .btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #d32f2f;background:#fdecea;color:#d32f2f;transition:all .2s;width:100%}
 .btn-cancelar-chip:active{transform:scale(.97);background:#e53935;color:#fff}
 .classif-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.3px;margin-top:3px}
@@ -324,6 +326,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </button>
       <button class="group-tab" id="gtCANC" onclick="switchGroup('CANC')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelados<span class="group-tab-count" id="gtCountCANC">0</span>
+      </button>
+      <button class="group-tab" id="gtRET" onclick="switchGroup('RET')">
+        🚚 Retirada<span class="group-tab-count" id="gtCountRET">0</span>
       </button>
     </div>
     <div class="stats-row" id="statsRow" style="display:none">
@@ -442,6 +447,7 @@ const API_SECRET = 'rastreandogps2025';
 let clientsAT = [];
 let clientsIN = [];
 let clientsCancelados = [];
+let clientsRetirada   = [];
 let activeGroup = 'AT';
 let currentFilter = 'all';
 let currentDateFilter = 'all';
@@ -454,7 +460,9 @@ function currentClients() {
   if (activeGroup === 'AT')   return getATOnly();
   if (activeGroup === 'IN')   return getINOnly();
   if (activeGroup === 'BOTH') return getBothClients();
-  return clientsCancelados;
+  if (activeGroup === 'CANC') return clientsCancelados;
+  if (activeGroup === 'RET')  return clientsRetirada;
+  return [];
 }
 function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
 
@@ -462,29 +470,32 @@ function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; els
 function getBothClients() {
   const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  const keysRET  = new Set(clientsRetirada.map(c => clientKey(c.nome, c.telefone)));
   return clientsAT.filter(c => {
     const k = clientKey(c.nome, c.telefone);
-    return keysIN.has(k) && !keysCANC.has(k);
+    return keysIN.has(k) && !keysCANC.has(k) && !keysRET.has(k);
   });
 }
 
-// AT exclusivo: em AT, não em IN, não cancelado
+// AT exclusivo: em AT, não em IN, não cancelado, não retirada
 function getATOnly() {
   const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  const keysRET  = new Set(clientsRetirada.map(c => clientKey(c.nome, c.telefone)));
   return clientsAT.filter(c => {
     const k = clientKey(c.nome, c.telefone);
-    return !keysIN.has(k) && !keysCANC.has(k);
+    return !keysIN.has(k) && !keysCANC.has(k) && !keysRET.has(k);
   });
 }
 
-// IN exclusivo: em IN, não em AT, não cancelado
+// IN exclusivo: em IN, não em AT, não cancelado, não retirada
 function getINOnly() {
   const keysAT   = new Set(clientsAT.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
+  const keysRET  = new Set(clientsRetirada.map(c => clientKey(c.nome, c.telefone)));
   return clientsIN.filter(c => {
     const k = clientKey(c.nome, c.telefone);
-    return !keysAT.has(k) && !keysCANC.has(k);
+    return !keysAT.has(k) && !keysCANC.has(k) && !keysRET.has(k);
   });
 }
 
@@ -494,6 +505,7 @@ function switchGroup(g) {
   document.getElementById('gtIN').className   = 'group-tab' + (g === 'IN'   ? ' active-in'   : '');
   document.getElementById('gtBOTH').className = 'group-tab' + (g === 'BOTH' ? ' active-both' : '');
   document.getElementById('gtCANC').className = 'group-tab' + (g === 'CANC' ? ' active-canc' : '');
+  document.getElementById('gtRET').className  = 'group-tab' + (g === 'RET'  ? ' active-ret'  : '');
   currentFilter = 'all';
   currentDateFilter = 'all';
   currentClassifFilter = 'all';
@@ -511,6 +523,7 @@ function updateGroupCounts() {
   document.getElementById('gtCountIN').textContent   = getINOnly().length;
   document.getElementById('gtCountBOTH').textContent = getBothClients().length;
   document.getElementById('gtCountCANC').textContent = clientsCancelados.length;
+  document.getElementById('gtCountRET').textContent  = clientsRetirada.length;
 }
 
 window.addEventListener('load', () => { loadFromStorage(); updateGroupCounts(); switchTab('clientes'); });
@@ -899,24 +912,27 @@ function buildCardHTML(c, i) {
       </div>
       <div class="just-save-row">
         <button class="btn-just-save" onclick="saveJust(${c.id})">💾 Salvar</button>
-        ${hasJust ? `<button class="btn-just-clear" onclick="clearJust(${c.id})">Apagar retorno</button>` : ''}
+        ${(hasJust || c.dataCompromisso) ? `<button class="btn-just-clear" onclick="clearJust(${c.id})">🗑️ Apagar retorno e compromisso</button>` : ''}
       </div>
     </div>`;
 
   const cancelBtn = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
-    ? `<button class="btn-cancelar-chip" onclick="cancelarChip(${c.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelar chip</button>`
+    ? `<button class="btn-cancelar-chip" onclick="cancelarChip(${c.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelar chip</button>
+     <button class="btn-cancelar-chip" onclick="marcarRetirada(${c.id})" style="border-color:var(--orange);background:var(--orange-dim);color:var(--orange);margin-top:4px">🚚 Solicitar retirada</button>`
     : activeGroup === 'CANC'
     ? `<button class="btn-cancelar-chip" onclick="reativarCliente(${c.id})" style="border-color:var(--green);background:var(--green-dim);color:var(--green)">↩️ Reativar cliente</button>`
+    : activeGroup === 'RET'
+    ? `<button class="btn-cancelar-chip" onclick="reverterRetirada(${c.id})" style="border-color:var(--green);background:var(--green-dim);color:var(--green)">↩️ Reverter retirada</button>`
     : '';
 
   const cancelBtnHead = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
-    ? `<button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#fdecea;border:1.5px solid #d32f2f;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
+    ? `<button onclick="event.stopPropagation();marcarRetirada(${c.id})" title="Solicitar retirada" style="background:var(--orange-dim);border:1.5px solid var(--orange);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">🚚</button>
+       <button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#fdecea;border:1.5px solid #d32f2f;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
     : activeGroup === 'CANC'
     ? `<button onclick="event.stopPropagation();reativarCliente(${c.id})" title="Reativar cliente" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">↩️</button>`
+    : activeGroup === 'RET'
+    ? `<button onclick="event.stopPropagation();reverterRetirada(${c.id})" title="Reverter retirada" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">↩️</button>`
     : '';
-
-  return `<div class="client-card${sentClass}${justClass}" id="card-${c.id}" style="animation-delay:${i*.04}s">
-    <div class="client-card-head" onclick="toggleCard(${c.id})">
       <div class="client-card-head-top">
         <div class="client-avatar" ${avatarStyle ? `style="${avatarStyle}"` : ''}>${avatarContent}</div>
         <div class="client-info">
@@ -1017,15 +1033,32 @@ function saveJust(id) {
 }
 
 function clearJust(id) {
+  const c = currentClients().find(x => x.id === id); if (!c) return;
   const ta = document.getElementById('just-' + id);
   if (ta) ta.value = '';
-  saveJust(id);
-}
-
-function clearJust(id) {
-  const ta = document.getElementById('just-' + id);
-  if (ta) ta.value = '';
-  saveJust(id);
+  const inp = document.getElementById('comp-' + id);
+  if (inp) inp.value = '';
+  c.justificativa  = '';
+  c.justData       = null;
+  c.dataCompromisso = '';
+  saveToStorage();
+  // Atualiza visual do card sem re-render completo
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    card.classList.remove('has-just');
+    const chip = card.querySelector('.just-chip');
+    if (chip) chip.remove();
+    const label = card.querySelector('.just-section-label');
+    if (label) label.innerHTML = '💬 Retorno do cliente';
+    const saveRow = card.querySelector('.just-save-row');
+    if (saveRow) { const cb = saveRow.querySelector('.btn-just-clear'); if (cb) cb.remove(); }
+  }
+  // Apaga tudo na planilha
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ secret: API_SECRET, action: 'salvarRetorno', nome: c.nome, telefone: c.telefone, retorno: '', dataRetorno: '', dataCompromisso: '', retirada: c.retiradaEm ? 'SIM' : '' })
+  }).catch(() => {});
+  showToast('🗑️ Retorno e compromisso apagados');
 }
 
 function saveCompromisso(id, valor) {
@@ -1111,7 +1144,7 @@ function renderAgendaClientes() {
     el.innerHTML = '<div class="agenda-empty">Selecione um dia para ver os compromissos</div>';
     return;
   }
-  const todasListas = [...clientsAT, ...clientsIN, ...clientsCancelados];
+  const todasListas = [...clientsAT, ...clientsIN, ...clientsCancelados, ...clientsRetirada];
   const clientes = todasListas.filter(c => c.dataCompromisso === agendaDiaSel);
   if (clientes.length === 0) {
     el.innerHTML = '<div class="agenda-empty">Nenhum compromisso em ' + formatarDataBR(agendaDiaSel) + '</div>';
@@ -1177,7 +1210,7 @@ function toggleSent(id) {
 }
 
 function deleteClient(id) {
-  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use o botão de reativar ou remova pela aba AT/IN'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Use o botão de reverter ou remova pela aba AT/IN'); return; }
   const c = currentClients().find(x=>x.id===id); if(!c) return;
   openModal('Remover cliente?','"'+c.nome+'" será removido da lista.',() => {
     const card = document.getElementById('card-'+id);
@@ -1193,39 +1226,31 @@ function deleteClient(id) {
 }
 
 function confirmLimparRetornos() {
-  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar retornos'); return; }
-  const comRetorno = currentClients().filter(c => c.justificativa && c.justificativa.trim()).length;
-  if (comRetorno === 0) { showToast('Nenhum retorno registrado'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Use a aba AT ou IN para limpar retornos'); return; }
+  const comRetorno = currentClients().filter(c => (c.justificativa && c.justificativa.trim()) || c.dataCompromisso).length;
+  if (comRetorno === 0) { showToast('Nenhum retorno ou compromisso registrado'); return; }
   openModal(
     '⚠️ Limpar todos os retornos?',
-    comRetorno + ' cliente' + (comRetorno > 1 ? 's' : '') + ' terão seus retornos apagados para todos os dispositivos.',
+    comRetorno + ' cliente' + (comRetorno > 1 ? 's' : '') + ' terão retorno e data de compromisso apagados em todos os dispositivos.',
     () => {
-      // Apaga localmente
-      const afetados = currentClients().filter(c => c.justificativa && c.justificativa.trim());
-      afetados.forEach(c => { c.justificativa = ''; c.justData = null; });
+      const afetados = currentClients().filter(c => (c.justificativa && c.justificativa.trim()) || c.dataCompromisso);
+      afetados.forEach(c => { c.justificativa = ''; c.justData = null; c.dataCompromisso = ''; });
       saveToStorage();
       renderClients();
-      // Apaga na planilha — envia um por um silenciosamente
+      // Apaga na planilha
       afetados.forEach(c => {
         fetch(API_URL, {
           method: 'POST',
-          body: JSON.stringify({
-            secret: API_SECRET,
-            action: 'salvarRetorno',
-            nome: c.nome,
-            telefone: c.telefone,
-            retorno: '',
-            dataRetorno: ''
-          })
+          body: JSON.stringify({ secret: API_SECRET, action: 'salvarRetorno', nome: c.nome, telefone: c.telefone, retorno: '', dataRetorno: '', dataCompromisso: '', retirada: c.retiradaEm ? 'SIM' : '' })
         }).catch(() => {});
       });
-      showToast('💬 Retornos apagados em todos os dispositivos');
+      showToast('💬 Retornos e compromissos apagados');
     }
   );
 }
 
 function confirmResetSent() {
-  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
   openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
@@ -1254,6 +1279,34 @@ function reativarCliente(id) {
     clientsCancelados = clientsCancelados.filter(x=>x.id!==id);
     saveToStorage(); updateGroupCounts(); renderClients();
     showToast('↩️ ' + c.nome.split(' ')[0] + ' reativado');
+  });
+}
+
+function marcarRetirada(id) {
+  const c = currentClients().find(x=>x.id===id); if(!c) return;
+  openModal('Marcar retirada?', '"'+c.nome+'" será movido para a aba Retirada.', () => {
+    clientsRetirada.push({ ...c, retiradaEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
+    saveToStorage(); updateGroupCounts(); renderClients();
+    showToast('🚚 ' + c.nome.split(' ')[0] + ' marcado para retirada');
+    // Notifica planilha
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ secret: API_SECRET, action: 'salvarRetorno', nome: c.nome, telefone: c.telefone, retorno: c.justificativa||'', dataRetorno: c.justData||'', dataCompromisso: c.dataCompromisso||'', retirada: 'SIM' })
+    }).catch(()=>{});
+  });
+}
+
+function reverterRetirada(id) {
+  const c = clientsRetirada.find(x=>x.id===id); if(!c) return;
+  openModal('Reverter retirada?', '"'+c.nome+'" voltará para a fila normal.', () => {
+    clientsRetirada = clientsRetirada.filter(x=>x.id!==id);
+    saveToStorage(); updateGroupCounts(); renderClients();
+    showToast('↩️ ' + c.nome.split(' ')[0] + ' retirada revertida');
+    // Notifica planilha
+    fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ secret: API_SECRET, action: 'salvarRetorno', nome: c.nome, telefone: c.telefone, retorno: c.justificativa||'', dataRetorno: c.justData||'', dataCompromisso: c.dataCompromisso||'', retirada: '' })
+    }).catch(()=>{});
   });
 }
 
@@ -1298,7 +1351,7 @@ function copyMsg(id) {
 }
 
 function confirmClear() {
-  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Limpe pela aba AT ou IN'); return; }
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Limpe pela aba AT ou IN'); return; }
   const label = importMode === 'IN' ? 'IN' : 'AT';
   openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
     if (importMode === 'AT') clientsAT = []; else clientsIN = [];
@@ -1329,9 +1382,10 @@ function showToast(msg) {
 // ── STORAGE ───────────────────────────────────────────────
 function saveToStorage() {
   try {
-    localStorage.setItem('rg_clientsAT', JSON.stringify(clientsAT));
-    localStorage.setItem('rg_clientsIN', JSON.stringify(clientsIN));
+    localStorage.setItem('rg_clientsAT',   JSON.stringify(clientsAT));
+    localStorage.setItem('rg_clientsIN',   JSON.stringify(clientsIN));
     localStorage.setItem('rg_clientsCANC', JSON.stringify(clientsCancelados));
+    localStorage.setItem('rg_clientsRET',  JSON.stringify(clientsRetirada));
   } catch(e){}
 }
 function saveTemplate() { try{localStorage.setItem('rg_template',document.getElementById('msgTemplate').value);}catch(e){} }
@@ -1359,9 +1413,11 @@ function loadFromStorage() {
       const clAT   = localStorage.getItem('rg_clientsAT');
       const clIN   = localStorage.getItem('rg_clientsIN');
       const clCANC = localStorage.getItem('rg_clientsCANC');
+      const clRET  = localStorage.getItem('rg_clientsRET');
       if (clAT)   clientsAT          = fixClients(JSON.parse(clAT));
       if (clIN)   clientsIN          = fixClients(JSON.parse(clIN));
       if (clCANC) clientsCancelados  = fixClients(JSON.parse(clCANC));
+      if (clRET)  clientsRetirada    = fixClients(JSON.parse(clRET));
     }
     const fl = localStorage.getItem('rg_fields');
     if (fl) { /* campos de texto removidos — ignorar */ }
