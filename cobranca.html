@@ -385,6 +385,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </select>
       <button class="date-filter-clear" id="classifFilterClear" onclick="setClassifFilter('all')" style="display:none">✕ Limpar</button>
     </div>
+    <div class="date-filter-wrap" id="zeroPtsWrap" style="display:none;align-items:center;gap:8px">
+      <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);user-select:none">
+        <input type="checkbox" id="zeroPtsCheck" onchange="renderClients()" style="width:17px;height:17px;cursor:pointer;accent-color:var(--purple)">
+        Mostrar só clientes com 0 pts
+      </label>
+    </div>
     <div class="clients-list" id="clientsList">
       <div class="empty-state">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="8" y="12" width="48" height="40" rx="6" stroke="#888" stroke-width="2"/><line x1="16" y1="24" x2="48" y2="24" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="32" x2="40" y2="32" stroke="#888" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="40" x2="32" y2="40" stroke="#888" stroke-width="2" stroke-linecap="round"/></svg>
@@ -490,6 +496,8 @@ function switchGroup(g) {
   currentFilter = 'all';
   currentDateFilter = 'all';
   currentClassifFilter = 'all';
+  const zpc = document.getElementById('zeroPtsCheck');
+  if (zpc) zpc.checked = false;
   ['All','Pending','Sent','Just'].forEach(x => {
     const el = document.getElementById('ft'+x);
     if (el) el.classList.toggle('active', x.toLowerCase() === 'all');
@@ -795,6 +803,8 @@ function renderDateFilterOptions() {
     cfSel.value = currentClassifFilter;
     cfClear.style.display = currentClassifFilter !== 'all' ? 'block' : 'none';
   }
+  const zpWrap = document.getElementById('zeroPtsWrap');
+  if (zpWrap) zpWrap.style.display = 'flex';
 }
 
 function setDateFilter(v) {
@@ -826,6 +836,10 @@ function renderClients() {
       if (currentClassifFilter === 'sem')   return !r.includes('OURO') && !r.includes('PRATA') && !r.includes('LAT');
       return true;
     });
+  }
+  const zeroPtsCheck = document.getElementById('zeroPtsCheck');
+  if (zeroPtsCheck && zeroPtsCheck.checked) {
+    pool = pool.filter(c => (parseFloat(c.pontuacao) || 0) === 0);
   }
   pool.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
