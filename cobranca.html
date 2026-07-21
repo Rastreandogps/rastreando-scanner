@@ -18,14 +18,14 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
---bg:#0a0a0a;--bg2:#141414;--bg3:#1c1c1c;--card:#1a1a1a;--border:#2a2a2a;--border2:#333;
---yellow:#f5c518;--yellow2:#ffd740;--yellow-dim:#2a2200;
---red:#e53935;--red-dim:#2a0a0a;
---white:#f0f0f0;--muted:#888;--muted2:#555;--text:#f0f0f0;--text2:#bbb;
---green:#25d366;--green-dim:#0a1f0f;--green2:#1aad54;
---sent:#0d3320;--sent-border:#1aad54;
---orange:#ff9800;--orange-dim:#2a1800;
---purple:#9c27b0;--purple-dim:#1a0a1f;
+--bg:#f4f5f7;--bg2:#ffffff;--bg3:#e8eaed;--card:#ffffff;--border:#dde1e7;--border2:#c8cdd6;
+--yellow:#c9920a;--yellow2:#e8a800;--yellow-dim:#fff3cc;
+--red:#d32f2f;--red-dim:#fdecea;
+--white:#1a1a1a;--muted:#666;--muted2:#999;--text:#1a1a1a;--text2:#444;
+--green:#1a9e4a;--green-dim:#e6f7ed;--green2:#1a9e4a;
+--sent:#e6f7ed;--sent-border:#1a9e4a;
+--orange:#e65c00;--orange-dim:#fff0e6;
+--purple:#7b1fa2;--purple-dim:#f3e5f5;
 --radius:14px;--radius-sm:8px;--radius-lg:20px;
 --font:'Space Grotesk',sans-serif;--font-display:'Syne',sans-serif;
 }
@@ -195,12 +195,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab.active-in .group-tab-count{background:var(--orange);color:#000}
 .group-tab.active-both .group-tab-count{background:var(--yellow);color:#000}
 .group-tab.active-canc .group-tab-count{background:#555;color:#fff}
-.btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #e53935;background:#2a0a0a;color:#e53935;transition:all .2s;width:100%}
+.btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #d32f2f;background:#fdecea;color:#d32f2f;transition:all .2s;width:100%}
 .btn-cancelar-chip:active{transform:scale(.97);background:#e53935;color:#fff}
 .classif-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.3px;margin-top:3px}
-.classif-ouro{background:#3a2800;color:#f5c518;border:1px solid #f5c518}
-.classif-prata{background:#1e1e1e;color:#bbb;border:1px solid #888}
-.classif-latao{background:#2a1800;color:#cd7f32;border:1px solid #cd7f32}
+.classif-ouro{background:#fff3cc;color:#c9920a;border:1px solid #e8a800}
+.classif-prata{background:#f0f0f0;color:#555;border:1px solid #aaa}
+.classif-latao{background:#fff0e6;color:#a0611f;border:1px solid #cd7f32}
 .filter-tabs{display:flex;gap:6px;flex-wrap:wrap}
 .date-filter-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-filter-label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -586,7 +586,10 @@ async function importarInadimplentes() {
           mes:   fresh.mes,
           link:  fresh.link || existing.link,
           classificacao: fresh.classificacao || existing.classificacao || '',
-          pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || '')
+          pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || ''),
+          // Retorno da planilha tem prioridade se vier preenchido
+          justificativa: fresh.retorno || existing.justificativa || '',
+          justData: fresh.dataRetorno || existing.justData || null
         });
         novosMap.delete(key); // já processado
       } else {
@@ -606,10 +609,10 @@ async function importarInadimplentes() {
         link: c.link || '',
         classificacao: c.classificacao || '',
         pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
+        justificativa: c.retorno || '',
+        justData: c.dataRetorno || null,
         expanded: false,
         sent: false,
-        justificativa: '',
-        justData: null
       });
     });
 
@@ -879,16 +882,16 @@ function buildCardHTML(c, i) {
   const classifRaw = (c.classificacao || '').toUpperCase();
   const pontuacao = (c.pontuacao !== undefined && c.pontuacao !== '' && c.pontuacao !== null)
     ? c.pontuacao : null;
-  const pontColor = classifRaw.includes('OURO')  ? 'var(--yellow)'
-                  : classifRaw.includes('PRATA') ? '#bbb'
-                  : classifRaw.includes('LAT')   ? '#cd7f32'
+  const pontColor = classifRaw.includes('OURO')  ? '#c9920a'
+                  : classifRaw.includes('PRATA') ? '#555'
+                  : classifRaw.includes('LAT')   ? '#a0611f'
                   : 'var(--muted)';
-  const pontBg    = classifRaw.includes('OURO')  ? 'var(--yellow-dim)'
-                  : classifRaw.includes('PRATA') ? '#1e1e1e'
-                  : classifRaw.includes('LAT')   ? 'var(--orange-dim)'
+  const pontBg    = classifRaw.includes('OURO')  ? '#fff3cc'
+                  : classifRaw.includes('PRATA') ? '#f0f0f0'
+                  : classifRaw.includes('LAT')   ? '#fff0e6'
                   : 'var(--bg3)';
-  const pontBorder= classifRaw.includes('OURO')  ? '#f5c518'
-                  : classifRaw.includes('PRATA') ? '#888'
+  const pontBorder= classifRaw.includes('OURO')  ? '#e8a800'
+                  : classifRaw.includes('PRATA') ? '#aaa'
                   : classifRaw.includes('LAT')   ? '#cd7f32'
                   : 'var(--border2)';
   const classifLabel = classifRaw.includes('OURO')  ? '🥇 Ouro'
@@ -901,9 +904,9 @@ function buildCardHTML(c, i) {
     ? `<span class="classif-badge" style="background:${pontBg};color:${pontColor};border-color:${pontBorder}">⭐ ${pontuacao} pts</span>`
     : '';
 
-  const avatarStyle = classifRaw.includes('OURO')  ? 'background:#3a2800;border:2px solid #f5c518;font-size:20px'
-                    : classifRaw.includes('PRATA') ? 'background:#1e1e1e;border:2px solid #aaa;font-size:20px'
-                    : classifRaw.includes('LAT')   ? 'background:#2a1800;border:2px solid #cd7f32;font-size:20px'
+  const avatarStyle = classifRaw.includes('OURO')  ? 'background:#fff3cc;border:2px solid #e8a800;font-size:20px'
+                    : classifRaw.includes('PRATA') ? 'background:#f0f0f0;border:2px solid #aaa;font-size:20px'
+                    : classifRaw.includes('LAT')   ? 'background:#fff0e6;border:2px solid #cd7f32;font-size:20px'
                     : '';
 
   const avatarContent = c.sent ? '✓'
@@ -929,7 +932,7 @@ function buildCardHTML(c, i) {
     : '';
 
   const cancelBtnHead = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
-    ? `<button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#2a0a0a;border:1.5px solid #e53935;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
+    ? `<button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#fdecea;border:1.5px solid #d32f2f;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
     : activeGroup === 'CANC'
     ? `<button onclick="event.stopPropagation();reativarCliente(${c.id})" title="Reativar cliente" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">↩️</button>`
     : '';
@@ -949,7 +952,7 @@ function buildCardHTML(c, i) {
       </div>
       <div class="card-head-actions" onclick="event.stopPropagation()">
         ${cancelBtnHead}
-        <button class="btn-head-wa" onclick="sendWhatsApp(${c.id})" title="WhatsApp com mensagem" style="background:#0d2a3f;border:1.5px solid #1d9bf0;color:#1d9bf0">
+        <button class="btn-head-wa" onclick="sendWhatsApp(${c.id})" title="WhatsApp com mensagem" style="background:#e3f2fd;border:1.5px solid #1d9bf0;color:#1d9bf0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14l4 4V4a2 2 0 0 0-2-2zm-2 10H6v-2h12v2zm0-3H6V7h12v2z"/></svg>
         </button>
         <button class="btn-head-wa-blank" onclick="openWhatsAppBlank(${c.id})" title="WhatsApp sem mensagem" style="background:var(--bg3);border:1.5px solid var(--border2);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;color:var(--green)">
@@ -968,7 +971,7 @@ function buildCardHTML(c, i) {
       </div>
       ${justSection}
       <div class="action-row">
-        <button class="btn-whatsapp" onclick="sendWhatsApp(${c.id})" title="WhatsApp com mensagem" style="background:#0d2a3f;color:#1d9bf0;border:1.5px solid #1d9bf0">
+        <button class="btn-whatsapp" onclick="sendWhatsApp(${c.id})" title="WhatsApp com mensagem" style="background:#e3f2fd;color:#1d9bf0;border:1.5px solid #1d9bf0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14l4 4V4a2 2 0 0 0-2-2zm-2 10H6v-2h12v2zm0-3H6V7h12v2z"/></svg>
           Com mensagem
         </button>
@@ -998,6 +1001,19 @@ function saveJust(id) {
   c.justificativa = txt;
   c.justData = txt ? new Date().toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric', hour:'2-digit', minute:'2-digit'}) : null;
   saveToStorage();
+
+  // Envia retorno para a planilha via GAS
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      secret: API_SECRET,
+      action: 'salvarRetorno',
+      nome: c.nome,
+      telefone: c.telefone,
+      retorno: txt,
+      dataRetorno: c.justData || ''
+    })
+  }).catch(() => {}); // silencioso — não bloqueia o app se falhar
   // Atualiza chip e borda sem re-render completo
   const card = document.getElementById('card-' + id);
   if (card) {
