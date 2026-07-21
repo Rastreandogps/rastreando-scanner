@@ -328,7 +328,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline;vertical-align:middle;margin-right:3px"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#555" stroke="#888" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#222" stroke="#aaa" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#e53935" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelados<span class="group-tab-count" id="gtCountCANC">0</span>
       </button>
       <button class="group-tab" id="gtRET" onclick="switchGroup('RET')">
-        🚚 Retirada<span class="group-tab-count" id="gtCountRET">0</span>
+        🔧 Retirada<span class="group-tab-count" id="gtCountRET">0</span>
       </button>
     </div>
     <div class="stats-row" id="statsRow" style="display:none">
@@ -935,7 +935,7 @@ function buildCardHTML(c, i) {
 
   const cancelBtn = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
     ? `<button class="btn-cancelar-chip" onclick="cancelarChip(${c.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg> Cancelar chip</button>
-     <button class="btn-cancelar-chip" onclick="marcarRetirada(${c.id})" style="border-color:var(--orange);background:var(--orange-dim);color:var(--orange);margin-top:4px">🚚 Solicitar retirada</button>`
+     <button class="btn-cancelar-chip" onclick="marcarRetirada(${c.id})" style="border-color:var(--orange);background:var(--orange-dim);color:var(--orange);margin-top:4px">🔧 Solicitar retirada</button>`
     : activeGroup === 'CANC'
     ? `<button class="btn-cancelar-chip" onclick="reativarCliente(${c.id})" style="border-color:var(--green);background:var(--green-dim);color:var(--green)">↩️ Reativar cliente</button>`
     : activeGroup === 'RET'
@@ -943,7 +943,7 @@ function buildCardHTML(c, i) {
     : '';
 
   const cancelBtnHead = (activeGroup === 'BOTH' || activeGroup === 'IN' || activeGroup === 'AT')
-    ? `<button onclick="event.stopPropagation();marcarRetirada(${c.id})" title="Solicitar retirada" style="background:var(--orange-dim);border:1.5px solid var(--orange);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">🚚</button>
+    ? `<button onclick="event.stopPropagation();marcarRetirada(${c.id})" title="Solicitar retirada" style="background:var(--orange-dim);border:1.5px solid var(--orange);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">🔧</button>
        <button onclick="event.stopPropagation();cancelarChip(${c.id})" title="Cancelar chip" style="background:#fdecea;border:1.5px solid #d32f2f;border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 2h8l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#ccc" stroke="#999" stroke-width="1.2"/><rect x="8" y="9" width="8" height="6" rx="1" fill="#eee" stroke="#bbb" stroke-width=".8"/><line x1="9.5" y1="10.5" x2="14.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/><line x1="14.5" y1="10.5" x2="9.5" y2="14.5" stroke="#d32f2f" stroke-width="1.8" stroke-linecap="round"/></svg></button>`
     : activeGroup === 'CANC'
     ? `<button onclick="event.stopPropagation();reativarCliente(${c.id})" title="Reativar cliente" style="background:var(--green-dim);border:1.5px solid var(--green);border-radius:var(--radius-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px">↩️</button>`
@@ -1307,7 +1307,7 @@ function marcarRetirada(id) {
   openModal('Marcar retirada?', '"'+c.nome+'" será movido para a aba Retirada.', () => {
     clientsRetirada.push({ ...c, retiradaEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
     saveToStorage(); updateGroupCounts(); renderClients();
-    showToast('🚚 ' + c.nome.split(' ')[0] + ' marcado para retirada');
+    showToast('🔧 ' + c.nome.split(' ')[0] + ' marcado para retirada');
     // Notifica planilha
     fetch(API_URL, {
       method: 'POST',
