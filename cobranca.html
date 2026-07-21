@@ -1343,9 +1343,14 @@ function openWhatsAppBlank(id) {
 }
 
 function cancelarChip(id) {
-  const c = currentClients().find(x=>x.id===id); if(!c) return;
+  // Na aba BOTH os clientes vêm de clientsAT — busca lá diretamente
+  const lista = (activeGroup === 'BOTH') ? clientsAT : currentClients();
+  const c = lista.find(x=>x.id===id); if(!c) return;
   openModal('Cancelar chip?', '"'+c.nome+'" será movido para Cancelados.', () => {
     clientsCancelados.push({ ...c, canceladoEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
+    // Remove das listas originais
+    clientsAT = clientsAT.filter(x=>x.id!==id);
+    clientsIN = clientsIN.filter(x=>clientKey(x.nome,x.telefone)!==clientKey(c.nome,c.telefone));
     saveToStorage(); updateGroupCounts(); renderClients();
     showToast('🚫 Chip de ' + c.nome.split(' ')[0] + ' cancelado');
     fetch(API_URL, { method:'POST', body: JSON.stringify({ secret:API_SECRET, action:'salvarRetorno', nome:c.nome, telefone:c.telefone, retorno:c.justificativa||'', dataRetorno:c.justData||'', dataCompromisso:c.dataCompromisso||'', retirada:'CANC' }) }).catch(()=>{});
@@ -1363,9 +1368,14 @@ function reativarCliente(id) {
 }
 
 function marcarRetirada(id) {
-  const c = currentClients().find(x=>x.id===id); if(!c) return;
+  // Na aba BOTH os clientes vêm de clientsAT — busca lá diretamente
+  const lista = (activeGroup === 'BOTH') ? clientsAT : currentClients();
+  const c = lista.find(x=>x.id===id); if(!c) return;
   openModal('Marcar retirada?', '"'+c.nome+'" será movido para a aba Retirada.', () => {
     clientsRetirada.push({ ...c, retiradaEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
+    // Remove das listas originais
+    clientsAT = clientsAT.filter(x=>x.id!==id);
+    clientsIN = clientsIN.filter(x=>clientKey(x.nome,x.telefone)!==clientKey(c.nome,c.telefone));
     saveToStorage(); updateGroupCounts(); renderClients();
     showToast('🔧 ' + c.nome.split(' ')[0] + ' marcado para retirada');
     fetch(API_URL, { method:'POST', body: JSON.stringify({ secret:API_SECRET, action:'salvarRetorno', nome:c.nome, telefone:c.telefone, retorno:c.justificativa||'', dataRetorno:c.justData||'', dataCompromisso:c.dataCompromisso||'', retirada:'SIM' }) }).catch(()=>{});
