@@ -577,9 +577,10 @@ async function importarInadimplentes() {
     const statusRes = await fetch(statusUrl);
     const statusJson = await statusRes.json();
     if (statusJson.atualizando) {
-      statusEl.innerHTML = '<div class="import-error" style="display:block;background:#fff3cc;color:#c9920a;border-color:#e8a800">⏳ A planilha está sendo atualizada agora. Aguarde alguns minutos e tente novamente.</div>';
       btn.disabled = false;
-      btn.innerHTML = '🔄 Tentar novamente';
+      btn.innerHTML = (importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora');
+      statusEl.innerHTML = '';
+      openModal('⏳ Planilha atualizando', 'A planilha está sendo atualizada agora. Aguarde alguns minutos e tente novamente.', null);
       return;
     }
   } catch(e) { /* se falhar a verificação, continua normalmente */ }
@@ -1387,9 +1388,22 @@ function openModal(title,text,cb) {
   document.getElementById('modalTitle').textContent=title;
   document.getElementById('modalText').textContent=text;
   document.getElementById('modalOverlay').classList.add('open');
-  document.getElementById('modalConfirmBtn').onclick=()=>{closeModal();cb();};
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  const titleEl = document.getElementById('modalTitle');
+  if (cb) {
+    confirmBtn.style.display='';
+    confirmBtn.onclick=()=>{closeModal();cb();};
+    titleEl.style.color='';
+  } else {
+    confirmBtn.style.display='none';
+    titleEl.style.color='var(--red)';
+  }
 }
-function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalConfirmBtn').style.display='';
+  document.getElementById('modalTitle').style.color='';
+}
 document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
 // ── TOAST ─────────────────────────────────────────────────
