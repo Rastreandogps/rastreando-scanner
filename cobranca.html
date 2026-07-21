@@ -111,7 +111,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .clients-list{display:flex;flex-direction:column;gap:10px}
 .client-card{background:var(--card);border:2px solid #f5e642;border-radius:var(--radius);overflow:hidden;transition:border-color .3s,background .3s;box-shadow:0 0 6px rgba(245,230,66,.18)}
 .client-card.sent{background:var(--sent);border-color:var(--sent-border)}
-.client-card.has-just{border-left:3px solid var(--purple)}
+.client-card.has-just{background:var(--purple-dim);border-color:var(--purple);box-shadow:0 0 8px rgba(123,31,162,.25)}
 .client-card-head{padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
 .client-card-head-top{display:flex;align-items:center;gap:10px}
 .client-avatar{width:40px;height:40px;border-radius:50%;background:var(--yellow-dim);border:1.5px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--yellow);flex-shrink:0;transition:all .3s}
