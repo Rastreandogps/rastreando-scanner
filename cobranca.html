@@ -1124,6 +1124,8 @@ function confirmLimparRetornos() {
     }
   );
 }
+
+function confirmResetSent() {
   if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
