@@ -358,7 +358,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
       <div class="progress-bottom">
         <span class="progress-pct" id="progressPct">0% concluído</span>
-        <button class="btn-reset-sent" onclick="confirmResetSent()">🔄 Limpar marcações</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn-reset-sent" onclick="confirmResetSent()">🔄 Limpar marcações</button>
+          <button class="btn-reset-sent" onclick="confirmLimparRetornos()" style="background:var(--purple-dim);color:var(--purple);border-color:rgba(123,31,162,.3)">💬 Limpar retornos</button>
+        </div>
       </div>
     </div>
     <div class="filter-tabs" id="filterTabs" style="display:none">
@@ -1106,7 +1109,21 @@ function deleteClient(id) {
   });
 }
 
-function confirmResetSent() {
+function confirmLimparRetornos() {
+  if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar retornos'); return; }
+  const comRetorno = currentClients().filter(c => c.justificativa && c.justificativa.trim()).length;
+  if (comRetorno === 0) { showToast('Nenhum retorno registrado'); return; }
+  openModal(
+    '⚠️ Limpar todos os retornos?',
+    comRetorno + ' cliente' + (comRetorno > 1 ? 's' : '') + ' terão seus retornos apagados. Esta ação não pode ser desfeita.',
+    () => {
+      currentClients().forEach(c => { c.justificativa = ''; c.justData = null; });
+      saveToStorage();
+      renderClients();
+      showToast('💬 Retornos apagados');
+    }
+  );
+}
   if (activeGroup === 'BOTH' || activeGroup === 'CANC') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
