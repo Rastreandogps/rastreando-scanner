@@ -261,47 +261,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </button>
       </div>
     </div>
-
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-      <span style="font-size:12px;color:var(--muted);font-weight:600">ou cole manualmente</span>
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-head"><h3>📥 Cole os dados</h3></div>
-      <div class="fields-grid">
-        <div class="field-wrap">
-          <label>Nomes</label>
-          <textarea id="fNomes" placeholder="João Silva&#10;Maria Oliveira" oninput="autoResize(this);validateFields()"></textarea>
-        </div>
-        <div class="field-wrap">
-          <label>Telefones</label>
-          <textarea id="fTelefones" placeholder="21999999999&#10;21988888888" oninput="autoResize(this);validateFields()"></textarea>
-        </div>
-        <div class="field-wrap">
-          <label>Datas</label>
-          <textarea id="fMeses" placeholder="23/04/2025&#10;15/05/2025" oninput="autoResize(this);validateFields()"></textarea>
-        </div>
-        <div class="field-wrap">
-          <label>Valores (R$)</label>
-          <textarea id="fValores" placeholder="59,90&#10;120,00" oninput="autoResize(this);validateFields()"></textarea>
-        </div>
-        <div class="field-wrap" style="grid-column:1/-1">
-          <label>🏅 Classificação <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(Ouro, Prata ou Latão)</span></label>
-          <textarea id="fClassif" placeholder="Ouro&#10;Prata&#10;Latão" oninput="autoResize(this)" style="min-height:60px"></textarea>
-        </div>
-      </div>
-      <div style="border-top:1px solid var(--border)">
-        <div class="field-wrap" style="padding:10px 12px">
-          <label>🔗 Links <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <textarea id="fLinks" placeholder="https://..." oninput="autoResize(this);validateFields()" style="min-height:60px"></textarea>
-        </div>
-      </div>
-      <div id="validationMsg" class="validation"></div>
-    </div>
-    <button class="btn btn-primary" onclick="generateClients()" id="btnGerar">⚡ GERAR CLIENTES</button>
-    <button class="btn btn-danger" onclick="confirmClear()" style="margin-top:-6px">🗑️ Limpar Tudo</button>
+    <button class="btn btn-danger" onclick="confirmClear()">🗑️ Limpar Tudo</button>
   </div>
 
   <!-- MENSAGEM -->
@@ -515,7 +475,7 @@ function updateGroupCounts() {
   document.getElementById('gtCountCANC').textContent = clientsCancelados.length;
 }
 
-window.addEventListener('load', () => { loadFromStorage(); validateFields(); updateGroupCounts(); switchTab('clientes'); });
+window.addEventListener('load', () => { loadFromStorage(); updateGroupCounts(); switchTab('clientes'); });
 
 // ── CHAVE DE IDENTIDADE ──────────────────────────────────
 // Normaliza para os últimos 11 dígitos (sem código do país 55)
@@ -664,51 +624,7 @@ function switchTab(tab) {
 // ── PARSE MANUAL ─────────────────────────────────────────
 function parseField(text) { return text.split('\n').map(l => l.trim()).filter(l => l.length > 0); }
 
-function validateFields() {
-  const n = parseField(document.getElementById('fNomes').value);
-  const t = parseField(document.getElementById('fTelefones').value);
-  const m = parseField(document.getElementById('fMeses').value);
-  const v = parseField(document.getElementById('fValores').value);
-  const el = document.getElementById('validationMsg');
-  const btn = document.getElementById('btnGerar');
-  const counts = [n,t,m,v].map(a => a.length).filter(c => c > 0);
-  if (counts.length === 0) { el.style.display='none'; btn.disabled=false; return; }
-  const allSame = counts.every(c => c === counts[0]);
-  if (!allSame) {
-    el.className='validation error';
-    el.innerHTML='⚠️ Colunas diferentes: Nomes('+n.length+'), Tel('+t.length+'), Datas('+m.length+'), Valores('+v.length+')';
-    el.style.display='flex'; btn.disabled=true; return;
-  }
-  el.className='validation success';
-  el.innerHTML='✅ '+counts[0]+' cliente'+(counts[0]>1?'s':'')+' prontos';
-  el.style.display='flex'; btn.disabled=false;
-}
-
-function generateClients() {
-  const nomes   = parseField(document.getElementById('fNomes').value);
-  const tels    = parseField(document.getElementById('fTelefones').value);
-  const meses   = parseField(document.getElementById('fMeses').value);
-  const vals    = parseField(document.getElementById('fValores').value);
-  const links   = parseField(document.getElementById('fLinks').value);
-  const classif = parseField(document.getElementById('fClassif').value);
-  if (nomes.length === 0) { showToast('Cole os dados primeiro!'); return; }
-  if (![tels,meses,vals].every(a => a.length === nomes.length)) { showToast('Corrija as colunas antes de gerar'); return; }
-  const lista = nomes.map((nome, i) => ({
-    id: Date.now() + i, nome,
-    telefone: formatPhone(tels[i]),
-    mes: meses[i], valor: vals[i],
-    link: links[i] || '',
-    classificacao: classif[i] || '',
-    expanded: false, sent: false,
-    justificativa: '', justData: null
-  }));
-  if (importMode === 'AT') clientsAT = lista; else clientsIN = lista;
-  activeGroup = importMode;
-  saveToStorage();
-  updateGroupCounts();
-  showToast('⚡ ' + lista.length + ' cliente' + (lista.length>1?'s':'') + ' gerado' + (lista.length>1?'s':'') + '!');
-  switchTab('clientes');
-}
+// validateFields e generateClients removidos (seção de colar dados removida)
 
 function formatPhone(raw) {
   let p = raw.replace(/\D/g,'');
@@ -1203,8 +1119,6 @@ function confirmClear() {
   const label = importMode === 'IN' ? 'IN' : 'AT';
   openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
     if (importMode === 'AT') clientsAT = []; else clientsIN = [];
-    ['fNomes','fTelefones','fMeses','fValores','fLinks'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('validationMsg').style.display='none';
     document.getElementById('import-status').innerHTML='';
     document.getElementById('btnImportar').innerHTML= importMode === 'IN' ? '⚡ Importar IN agora' : '⚡ Importar AT agora';
     document.getElementById('btnImportar').disabled=false;
@@ -1235,14 +1149,6 @@ function saveToStorage() {
     localStorage.setItem('rg_clientsAT', JSON.stringify(clientsAT));
     localStorage.setItem('rg_clientsIN', JSON.stringify(clientsIN));
     localStorage.setItem('rg_clientsCANC', JSON.stringify(clientsCancelados));
-    localStorage.setItem('rg_fields', JSON.stringify({
-      n:  document.getElementById('fNomes').value,
-      te: document.getElementById('fTelefones').value,
-      m:  document.getElementById('fMeses').value,
-      v:  document.getElementById('fValores').value,
-      l:  document.getElementById('fLinks').value,
-      cl: document.getElementById('fClassif').value
-    }));
   } catch(e){}
 }
 function saveTemplate() { try{localStorage.setItem('rg_template',document.getElementById('msgTemplate').value);}catch(e){} }
@@ -1274,15 +1180,7 @@ function loadFromStorage() {
       if (clCANC) clientsCancelados  = fixClients(JSON.parse(clCANC));
     }
     const fl = localStorage.getItem('rg_fields');
-    if (fl) {
-      const f = JSON.parse(fl);
-      document.getElementById('fNomes').value      = f.n  || '';
-      document.getElementById('fTelefones').value  = f.te || '';
-      document.getElementById('fMeses').value      = f.m  || '';
-      document.getElementById('fValores').value    = f.v  || '';
-      document.getElementById('fLinks').value      = f.l  || '';
-      document.getElementById('fClassif').value    = f.cl || '';
-    }
+    if (fl) { /* campos de texto removidos — ignorar */ }
     const tpl = localStorage.getItem('rg_template');
     if (tpl) document.getElementById('msgTemplate').value = tpl;
     const total = clientsAT.length + clientsIN.length;
