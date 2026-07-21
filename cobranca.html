@@ -568,6 +568,23 @@ async function importarInadimplentes() {
   const btn = document.getElementById('btnImportar');
   const statusEl = document.getElementById('import-status');
   btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⏳</span> Verificando...';
+  statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Verificando planilha...</div>';
+
+  // ── Verifica se a planilha está sendo atualizada ──────────────────────────
+  try {
+    const statusUrl = API_URL + '?secret=' + API_SECRET + '&action=status';
+    const statusRes = await fetch(statusUrl);
+    const statusJson = await statusRes.json();
+    if (statusJson.atualizando) {
+      statusEl.innerHTML = '<div class="import-error" style="display:block;background:#fff3cc;color:#c9920a;border-color:#e8a800">⏳ A planilha está sendo atualizada agora. Aguarde alguns minutos e tente novamente.</div>';
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Tentar novamente';
+      return;
+    }
+  } catch(e) { /* se falhar a verificação, continua normalmente */ }
+  // ─────────────────────────────────────────────────────────────────────────
+
   btn.innerHTML = '<span class="spin">⏳</span> Buscando...';
   statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Conectando com a planilha...</div>';
   const action = importMode === 'IN' ? 'inadimplentesIN' : 'inadimplentes';
