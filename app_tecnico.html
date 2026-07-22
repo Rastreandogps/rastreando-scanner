@@ -4201,15 +4201,15 @@ async function adminVerTecnico(tech) {
     if (totalMes > 0) { elMes.textContent = '💰 Mês: R$' + totalMes.toFixed(2).replace('.',','); elMes.style.display = 'block'; }
     else elMes.style.display = 'none';
   }
-  document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[now.getMonth()] + ' — ' + tech;
+  document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[_adminCalMes] + ' de ' + _adminCalAno + ' — ' + tech;
   // Botão resumo do dia
   const resumoDiaEl = document.getElementById('admin-resumo-dia-btn');
   if (resumoDiaEl) { resumoDiaEl.style.display = 'flex'; resumoDiaEl.onclick = () => enviarResumoDia(tech); }
 
   // Renderizar calendário
   const grid  = document.getElementById('admin-cal-grid');
-  const year  = now.getFullYear();
-  const month = now.getMonth();
+  const year  = _adminCalAno;
+  const month = _adminCalMes;
   grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
 
   const dateMap  = {};
