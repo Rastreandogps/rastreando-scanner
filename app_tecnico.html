@@ -5226,6 +5226,24 @@ function buscarOSAdmin(termo) {
 }
 
 // ── NOTA DO TÉCNICO
+async function apagarNotaDoMapa(id, tech, btn) {
+  const res = await gasRequest({ action: 'salvarNotaTecnico', id, tech, nota: '' });
+  if (res.ok) {
+    // Atualizar na memória
+    if (allOrders[tech]) {
+      const o = allOrders[tech].find(function(x) { return x.id === id; });
+      if (o) o.notaTecnico = '';
+    }
+    // Fechar o popup e atualizar
+    showToast('Nota apagada ✅', 'success');
+    // Fechar popup do Leaflet
+    const popup = btn.closest('.leaflet-popup');
+    if (popup) popup.remove();
+  } else {
+    showToast('Erro ao apagar nota.', 'error');
+  }
+}
+
 async function apagarNotaCard(btn) {
   // Limpar o input e salvar vazio
   const row    = btn.parentElement;
@@ -5676,10 +5694,18 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       veiculoHtml +
       // Endereço
       '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(_endExibir) + '</div>' +
-      // Observações
-      (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:6px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
+      // Observações (sem caixa — texto simples)
+      (o.obs && o.obs.trim() ? '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📌 ' + esc(o.obs) + '</div>' : '') +
       // Nota do técnico no popup
-      (o.notaTecnico && o.notaTecnico.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:13px;flex-shrink:0;">🗒️</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">Nota: ' + esc(o.notaTecnico) + '</span></div>' : '') +
+      (o.notaTecnico && o.notaTecnico.trim() ?
+        '<div style="background:#fefce8;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:8px;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">' +
+            '<span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;">🗒️ NOTA DO TÉCNICO</span>' +
+            (modo === 'inicial' ? '<button onclick="apagarNotaDoMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\',this)" style="padding:2px 7px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;font-size:11px;cursor:pointer;">🗑️</button>' : '') +
+          '</div>' +
+          '<div style="font-size:12px;color:#78350f;font-weight:600;">' + esc(o.notaTecnico) + '</div>' +
+        '</div>'
+      : '') +
       // Botão confirmar endereço com cliente (só no mapa do técnico)
       (modo === 'car' && o.telefone ? (function() {
         const _tel = (o.telefone || '').replace(/\D/g,'');
