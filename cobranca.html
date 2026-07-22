@@ -743,7 +743,7 @@ async function importarInadimplentes() {
     btn.disabled = false;
     btn.innerHTML = '🔄 Reimportar';
     showToast((importMode === 'IN' ? '🚫' : '🔴') + ' ' + qtd + ' cliente' + (qtd !== 1 ? 's' : '') + ' atualizados!');
-    setTimeout(() => switchTab('clientes'), 1200);
+    setTimeout(() => { switchTab('clientes'); switchGroup(importMode); }, 1200);
   } catch(e) {
     statusEl.innerHTML = '<div class="import-error" style="display:block">❌ Erro de conexão. Verifique sua internet.</div>';
     btn.disabled = false;
@@ -1430,7 +1430,7 @@ function confirmResetSent() {
 
 function openWhatsAppBlank(id) {
   const c = currentClients().find(x=>x.id===id); if(!c) return;
-  window.open('https://wa.me/'+c.telefone,'_blank');
+  agOpenModal(c.telefone, c.nome, c.valor, c.dataCompromisso || '', c.link || '');
 }
 
 function cancelarChip(id) {
