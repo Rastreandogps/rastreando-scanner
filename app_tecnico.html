@@ -4968,51 +4968,39 @@ function fecharModalNovaOS() {
 
 // ════════════════════════════════════════
 // ── BUSCA DE OS NO CALENDÁRIO ADMIN
+// Filtra os cards reais da lista: só ficam visíveis os que batem com o termo
 function buscarOSAdmin(termo) {
-  const box = document.getElementById('admin-cal-busca-resultados');
-  if (!box) return;
+  const lista = document.getElementById('admin-tech-os-list');
+  const aviso = document.getElementById('admin-cal-busca-resultados');
+  if (!lista) return;
   termo = (termo || '').trim().toLowerCase();
 
-  if (termo.length < 2) {
-    box.style.display = 'none';
-    box.innerHTML = '';
-    return;
-  }
+  const cards = lista.querySelectorAll('[data-os-id]');
+  let visiveis = 0;
 
-  // Buscar nas OS ativas: só do técnico selecionado, ou de todos se nenhum selecionado
-  const resultados = [];
-  const techsBusca = (typeof adminTechSelecionado !== 'undefined' && adminTechSelecionado)
-    ? [adminTechSelecionado]
-    : TECH_NAMES;
-  techsBusca.forEach(function(t) {
-    (allOrders[t] || []).forEach(function(o) {
-      if (o.status === 'concluido') return;
-      const alvo = ((o.nome || '') + ' ' + (o.endereco || '') + ' ' + (o.veiculo || '') + ' ' + (o.telefone || '')).toLowerCase();
-      if (alvo.includes(termo)) resultados.push({ ...o, _tech: t });
-    });
+  cards.forEach(function(card) {
+    if (termo.length < 2) {
+      // Sem busca: mostrar todos
+      card.style.display = '';
+      visiveis++;
+      return;
+    }
+    const texto = (card.textContent || '').toLowerCase();
+    const match = texto.includes(termo);
+    card.style.display = match ? '' : 'none';
+    if (match) visiveis++;
   });
 
-  if (resultados.length === 0) {
-    box.innerHTML = '<div style="padding:14px;background:#f8fafc;border-radius:10px;font-size:13px;color:var(--muted);text-align:center;">Nenhuma OS encontrada 🔍</div>';
-    box.style.display = 'block';
-    return;
+  // Aviso quando nada foi encontrado
+  if (aviso) {
+    if (termo.length >= 2 && visiveis === 0 && cards.length > 0) {
+      aviso.innerHTML = '<div style="padding:14px;background:#f8fafc;border-radius:10px;font-size:13px;color:var(--muted);text-align:center;">Nenhuma OS encontrada 🔍</div>';
+      aviso.style.display = 'block';
+    } else {
+      aviso.style.display = 'none';
+      aviso.innerHTML = '';
+    }
   }
-
-  box.innerHTML = resultados.map(function(o) {
-    const dataStr = (o.data && o.data.trim() && o.data !== 'undefined') ? formatDateBR(o.data) : 'Sem data';
-    const tipoCor = (o.tipo || '').toLowerCase().includes('manut') ? '#f59e0b' :
-                    ((o.tipo || '').toLowerCase().includes('remo') || (o.tipo || '').toLowerCase().includes('retir')) ? '#ef4444' : '#10b981';
-    return '<div style="background:white;border:1.5px solid var(--border);border-left:4px solid ' + tipoCor + ';border-radius:10px;padding:12px 14px;margin-bottom:8px;">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">' +
-        '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome || '') + '</span>' +
-        '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + tipoCor + '22;color:' + tipoCor + ';">' + esc(o.tipo || '') + '</span>' +
-      '</div>' +
-      '<div style="font-size:12px;color:var(--muted);margin-top:4px;">👤 ' + esc(o._tech) + ' · 📅 ' + dataStr + '</div>' +
-      '<div style="font-size:12px;color:var(--muted);margin-top:2px;">📍 ' + esc(_endParaExibir(o.endereco || '')) + '</div>' +
-      (o.veiculo ? '<div style="font-size:12px;color:var(--muted);margin-top:2px;">🚗 ' + esc(o.veiculo.split(' | ')[0]) + '</div>' : '') +
-    '</div>';
-  }).join('');
-  box.style.display = 'block';
 }
 
 // ── ORDEM DO DIA
