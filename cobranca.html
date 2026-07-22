@@ -555,20 +555,6 @@ function switchGroup(g) {
   document.getElementById('gtBOTH').className = 'group-tab' + (g === 'BOTH' ? ' active-both' : '');
   document.getElementById('gtCANC').className = 'group-tab' + (g === 'CANC' ? ' active-canc' : '');
   document.getElementById('gtRET').className  = 'group-tab' + (g === 'RET'  ? ' active-ret'  : '');
-  currentFilter = 'all';
-  currentDateFilter = 'all';
-  currentClassifFilter = 'all';
-  currentSearch = '';
-  const si = document.getElementById('searchInput');
-  if (si) si.value = '';
-  const sc = document.getElementById('searchClear');
-  if (sc) sc.classList.remove('visible');
-  const zpc = document.getElementById('zeroPtsCheck');
-  if (zpc) zpc.checked = false;
-  ['All','Pending','Sent','Just'].forEach(x => {
-    const el = document.getElementById('ft'+x);
-    if (el) el.classList.toggle('active', x.toLowerCase() === 'all');
-  });
   renderClients();
 }
 
@@ -683,7 +669,8 @@ async function importarInadimplentes() {
           justificativa: fresh.retorno || existing.justificativa || '',
           justData: fresh.dataRetorno || existing.justData || null,
           dataCompromisso: fresh.dataCompromisso || existing.dataCompromisso || '',
-          retirada: fresh.retirada || existing.retirada || ''
+          retirada: fresh.retirada || existing.retirada || '',
+          sent: fresh.enviado === 'SIM' ? true : existing.sent
         });
         novosMap.delete(key);
       }
@@ -706,7 +693,7 @@ async function importarInadimplentes() {
         dataCompromisso: c.dataCompromisso || '',
         retirada: c.retirada || '',
         expanded: false,
-        sent: false,
+        sent: c.enviado === 'SIM',
       });
     });
 
@@ -1377,6 +1364,14 @@ function toggleSent(id) {
   document.getElementById('progressFill').style.width = p+'%';
   document.getElementById('progressPct').textContent = p+'% concluído';
   showToast(c.sent?'✅ Marcado como enviado!':'↩️ Marcação removida');
+  // Sincroniza com planilha
+  fetch(API_URL, { method:'POST', body: JSON.stringify({
+    secret: API_SECRET, action: 'salvarRetorno',
+    nome: c.nome, telefone: c.telefone,
+    retorno: c.justificativa||'', dataRetorno: c.justData||'',
+    dataCompromisso: c.dataCompromisso||'', retirada: c.retirada||'',
+    enviado: c.sent ? 'SIM' : ''
+  })}).catch(()=>{});
 }
 
 function deleteClient(id) {
@@ -1423,8 +1418,20 @@ function confirmResetSent() {
   if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Use a aba AT ou IN para limpar marcações'); return; }
   const s = currentClients().filter(c=>c.sent).length;
   if (s===0) { showToast('Nenhum marcado como enviado'); return; }
-  openModal('Limpar marcações?',s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
-    currentClients().forEach(c=>{c.sent=false;c.expanded=false;}); saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
+  openModal('Limpar marcações?', s+' cliente'+(s>1?'s':'')+' voltarão para pendente.',() => {
+    const afetados = currentClients().filter(c=>c.sent);
+    afetados.forEach(c=>{ c.sent=false; c.expanded=false; });
+    saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
+    // Limpa enviado na planilha
+    afetados.forEach(c => {
+      fetch(API_URL, { method:'POST', body: JSON.stringify({
+        secret: API_SECRET, action: 'salvarRetorno',
+        nome: c.nome, telefone: c.telefone,
+        retorno: c.justificativa||'', dataRetorno: c.justData||'',
+        dataCompromisso: c.dataCompromisso||'', retirada: c.retirada||'',
+        enviado: ''
+      })}).catch(()=>{});
+    });
   });
 }
 
