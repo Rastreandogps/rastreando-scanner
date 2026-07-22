@@ -1361,7 +1361,12 @@ function showTechTab(tab) {
   // Mapa técnico: auto-carrega na primeira visita ou após 30 min
   if (tab === 'mapa') {
     const expirado = _mapaTechCarregadoEm && (Date.now() - _mapaTechCarregadoEm > MAPA_VALIDADE_MS);
-    if (!_leafletMapTech || expirado) iniciarMapaTecnico();
+    if (!_leafletMapTech || expirado) {
+      iniciarMapaTecnico();
+    } else {
+      // Mapa existente: recalcular tamanho ao voltar para a aba
+      setTimeout(function() { try { _leafletMapTech.invalidateSize(); } catch(_) {} }, 200);
+    }
   }
 }
 
@@ -1382,7 +1387,11 @@ function showAdminTab(tab) {
   // Mapa admin: auto-carrega na primeira visita ou após 30 min
   if (tab === 'mapa') {
     const expirado = _mapaAdminCarregadoEm && (Date.now() - _mapaAdminCarregadoEm > MAPA_VALIDADE_MS);
-    if (!_leafletMapAdmin || expirado) iniciarMapaAdmin();
+    if (!_leafletMapAdmin || expirado) {
+      iniciarMapaAdmin();
+    } else {
+      setTimeout(function() { try { _leafletMapAdmin.invalidateSize(); } catch(_) {} }, 200);
+    }
   }
 }
 
@@ -5239,6 +5248,9 @@ function _criarMapa(divId) {
     attribution: '© OpenStreetMap',
     maxZoom: 18,
   }).addTo(map);
+  // Corrige mapa cortado quando criado com a aba ainda renderizando
+  setTimeout(function() { try { map.invalidateSize(); } catch(_) {} }, 300);
+  setTimeout(function() { try { map.invalidateSize(); } catch(_) {} }, 800);
   return map;
 }
 
