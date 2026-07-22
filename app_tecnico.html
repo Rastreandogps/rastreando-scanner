@@ -1342,7 +1342,7 @@ function showTechScreen() {
   registrarLogin(currentUser);
   document.getElementById('tech-header-name').textContent = currentUser;
   showTechTab('calendar');
-  loadTechOrders(true);
+  loadTechOrders();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
 }
@@ -1427,7 +1427,7 @@ function getDinoHTML(id, label) {
   '</div>';
 }
 
-async function loadTechOrders(showMotivacional = false) {
+async function loadTechOrders() {
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
@@ -1444,8 +1444,6 @@ async function loadTechOrders(showMotivacional = false) {
     renderDoneList();
   }
   setSyncStatus('ok');
-  // Popup motivacional só na primeira carga, após dados chegarem
-  if (showMotivacional) mostrarMotivacional();
 }
 
 async function loadAllOrders() {
@@ -2345,7 +2343,13 @@ function renderAdminOSList() {
       (o.msgLog
         ? '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
         : '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
-      (o.notaTecnico ? '<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#fefce8;border-radius:8px;font-size:11px;color:#92400e;margin-top:4px;">🗒️ ' + esc(o.notaTecnico) + '</div>' : '') +
+      (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:6px;">' +
+          '<span style="font-size:18px;flex-shrink:0;">🗒️</span>' +
+          '<div>' +
+            '<div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">NOTA DO TÉCNICO</div>' +
+            '<div style="font-size:13px;color:#78350f;font-weight:600;line-height:1.4;">' + esc(o.notaTecnico) + '</div>' +
+          '</div>' +
+        '</div>' : '') +
 
       // ── LINHA 3: botões de ação
       '<div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">' +
@@ -4323,7 +4327,13 @@ async function adminVerTecnico(tech) {
         (o.msgLog
           ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
-        (o.notaTecnico ? '<div style="font-size:11px;font-weight:600;background:#fefce8;border-radius:8px;padding:4px 8px;color:#92400e;margin-bottom:8px;">🗒️ ' + esc(o.notaTecnico) + '</div>' : '') +
+        (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
+          '<span style="font-size:18px;flex-shrink:0;">🗒️</span>' +
+          '<div>' +
+            '<div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">NOTA DO TÉCNICO</div>' +
+            '<div style="font-size:13px;color:#78350f;font-weight:600;line-height:1.4;">' + esc(o.notaTecnico) + '</div>' +
+          '</div>' +
+        '</div>' : '') +
 
         // ── Reatribuição de técnico
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">' +
