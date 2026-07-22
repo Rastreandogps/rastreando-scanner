@@ -1598,13 +1598,15 @@ function limparDestaqueCalendario() {
     c.style.boxShadow = '';
     c.style.transform = 'scale(1)';
   });
-  // Remove destaque cards admin
+  // Remove destaque cards admin e volta a mostrar só hoje
   document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
     c.style.opacity       = '1';
     c.style.transform     = 'scale(1)';
     c.style.pointerEvents = 'auto';
     c.style.userSelect    = 'auto';
   });
+  // Recarregar lista com OS de hoje
+  if (adminTechSelecionado) _renderAdminListaPorIds(null);
 }
 
 
@@ -2106,6 +2108,8 @@ document.addEventListener('click', function(e) {
     // Mostrar overlay e X no admin
     const xBtn = document.getElementById('destaque-fechar');
     if (xBtn) xBtn.style.display = 'flex';
+    // Recarregar lista com as OS do dia clicado
+    _renderAdminListaPorIds(ids);
     // Destacar cards na lista
     const cards = document.querySelectorAll('#admin-tech-os-list > div');
     let primeiro = null;
@@ -4159,6 +4163,7 @@ async function adminVerTecnico(tech) {
 
   const orders    = result.ok     ? (result.data     || []) : [];
   const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
+  _adminOrdersCache = orders; // salva para uso no clique do calendário
   _doneAdminCache[tech] = doneAdmin; // salva no cache
 
   // Mostrar área (já exibida acima)
@@ -4397,8 +4402,180 @@ async function adminVerTecnico(tech) {
   }).join('');
 }
 
+// Renderiza a lista de OS do admin filtrando por IDs (clique no calendário)
+// ou por data de hoje (padrão)
+function _renderAdminListaPorIds(ids) {
+  const lista = fixed_lista = document.getElementById('admin-tech-os-list');
+  if (!lista) return;
+
+  // Usar cache das OS já carregadas pelo adminVerTecnico
+  const tech = adminTechSelecionado;
+
+  let ativas;
+  if (ids && ids.length > 0) {
+    // Clique num dia — mostrar só as OS daquele dia
+    const set = new Set(ids);
+    ativas = _adminOrdersCache.filter(o => set.has(o.id) && o.status !== 'concluido');
+  } else {
+    // Padrão — só hoje
+    const _hj = new Date();
+    ativas = _adminOrdersCache.filter(o => {
+      if (o.status === 'concluido') return false;
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true;
+      const d = parseDate(o.data);
+      return d && d.getDate() === _hj.getDate() && d.getMonth() === _hj.getMonth() && d.getFullYear() === _hj.getFullYear();
+    });
+  }
+
+  if (ativas.length === 0) {
+    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem para este dia.</p></div>';
+    return;
+  }
+
+  lista.innerHTML = ativas.map(o => {
+    const dataOk = o.data && o.data.trim() && o.data !== 'undefined';
+    const hoje   = new Date();
+    const amanha = new Date(); amanha.setDate(hoje.getDate()+1);
+    let dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
+    let dataBg = dataOk ? '#dbeafe' : '#fef3c7';
+    let dataFg = dataOk ? '#1d4ed8' : '#b45309';
+    if (dataOk) {
+      const dp = parseDate(o.data);
+      if (dp) {
+        const eHoje   = dp.getDate()===hoje.getDate()   && dp.getMonth()===hoje.getMonth()   && dp.getFullYear()===hoje.getFullYear();
+        const eAmanha = dp.getDate()===amanha.getDate() && dp.getMonth()===amanha.getMonth() && dp.getFullYear()===amanha.getFullYear();
+        const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        if (eHoje)        { dataLabel = 'Hoje';   dataBg = '#fee2e2'; dataFg = '#ef4444'; }
+        else if (eAmanha) { dataLabel = 'Amanhã'; dataBg = '#fef3c7'; dataFg = '#b45309'; }
+        else              { dataLabel = DIAS_SEMANA[dp.getDay()] + ' · ' + formatDateBR(o.data); }
+      }
+    }
+  // Cores por tipo de OS
+    const tipoAdmin = (o.tipo || '').toLowerCase();
+    let borderLed, bgCard;
+    if (tipoAdmin.includes('manut')) {
+      borderLed = 'rgba(245,158,11,.4),0 0 28px rgba(245,158,11,.55),0 0 55px rgba(245,158,11,.2)';
+      bgCard = 'background:#fffbeb;border:1px solid rgba(245,158,11,.3);';
+    } else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) {
+      borderLed = 'rgba(239,68,68,.4),0 0 28px rgba(239,68,68,.55),0 0 55px rgba(239,68,68,.2)';
+      bgCard = 'background:#fff5f5;border:1px solid rgba(239,68,68,.3);';
+    } else {
+      borderLed = 'rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
+      bgCard = !dataOk ? 'background:#fffbeb;border:1px solid rgba(245,158,11,.25);' : '';
+    }
+    const tech = adminTechSelecionado;
+
+    return (
+      '<div data-os-id="' + o.id + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';">' +
+
+        // ── Linha 1: nome + WPP + badge data
+        (function() {
+          const tel     = (o.telefone || '').replace(/\D/g,'');
+          const wppLink = tel ? 'https://wa.me/55' + tel : '';
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
+            '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+            (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+            '</a>' : '') +
+
+            '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
+          '</div>';
+        })() +
+
+        // ── Linha 2: veículo
+        renderVeiculosAdmin(o.veiculo) +
+
+        // Valor da instalação
+        (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0
+          ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
+          : '') +
+
+        // ── Linha 3: endereço + tipo + Maps
+        (function() {
+          const mapsLink = _mapsLinkPara(o.endereco);
+          return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
+            '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+
+            (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
+            (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
+              '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
+            '</a>' : '') +
+          '</div>';
+        })() +
+
+        // ── Linha 4: log mensagem
+        (o.msgLog
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
+        (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
+          '<span style="font-size:18px;flex-shrink:0;">🗒️</span>' +
+          '<div>' +
+            '<div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">NOTA DO TÉCNICO</div>' +
+            '<div style="font-size:13px;color:#78350f;font-weight:600;line-height:1.4;">' + esc(o.notaTecnico) + '</div>' +
+          '</div>' +
+        '</div>' : '') +
+
+        // ── Reatribuição de técnico
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">' +
+          '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">Técnico:</span>' +
+          '<select class="admin-view-reassign-sel" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;">' +
+            TECH_NAMES.map(n => '<option value="' + n + '"' + (n === tech ? ' selected' : '') + '>' + n + '</option>').join('') +
+          '</select>' +
+          '<button class="admin-view-reassign-btn" style="padding:5px 10px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✔</button>' +
+        '</div>' +
+
+        // ── Botão confirmar agendamento ao cliente
+        (o.telefone ? (function() {
+          const tel = (o.telefone || '').replace(/\D/g,'');
+          return '<button class="admin-confirmar-ag-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>' +
+            '📲 Confirmar agendamento ao cliente' +
+          '</button>';
+        })() : '') +
+
+        // ── Botões: Editar + Concluir + Excluir
+        '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+          '<button onclick="enviarOSParaTecnico(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:8px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
+            '📋 Enviar OS pro técnico' +
+          '</button>' +
+        '</div>' +
+
+        // ── Botão enviar acesso ao cliente
+        (o.telefone ? '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+          '<button onclick="abrirModalAcesso(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="width:100%;padding:8px;background:#0ea5e9;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '🔐 Enviar acesso ao cliente' +
+          '</button>' +
+        '</div>' : '') +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
+          '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;">Ordem:</span>' +
+          '<div style="display:flex;gap:4px;">' +
+            [0,1,2,3,4,5].map(function(n) {
+              const ativo = (o.ordemDia || 0) === n;
+              const label = n === 0 ? '—' : String(n);
+              const bg    = ativo ? '#1a2744' : '#e2e8f0';
+              const cor   = ativo ? 'white' : '#64748b';
+              return '<button onclick="event.stopPropagation();definirOrdemDia(\'' + esc(o.id) + '\',\'' + esc(tech) + '\',' + n + ',this)" style="width:28px;height:28px;border-radius:50%;border:none;background:' + bg + ';color:' + cor + ';font-size:11px;font-weight:800;cursor:pointer;">' + label + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button class="admin-view-edit-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar</button>' +
+          '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>' +
+          '<button class="admin-del-tech-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="padding:7px 12px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;cursor:pointer;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
+        '</div>' +
+
+      '</div>'
+    );
+  }).join('');
+
+  lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // Variável para guardar OS pendente de conclusão
 let pendingConcluir = null;
+let _adminOrdersCache = []; // cache das OS do técnico selecionado para clique no calendário
 
 // Abre modal de confirmação de conclusão
 function cardConcluir(btn) {
