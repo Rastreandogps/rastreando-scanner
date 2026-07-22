@@ -2343,6 +2343,7 @@ function renderAdminOSList() {
       (o.msgLog
         ? '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#eff6ff;border-radius:8px;font-size:11px;color:#1d4ed8;">✅ Enviada por <b>' + esc(o.msgLog.tecnico) + '</b> — ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
         : '<div style="display:flex;align-items:center;gap:5px;padding:5px 8px;background:#fef9c3;border-radius:8px;font-size:11px;color:#854d0e;">⚠️ Mensagem ainda não enviada</div>') +
+      (o.notaTecnico ? '<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f0fdf4;border-radius:8px;font-size:11px;color:#15803d;margin-top:4px;">🗒️ ' + esc(o.notaTecnico) + '</div>' : '') +
 
       // ── LINHA 3: botões de ação
       '<div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">' +
@@ -3886,14 +3887,7 @@ async function adminVerTodos() {
       renderVeiculosAdmin(o.veiculo) +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
-          // Nota do técnico no card admin
-          (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 10px;margin-top:6px;">' +
-            '<span style="font-size:13px;flex-shrink:0;">🗒️</span>' +
-            '<div>' +
-              '<span style="font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.5px;">NOTA DO TÉCNICO · </span>' +
-              '<span style="font-size:12px;color:#15803d;">' + esc(o.notaTecnico) + '</span>' +
-            '</div>' +
-          '</div>' : '') +
+
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
         (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
       '</div>' +
@@ -4315,14 +4309,7 @@ async function adminVerTecnico(tech) {
           const mapsLink = _mapsLinkPara(o.endereco);
           return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
             '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
-          // Nota do técnico no card admin
-          (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 10px;margin-top:6px;">' +
-            '<span style="font-size:13px;flex-shrink:0;">🗒️</span>' +
-            '<div>' +
-              '<span style="font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.5px;">NOTA DO TÉCNICO · </span>' +
-              '<span style="font-size:12px;color:#15803d;">' + esc(o.notaTecnico) + '</span>' +
-            '</div>' +
-          '</div>' : '') +
+
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
             (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
               '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
@@ -4332,8 +4319,9 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:8px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
-          : '<div style="font-size:10px;color:#b45309;margin-bottom:8px;">⚠️ Mensagem não enviada</div>') +
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
+        (o.notaTecnico ? '<div style="font-size:11px;color:#15803d;margin-bottom:8px;">🗒️ ' + esc(o.notaTecnico) + '</div>' : '') +
 
         // ── Reatribuição de técnico
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">' +
