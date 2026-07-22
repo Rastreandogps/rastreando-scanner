@@ -4099,6 +4099,11 @@ async function enviarResumoDia(tech) {
 
 async function adminVerTecnico(tech) {
   adminTechSelecionado = tech;
+  // Limpar busca ao trocar de técnico
+  const buscaInput = document.getElementById('admin-cal-busca');
+  if (buscaInput) buscaInput.value = '';
+  const buscaAviso = document.getElementById('admin-cal-busca-resultados');
+  if (buscaAviso) { buscaAviso.style.display = 'none'; buscaAviso.innerHTML = ''; }
   // Ocultar resumo e mostrar conteúdo do técnico
   const resumo = document.getElementById('admin-resumo-geral');
   if (resumo) resumo.style.display = 'none';
@@ -4255,7 +4260,7 @@ async function adminVerTecnico(tech) {
     const tech = adminTechSelecionado;
 
     return (
-      '<div style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+      '<div data-os-id="' + o.id + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
         'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';">' +
 
         // ── Linha 1: nome + WPP + badge data
