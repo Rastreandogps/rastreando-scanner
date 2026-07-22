@@ -1430,7 +1430,7 @@ function confirmResetSent() {
 
 function openWhatsAppBlank(id) {
   const c = currentClients().find(x=>x.id===id); if(!c) return;
-  window.open('https://wa.me/'+c.telefone,'_blank');
+  agOpenModal(c.telefone, c.nome, c.valor, c.dataCompromisso || '', c.link || '');
 }
 
 function cancelarChip(id) {
@@ -1620,4 +1620,4 @@ function loadFromStorage() {
 function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 </script>
 </body>
-</html>
+</html>                      
