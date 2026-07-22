@@ -241,7 +241,7 @@
 
   /* MODAL */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000;
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 10000;
     display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-overlay.open { display: flex; }
@@ -900,6 +900,13 @@
           <div class="loading-car-label">Carregando ordens... 🏃</div>
         </div>
         <div class="cal-grid" id="admin-cal-grid" style="margin-bottom:16px;"></div>
+        <!-- Busca de OS -->
+        <div style="position:relative;margin-bottom:14px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="admin-cal-busca" placeholder="Buscar OS por nome, endereço ou veículo..." oninput="buscarOSAdmin(this.value)"
+            style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
+        </div>
+        <div id="admin-cal-busca-resultados" style="display:none;margin-bottom:14px;"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;"></div><button id="admin-resumo-dia-btn" onclick="" style="display:none;align-items:center;gap:5px;padding:6px 12px;background:#25D366;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;"><svg viewBox="0 0 24 24" width="12" height="12" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>📋 Resumo do dia</button></div>
         <div id="admin-tech-os-list"></div>
       </div>
@@ -4960,6 +4967,51 @@ function fecharModalNovaOS() {
 }
 
 // ════════════════════════════════════════
+// ── BUSCA DE OS NO CALENDÁRIO ADMIN
+function buscarOSAdmin(termo) {
+  const box = document.getElementById('admin-cal-busca-resultados');
+  if (!box) return;
+  termo = (termo || '').trim().toLowerCase();
+
+  if (termo.length < 2) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  // Buscar em todas as OS ativas de todos os técnicos
+  const resultados = [];
+  TECH_NAMES.forEach(function(t) {
+    (allOrders[t] || []).forEach(function(o) {
+      if (o.status === 'concluido') return;
+      const alvo = ((o.nome || '') + ' ' + (o.endereco || '') + ' ' + (o.veiculo || '') + ' ' + (o.telefone || '')).toLowerCase();
+      if (alvo.includes(termo)) resultados.push({ ...o, _tech: t });
+    });
+  });
+
+  if (resultados.length === 0) {
+    box.innerHTML = '<div style="padding:14px;background:#f8fafc;border-radius:10px;font-size:13px;color:var(--muted);text-align:center;">Nenhuma OS encontrada 🔍</div>';
+    box.style.display = 'block';
+    return;
+  }
+
+  box.innerHTML = resultados.map(function(o) {
+    const dataStr = (o.data && o.data.trim() && o.data !== 'undefined') ? formatDateBR(o.data) : 'Sem data';
+    const tipoCor = (o.tipo || '').toLowerCase().includes('manut') ? '#f59e0b' :
+                    ((o.tipo || '').toLowerCase().includes('remo') || (o.tipo || '').toLowerCase().includes('retir')) ? '#ef4444' : '#10b981';
+    return '<div style="background:white;border:1.5px solid var(--border);border-left:4px solid ' + tipoCor + ';border-radius:10px;padding:12px 14px;margin-bottom:8px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome || '') + '</span>' +
+        '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + tipoCor + '22;color:' + tipoCor + ';">' + esc(o.tipo || '') + '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-top:4px;">👤 ' + esc(o._tech) + ' · 📅 ' + dataStr + '</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-top:2px;">📍 ' + esc(_endParaExibir(o.endereco || '')) + '</div>' +
+      (o.veiculo ? '<div style="font-size:12px;color:var(--muted);margin-top:2px;">🚗 ' + esc(o.veiculo.split(' | ')[0]) + '</div>' : '') +
+    '</div>';
+  }).join('');
+  box.style.display = 'block';
+}
+
 // ── ORDEM DO DIA
 // Guarda pendência de ordem aguardando confirmação
 let _ordemPendente = null;
@@ -5391,6 +5443,22 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           'Navegar' +
         '</a>' +
       '</div>' +
+      // Controles do admin: ordem do dia + excluir (só no mapa do admin)
+      (modo === 'inicial' ? (function() {
+        const _ordemBtns = [0,1,2,3,4,5].map(function(n) {
+          const ativo = (o.ordemDia || 0) === n;
+          const label = n === 0 ? '—' : String(n);
+          const bg    = ativo ? '#1a2744' : '#e2e8f0';
+          const cr    = ativo ? 'white' : '#64748b';
+          return '<button onclick="definirOrdemDia(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\',' + n + ',this)" style="width:26px;height:26px;border-radius:50%;border:none;background:' + bg + ';color:' + cr + ';font-size:11px;font-weight:800;cursor:pointer;">' + label + '</button>';
+        }).join('');
+        return '<div style="border-top:1px solid #e2e8f0;margin-top:10px;padding-top:8px;">' +
+          '<div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">' +
+            '<span style="font-size:10px;color:#64748b;font-weight:700;">ORDEM:</span>' + _ordemBtns +
+          '</div>' +
+          '<button onclick="requestDelete(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" style="width:100%;padding:7px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Excluir OS</button>' +
+        '</div>';
+      })() : '') +
       '</div>';
 
     L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '') })
