@@ -2037,13 +2037,15 @@ function renderTechOSList() {
           '</div>' +
         '</div>' : '') +
         // Campo para adicionar/editar nota
-        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">' +
           '<input type="text" class="card-nota-input" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" ' +
             'placeholder="📝 Adicionar nota..." value="' + esc(o.notaTecnico || '') + '" ' +
             'onclick="event.stopPropagation()" ' +
             'style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
           '<button onclick="event.stopPropagation();salvarNotaCard(this)" ' +
-            'style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar nota</button>' +
+            'style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
+          '<button onclick="event.stopPropagation();apagarNotaCard(this)" ' +
+            'style="padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
         '</div>' +
         '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
           '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
@@ -5030,6 +5032,15 @@ function buscarOSAdmin(termo) {
 }
 
 // ── NOTA DO TÉCNICO
+async function apagarNotaCard(btn) {
+  // Limpar o input e salvar vazio
+  const row    = btn.parentElement;
+  const input  = row.querySelector('.card-nota-input');
+  if (!input) return;
+  input.value = '';
+  await salvarNotaCard(btn.previousElementSibling); // chama salvar com campo vazio
+}
+
 async function salvarNotaCard(btn) {
   const input = btn.previousElementSibling;
   if (!input) return;
@@ -5122,7 +5133,7 @@ function _corTech(nome) {
   return TECH_CORES[nome] || '#64748b';
 }
 
-function _pinIcon(cor, inicial, modo, ordemDia, tipo) {
+function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome) {
   // Manutenção e Retirada: pílula amarela com o texto do tipo
   const _t = (tipo || '').toLowerCase();
   const ehManut = _t.includes('manut');
@@ -5131,12 +5142,13 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo) {
   if (ehManut || ehRetir) {
     const label = ehManut ? 'Manutenção' : 'Retirada';
     const prefixo = ordemDia ? ordemDia + ' · ' : '';
+    const nomeAcima = nome ? '<div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;">' + nome + '</div>' : '';
     return L.divIcon({
       className: '',
-      html: '<div style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:20px;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800;color:white;white-space:nowrap;">' + prefixo + label + '</div>',
+      html: '<div style="position:relative;">' + nomeAcima + '<div style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:20px;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800;color:white;white-space:nowrap;">' + prefixo + label + '</div></div>',
       iconSize: [90, 28],
       iconAnchor: [45, 14],
-      popupAnchor: [0, -18],
+      popupAnchor: [0, -36],
     });
   }
 
@@ -5151,12 +5163,16 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo) {
     inner = '<span style="font-size:13px;font-weight:700;color:white;">' + inicial + '</span>';
   }
   const tamanho = ordemDia ? 38 : 34;
+  const nomeLabel = nome ? '<div style="position:absolute;bottom:' + (tamanho+4) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
   return L.divIcon({
     className: '',
-    html: '<div style="width:' + tamanho + 'px;height:' + tamanho + 'px;border-radius:50%;background:' + cor + ';border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">' + inner + '</div>',
+    html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
+      nomeLabel +
+      '<div style="width:' + tamanho + 'px;height:' + tamanho + 'px;border-radius:50%;background:' + cor + ';border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">' + inner + '</div>' +
+    '</div>',
     iconSize: [tamanho, tamanho],
     iconAnchor: [tamanho/2, tamanho/2],
-    popupAnchor: [0, -22],
+    popupAnchor: [0, -(tamanho + 26)],
   });
 }
 
@@ -5499,7 +5515,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       })() : '') +
       '</div>';
 
-    L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '') })
+    L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0]) })
       .addTo(map)
       .bindPopup(popup, { maxWidth: 260 });
 
