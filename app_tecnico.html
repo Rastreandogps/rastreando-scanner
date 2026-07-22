@@ -1687,7 +1687,7 @@ function renderCardInline(o) {
   const dateVal  = hasDate ? toInputDate(o.data) : '';
   const telLimpo = (o.telefone || '').replace(/\D/g,'');
   const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
-  const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+  const mapsLink = _mapsLinkPara(o.endereco);
   const cid      = 'cbc-' + o.id; // prefixo diferente para não colidir com aba ordens
   const DIAS     = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
 
@@ -1857,7 +1857,7 @@ function renderTechOSList() {
     const dateVal  = hasDate ? toInputDate(o.data) : '';
     const telLimpo = (o.telefone || '').replace(/\D/g,'');
     const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
-    const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+    const mapsLink = _mapsLinkPara(o.endereco);
     const cid      = 'cb-' + o.id;
     const DIAS     = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
 
@@ -2288,7 +2288,7 @@ function renderAdminOSList() {
         '<div class="admin-os-info" style="min-width:0;flex:1;">' +
           '<div class="admin-os-name">' + esc(o.nome) + '</div>' +
           '<div class="admin-os-meta">' + (dataOk ? '📅 ' + formatDateBR(o.data) : '⏳ Sem data') + ' · ' + esc(o.tipo||'Instalação') + ' · ' + esc(o.telefone||'') + '</div>' +
-          '<div class="admin-os-meta">📍 ' + esc(o.endereco||'') + '</div>' +
+          '<div class="admin-os-meta">📍 ' + esc(_endParaExibir(o.endereco||'')) + '</div>' +
         '</div>' +
         // Só o select de técnico no canto direito
         '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">' +
@@ -2931,8 +2931,8 @@ function renderAdminDoneList() {
           '</div>' +
           '<div class="admin-os-meta">📅 ' + dataStr + ' · ' + esc(o.tipo||'') + ' · ' + esc(o.telefone||'') + '</div>' +
           '<div class="admin-os-meta" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-            '<span>📍 ' + esc(o.endereco||'') + '</span>' +
-            (o.endereco ? '<a href="https://www.google.com/maps/search/' + encodeURIComponent(o.endereco||'') + '" target="_blank" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:3px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;"><svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps</a>' : '') +
+            '<span>📍 ' + esc(_endParaExibir(o.endereco||'')) + '</span>' +
+            (o.endereco ? '<a href="' + _mapsLinkPara(o.endereco||'') + '" target="_blank" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:3px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;"><svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps</a>' : '') +
           '</div>' +
           (o.veiculo ? '<div class="admin-os-meta">🔑 ' + esc(o.veiculo) + '</div>' : '') +
         '</div>' +
@@ -3319,7 +3319,7 @@ function mostrarMotivacional() {
         '<div style="flex:1;min-width:0;">' +
           '<div style="font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
           (o.veiculo ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">🔑 ' + esc(o.veiculo.split(' || ')[0]) + '</div>' : '') +
-          '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📍 ' + esc(o.endereco || '') + '</div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📍 ' + esc(_endParaExibir(o.endereco || '')) + '</div>' +
         '</div>' +
         '<span style="font-size:10px;font-weight:700;background:' + cor + '22;color:' + cor + ';padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">' + esc(o.tipo || 'Instalação') + '</span>' +
       '</div>';
@@ -3832,7 +3832,7 @@ async function adminVerTodos() {
     const dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
     const dataBg   = dataOk ? '#dbeafe' : '#fef3c7';
     const dataFg   = dataOk ? '#1d4ed8' : '#b45309';
-    const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+    const mapsLink = _mapsLinkPara(o.endereco);
     const tech     = o._tech;
     const cor      = o._cor;
 
@@ -3844,7 +3844,7 @@ async function adminVerTodos() {
       '</div>' +
       renderVeiculosAdmin(o.veiculo) +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-        '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(o.endereco||'') + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
         (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
       '</div>' +
@@ -4258,9 +4258,9 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 3: endereço + tipo + Maps
         (function() {
-          const mapsLink = o.endereco ? 'https://www.google.com/maps/search/' + encodeURIComponent(o.endereco) : '';
+          const mapsLink = _mapsLinkPara(o.endereco);
           return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
-            '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(o.endereco||'') + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
             (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
               '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
@@ -5039,7 +5039,62 @@ function _pinIcon(cor, inicial, modo, ordemDia) {
   });
 }
 
+// ── Formata endereço para exibição: coordenadas ficam compactas com ícone de satélite
+function _endParaExibir(endereco) {
+  if (!endereco) return '';
+  const c = _detectarCoordenada(endereco);
+  if (c) return '📡 ' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5);
+  return endereco;
+}
+
+// ── Gera link do Google Maps: coordenada exata se detectada, senão busca por texto
+function _mapsLinkPara(endereco) {
+  if (!endereco) return '';
+  const c = _detectarCoordenada(endereco);
+  if (c) return 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng;
+  return 'https://www.google.com/maps/search/' + encodeURIComponent(endereco);
+}
+
+// ── Detecta se o texto é uma coordenada lat,lng
+// Aceita: "-22.786958, -43.307302" | "-22.786958°, -43.307302°" | sem espaço
+function _detectarCoordenada(texto) {
+  if (!texto) return null;
+  const m = String(texto).trim().match(/^\s*(-?\d{1,3}\.\d+)\s*°?\s*,\s*(-?\d{1,3}\.\d+)\s*°?\s*$/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat: lat, lng: lng };
+}
+
+// ── Geocodificação reversa: coordenada → endereço por escrito
+async function _enderecoReverso(lat, lng) {
+  try {
+    const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=17&addressdetails=1';
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+    const data = await res.json();
+    if (data && data.address) {
+      const a = data.address;
+      const partes = [];
+      if (a.road)          partes.push(a.road);
+      if (a.house_number)  partes.push(a.house_number);
+      const rua = partes.join(', ');
+      const bairro = a.suburb || a.neighbourhood || a.quarter || '';
+      const cidade = a.city || a.town || a.municipality || '';
+      let txt = rua;
+      if (bairro) txt += (txt ? ' - ' : '') + bairro;
+      if (cidade) txt += (txt ? ' - ' : '') + cidade;
+      return txt || null;
+    }
+  } catch(_) {}
+  return null;
+}
+
 async function _geocodificar(endereco) {
+  // Se for coordenada direta, retorna sem consultar Nominatim
+  const coordDireta = _detectarCoordenada(endereco);
+  if (coordDireta) return coordDireta;
+
   // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
   const tentativas = _montarTentativas(endereco);
   for (const q of tentativas) {
@@ -5222,7 +5277,23 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     const tipo   = o.tipo || 'Instalação';
     const tipoCor = tipo.toLowerCase().includes('manut') ? '#f59e0b' : tipo.toLowerCase().includes('remo') || tipo.toLowerCase().includes('retir') ? '#ef4444' : '#10b981';
 
-    const mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(o.endereco || '');
+    // Se o endereço é coordenada, o Maps navega com precisão total
+    const _coordDireta = _detectarCoordenada(o.endereco);
+    const mapsUrl = _coordDireta
+      ? 'https://www.google.com/maps/dir/?api=1&destination=' + _coordDireta.lat + ',' + _coordDireta.lng
+      : 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(o.endereco || '');
+
+    // Endereço para exibir: se for coordenada, tentar buscar o nome da rua
+    let _endExibir = o.endereco || '';
+    if (_coordDireta) {
+      const _nomeRua = await _enderecoReverso(_coordDireta.lat, _coordDireta.lng);
+      if (_nomeRua) {
+        _endExibir = _nomeRua + ' (' + _coordDireta.lat.toFixed(5) + ', ' + _coordDireta.lng.toFixed(5) + ')';
+      } else {
+        _endExibir = '📡 Coordenada: ' + _coordDireta.lat.toFixed(6) + ', ' + _coordDireta.lng.toFixed(6);
+      }
+      await new Promise(r => setTimeout(r, 1100)); // respeitar limite Nominatim no reverso
+    }
 
     // Montar bloco de data com dia da semana
     const DIAS_SEMANA = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -5264,7 +5335,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       // Veículos
       veiculoHtml +
       // Endereço
-      '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(o.endereco || '') + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(_endExibir) + '</div>' +
       // Observações
       (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
       // Botão confirmar endereço com cliente (só no mapa do técnico)
