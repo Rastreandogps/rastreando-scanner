@@ -4239,11 +4239,18 @@ async function adminVerTecnico(tech) {
       '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
   }
 
-  // Listar ordens do técnico
+  // Listar ordens do técnico — só as de hoje
   const lista = document.getElementById('admin-tech-os-list');
-  const ativas = orders.filter(o => o.status !== 'concluido');
+  const _hoje = new Date();
+  const ativas = orders.filter(o => {
+    if (o.status === 'concluido') return false;
+    if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true; // sem data: sempre mostra
+    const d = parseDate(o.data);
+    if (!d) return false;
+    return d.getDate() === _hoje.getDate() && d.getMonth() === _hoje.getMonth() && d.getFullYear() === _hoje.getFullYear();
+  });
   if (ativas.length === 0) {
-    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem para este mês.</p></div>';
+    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem para hoje.</p></div>';
     return;
   }
   ativas.sort((a,b) => {
