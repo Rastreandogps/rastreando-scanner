@@ -2028,6 +2028,23 @@ function renderTechOSList() {
           '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
+        // Nota do técnico
+        (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
+          '<span style="font-size:16px;flex-shrink:0;">🗒️</span>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.5px;margin-bottom:3px;">NOTA</div>' +
+            '<div style="font-size:13px;color:#15803d;line-height:1.4;">' + esc(o.notaTecnico) + '</div>' +
+          '</div>' +
+        '</div>' : '') +
+        // Campo para adicionar/editar nota
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+          '<input type="text" class="card-nota-input" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" ' +
+            'placeholder="📝 Adicionar nota..." value="' + esc(o.notaTecnico || '') + '" ' +
+            'onclick="event.stopPropagation()" ' +
+            'style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
+          '<button onclick="event.stopPropagation();salvarNotaCard(this)" ' +
+            'style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar nota</button>' +
+        '</div>' +
         '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
           '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
         '</button>' +
@@ -3869,6 +3886,14 @@ async function adminVerTodos() {
       renderVeiculosAdmin(o.veiculo) +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+          // Nota do técnico no card admin
+          (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 10px;margin-top:6px;">' +
+            '<span style="font-size:13px;flex-shrink:0;">🗒️</span>' +
+            '<div>' +
+              '<span style="font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.5px;">NOTA DO TÉCNICO · </span>' +
+              '<span style="font-size:12px;color:#15803d;">' + esc(o.notaTecnico) + '</span>' +
+            '</div>' +
+          '</div>' : '') +
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
         (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
       '</div>' +
@@ -4290,6 +4315,14 @@ async function adminVerTecnico(tech) {
           const mapsLink = _mapsLinkPara(o.endereco);
           return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
             '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+          // Nota do técnico no card admin
+          (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 10px;margin-top:6px;">' +
+            '<span style="font-size:13px;flex-shrink:0;">🗒️</span>' +
+            '<div>' +
+              '<span style="font-size:10px;font-weight:700;color:#16a34a;letter-spacing:.5px;">NOTA DO TÉCNICO · </span>' +
+              '<span style="font-size:12px;color:#15803d;">' + esc(o.notaTecnico) + '</span>' +
+            '</div>' +
+          '</div>' : '') +
             (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
             (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
               '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
@@ -5008,6 +5041,25 @@ function buscarOSAdmin(termo) {
   }
 }
 
+// ── NOTA DO TÉCNICO
+async function salvarNotaCard(btn) {
+  const input = btn.previousElementSibling;
+  if (!input) return;
+  const id   = input.getAttribute('data-id');
+  const tech = input.getAttribute('data-tech');
+  const nota = input.value.trim();
+  const res  = await gasRequest({ action: 'salvarNotaTecnico', id, tech, nota });
+  if (res.ok) {
+    // Atualizar na memória local
+    const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
+    if (o) o.notaTecnico = nota;
+    showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
+    renderTechOSList();
+  } else {
+    showToast('Erro ao salvar nota.', 'error');
+  }
+}
+
 // ── ORDEM DO DIA
 // Guarda pendência de ordem aguardando confirmação
 let _ordemPendente = null;
@@ -5421,7 +5473,9 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       // Endereço
       '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(_endExibir) + '</div>' +
       // Observações
-      (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
+      (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:6px 8px;margin-bottom:6px;"><span style="font-size:14px;flex-shrink:0;">📌</span><span style="font-size:11px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
+      // Nota do técnico no popup
+      (o.notaTecnico && o.notaTecnico.trim() ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:6px 8px;margin-bottom:8px;"><span style="font-size:13px;flex-shrink:0;">🗒️</span><span style="font-size:11px;font-weight:600;color:#15803d;line-height:1.5;">Nota: ' + esc(o.notaTecnico) + '</span></div>' : '') +
       // Botão confirmar endereço com cliente (só no mapa do técnico)
       (modo === 'car' && o.telefone ? (function() {
         const _tel = (o.telefone || '').replace(/\D/g,'');
