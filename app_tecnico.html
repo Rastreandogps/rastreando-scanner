@@ -4979,9 +4979,12 @@ function buscarOSAdmin(termo) {
     return;
   }
 
-  // Buscar em todas as OS ativas de todos os técnicos
+  // Buscar nas OS ativas: só do técnico selecionado, ou de todos se nenhum selecionado
   const resultados = [];
-  TECH_NAMES.forEach(function(t) {
+  const techsBusca = (typeof adminTechSelecionado !== 'undefined' && adminTechSelecionado)
+    ? [adminTechSelecionado]
+    : TECH_NAMES;
+  techsBusca.forEach(function(t) {
     (allOrders[t] || []).forEach(function(o) {
       if (o.status === 'concluido') return;
       const alvo = ((o.nome || '') + ' ' + (o.endereco || '') + ' ' + (o.veiculo || '') + ' ' + (o.telefone || '')).toLowerCase();
