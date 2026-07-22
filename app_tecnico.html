@@ -5014,19 +5014,32 @@ function _corTech(nome) {
   return TECH_CORES[nome] || '#64748b';
 }
 
-function _pinIcon(cor, inicial, modo, ordemDia) {
+function _pinIcon(cor, inicial, modo, ordemDia, tipo) {
+  // Manutenção e Retirada: pílula amarela com o texto do tipo
+  const _t = (tipo || '').toLowerCase();
+  const ehManut = _t.includes('manut');
+  const ehRetir = _t.includes('remo') || _t.includes('retir');
+
+  if (ehManut || ehRetir) {
+    const label = ehManut ? 'Manutenção' : 'Retirada';
+    const prefixo = ordemDia ? ordemDia + ' · ' : '';
+    return L.divIcon({
+      className: '',
+      html: '<div style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:20px;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800;color:white;white-space:nowrap;">' + prefixo + label + '</div>',
+      iconSize: [90, 28],
+      iconAnchor: [45, 14],
+      popupAnchor: [0, -18],
+    });
+  }
+
   let inner;
   if (modo === 'car' && ordemDia) {
-    // Número da ordem em destaque
     inner = '<span style="font-size:14px;font-weight:900;color:white;line-height:1;">' + ordemDia + '</span>';
   } else if (modo === 'car') {
-    // Carrinho quando sem ordem definida
     inner = '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>';
   } else if (ordemDia) {
-    // Admin com ordem definida — mostra número
     inner = '<span style="font-size:14px;font-weight:900;color:white;line-height:1;">' + ordemDia + '</span>';
   } else {
-    // Admin sem ordem — mostra inicial do técnico
     inner = '<span style="font-size:13px;font-weight:700;color:white;">' + inicial + '</span>';
   }
   const tamanho = ordemDia ? 38 : 34;
@@ -5366,7 +5379,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       '</div>' +
       '</div>';
 
-    L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0) })
+    L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '') })
       .addTo(map)
       .bindPopup(popup, { maxWidth: 260 });
 
