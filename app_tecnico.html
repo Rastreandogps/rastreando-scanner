@@ -5140,15 +5140,21 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome) {
   const ehRetir = _t.includes('remo') || _t.includes('retir');
 
   if (ehManut || ehRetir) {
-    const label = ehManut ? 'Manutenção' : 'Retirada';
-    const prefixo = ordemDia ? ordemDia + ' · ' : '';
-    const nomeAcima = nome ? '<div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;">' + nome + '</div>' : '';
+    // Bolinha amarela — número dentro se tiver ordem, vazia se não tiver
+    const inner = ordemDia
+      ? '<span style="font-size:14px;font-weight:900;color:white;line-height:1;">' + ordemDia + '</span>'
+      : '';
+    const tamanho = ordemDia ? 38 : 34;
+    const nomeAcima = nome ? '<div style="position:absolute;bottom:' + (tamanho+4) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
     return L.divIcon({
       className: '',
-      html: '<div style="position:relative;">' + nomeAcima + '<div style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:20px;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:11px;font-weight:800;color:white;white-space:nowrap;">' + prefixo + label + '</div></div>',
-      iconSize: [90, 28],
-      iconAnchor: [45, 14],
-      popupAnchor: [0, -36],
+      html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
+        nomeAcima +
+        '<div style="width:' + tamanho + 'px;height:' + tamanho + 'px;border-radius:50%;background:#f59e0b;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">' + inner + '</div>' +
+      '</div>',
+      iconSize: [tamanho, tamanho],
+      iconAnchor: [tamanho/2, tamanho/2],
+      popupAnchor: [0, -(tamanho + 26)],
     });
   }
 
