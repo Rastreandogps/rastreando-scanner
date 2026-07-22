@@ -5682,7 +5682,12 @@ async function iniciarMapaTecnico() {
   _leafletMapTech = map;
   _mapaTechCarregadoEm = Date.now();
 
-  const orders = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido');
+  const orders = (allOrders[currentUser] || []).filter((function(o) {
+      if (o.status === 'concluido') return false;
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true;
+      const _d = parseDate(o.data); const _hj = new Date();
+      return _d && _d.getDate()===_hj.getDate() && _d.getMonth()===_hj.getMonth() && _d.getFullYear()===_hj.getFullYear();
+    }));
 
   await _plotarOS(
     map, orders,
@@ -5744,7 +5749,12 @@ async function iniciarMapaAdmin() {
   const todas = [];
   TECH_NAMES.forEach(t => {
     if (_mapaAdminFiltro !== 'todos' && t !== _mapaAdminFiltro) return;
-    (allOrders[t] || []).filter(o => o.status !== 'concluido').forEach(o => {
+    (allOrders[t] || []).filter((function(o) {
+      if (o.status === 'concluido') return false;
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true;
+      const _d = parseDate(o.data); const _hj = new Date();
+      return _d && _d.getDate()===_hj.getDate() && _d.getMonth()===_hj.getMonth() && _d.getFullYear()===_hj.getFullYear();
+    })).forEach(o => {
       todas.push({ ...o, _tech: t });
     });
   });
