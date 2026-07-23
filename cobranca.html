@@ -1122,8 +1122,8 @@ function buildCardHTML(c, i) {
             <div class="client-value">R$ ${c.valor}</div>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
-            ${c.telefone ? `<span>📱 ${c.telefone}</span>` : ''}
-            ${c.cpf ? `<span>🪪 ${formatarCPF(c.cpf)}</span>` : ''}
+            ${c.telefone ? '<span>📱 ' + c.telefone + '</span>' : ''}
+            ${c.cpf ? '<span>🪪 ' + formatarCPF(c.cpf) + '</span>' : ''}
           </div>
           ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
         </div>
