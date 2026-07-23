@@ -688,6 +688,7 @@ async function importarInadimplentes() {
           link:  fresh.link || existing.link,
           classificacao: fresh.classificacao || existing.classificacao || '',
           pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || ''),
+          cpf: fresh.cpf || existing.cpf || '',
           justificativa: fresh.retorno || existing.justificativa || '',
           justData: fresh.dataRetorno || existing.justData || null,
           dataCompromisso: fresh.dataCompromisso || existing.dataCompromisso || '',
@@ -710,6 +711,7 @@ async function importarInadimplentes() {
         link: c.link || '',
         classificacao: c.classificacao || '',
         pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
+        cpf: c.cpf || '',
         justificativa: c.retorno || '',
         justData: c.dataRetorno || null,
         dataCompromisso: c.dataCompromisso || '',
@@ -1119,6 +1121,10 @@ function buildCardHTML(c, i) {
             <div class="client-sub">📅 ${formatarData(c.mes)}</div>
             <div class="client-value">R$ ${c.valor}</div>
           </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
+            ${c.telefone ? `<span>📱 ${c.telefone}</span>` : ''}
+            ${c.cpf ? `<span>🪪 ${formatarCPF(c.cpf)}</span>` : ''}
+          </div>
           ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
         </div>
       </div>
@@ -1259,7 +1265,12 @@ function saveCompromisso(id, valor) {
   showToast(valor ? '📅 Compromisso salvo: ' + formatarDataBR(valor) : '📅 Compromisso removido');
 }
 
-function formatarDataBR(iso) {
+function formatarCPF(cpf) {
+  const c = (cpf || '').replace(/\D/g, '');
+  if (c.length === 11) return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  if (c.length === 14) return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  return cpf;
+}
   if (!iso) return '';
   const [y,m,d] = iso.split('-');
   return (d||'')+'/'+(m||'')+'/'+(y||'');
@@ -1666,6 +1677,7 @@ function fixClients(arr) {
     if (c.classificacao === undefined) c.classificacao = '';
     if (c.pontuacao === undefined) c.pontuacao = '';
     if (c.dataCompromisso === undefined) c.dataCompromisso = '';
+    if (c.cpf === undefined) c.cpf = '';
   });
   return arr;
 }
