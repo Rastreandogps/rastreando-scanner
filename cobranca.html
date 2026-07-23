@@ -1122,7 +1122,7 @@ function buildCardHTML(c, i) {
             <div class="client-value">R$ ${c.valor}</div>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
-            ${c.telefone ? '<span>📱 ' + c.telefone + '</span>' : ''}
+            ${c.telefone ? '<span>📱 ' + formatarTelExibicao(c.telefone) + '</span>' : ''}
             ${c.cpf ? '<span>🪪 ' + formatarCPF(c.cpf) + '</span>' : ''}
           </div>
           ${(classifBadge || justChip) ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${classifBadge}${justChip}</div>` : ''}
@@ -1265,7 +1265,14 @@ function saveCompromisso(id, valor) {
   showToast(valor ? '📅 Compromisso salvo: ' + formatarDataBR(valor) : '📅 Compromisso removido');
 }
 
-function formatarCPF(cpf) {
+function formatarTelExibicao(tel) {
+  let t = (tel || '').replace(/\D/g, '');
+  if (t.startsWith('55') && t.length >= 12) t = t.substring(2);
+  // Formata: (21) 99999-9999
+  if (t.length === 11) return '(' + t.substring(0,2) + ') ' + t.substring(2,7) + '-' + t.substring(7);
+  if (t.length === 10) return '(' + t.substring(0,2) + ') ' + t.substring(2,6) + '-' + t.substring(6);
+  return tel;
+}
   const c = (cpf || '').replace(/\D/g, '');
   if (c.length === 11) return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   if (c.length === 14) return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
