@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Rastreando GPS — Agendamento de Instalação</title>
-<meta name="description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
+<title>Rastreando GPS — Agendamento de Serviço</title>
+<meta name="description" content="Preencha sua solicitação de serviço em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local.">
 <meta name="theme-color" content="#080C16">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://agendamento.rastreandogpsbr.com.br/">
-<meta property="og:title" content="📅 Agende sua instalação">
-<meta property="og:description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
+<meta property="og:title" content="📅 Solicite seu atendimento">
+<meta property="og:description" content="Preencha sua solicitação de serviço em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local.">
 <meta property="og:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
 <meta property="og:image:secure_url" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Rastreando GPS — Agendamento de instalação">
+<meta property="og:image:alt" content="Rastreando GPS — Agendamento de serviço">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Rastreando GPS">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="📅 Agende sua instalação">
-<meta name="twitter:description" content="Preencha seu pré-agendamento em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local da instalação.">
+<meta name="twitter:title" content="📅 Solicite seu atendimento">
+<meta name="twitter:description" content="Preencha sua solicitação de serviço em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local.">
 <meta name="twitter:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
 
 <meta name="application-name" content="Agendamento Rastreando GPS">
@@ -406,8 +406,8 @@
     <p class="signal-tag" id="signalTag">SINAL: AGUARDANDO DADOS</p>
 
     <p class="eyebrow">Rastreando GPS · Agendamento</p>
-    <h1>Agende a instalação<br>do seu rastreador</h1>
-    <p class="subtext">Preencha os dados abaixo. É rápido, e sua instalação já entra na nossa agenda.</p>
+    <h1>Solicite seu<br>atendimento</h1>
+    <p class="subtext">Preencha os dados abaixo. É rápido, e seu serviço já entra na nossa agenda.</p>
 
     <div class="signal-meter" aria-hidden="true">
       <div class="bars">
@@ -464,7 +464,7 @@
 
     <div class="field stepper-field">
       <div class="stepper-label-wrap">
-        <label>Quantos veículos serão instalados?</label>
+        <label>Quantos veículos serão atendidos?</label>
         <span class="stepper-hint">Cada veículo abre uma caixinha própria abaixo</span>
       </div>
       <div class="stepper">
@@ -479,7 +479,7 @@
     <div class="error-banner" id="errorBanner" role="alert" hidden></div>
 
     <button type="submit" class="submit-btn" id="submitBtn">
-      <span id="submitLabel">Confirmar agendamento</span>
+      <span id="submitLabel">Confirmar solicitação</span>
     </button>
 
     <p class="footer-note">Dúvidas? <span class="mono">(21) 9 8088-6087</span> · <span class="mono">(21) 9 6931-2625</span></p>
@@ -493,7 +493,7 @@
       </svg>
     </div>
     <p class="signal-tag success">SINAL: CONECTADO</p>
-    <h2>Agendamento recebido!</h2>
+    <h2>Solicitação recebida!</h2>
     <p class="subtext">Estamos abrindo o WhatsApp para confirmar com você. Se não abriu, toque no botão abaixo.</p>
     <p class="ref-tag">Referência <span class="mono" id="refId"></span></p>
 
@@ -676,12 +676,12 @@
   function hideError(){ errorBanner.hidden = true; }
   function setSending(isSending){
     submitBtn.disabled = isSending;
-    submitLabel.textContent = isSending ? 'Enviando...' : 'Confirmar agendamento';
+    submitLabel.textContent = isSending ? 'Enviando...' : 'Confirmar solicitação';
   }
 
   function buildWhatsAppMessage(payload){
     var linhas = [];
-    linhas.push('Olá! Acabei de agendar a instalação do rastreador pelo formulário.');
+    linhas.push('Olá! Segue minha solicitação de serviço preenchida pelo formulário.');
     linhas.push('');
     linhas.push('Nome: ' + payload.nomeCompleto);
     linhas.push('Telefone: ' + payload.telefone);
@@ -699,9 +699,6 @@
     return linhas.join('\n');
   }
 
-  // =========================================================
-  // SHOW SUCCESS — abre WhatsApp imediatamente (sem clique extra)
-  // =========================================================
   function showSuccess(payload, waWindow){
     form.hidden = true;
     successCard.hidden = false;
@@ -710,25 +707,18 @@
     var mensagem = buildWhatsAppMessage(payload);
     var link = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
 
-    // Atualiza o link do botão de fallback
     var whatsappBtn = document.getElementById('whatsappBtn');
     whatsappBtn.href = link;
 
-    // Se já temos a janela aberta (modo Apps Script), navega ela para o link
-    // Se não (modo teste), tenta abrir agora
     if(waWindow && !waWindow.closed){
       waWindow.location.href = link;
     } else {
-      // Tentativa de abertura tardia (funciona em alguns browsers mobile)
       window.location.href = link;
     }
 
     successCard.scrollIntoView({ behavior:'smooth', block:'center' });
   }
 
-  // =========================================================
-  // LISTENERS de campos
-  // =========================================================
   btnMinus.addEventListener('click', function(){ setVehicleCount(vehicles.length - 1); });
   btnPlus.addEventListener('click',  function(){ setVehicleCount(vehicles.length + 1); });
 
@@ -780,14 +770,10 @@
     else{ setCepStatus('Continue digitando ou preencha o endereço manualmente abaixo.', null); }
   });
 
-  // =========================================================
-  // SUBMIT — abre o WhatsApp DENTRO do evento de clique
-  // =========================================================
   form.addEventListener('submit', function(e){
     e.preventDefault();
     hideError();
 
-    // --- Validação ---
     var nome           = nomeInput.value.trim();
     var telefoneDigits = telefoneInput.value.replace(/\D/g, '');
     var rua            = ruaInput.value.trim();
@@ -824,7 +810,6 @@
       return;
     }
 
-    // --- Monta payload ---
     var payload = {
       enviadoEm: new Date().toISOString(),
       idPedido: 'PED-' + Date.now(),
@@ -839,26 +824,17 @@
       })
     };
 
-    // ─────────────────────────────────────────────────────────
-    // PASSO-CHAVE: abre o WhatsApp AGORA, dentro do evento de clique.
-    // O browser aceita window.open() aqui pois ainda está no stack do clique.
-    // Depois redirecionamos a URL da janela para a mensagem real.
-    // ─────────────────────────────────────────────────────────
     var mensagem = buildWhatsAppMessage(payload);
     var waLink   = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
-
-    // Abre direto para o WhatsApp (não precisa de "about:blank" + redirecionamento)
     var waWindow = window.open(waLink, '_blank');
 
     setSending(true);
 
-    // --- Modo de teste (sem Apps Script configurado) ---
     if(CONFIG.SCRIPT_URL.indexOf('COLOQUE_AQUI') > -1){
       setTimeout(function(){ setSending(false); showSuccess(payload, waWindow); }, 400);
       return;
     }
 
-    // --- Envia para o Apps Script em background ---
     fetch(CONFIG.SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -875,10 +851,7 @@
       })
       .catch(function(){
         setSending(false);
-        // WhatsApp já foi aberto; mesmo com erro na planilha o cliente já chegou pra você.
-        // Mostra o card de sucesso mesmo assim, pois a mensagem foi enviada.
         showSuccess(payload, waWindow);
-        // Aviso secundário no console para debug
         console.warn('[Rastreando GPS] Falha ao salvar na planilha. WhatsApp já foi aberto.');
       });
   });
