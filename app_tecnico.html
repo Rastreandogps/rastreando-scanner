@@ -557,9 +557,16 @@
     <div id="tech-os-list"></div>
   </div>
   <div id="tech-tab-mapa" class="screen" style="padding:0;overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border-bottom:1px solid var(--border);">
-      <span id="map-timestamp-tech" style="font-size:12px;color:var(--muted);">Carregando na primeira visita...</span>
-      <button onclick="recarregarMapaTecnico()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='white' stroke-width='2.5'><path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/><path d='M3 3v5h5'/></svg> Atualizar mapa</button>
+    <div style="padding:10px 14px;background:white;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span id="map-timestamp-tech" style="font-size:12px;color:var(--muted);">Carregando na primeira visita...</span>
+        <button onclick="recarregarMapaTecnico()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='white' stroke-width='2.5'><path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/><path d='M3 3v5h5'/></svg> Atualizar mapa</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 Ver dia:</span>
+        <input type="date" id="map-data-tech" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaTecnico()">
+        <button onclick="mapDataHoje('tech')" style="padding:6px 10px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
+      </div>
     </div>
     <div id="map-container-tech" style="position:relative;height:calc(100vh - 190px);">
       <div class="map-loading-wrap hide" id="map-loading-tech">
@@ -664,6 +671,11 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span id="map-timestamp-admin" style="font-size:12px;color:var(--muted);">Carregando na primeira visita...</span>
         <button onclick="recarregarMapaAdmin()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='white' stroke-width='2.5'><path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/><path d='M3 3v5h5'/></svg> Atualizar mapa</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 Ver dia:</span>
+        <input type="date" id="map-data-admin" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
+        <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
@@ -5341,6 +5353,7 @@ let _mapaTechIniciado   = false;
 let _leafletMapAdmin    = null;
 let _leafletMapTech     = null;
 let _mapaTechCarregadoEm  = 0;
+let _mapaDataFiltro = new Date(); // data selecionada para plotagem
 let _mapaAdminCarregadoEm = 0;
 const MAPA_VALIDADE_MS = 30 * 60 * 1000; // 30 minutos
 
@@ -5886,6 +5899,7 @@ async function iniciarMapaTecnico() {
   document.getElementById('map-progress-tech').style.width = '0%';
 
   // Garantir que Leaflet está carregado
+  _inicializarInputsMapaData();
   if (typeof L === 'undefined') {
     document.getElementById('map-label-tech').textContent = 'Carregando biblioteca do mapa...';
     await carregarLeaflet();
@@ -5895,11 +5909,12 @@ async function iniciarMapaTecnico() {
   _leafletMapTech = map;
   _mapaTechCarregadoEm = Date.now();
 
+  _mapaDataFiltro = _mapDataSelecionada('tech');
   const orders = (allOrders[currentUser] || []).filter((function(o) {
       if (o.status === 'concluido') return false;
-      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true;
-      const _d = parseDate(o.data); const _hj = new Date();
-      return _d && _d.getDate()===_hj.getDate() && _d.getMonth()===_hj.getMonth() && _d.getFullYear()===_hj.getFullYear();
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+      const _d = parseDate(o.data);
+      return _d && _d.getDate()===_mapaDataFiltro.getDate() && _d.getMonth()===_mapaDataFiltro.getMonth() && _d.getFullYear()===_mapaDataFiltro.getFullYear();
     }));
 
   await _plotarOS(
@@ -5935,6 +5950,35 @@ function filtrarMapaAdmin(tech) {
   iniciarMapaAdmin();
 }
 
+// ── Data do mapa
+function _mapDataSelecionada(sufixo) {
+  const input = document.getElementById('map-data-' + sufixo);
+  if (!input || !input.value) return new Date();
+  const [y, m, d] = input.value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function _mapDataHojeStr() {
+  const h = new Date();
+  return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0');
+}
+
+function mapDataHoje(sufixo) {
+  const input = document.getElementById('map-data-' + sufixo);
+  if (input) input.value = _mapDataHojeStr();
+  if (sufixo === 'tech') recarregarMapaTecnico();
+  else recarregarMapaAdmin();
+}
+
+// Inicializar inputs de data com hoje quando o mapa abre
+function _inicializarInputsMapaData() {
+  const hoje = _mapDataHojeStr();
+  const t = document.getElementById('map-data-tech');
+  const a = document.getElementById('map-data-admin');
+  if (t && !t.value) t.value = hoje;
+  if (a && !a.value) a.value = hoje;
+}
+
 function navAdminCal(dir) {
   if (dir === 0) {
     // Volta para o mês atual
@@ -5963,6 +6007,7 @@ async function iniciarMapaAdmin() {
   document.getElementById('map-loading-admin').classList.remove('hide');
   document.getElementById('map-progress-admin').style.width = '0%';
 
+  _inicializarInputsMapaData();
   if (typeof L === 'undefined') {
     document.getElementById('map-label-admin').textContent = 'Carregando biblioteca do mapa...';
     await carregarLeaflet();
@@ -5972,15 +6017,16 @@ async function iniciarMapaAdmin() {
   _leafletMapAdmin = map;
   _mapaAdminCarregadoEm = Date.now();
 
+  _mapaDataFiltro = _mapDataSelecionada('admin');
   // OS ativas filtradas por técnico (se houver filtro ativo)
   const todas = [];
   TECH_NAMES.forEach(t => {
     if (_mapaAdminFiltro !== 'todos' && t !== _mapaAdminFiltro) return;
     (allOrders[t] || []).filter((function(o) {
       if (o.status === 'concluido') return false;
-      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return true;
-      const _d = parseDate(o.data); const _hj = new Date();
-      return _d && _d.getDate()===_hj.getDate() && _d.getMonth()===_hj.getMonth() && _d.getFullYear()===_hj.getFullYear();
+      if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
+      const _d = parseDate(o.data);
+      return _d && _d.getDate()===_mapaDataFiltro.getDate() && _d.getMonth()===_mapaDataFiltro.getMonth() && _d.getFullYear()===_mapaDataFiltro.getFullYear();
     })).forEach(o => {
       todas.push({ ...o, _tech: t });
     });
