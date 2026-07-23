@@ -2557,6 +2557,13 @@ function renderCardConfirmacao() {
 
       // Campo valor da instalação
       '<div style="background:#f0f4ff;border-radius:12px;padding:14px;margin-bottom:12px;">' +
+        '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">TIPO DE SERVIÇO</label>' +
+        '<select id="ag-tipo-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px;">' +
+          '<option value="Instalação">🔧 Instalação</option>' +
+          '<option value="Manutenção">🔨 Manutenção</option>' +
+          '<option value="Remoção">📤 Remoção</option>' +
+          '<option value="Retirada">🔄 Retirada</option>' +
+        '</select>' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">💰 Valor da instalação</label>' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
           '<span style="font-size:15px;font-weight:700;color:var(--primary);">R$</span>' +
@@ -5062,7 +5069,7 @@ async function confirmarAgendamentoAba(rowIndex) {
   const resultSave = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
-    endereco: ag.endereco || '', tipo: 'Instalação', data: data,
+    endereco: ag.endereco || '', tipo: (document.getElementById('ag-tipo-' + rowIndex)||{}).value||'Instalação', data: data,
     veiculo: veiculoStr, obs: ag.pontoReferencia || ''
   });
 
