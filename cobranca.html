@@ -236,6 +236,12 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .group-tab.active-both .group-tab-count{background:var(--yellow);color:#000}
 .group-tab.active-canc .group-tab-count{background:#555;color:#fff}
 .group-tab.active-ret .group-tab-count{background:var(--orange);color:#000}
+.classif-dropdown{position:relative;flex:1}
+.classif-dropdown-btn{width:100%;display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--font);font-size:13px;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.classif-dropdown-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--radius-sm);z-index:200;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden}
+.classif-dropdown-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);transition:background .15s}
+.classif-dropdown-item:hover{background:var(--bg3)}
+.classif-stat{font-size:11px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap}
 .btn-cancelar-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid #d32f2f;background:#fdecea;color:#d32f2f;transition:all .2s;width:100%}
 .btn-cancelar-chip:active{transform:scale(.97);background:#e53935;color:#fff}
 .classif-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;letter-spacing:.3px;margin-top:3px}
@@ -395,14 +401,30 @@ body{display:flex;flex-direction:column;min-height:100vh}
     </div>
     <div class="date-filter-wrap" id="classifFilterWrap" style="display:none">
       <span class="date-filter-label">🏅 Classificação:</span>
-      <select class="date-filter-select" id="classifFilterSelect" onchange="setClassifFilter(this.value)">
-        <option value="all">Todas</option>
-        <option value="ouro">🥇 Ouro</option>
-        <option value="prata">🥈 Prata</option>
-        <option value="latao">🥉 Latão</option>
-        <option value="sem">Sem classificação</option>
-      </select>
-      <button class="date-filter-clear" id="classifFilterClear" onclick="setClassifFilter('all')" style="display:none">✕ Limpar</button>
+      <div class="classif-dropdown" id="classifDropdown">
+        <button class="classif-dropdown-btn" id="classifDropdownBtn" onclick="toggleClassifDropdown()">
+          <span id="classifDropdownLabel">Todas</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--muted)">▼</span>
+        </button>
+        <div class="classif-dropdown-list" id="classifDropdownList" style="display:none">
+          <div class="classif-dropdown-item" onclick="setClassifFilter('all')">
+            <span>Todas</span><span id="cdAll" class="classif-stat"></span>
+          </div>
+          <div class="classif-dropdown-item" onclick="setClassifFilter('ouro')">
+            <span>🥇 Ouro</span><span id="cdOuro" class="classif-stat"></span>
+          </div>
+          <div class="classif-dropdown-item" onclick="setClassifFilter('prata')">
+            <span>🥈 Prata</span><span id="cdPrata" class="classif-stat"></span>
+          </div>
+          <div class="classif-dropdown-item" onclick="setClassifFilter('latao')">
+            <span>🥉 Latão</span><span id="cdLatao" class="classif-stat"></span>
+          </div>
+          <div class="classif-dropdown-item" onclick="setClassifFilter('sem')">
+            <span>Sem classificação</span><span id="cdSem" class="classif-stat"></span>
+          </div>
+        </div>
+      </div>
+      <button class="date-filter-clear" id="classifFilterClear" onclick="setClassifFilter('all')" style="display:none">✕</button>
     </div>
     <div class="date-filter-wrap" id="zeroPtsWrap" style="display:none;align-items:center;gap:8px">
       <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);user-select:none">
@@ -845,12 +867,14 @@ function renderDateFilterOptions() {
 
   // Filtro de classificação
   const cfWrap   = document.getElementById('classifFilterWrap');
-  const cfSel    = document.getElementById('classifFilterSelect');
-  const cfClear  = document.getElementById('classifFilterClear');
-  if (cfWrap && cfSel) {
+  if (cfWrap) {
     cfWrap.style.display = 'flex';
-    cfSel.value = currentClassifFilter;
-    cfClear.style.display = currentClassifFilter !== 'all' ? 'block' : 'none';
+    updateClassifStats();
+    const lbl = document.getElementById('classifDropdownLabel');
+    const labels = { all:'Todas', ouro:'🥇 Ouro', prata:'🥈 Prata', latao:'🥉 Latão', sem:'Sem classificação' };
+    if (lbl) lbl.textContent = labels[currentClassifFilter] || 'Todas';
+    const cfClear = document.getElementById('classifFilterClear');
+    if (cfClear) cfClear.style.display = currentClassifFilter !== 'all' ? 'block' : 'none';
   }
   const zpWrap = document.getElementById('zeroPtsWrap');
   if (zpWrap) zpWrap.style.display = 'flex';
@@ -861,12 +885,63 @@ function setDateFilter(v) {
   renderClients();
 }
 
+function toggleClassifDropdown() {
+  const list = document.getElementById('classifDropdownList');
+  if (!list) return;
+  const isOpen = list.style.display !== 'none';
+  list.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) updateClassifStats();
+}
+
+function updateClassifStats() {
+  const clients = currentClients();
+  const grupos = { ouro: [], prata: [], latao: [], sem: [] };
+  clients.forEach(c => {
+    const r = (c.classificacao || '').toUpperCase();
+    const v = parseFloat((c.valor||'0').replace(/\./g,'').replace(',','.')) || 0;
+    if (r.includes('OURO'))       grupos.ouro.push(v);
+    else if (r.includes('PRATA')) grupos.prata.push(v);
+    else if (r.includes('LAT'))   grupos.latao.push(v);
+    else                          grupos.sem.push(v);
+  });
+  const fmt = (arr) => {
+    if (!arr.length) return '';
+    const total = arr.reduce((s,v)=>s+v,0);
+    return arr.length + ' · R$ ' + total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
+  const all = clients.length;
+  const allVal = clients.reduce((s,c)=>s+(parseFloat((c.valor||'0').replace(/\./g,'').replace(',','.'))||0),0);
+  const el = (id, txt) => { const e = document.getElementById(id); if(e) e.textContent = txt; };
+  el('cdAll',   all + ' · R$ ' + allVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  el('cdOuro',  fmt(grupos.ouro));
+  el('cdPrata', fmt(grupos.prata));
+  el('cdLatao', fmt(grupos.latao));
+  el('cdSem',   fmt(grupos.sem));
+}
+
 function setClassifFilter(v) {
   currentClassifFilter = v;
+  // Atualiza label do botão
+  const labels = { all:'Todas', ouro:'🥇 Ouro', prata:'🥈 Prata', latao:'🥉 Latão', sem:'Sem classificação' };
+  const lbl = document.getElementById('classifDropdownLabel');
+  if (lbl) lbl.textContent = labels[v] || 'Todas';
+  // Fecha dropdown
+  const list = document.getElementById('classifDropdownList');
+  if (list) list.style.display = 'none';
+  // Mostra/esconde botão limpar
   const cfClear = document.getElementById('classifFilterClear');
   if (cfClear) cfClear.style.display = v !== 'all' ? 'block' : 'none';
   renderClients();
 }
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('classifDropdown');
+  if (dd && !dd.contains(e.target)) {
+    const list = document.getElementById('classifDropdownList');
+    if (list) list.style.display = 'none';
+  }
+});
 
 function onSearch(val) {
   currentSearch = val.trim();
