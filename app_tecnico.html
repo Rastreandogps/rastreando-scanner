@@ -4146,14 +4146,14 @@ async function enviarResumoDia(tech) {
       return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
     }).join('\n');
 
-    return '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
+    return '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
   }).join('\n\n');
 
-  const totalStr = totalGeral > 0 ? '\n\n💰 *Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '';
+  const totalStr = totalGeral > 0 ? '\n\n*Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '';
   const dataStr  = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
   const msg =
-    '*' + tech + ', segue o resumo de hoje — ' + dataStr + ' 📋*\n\n' +
+    '*' + tech + ', segue o resumo de hoje — ' + dataStr + '*\n\n' +
     linhas +
     totalStr + '\n\n' +
     '_Rastreando GPS_ 📍';
@@ -4742,12 +4742,12 @@ function abrirResumoUnicaOS(id, tech) {
     return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
   }).join('\n');
 
-  const linha = '🪪 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
+  const linha = '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
 
   const hoje   = new Date();
   const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
-  const totalStr = valor > 0 ? '\n\n💰 *Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+  const totalStr = valor > 0 ? '\n\n*Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
 
   const msg =
     '*' + tech + ', segue o serviço avulso — ' + dataStr + ' 📋*\n\n' +
