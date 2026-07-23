@@ -1271,6 +1271,8 @@ function formatarCPF(cpf) {
   if (c.length === 14) return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   return cpf;
 }
+
+function formatarDataBR(iso) {
   if (!iso) return '';
   const [y,m,d] = iso.split('-');
   return (d||'')+'/'+(m||'')+'/'+(y||'');
