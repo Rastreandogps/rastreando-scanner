@@ -1272,7 +1272,8 @@ function formatarTelExibicao(tel) {
   if (t.length === 11) return '(' + t.substring(0,2) + ') ' + t.substring(2,7) + '-' + t.substring(7);
   if (t.length === 10) return '(' + t.substring(0,2) + ') ' + t.substring(2,6) + '-' + t.substring(6);
   return tel;
-}
+  
+function formatarCpfCnpj(cpf) {
   const c = (cpf || '').replace(/\D/g, '');
   if (c.length === 11) return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   if (c.length === 14) return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
