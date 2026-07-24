@@ -1070,17 +1070,25 @@
     </div>
     <div class="modal-sub">Adicione os gastos a descontar do técnico hoje (opcional)</div>
 
-    <!-- Lista de despesas -->
-    <div id="despesas-lista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
-
-    <!-- Botão adicionar despesa -->
-    <button type="button" onclick="adicionarDespesa()" style="width:100%;padding:10px;background:#f0f4ff;border:2px dashed var(--admin);border-radius:10px;color:var(--admin);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
+    <!-- DESPESAS -->
+    <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">➖ Despesas (descontar)</div>
+    <div id="despesas-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+    <button type="button" onclick="adicionarDespesa()" style="width:100%;padding:9px;background:#fff5f5;border:2px dashed #ef4444;border-radius:10px;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;">
       + Adicionar despesa
     </button>
 
-    <!-- Resumo do desconto -->
-    <div id="despesas-resumo" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-top:10px;font-size:13px;color:#92400e;">
-      <div style="display:flex;justify-content:space-between;"><span>Total de despesas:</span><span id="despesas-total-label" style="font-weight:700;">R$ 0,00</span></div>
+    <!-- ACRÉSCIMOS -->
+    <div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:6px;">➕ Acréscimos (somar)</div>
+    <div id="acrescimos-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+    <button type="button" onclick="adicionarAcrescimo()" style="width:100%;padding:9px;background:#f0fdf4;border:2px dashed #10b981;border-radius:10px;color:#10b981;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;">
+      + Adicionar acréscimo
+    </button>
+
+    <!-- Resumo -->
+    <div id="despesas-resumo" style="display:none;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:4px;font-size:13px;color:#1e293b;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#ef4444;">➖ Despesas:</span><span id="despesas-total-label" style="font-weight:700;color:#ef4444;">R$ 0,00</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="color:#10b981;">➕ Acréscimos:</span><span id="acrescimos-total-label" style="font-weight:700;color:#10b981;">R$ 0,00</span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;"><span style="font-weight:700;">Total líquido:</span><span id="liquido-total-label" style="font-weight:800;color:var(--primary);">R$ 0,00</span></div>
     </div>
 
     <div class="modal-btns" style="margin-top:16px;">
@@ -4059,6 +4067,9 @@ function abrirModalDesconto(tech, msg, totalGeral) {
   _resumoPendente = { tech, msg, totalGeral };
   _despesasCounter = 0;
   document.getElementById('despesas-lista').innerHTML = '';
+  _acrescimosCounter = 0;
+  const _acresLista = document.getElementById('acrescimos-lista');
+  if (_acresLista) _acresLista.innerHTML = '';
   document.getElementById('despesas-resumo').style.display = 'none';
   document.getElementById('modal-desconto-resumo').classList.add('open'); lockScroll();
   // Já abre com uma linha em branco pra facilitar
@@ -4091,17 +4102,69 @@ function removerDespesa(id) {
   atualizarTotalDespesas();
 }
 
-function atualizarTotalDespesas() {
-  let total = 0;
-  for (let i = 1; i <= _despesasCounter; i++) {
-    const val = parseFloat(document.getElementById('desp-val-' + i)?.value) || 0;
-    total += val;
+let _acrescimosCounter = 0;
+
+function adicionarAcrescimo() {
+  const id = ++_acrescimosCounter;
+  const lista = document.getElementById('acrescimos-lista');
+  const div = document.createElement('div');
+  div.id = 'acrescimo-row-' + id;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  div.innerHTML =
+    '<input type="text" id="acr-mot-' + id + '" placeholder="Ex: Serviço adicional" oninput="atualizarTotalDespesas()" ' +
+      'style="flex:2;border:2px solid #6ee7b7;border-radius:10px;padding:9px 10px;font-size:13px;outline:none;">' +
+    '<div style="display:flex;align-items:center;gap:4px;border:2px solid #6ee7b7;border-radius:10px;padding:0 8px;background:white;flex:1;">' +
+      '<span style="font-weight:700;color:#10b981;font-size:13px;">R$</span>' +
+      '<input type="number" id="acr-val-' + id + '" placeholder="0,00" step="0.01" min="0" oninput="atualizarTotalDespesas()" ' +
+        'style="flex:1;border:none;outline:none;padding:9px 0;font-size:13px;font-weight:600;width:60px;">' +
+    '</div>' +
+    '<button type="button" onclick="removerAcrescimo(' + id + ')" ' +
+      'style="width:32px;height:32px;border-radius:8px;border:none;background:#f0fdf4;color:#10b981;font-size:16px;cursor:pointer;flex-shrink:0;">×</button>';
+  lista.appendChild(div);
+  setTimeout(function() { var el = document.getElementById('acr-mot-' + id); if(el) el.focus(); }, 50);
+}
+
+function removerAcrescimo(id) {
+  const el = document.getElementById('acrescimo-row-' + id);
+  if (el) el.remove();
+  atualizarTotalDespesas();
+}
+
+function coletarAcrescimos() {
+  const acrescimos = [];
+  for (let i = 1; i <= _acrescimosCounter; i++) {
+    const motEl = document.getElementById('acr-mot-' + i);
+    const valEl = document.getElementById('acr-val-' + i);
+    if (!motEl || !valEl) continue;
+    const motivo = motEl.value.trim();
+    const valor  = parseFloat(valEl.value) || 0;
+    if (motivo && valor > 0) acrescimos.push({ motivo, valor });
   }
-  const resumo = document.getElementById('despesas-resumo');
-  const label  = document.getElementById('despesas-total-label');
+  return acrescimos;
+}
+
+function atualizarTotalDespesas() {
+  let totalDesp = 0;
+  for (let i = 1; i <= _despesasCounter; i++) {
+    totalDesp += parseFloat(document.getElementById('desp-val-' + i)?.value) || 0;
+  }
+  let totalAcres = 0;
+  for (let i = 1; i <= _acrescimosCounter; i++) {
+    totalAcres += parseFloat(document.getElementById('acr-val-' + i)?.value) || 0;
+  }
+  const total   = totalDesp + totalAcres;
+  const resumo  = document.getElementById('despesas-resumo');
+  const lDesp   = document.getElementById('despesas-total-label');
+  const lAcres  = document.getElementById('acrescimos-total-label');
+  const lLiq    = document.getElementById('liquido-total-label');
   if (total > 0) {
     resumo.style.display = 'block';
-    label.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+    if (lDesp)  lDesp.textContent  = 'R$ ' + totalDesp.toFixed(2).replace('.', ',');
+    if (lAcres) lAcres.textContent = 'R$ ' + totalAcres.toFixed(2).replace('.', ',');
+    if (lLiq && _resumoPendente) {
+      const liquido = Math.max(0, (_resumoPendente.totalGeral || 0) - totalDesp + totalAcres);
+      lLiq.textContent = 'R$ ' + liquido.toFixed(2).replace('.', ',');
+    }
   } else {
     resumo.style.display = 'none';
   }
@@ -4133,23 +4196,33 @@ function enviarResumoComDesconto() {
   document.getElementById('modal-desconto-resumo').classList.remove('open'); unlockScroll();
   if (!_resumoPendente) return;
   const { tech, msg, totalGeral } = _resumoPendente;
-  const tel      = TECH_TEL[tech];
-  const despesas = coletarDespesas();
+  const tel       = TECH_TEL[tech];
+  const despesas  = coletarDespesas();
+  const acrescimos = typeof coletarAcrescimos === 'function' ? coletarAcrescimos() : [];
 
   let msgFinal = msg;
-  if (despesas.length > 0) {
-    const totalDespesas = despesas.reduce((s, d) => s + d.valor, 0);
-    const liquido = Math.max(0, totalGeral - totalDespesas);
-    const linhasDespesas = despesas.map(d =>
-      '➖ *' + d.motivo + ': R$' + d.valor.toFixed(2).replace('.', ',') + '*'
-    ).join('\n');
-    // Substitui qualquer variante de "💰 *Total..." (do dia, avulso, etc.)
+  if (despesas.length > 0 || acrescimos.length > 0) {
+    const totalDespesas  = despesas.reduce(function(s,d) { return s+d.valor; }, 0);
+    const totalAcrescimos = acrescimos.reduce(function(s,a) { return s+a.valor; }, 0);
+    const liquido = Math.max(0, totalGeral - totalDespesas + totalAcrescimos);
+
+    const linhasDespesas = despesas.map(function(d) {
+      return '➖ *' + d.motivo + ': R$' + d.valor.toFixed(2).replace('.', ',') + '*';
+    }).join('\n');
+
+    const linhasAcrescimos = acrescimos.map(function(a) {
+      return '➕ *' + a.motivo + ': R$' + a.valor.toFixed(2).replace('.', ',') + '*';
+    }).join('\n');
+
     const totalValorStr = totalGeral.toFixed(2).replace('.', ',');
-    const totalRegex = new RegExp('💰 \\*Total[^:]*: R\\$' + totalValorStr.replace('.', '\\.') + '\\*');
+    const totalRegex = new RegExp('\\*Total[^:]*: R\\$' + totalValorStr.replace('.', '\\.') + '\\*');
+
+    const extras = [linhasDespesas, linhasAcrescimos].filter(Boolean).join('\n');
+
     msgFinal = msg.replace(
       totalRegex,
-      '💰 *Total bruto: R$' + totalValorStr + '*\n' +
-      linhasDespesas + '\n' +
+      '*Total bruto: R$' + totalValorStr + '*\n' +
+      extras + '\n' +
       '💵 *Total líquido: R$' + liquido.toFixed(2).replace('.', ',') + '*'
     );
   }
