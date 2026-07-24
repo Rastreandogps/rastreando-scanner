@@ -516,13 +516,6 @@
         <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
     </button>
-    <!-- 📋 Ordens -->
-    <button class="tab-btn" onclick="showTechTab('orders')" id="tt-orders" title="Ordens">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-      </svg>
-    </button>
     <!-- ✅ Concluídos -->
     <button class="tab-btn" onclick="showTechTab('done')" id="tt-done" title="Concluídos">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -552,10 +545,7 @@
     <!-- Cards do dia selecionado -->
     <div id="cal-day-cards" style="padding:0 20px 20px;max-width:680px;margin:0 auto;"></div>
   </div>
-  <div id="tech-tab-orders" class="screen" style="padding-top:20px;background:#e8eef8;min-height:100vh;">
-    <div class="section-title" id="orders-month-label"></div>
-    <div id="tech-os-list"></div>
-  </div>
+
   <div id="tech-tab-mapa" class="screen" style="padding:0;overflow:hidden;">
     <div style="padding:10px 14px;background:white;border-bottom:1px solid var(--border);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -1391,7 +1381,7 @@ function showAdminScreen() {
 }
 
 function showTechTab(tab) {
-  ['calendar','orders','done','mapa'].forEach(t => {
+  ['calendar','done','mapa'].forEach(t => {
     document.getElementById('tech-tab-' + t).classList.toggle('active', t === tab);
     document.getElementById('tt-' + t).classList.toggle('active', t === tab);
   });
@@ -1866,11 +1856,26 @@ function renderCardInline(o) {
         '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps</a>' : '') +
     '</div>' : '') +
     // Campo alterar data
-    '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
+    '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);margin-bottom:8px;">' +
       '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
       '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
       '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDateAndRefreshCal(this)">Salvar</button>' +
     '</div>' +
+    // Nota do técnico — exibição
+    (o.notaTecnico ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:1.5px solid #fde68a;border-radius:10px;padding:10px 12px;margin-bottom:8px;"><span style="font-size:16px;flex-shrink:0;">🗒️</span><div style="flex:1;"><div style="font-size:10px;font-weight:700;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">NOTA</div><div style="font-size:13px;color:#78350f;line-height:1.4;">' + esc(o.notaTecnico) + '</div></div></div>' : '') +
+    // Nota do técnico — campo editar
+    '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">' +
+      '<input type="text" class="card-nota-input" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" ' +
+        'placeholder="📝 Adicionar nota..." value="' + esc(o.notaTecnico || '') + '" ' +
+        'onclick="event.stopPropagation()" ' +
+        'style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
+      '<button onclick="event.stopPropagation();salvarNotaCard(this)" style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
+      '<button onclick="event.stopPropagation();apagarNotaCard(this)" style="padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
+    '</div>' +
+    // Marcar como Concluído
+    '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:4px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+      '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
+    '</button>' +
   '</div>';
 }
 
@@ -5872,6 +5877,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
   const bounds = [];
   const _rotasPorTech = {}; // acumula coords por técnico para rota
+  let _coordUsadas = {}; // rastreia coordenadas duplicadas para offset
 
   // 1. Buscar coordenadas já salvas no cache (GAS)
   if (labelEl) labelEl.textContent = 'Buscando cache de coordenadas...';
@@ -6033,11 +6039,25 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       })() : '') +
       '</div>';
 
-    L.marker([coord.lat, coord.lng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0]) })
+    // Deslocar levemente pins com coordenadas idênticas (sobreposição)
+    let plotLat = coord.lat;
+    let plotLng = coord.lng;
+    const _chave = coord.lat.toFixed(5) + ',' + coord.lng.toFixed(5);
+    if (!_coordUsadas) _coordUsadas = {};
+    if (_coordUsadas[_chave] !== undefined) {
+      _coordUsadas[_chave]++;
+      const _angulo = (_coordUsadas[_chave] * 60) * (Math.PI / 180); // 60° entre cada pin
+      plotLat = coord.lat  + 0.00015 * Math.cos(_angulo);
+      plotLng = coord.lng + 0.00020 * Math.sin(_angulo);
+    } else {
+      _coordUsadas[_chave] = 0;
+    }
+
+    L.marker([plotLat, plotLng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0]) })
       .addTo(map)
       .bindPopup(popup, { maxWidth: 260 });
 
-    bounds.push([coord.lat, coord.lng]);
+    bounds.push([plotLat, plotLng]);
 
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
@@ -6366,7 +6386,7 @@ setTimeout(carregarLeaflet, 5000);
 
     // ── Técnico
     if (document.getElementById('screen-tech').style.display !== 'none') {
-      const tabs  = ['calendar', 'orders', 'done', 'mapa'];
+      const tabs  = ['calendar', 'done', 'mapa'];
       const ativos = tabs.filter(t => document.getElementById('tech-tab-' + t));
       const atual  = ativos.find(t => document.getElementById('tech-tab-' + t).classList.contains('active'));
       const idx    = ativos.indexOf(atual);
