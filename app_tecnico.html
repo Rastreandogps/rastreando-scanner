@@ -2430,6 +2430,17 @@ async function submitOS() {
   const obs     = document.getElementById('f-obs').value.trim();
   if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
   const valorInst = document.getElementById('f-valor')?.value?.trim() || '';
+
+  // Verificar telefone duplicado
+  const _telLimpo = tel.replace(/\D/g, '');
+  if (_telLimpo) {
+    const _duplicada = _buscarOSPorTel(_telLimpo);
+    if (_duplicada) {
+      const _continuar = await _confirmarTelDuplicado(_duplicada);
+      if (!_continuar) return;
+    }
+  }
+
   const novaId = genId();
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: novaId });
@@ -2719,6 +2730,17 @@ async function submitImportOS() {
 
   // Salva UMA única OS com todos os veículos no campo veiculo
   const _ifValor = (document.getElementById('if-valor')||{}).value || '';
+
+  // Verificar telefone duplicado
+  const _ifTelLimpo = (tel||'').replace(/\D/g, '');
+  if (_ifTelLimpo) {
+    const _ifDup = _buscarOSPorTel(_ifTelLimpo);
+    if (_ifDup) {
+      const _ifOk = await _confirmarTelDuplicado(_ifDup);
+      if (!_ifOk) return;
+    }
+  }
+
   const _ifId    = genId();
   const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs, id: _ifId });
   if (result.ok) {
@@ -5224,6 +5246,17 @@ async function confirmarAgendamentoAba(rowIndex) {
   }
 
   const valor = document.getElementById('ag-valor-' + rowIndex)?.value || '';
+
+  // Verificar telefone duplicado
+  const _agTelLimpo = (ag.telefone||'').replace(/\D/g, '');
+  if (_agTelLimpo) {
+    const _agDup = _buscarOSPorTel(_agTelLimpo);
+    if (_agDup) {
+      const _agOk = await _confirmarTelDuplicado(_agDup);
+      if (!_agOk) return;
+    }
+  }
+
   const novoId = genId();
   setAdminSyncStatus('syncing');
   const resultSave = await gasRequest({
@@ -5461,6 +5494,45 @@ async function salvarNotaCard(btn) {
   }
 }
 
+// ── VERIFICAÇÃO DE TELEFONE DUPLICADO
+function _buscarOSPorTel(telLimpo) {
+  if (!telLimpo) return null;
+  for (const tech of TECH_NAMES) {
+    const found = (allOrders[tech] || []).find(function(o) {
+      return o.status !== 'concluido' && (o.telefone || '').replace(/\D/g, '') === telLimpo;
+    });
+    if (found) return { os: found, tech };
+  }
+  return null;
+}
+
+function _confirmarTelDuplicado(duplicada) {
+  return new Promise(function(resolve) {
+    const { os, tech } = duplicada;
+    const dataStr = os.data && os.data.trim() && os.data !== 'undefined'
+      ? ' — ' + formatDateBR(os.data)
+      : ' (sem data)';
+    const msg = '⚠️ Já existe uma OS para o número ' + (os.telefone || '') + ':' +
+      '\n\n👤 ' + (os.nome || '') + ' · ' + tech + dataStr +
+      '\n\nDeseja continuar mesmo assim?';
+
+    // Usar o modal de confirmação existente com mensagem customizada
+    const el = document.getElementById('modal-confirm-ordem-msg');
+    const modal = document.getElementById('modal-confirm-ordem');
+    if (el && modal) {
+      el.textContent = msg;
+      // Substituir temporariamente os botões de callback
+      modal.classList.add('open');
+      lockScroll();
+      // Sobrescrever confirmarOrdemDia e cancelarOrdemDia temporariamente
+      window._telDupResolve = resolve;
+      window._telDupMode = true;
+    } else {
+      resolve(confirm(msg));
+    }
+  });
+}
+
 // ── ORDEM DO DIA
 // Guarda pendência de ordem aguardando confirmação
 let _ordemPendente = null;
@@ -5483,6 +5555,14 @@ function definirOrdemDia(id, tech, ordem, btn) {
 }
 
 async function confirmarOrdemDia() {
+  // Modo verificação de telefone duplicado
+  if (window._telDupMode) {
+    window._telDupMode = false;
+    document.getElementById('modal-confirm-ordem').classList.remove('open');
+    unlockScroll();
+    if (window._telDupResolve) { window._telDupResolve(true); window._telDupResolve = null; }
+    return;
+  }
   if (!_ordemPendente) return;
   const { id, tech, ordem, btn } = _ordemPendente;
   _ordemPendente = null;
@@ -5512,6 +5592,14 @@ async function confirmarOrdemDia() {
 }
 
 function cancelarOrdemDia() {
+  // Modo verificação de telefone duplicado
+  if (window._telDupMode) {
+    window._telDupMode = false;
+    document.getElementById('modal-confirm-ordem').classList.remove('open');
+    unlockScroll();
+    if (window._telDupResolve) { window._telDupResolve(false); window._telDupResolve = null; }
+    return;
+  }
   _ordemPendente = null;
   document.getElementById('modal-confirm-ordem').classList.remove('open');
   unlockScroll();
