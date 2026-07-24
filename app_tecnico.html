@@ -1457,7 +1457,6 @@ async function loadTechOrders() {
   if (result.ok) {
     allOrders[currentUser] = result.data || [];
     renderTechCalendar();
-    renderTechOSList();
     renderCalDayCards(null);
   }
   // Busca ordens concluídas separadamente
@@ -1505,10 +1504,9 @@ function renderTechCalendar() {
   const year  = now.getFullYear();
   const month = now.getMonth();
   document.getElementById('cal-month-label').textContent = MONTHS[month] + ' ' + year;
-  document.getElementById('orders-month-label').textContent = 'Ordens de ' + MONTHS[month];
 
   const grid = document.getElementById('cal-grid');
-  grid.innerHTML = getDinoHTML('cal-dino-loading', 'Sincronizando...') + DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
+  grid.innerHTML = DAYS.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
 
   const first  = new Date(year, month, 1).getDay();
   const total  = new Date(year, month+1, 0).getDate();
@@ -1530,10 +1528,6 @@ function renderTechCalendar() {
   const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined'));
 
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
-
-  // Remove dino ao renderizar dias
-  const calDino = document.getElementById('cal-dino-loading');
-  if (calDino) calDino.remove();
 
   for (let d = 1; d <= total; d++) {
     const isToday  = d === now.getDate();
@@ -1884,6 +1878,7 @@ function renderCardInline(o) {
 // ════════════════════════════════
 function renderTechOSList() {
   const list   = document.getElementById('tech-os-list');
+  if (!list) { renderCalDayCards(null); return; } // aba removida — redireciona para calendário
   const orders = allOrders[currentUser] || [];
   const now    = new Date();
 
@@ -5493,7 +5488,7 @@ async function salvarNotaCard(btn) {
     const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
     if (o) o.notaTecnico = nota;
     showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
-    renderTechOSList();
+    renderCalDayCards(null);
   } else {
     showToast('Erro ao salvar nota.', 'error');
   }
