@@ -2539,7 +2539,7 @@ function renderCardConfirmacao() {
   if (!d) return;
 
   // Verificar se tem bloqueio em algum veículo
-  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('bloqueio'));
+  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('com bloqueio'));
 
   let wrap = document.getElementById('card-confirmacao-wrap');
   if (!wrap) {
@@ -2621,7 +2621,7 @@ function atualizarPreviewMsg() {
   const valor = valorInput ? parseFloat(valorInput.value) : 0;
   const valorStr = valor > 0 ? 'R$' + valor.toFixed(2).replace('.', ',') : '____';
 
-  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('bloqueio'));
+  const temBloqueio = d.veiculos.some(v => v.obs && v.obs.toLowerCase().includes('com bloqueio'));
   const mensalidade = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
   const desconto    = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
 
@@ -2699,8 +2699,11 @@ async function submitImportOS() {
   const tipo = tipoEl ? tipoEl.value : 'Instalação';
 
   // Salva UMA única OS com todos os veículos no campo veiculo
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs, id: genId() });
+  const _ifValor = (document.getElementById('if-valor')||{}).value || '';
+  const _ifId    = genId();
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs, id: _ifId });
   if (result.ok) {
+    if (_ifValor) await gasRequest({ action: 'salvarValorInstalacao', id: _ifId, tech: tecnico, valor: _ifValor });
     showToast('OS enviada para ' + tecnico + '!', 'success');
     resetImportForm();
     clearForm(); // garante que formulário manual fica vazio
@@ -3049,7 +3052,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
   const primeiroNome = (os.nome || '').split(' ')[0];
   const tipo = (os.tipo || 'Instalação').toLowerCase();
   const ehInstalacao = !tipo.includes('manut') && !tipo.includes('retir') && !tipo.includes('remo');
-  const temBloqueio  = (os.veiculo || '').toLowerCase().includes('bloqueio');
+  const temBloqueio  = (os.veiculo || '').toLowerCase().includes('com bloqueio');
 
   // Valor obrigatório apenas para instalação
   let blocoValores = '';
@@ -3070,7 +3073,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
     let totalMensalidade = 0;
     let totalDesconto    = 0;
     const linhasMensalidade = listaVeic.map((v, i) => {
-      const comBloqueio = v.toLowerCase().includes('bloqueio');
+      const comBloqueio = v.toLowerCase().includes('com bloqueio');
       // Pegar só o modelo (primeira parte antes do ' | ')
       const modeloCompleto = v.split(' | ')[0] || v;
       // Abreviar: só as primeiras 2 palavras do modelo
@@ -3089,7 +3092,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
 
     // Total com desconto = veículos com bloqueio (54,90 cada) + veículos sem bloqueio (39,90 cada)
     const totalComDesconto = listaVeic.reduce(function(acc, v) {
-      return acc + (v.toLowerCase().includes('bloqueio') ? 54.90 : 39.90);
+      return acc + (v.toLowerCase().includes('com bloqueio') ? 54.90 : 39.90);
     }, 0);
 
     const mensalidadeStr = listaVeic.length > 1
@@ -3179,6 +3182,8 @@ async function adminReatribuirDireto(id, techOld, techNew) {
     setAdminSyncStatus('ok');
     return;
   }
+  // Preservar valor da instalação após mover
+  if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
   // 2. Apagar da aba antiga
   const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
@@ -3620,7 +3625,7 @@ function atualizarPreviewModalCliente() {
   const valorStr   = valor > 0 ? 'R$' + valor.toFixed(2).replace('.', ',') : '____';
 
   const primeiroNome = (os.nome || '').split(' ')[0];
-  const temBloqueio  = (os.veiculo || '').toLowerCase().includes('bloqueio');
+  const temBloqueio  = (os.veiculo || '').toLowerCase().includes('com bloqueio');
   const mensalidade  = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
   const desconto     = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
 
@@ -4955,6 +4960,7 @@ async function adminReatribuir(btn) {
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
     tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: os.obs, id: os.id });
   if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
+  if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
   // 3. Apagar da aba antiga
   const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
@@ -5238,6 +5244,7 @@ async function confirmarNovaOS() {
   }
   setAdminSyncStatus('syncing');
   const novaId = genId();
+  const _agValor = (document.getElementById('modal-nova-os-valor')||{}).value || '';
   const result = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novaId,
     nome: _novaOSAtual.nome || '', telefone: _novaOSAtual.telefone || '',
@@ -5245,6 +5252,7 @@ async function confirmarNovaOS() {
     veiculo: veiculoStr, obs: _novaOSAtual.pontoReferencia || ''
   });
   if (result.ok) {
+    if (_agValor) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: _agValor });
     await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'true' });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
     fecharModalNovaOS();
