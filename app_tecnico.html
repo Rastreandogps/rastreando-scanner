@@ -3071,15 +3071,17 @@ function enviarConfirmacaoAgendamento(id, tech) {
     let totalDesconto    = 0;
     const linhasMensalidade = listaVeic.map((v, i) => {
       const comBloqueio = v.toLowerCase().includes('bloqueio');
-      const modelo      = v.split(' | ')[0] || v;
-      const prefix      = listaVeic.length > 1 ? '    🚗 ' + modelo + ': ' : '    ';
+      // Pegar só o modelo (primeira parte antes do ' | ')
+      const modeloCompleto = v.split(' | ')[0] || v;
+      // Abreviar: só as primeiras 2 palavras do modelo
+      const modeloCurto = modeloCompleto.split(' ').slice(0, 2).join(' ');
       if (comBloqueio) {
         totalMensalidade += 59.90;
         totalDesconto    += 54.90;
-        return prefix + '*R$59,90/mês*';
+        return listaVeic.length > 1 ? '   ' + (i+1) + '. ' + modeloCurto + ': *R$59,90/mês*' : '*R$59,90/mês*';
       } else {
         totalMensalidade += 39.90;
-        return prefix + '*R$39,90/mês*';
+        return listaVeic.length > 1 ? '   ' + (i+1) + '. ' + modeloCurto + ': *R$39,90/mês*' : '*R$39,90/mês*';
       }
     });
 
@@ -3100,8 +3102,10 @@ function enviarConfirmacaoAgendamento(id, tech) {
 
     blocoValores =
       '💰 *Valores:*\n' +
-      '    🔧 Instalação: *' + valorStr + '*\n' +
-      '    📋 Mensalidade: ' + mensalidadeStr + descontoStr + '\n\n';
+      '   🔧 Instalação: *' + valorStr + '*\n' +
+      '   📋 Mensalidade: ' + (listaVeic.length > 1 ? '\n' : '') + mensalidadeStr +
+      (listaVeic.length > 1 ? '\n   Total: *R$' + totalMensalidade.toFixed(2).replace('.',',') + '/mês*' : '') +
+      descontoStr + '\n\n';
   }
 
   // Veículos
