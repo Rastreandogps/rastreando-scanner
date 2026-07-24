@@ -3060,13 +3060,48 @@ function enviarConfirmacaoAgendamento(id, tech) {
       abrirModalConfirmacaoCliente(id, tech);
       return;
     }
-    const valorStr    = 'R$' + valorNum.toFixed(2).replace('.',',');
-    const mensalidade = temBloqueio ? 'R$59,90/mês' : 'R$39,90/mês';
-    const desconto    = temBloqueio ? '\n    💸 *Pagando até o vencimento: R$54,90* 🎉' : '';
+    const valorStr = 'R$' + valorNum.toFixed(2).replace('.',',');
+
+    // Calcular mensalidade por veículo individualmente
+    const listaVeic = os.veiculo
+      ? (os.veiculo.includes(' || ') ? os.veiculo.split(' || ').map(v => v.trim()) : [os.veiculo.trim()])
+      : [];
+
+    let totalMensalidade = 0;
+    let totalDesconto    = 0;
+    const linhasMensalidade = listaVeic.map((v, i) => {
+      const comBloqueio = v.toLowerCase().includes('bloqueio');
+      const modelo      = v.split(' | ')[0] || v;
+      const prefix      = listaVeic.length > 1 ? '    🚗 ' + modelo + ': ' : '    ';
+      if (comBloqueio) {
+        totalMensalidade += 59.90;
+        totalDesconto    += 54.90;
+        return prefix + '*R$59,90/mês*';
+      } else {
+        totalMensalidade += 39.90;
+        return prefix + '*R$39,90/mês*';
+      }
+    });
+
+    const temDesconto = totalDesconto > 0;
+
+    // Total com desconto = veículos com bloqueio (54,90 cada) + veículos sem bloqueio (39,90 cada)
+    const totalComDesconto = listaVeic.reduce(function(acc, v) {
+      return acc + (v.toLowerCase().includes('bloqueio') ? 54.90 : 39.90);
+    }, 0);
+
+    const mensalidadeStr = listaVeic.length > 1
+      ? linhasMensalidade.join('\n') + '\n    Total: *R$' + totalMensalidade.toFixed(2).replace('.',',') + '/mês*'
+      : linhasMensalidade[0] || '*R$39,90/mês*';
+
+    const descontoStr = temDesconto
+      ? '\n    💸 *Pagando até o vencimento: R$' + totalComDesconto.toFixed(2).replace('.',',') + '* 🎉'
+      : '';
+
     blocoValores =
       '💰 *Valores:*\n' +
       '    🔧 Instalação: *' + valorStr + '*\n' +
-      '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n';
+      '    📋 Mensalidade: ' + mensalidadeStr + descontoStr + '\n\n';
   }
 
   // Veículos
