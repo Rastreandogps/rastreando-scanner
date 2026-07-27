@@ -5476,6 +5476,12 @@ function buscarOSAdmin(termo) {
 
 // ── NOTA DO TÉCNICO
 // Helper: extrai texto e timestamp da nota (novo formato JSON ou texto legado)
+function _notaInfoTexto(nota) {
+  return _notaInfo(nota).texto || '';
+}
+function _notaInfoWhen(nota) {
+  return _notaInfo(nota).quando || '';
+}
 function _notaInfo(nota) {
   if (!nota) return { texto: '', quando: '', tecnico: '' };
   if (typeof nota === 'object') return { texto: nota.texto || '', quando: nota.quando || '', tecnico: nota.tecnico || '' };
@@ -5485,13 +5491,7 @@ function _notaInfo(nota) {
 }
 
 // Helper: extrai texto e timestamp da nota (novo formato JSON ou texto legado)
-function _notaInfo(nota) {
-  if (!nota) return { texto: '', quando: '', tecnico: '' };
-  if (typeof nota === 'object') return { texto: nota.texto || '', quando: nota.quando || '', tecnico: nota.tecnico || '' };
-  // Tentar parsear JSON
-  try { var p = JSON.parse(nota); return { texto: p.texto || '', quando: p.quando || '', tecnico: p.tecnico || '' }; } catch(e) {}
-  return { texto: String(nota), quando: '', tecnico: '' }; // formato legado
-}
+
 
 async function apagarNotaDoMapa(id, tech, btn) {
   const res = await gasRequest({ action: 'salvarNotaTecnico', id, tech, nota: '' });
