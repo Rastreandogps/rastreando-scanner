@@ -6333,7 +6333,6 @@ function toggleFavTech(nome) {
 
 function navAdminCal(dir) {
   if (dir === 0) {
-    // Volta para o mês atual
     _adminCalAno = new Date().getFullYear();
     _adminCalMes = new Date().getMonth();
   } else {
@@ -6342,7 +6341,12 @@ function navAdminCal(dir) {
     if (_adminCalMes < 0)  { _adminCalMes = 11; _adminCalAno--; }
   }
   limparDestaqueCalendario();
-  renderResumoGeral();
+  // Se há técnico selecionado, recarregar o calendário dele; senão o resumo geral
+  if (adminTechSelecionado) {
+    adminVerTecnico(adminTechSelecionado);
+  } else {
+    renderResumoGeral();
+  }
 }
 
 function recarregarMapaAdmin() {
