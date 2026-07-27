@@ -4506,6 +4506,7 @@ async function adminVerTecnico(tech) {
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
             '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
             '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
+            '<button onclick="event.stopPropagation();copiarSemEspaco(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome sem espaço" style="flex-shrink:0;padding:3px 7px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;font-size:11px;cursor:pointer;">📋_</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '</a>' : '') +
@@ -4676,6 +4677,7 @@ function _renderAdminListaPorIds(ids) {
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
             '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
             '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
+            '<button onclick="event.stopPropagation();copiarSemEspaco(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome sem espaço" style="flex-shrink:0;padding:3px 7px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;font-size:11px;cursor:pointer;">📋_</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '</a>' : '') +
@@ -5099,6 +5101,10 @@ function adminDelete(btn) {
   const id   = btn.getAttribute('data-id');
   const tech = btn.getAttribute('data-tech');
   requestDelete(id, tech);
+}
+
+function copiarSemEspaco(nomeComEspaco, btn) {
+  copiarTexto(nomeComEspaco.replace(/ /g, ''), btn);
 }
 
 function copiarTexto(texto, btn) {
