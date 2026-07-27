@@ -602,13 +602,17 @@
   </div>
   <div class="tab-bar">
     <!-- ➕ Nova OS -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab active" onclick="showAdminTab('new-os')" id="at-new" title="Nova OS">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
       </svg>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('new-os')" id="favaba-new-os" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
 
     <!-- 📋 Agendamentos do formulário -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab" onclick="showAdminTab('agendamentos')" id="at-agendamentos" title="Agendamentos" style="position:relative;">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -619,7 +623,10 @@
       </svg>
       <span id="badge-agendamentos" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('agendamentos')" id="favaba-agendamentos" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
     <!-- 🗓️ Técnico / Agenda -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view" title="Ver Técnico">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -633,19 +640,28 @@
         <line x1="12" y1="18" x2="12" y2="18" stroke-width="3" stroke-linecap="round"/>
       </svg>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('view-tech')" id="favaba-view-tech" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
     <!-- ✅ Concluídos -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab" onclick="showAdminTab('done-os')" id="at-done" title="Concluídos">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('done-os')" id="favaba-done-os" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
     <!-- 🔐 Acessos -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab" onclick="showAdminTab('acessos')" id="at-acessos" title="Acessos">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('acessos')" id="favaba-acessos" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
     <!-- 🗺️ Mapa -->
+    <div style="position:relative;">
     <button class="tab-btn admin-tab" onclick="showAdminTab('mapa')" id="at-mapa" title="Mapa">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
@@ -653,6 +669,8 @@
         <line x1="16" y1="6" x2="16" y2="22"/>
       </svg>
     </button>
+    <button onclick="event.stopPropagation();toggleFavAba('mapa')" id="favaba-mapa" style="position:absolute;top:1px;right:1px;width:12px;height:12px;border-radius:50%;border:none;background:transparent;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;padding:0;" title="Fixar aba como favorita">☆</button>
+  </div>
   </div>
 
   <!-- MAPA ADMIN -->
@@ -669,17 +687,17 @@
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
-        <div style="position:relative;display:inline-flex;">
+        <div style="position:relative;display:inline-flex;margin-top:6px;margin-right:4px;">
           <button onclick="filtrarMapaAdmin('Glauber')" id="mf-Glauber" style="padding:4px 12px;border-radius:20px;border:1.5px solid #3b82f6;background:white;color:#3b82f6;font-size:12px;font-weight:700;cursor:pointer;">Glauber</button>
-          <button onclick="event.stopPropagation();toggleFavMapa('Glauber')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Glauber">☆</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Glauber')" title="Fixar como favorito no mapa" style="width:18px;height:18px;border-radius:50%;border:1.5px solid #e2e8f0;background:#e2e8f0;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px;flex-shrink:0;" id="mfav-Glauber">☆</button>
         </div>
-        <div style="position:relative;display:inline-flex;">
+        <div style="position:relative;display:inline-flex;margin-top:6px;margin-right:4px;">
           <button onclick="filtrarMapaAdmin('Eberson')" id="mf-Eberson" style="padding:4px 12px;border-radius:20px;border:1.5px solid #ef4444;background:white;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;">Eberson</button>
-          <button onclick="event.stopPropagation();toggleFavMapa('Eberson')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Eberson">☆</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Eberson')" title="Fixar como favorito no mapa" style="width:18px;height:18px;border-radius:50%;border:1.5px solid #e2e8f0;background:#e2e8f0;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px;flex-shrink:0;" id="mfav-Eberson">☆</button>
         </div>
-        <div style="position:relative;display:inline-flex;">
+        <div style="position:relative;display:inline-flex;margin-top:6px;margin-right:4px;">
           <button onclick="filtrarMapaAdmin('Jonas')" id="mf-Jonas" style="padding:4px 12px;border-radius:20px;border:1.5px solid #10b981;background:white;color:#10b981;font-size:12px;font-weight:700;cursor:pointer;">Jonas</button>
-          <button onclick="event.stopPropagation();toggleFavMapa('Jonas')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Jonas">☆</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Jonas')" title="Fixar como favorito no mapa" style="width:18px;height:18px;border-radius:50%;border:1.5px solid #e2e8f0;background:#e2e8f0;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px;flex-shrink:0;" id="mfav-Jonas">☆</button>
         </div>
       </div>
     </div>
@@ -1387,7 +1405,10 @@ function showAdminScreen() {
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'block';
   gerarElementosDinamicos();
-  showAdminTab('new-os');
+  // Abrir aba favorita ou new-os
+  const _favAba = localStorage.getItem('adminFavAba');
+  showAdminTab((_favAba && _ABAS_ADMIN.includes(_favAba)) ? _favAba : 'new-os');
+  _atualizarEstrelasAba();
   loadAllOrders();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
@@ -6322,6 +6343,28 @@ function _inicializarInputsMapaData() {
 
 function marcarMapaDesatualizado() {
   _mapaDesatualizado = true;
+}
+
+// ── FAVORITO DE ABA ADMIN
+const _ABAS_ADMIN = ['new-os','agendamentos','view-tech','done-os','acessos','mapa'];
+
+function toggleFavAba(tabId) {
+  const atual = localStorage.getItem('adminFavAba') || '';
+  const novo  = atual === tabId ? '' : tabId;
+  if (novo) localStorage.setItem('adminFavAba', novo);
+  else localStorage.removeItem('adminFavAba');
+  _atualizarEstrelasAba();
+  showToast(novo ? '★ Aba fixada como favorita!' : 'Favorito de aba removido', novo ? 'success' : '');
+}
+
+function _atualizarEstrelasAba() {
+  const fav = localStorage.getItem('adminFavAba') || '';
+  _ABAS_ADMIN.forEach(function(id) {
+    const el = document.getElementById('favaba-' + id);
+    if (!el) return;
+    el.textContent = fav === id ? '★' : '☆';
+    el.style.color  = fav === id ? '#f59e0b' : '#94a3b8';
+  });
 }
 
 function toggleFavMapa(nome) {
