@@ -555,8 +555,7 @@
 
   var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
 
-  // ── Consulta de placa via JSONP (sem expor token) ──
-  var placaTimers = {};
+  // ── Consulta de placa via fetch ──
   function consultarPlaca(placa, index){
     var statusEl = document.getElementById('placa-status-' + index);
     var modeloEl = document.getElementById('modelo-' + index);
@@ -567,31 +566,24 @@
 
     if(statusEl){ statusEl.className = 'placa-status loading'; statusEl.textContent = 'Consultando placa...'; }
 
-    var cbName = '__placaCb_' + index + '_' + Date.now();
-    var url = CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa + '&callback=' + cbName;
+    var url = CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa;
 
-    var script = document.createElement('script');
-    var timer = setTimeout(function(){
-      delete window[cbName]; script.remove();
-      if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Tempo esgotado. Preencha o modelo manualmente.'; }
-    }, 10000);
-
-    window[cbName] = function(res){
-      clearTimeout(timer);
-      delete window[cbName]; script.remove();
-      if(res && res.ok && res.descricao){
-        if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; }
-        if(res.dados && res.dados.ano_modelo){ anoEl.value = res.dados.ano_modelo; vehicles[index].ano = res.dados.ano_modelo; }
-        else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao; vehicles[index].ano = res.dados.ano_fabricacao; }
-        if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '✓ ' + res.descricao; }
-        updateMeter();
-      } else {
-        if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa não encontrada. Preencha o modelo manualmente.'; }
-      }
-    };
-
-    script.src = url;
-    document.head.appendChild(script);
+    fetch(url, { redirect: 'follow' })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if(res && res.ok && res.descricao){
+          if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; modeloEl.classList.remove('invalid'); }
+          if(res.dados && res.dados.ano_modelo)        { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
+          else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao;   vehicles[index].ano = res.dados.ano_fabricacao; }
+          if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '✓ ' + res.descricao; }
+          updateMeter();
+        } else {
+          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa não encontrada. Preencha o modelo manualmente.'; }
+        }
+      })
+      .catch(function(){
+        if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Erro na consulta. Preencha o modelo manualmente.'; }
+      });
   }
 
   function escapeHtml(str){
