@@ -4025,7 +4025,7 @@ async function adminVerTodos() {
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
         '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
 
-            (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
+            (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
         (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
       '</div>' +
       (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:8px 10px;margin-top:8px;"><span style="font-size:16px;flex-shrink:0;line-height:1.3;">📌</span><span style="font-size:12px;font-weight:600;color:#92400e;line-height:1.5;">' + esc(o.obs) + '</span></div>' : '') +
@@ -4505,6 +4505,7 @@ async function adminVerTecnico(tech) {
           const wppLink = tel ? 'https://wa.me/55' + tel : '';
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
             '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+            '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '</a>' : '') +
@@ -4527,7 +4528,7 @@ async function adminVerTecnico(tech) {
           return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
             '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
 
-            (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
+            (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
             (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
               '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
             '</a>' : '') +
@@ -4674,6 +4675,7 @@ function _renderAdminListaPorIds(ids) {
           const wppLink = tel ? 'https://wa.me/55' + tel : '';
           return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
             '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+            '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '</a>' : '') +
@@ -4696,7 +4698,7 @@ function _renderAdminListaPorIds(ids) {
           return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
             '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
 
-            (o.telefone ? '<div style="font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '</div>' : '') +
+            (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
             (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
               '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
             '</a>' : '') +
@@ -5097,6 +5099,29 @@ function adminDelete(btn) {
   const id   = btn.getAttribute('data-id');
   const tech = btn.getAttribute('data-tech');
   requestDelete(id, tech);
+}
+
+function copiarTexto(texto, btn) {
+  navigator.clipboard.writeText(texto).then(function() {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅';
+    btn.style.background = '#d1fae5';
+    btn.style.color = '#065f46';
+    setTimeout(function() { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 1500);
+  }).catch(function() {
+    // Fallback para dispositivos sem clipboard API
+    const el = document.createElement('textarea');
+    el.value = texto;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅';
+    setTimeout(function() { btn.innerHTML = orig; }, 1500);
+  });
 }
 
 function esc(str) {
