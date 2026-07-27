@@ -5104,7 +5104,8 @@ function adminDelete(btn) {
 }
 
 function copiarSemEspaco(nomeComEspaco, btn) {
-  copiarTexto(nomeComEspaco.replace(/ /g, ''), btn);
+  const semEspaco = nomeComEspaco.replace(/ /g, '').toLowerCase();
+  copiarTexto(semEspaco + '@gmail.com', btn);
 }
 
 function copiarTexto(texto, btn) {
