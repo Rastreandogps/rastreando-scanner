@@ -275,6 +275,15 @@
     font-family:var(--font-display); font-weight:700; font-size:1.7rem; min-width:30px; text-align:center; color:var(--signal);
   }
 
+  .placa-wrap{position:relative;}
+  .placa-status{
+    display:block; font-size:.78rem; margin:6px 2px 0; line-height:1.5;
+    min-height:1.2em; transition:color .2s;
+  }
+  .placa-status.loading{color:var(--ink-faint);}
+  .placa-status.success{color:var(--signal);}
+  .placa-status.error{color:var(--danger);}
+
   .vehicle-card{
     background:rgba(255,255,255,.03); border:1px solid var(--glass-border);
     border-radius:var(--radius-md); padding:20px 18px 6px; margin-bottom:16px;
@@ -544,7 +553,46 @@
   var meterLabel      = document.getElementById('meterLabel');
   var bars            = Array.prototype.slice.call(document.querySelectorAll('.bar'));
 
-  var vehicles = [{ modelo:'', ano:'', gnv:null, rastreio:null }];
+  var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
+
+  // ── Consulta de placa via JSONP (sem expor token) ──
+  var placaTimers = {};
+  function consultarPlaca(placa, index){
+    var statusEl = document.getElementById('placa-status-' + index);
+    var modeloEl = document.getElementById('modelo-' + index);
+    var anoEl    = document.getElementById('ano-' + index);
+
+    placa = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if(placa.length < 7){ if(statusEl) statusEl.textContent = ''; return; }
+
+    if(statusEl){ statusEl.className = 'placa-status loading'; statusEl.textContent = 'Consultando placa...'; }
+
+    var cbName = '__placaCb_' + index + '_' + Date.now();
+    var url = CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa + '&callback=' + cbName;
+
+    var script = document.createElement('script');
+    var timer = setTimeout(function(){
+      delete window[cbName]; script.remove();
+      if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Tempo esgotado. Preencha o modelo manualmente.'; }
+    }, 10000);
+
+    window[cbName] = function(res){
+      clearTimeout(timer);
+      delete window[cbName]; script.remove();
+      if(res && res.ok && res.descricao){
+        if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; }
+        if(res.dados && res.dados.ano_modelo){ anoEl.value = res.dados.ano_modelo; vehicles[index].ano = res.dados.ano_modelo; }
+        else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao; vehicles[index].ano = res.dados.ano_fabricacao; }
+        if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '✓ ' + res.descricao; }
+        updateMeter();
+      } else {
+        if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa não encontrada. Preencha o modelo manualmente.'; }
+      }
+    };
+
+    script.src = url;
+    document.head.appendChild(script);
+  }
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, function(c){
@@ -572,13 +620,20 @@
     return ''
       + '<div class="vehicle-card" data-index="' + i + '">'
       +   '<p class="vehicle-eyebrow">Veículo ' + n + '</p>'
+      +   '<div class="field">'
+      +     '<label for="placa-' + i + '">Placa do veículo</label>'
+      +     '<div class="placa-wrap">'
+      +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="7" style="text-transform:uppercase">'
+      +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
+      +     '</div>'
+      +   '</div>'
       +   '<div class="grid-2">'
       +     '<div class="field">'
-      +       '<label for="modelo-' + i + '">Qual veículo?</label>'
-      +       '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno 2015 ou placa ABC1D23" data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +       '<label for="modelo-' + i + '">Modelo</label>'
+      +       '<input type="text" id="modelo-' + i + '" placeholder="Preenchido pela placa ou manual" data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
       +     '</div>'
       +     '<div class="field">'
-      +       '<label for="ano-' + i + '">Ano do veículo</label>'
+      +       '<label for="ano-' + i + '">Ano</label>'
       +       '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
       +     '</div>'
       +   '</div>'
@@ -610,9 +665,19 @@
       inp.addEventListener('input', function(e){
         var i = +e.target.dataset.index;
         var field = e.target.dataset.field;
+        e.target.value = field === 'placa' ? e.target.value.toUpperCase() : e.target.value;
         vehicles[i][field] = e.target.value;
         e.target.classList.remove('invalid');
         updateMeter();
+      });
+    });
+
+    // Dispara consulta de placa ao sair do campo (blur)
+    vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
+      inp.addEventListener('blur', function(e){
+        var i = +e.target.dataset.index;
+        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+        if(placa.length === 7) consultarPlaca(placa, i);
       });
     });
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
@@ -639,7 +704,7 @@
   function setVehicleCount(n){
     n = Math.max(1, Math.min(10, n));
     if(n > vehicles.length){
-      while(vehicles.length < n) vehicles.push({ modelo:'', ano:'', gnv:null, rastreio:null });
+      while(vehicles.length < n) vehicles.push({ placa:'', modelo:'', ano:'', gnv:null, rastreio:null });
     } else {
       vehicles.length = n;
     }
@@ -691,7 +756,8 @@
     }
     linhas.push('');
     payload.veiculos.forEach(function(v, i){
-      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')');
+      var placaStr = v.placa ? ' — Placa: ' + v.placa : '';
+      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')' + placaStr);
       linhas.push('GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio'));
       linhas.push('');
     });
@@ -820,7 +886,7 @@
       pontoReferencia: referenciaInput.value.trim(),
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
-        return { modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
+        return { placa: (v.placa||'').trim(), modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
       })
     };
 
