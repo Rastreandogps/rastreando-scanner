@@ -669,9 +669,18 @@
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
-        <button onclick="filtrarMapaAdmin('Glauber')" id="mf-Glauber" style="padding:4px 12px;border-radius:20px;border:1.5px solid #3b82f6;background:white;color:#3b82f6;font-size:12px;font-weight:700;cursor:pointer;">Glauber</button>
-        <button onclick="filtrarMapaAdmin('Eberson')" id="mf-Eberson" style="padding:4px 12px;border-radius:20px;border:1.5px solid #ef4444;background:white;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;">Eberson</button>
-        <button onclick="filtrarMapaAdmin('Jonas')" id="mf-Jonas" style="padding:4px 12px;border-radius:20px;border:1.5px solid #10b981;background:white;color:#10b981;font-size:12px;font-weight:700;cursor:pointer;">Jonas</button>
+        <div style="position:relative;display:inline-flex;">
+          <button onclick="filtrarMapaAdmin('Glauber')" id="mf-Glauber" style="padding:4px 12px;border-radius:20px;border:1.5px solid #3b82f6;background:white;color:#3b82f6;font-size:12px;font-weight:700;cursor:pointer;">Glauber</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Glauber')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Glauber">☆</button>
+        </div>
+        <div style="position:relative;display:inline-flex;">
+          <button onclick="filtrarMapaAdmin('Eberson')" id="mf-Eberson" style="padding:4px 12px;border-radius:20px;border:1.5px solid #ef4444;background:white;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;">Eberson</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Eberson')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Eberson">☆</button>
+        </div>
+        <div style="position:relative;display:inline-flex;">
+          <button onclick="filtrarMapaAdmin('Jonas')" id="mf-Jonas" style="padding:4px 12px;border-radius:20px;border:1.5px solid #10b981;background:white;color:#10b981;font-size:12px;font-weight:700;cursor:pointer;">Jonas</button>
+          <button onclick="event.stopPropagation();toggleFavMapa('Jonas')" title="Fixar como favorito no mapa" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1.5px solid white;background:#e2e8f0;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.2);" id="mfav-Jonas">☆</button>
+        </div>
       </div>
     </div>
     <div id="map-container-admin" style="position:relative;height:calc(100vh - 190px);">
@@ -6315,6 +6324,26 @@ function marcarMapaDesatualizado() {
   _mapaDesatualizado = true;
 }
 
+function toggleFavMapa(nome) {
+  const atual = localStorage.getItem('adminFavMapa') || '';
+  const novo = atual === nome ? '' : nome;
+  if (novo) localStorage.setItem('adminFavMapa', novo);
+  else localStorage.removeItem('adminFavMapa');
+  _atualizarEstrelasMapa();
+  if (novo) { filtrarMapaAdmin(novo); showToast('★ ' + novo + ' fixado no mapa!', 'success'); }
+  else showToast('Favorito do mapa removido', '');
+}
+
+function _atualizarEstrelasMapa() {
+  const fav = localStorage.getItem('adminFavMapa') || '';
+  ['Glauber','Eberson','Jonas','Mateus'].forEach(function(n) {
+    const el = document.getElementById('mfav-' + n);
+    if (!el) return;
+    el.textContent = fav === n ? '★' : '☆';
+    el.style.background = fav === n ? '#f59e0b' : '#e2e8f0';
+  });
+}
+
 function toggleFavTech(nome) {
   const atual = localStorage.getItem('adminFavTech') || '';
   if (atual === nome) {
@@ -6364,6 +6393,10 @@ async function iniciarMapaAdmin() {
   document.getElementById('map-progress-admin').style.width = '0%';
 
   _inicializarInputsMapaData();
+  // Aplicar favorito do mapa se existir
+  _atualizarEstrelasMapa();
+  const _favMapa = localStorage.getItem('adminFavMapa');
+  if (_favMapa) { _mapaAdminFiltro = _favMapa; }
   if (typeof L === 'undefined') {
     document.getElementById('map-label-admin').textContent = 'Carregando biblioteca do mapa...';
     await carregarLeaflet();
