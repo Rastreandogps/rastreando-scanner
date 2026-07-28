@@ -617,7 +617,7 @@
       +   '<div class="field">'
       +     '<label for="placa-' + i + '">Placa do veículo</label>'
       +     '<div class="placa-wrap">'
-      +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="7" style="text-transform:uppercase">'
+      +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
       +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
       +     '</div>'
       +   '</div>'
@@ -662,7 +662,18 @@
 
         vehicles[i][field] = e.target.value;
         e.target.classList.remove('invalid');
+        e.target.value = field === 'placa' ? e.target.value.toUpperCase() : e.target.value;
+        vehicles[i][field] = e.target.value;
         updateMeter();
+      });
+    });
+
+    // Dispara consulta ao sair do campo placa (blur)
+    vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
+      inp.addEventListener('blur', function(e){
+        var i = +e.target.dataset.index;
+        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+        if(placa.length >= 7) consultarPlaca(placa, i);
       });
     });
 
