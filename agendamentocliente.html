@@ -668,12 +668,16 @@
       });
     });
 
-    // Dispara consulta ao sair do campo placa (blur)
+    // Dispara consulta ao sair do campo placa (blur) — só se mudou
     vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
+      inp.dataset.ultimaPlaca = '';
       inp.addEventListener('blur', function(e){
         var i = +e.target.dataset.index;
-        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
-        if(placa.length >= 7) consultarPlaca(placa, i);
+        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if(placa.length >= 7 && placa !== e.target.dataset.ultimaPlaca){
+          e.target.dataset.ultimaPlaca = placa;
+          consultarPlaca(placa, i);
+        }
       });
     });
 
