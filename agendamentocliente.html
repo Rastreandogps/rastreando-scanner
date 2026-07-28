@@ -573,18 +573,20 @@
       .then(function(res){
         if(res && res.ok && res.descricao){
           if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; modeloEl.classList.remove('invalid'); }
-          if(res.dados && res.dados.ano_modelo)        { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
+          if(res.dados && res.dados.ano_modelo)         { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
           else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao;   vehicles[index].ano = res.dados.ano_fabricacao; }
-          if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '✓ ' + res.descricao; }
+          if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '\u2713 ' + res.descricao; }
           updateMeter();
         } else {
-          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa não encontrada. Preencha o modelo manualmente.'; }
+          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa n\u00e3o encontrada. Preencha o modelo manualmente.'; }
         }
       })
       .catch(function(){
         if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Erro na consulta. Preencha o modelo manualmente.'; }
       });
   }
+
+
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, function(c){
@@ -622,7 +624,7 @@
       +   '<div class="grid-2">'
       +     '<div class="field">'
       +       '<label for="modelo-' + i + '">Modelo</label>'
-      +       '<input type="text" id="modelo-' + i + '" placeholder="Preenchido pela placa ou manual" data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +       '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, Honda Civic, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
       +     '</div>'
       +     '<div class="field">'
       +       '<label for="ano-' + i + '">Ano</label>'
@@ -657,21 +659,13 @@
       inp.addEventListener('input', function(e){
         var i = +e.target.dataset.index;
         var field = e.target.dataset.field;
-        e.target.value = field === 'placa' ? e.target.value.toUpperCase() : e.target.value;
+
         vehicles[i][field] = e.target.value;
         e.target.classList.remove('invalid');
         updateMeter();
       });
     });
 
-    // Dispara consulta de placa ao sair do campo (blur)
-    vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
-      inp.addEventListener('blur', function(e){
-        var i = +e.target.dataset.index;
-        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
-        if(placa.length === 7) consultarPlaca(placa, i);
-      });
-    });
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
       group.querySelectorAll('.toggle-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
