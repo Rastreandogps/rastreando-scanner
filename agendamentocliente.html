@@ -765,15 +765,11 @@ input.invalid {
   var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
 
   // ── Consulta de placa via fetch ──
-  function setOverlay(index, active, msg){
+  function setOverlay(index, active){
     var overlay = document.getElementById('overlay-' + index);
     if(!overlay) return;
-    if(active){
-      overlay.querySelector('.overlay-msg').textContent = msg || 'Buscando dados da placa...';
-      overlay.classList.add('active');
-    } else {
-      overlay.classList.remove('active');
-    }
+    if(active){ overlay.classList.add('active'); }
+    else       { overlay.classList.remove('active'); }
   }
 
   function consultarPlaca(placa, index){
@@ -785,7 +781,7 @@ input.invalid {
     if(placa.length < 7){ if(statusEl) statusEl.textContent = ''; return; }
 
     if(statusEl){ statusEl.className = 'placa-status loading'; statusEl.textContent = ''; }
-    setOverlay(index, true, 'Buscando dados da placa...');
+    setOverlay(index, true);
 
     fetch(CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa, { redirect: 'follow' })
       .then(function(r){ return r.json(); })
@@ -834,7 +830,7 @@ input.invalid {
       + '<div class="vehicle-card" data-index="' + i + '">'
       +   '<div class="vehicle-overlay" id="overlay-' + i + '">'
       +     '<div class="vehicle-overlay-spinner"></div>'
-      +     '<span class="vehicle-overlay-text">Buscando dados do veículo...</span>'
+      +     '<span class="vehicle-overlay-text" id="overlay-msg-' + i + '">Buscando dados da placa...</span>'
       +   '</div>'
       +   '<div class="vehicle-tag">Veículo ' + n + '</div>'
       +   '<div class="vehicle-body">'
@@ -843,12 +839,7 @@ input.invalid {
       +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
       +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
       +     '</div>'
-      +     '<div class="vehicle-fields-wrap" id="fields-wrap-' + i + '">'
-      +       '<div class="vehicle-overlay" id="vehicle-overlay-' + i + '">'
-      +         '<div class="overlay-spinner"></div>'
-      +         '<span class="overlay-msg">Buscando dados da placa...</span>'
-      +       '</div>'
-      +       '<div class="grid-2">'
+      +     '<div class="grid-2">'
       +       '<div class="field">'
       +         '<label for="modelo-' + i + '">Modelo <span class="req">*</span></label>'
       +         '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
@@ -858,7 +849,6 @@ input.invalid {
       +         '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
       +       '</div>'
       +     '</div>'
-
       +     '<div class="field">'
       +       '<label>Possui kit de GNV? <span class="req">*</span></label>'
       +       '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
@@ -873,7 +863,6 @@ input.invalid {
       +         '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
       +       '</div>'
       +       '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
-      +     '</div>'
       +     '</div>'
       +   '</div>'
       + '</div>';
