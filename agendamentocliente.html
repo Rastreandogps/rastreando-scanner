@@ -847,9 +847,20 @@ input.invalid {
 
   function setOverlay(index, active){
     var overlay = document.getElementById('overlay-' + index);
-    if(!overlay) return;
-    if(active){ overlay.classList.add('active'); }
-    else       { overlay.classList.remove('active'); }
+    var btnBuscar = document.getElementById('btn-buscar-' + index);
+    if(overlay){
+      if(active){ overlay.classList.add('active'); }
+      else      { overlay.classList.remove('active'); }
+    }
+    if(btnBuscar){
+      if(active){
+        btnBuscar.disabled = true;
+        btnBuscar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg> Buscando...';
+      } else {
+        btnBuscar.disabled = false;
+        btnBuscar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Buscar';
+      }
+    }
   }
 
   function consultarPlaca(placa, index){
