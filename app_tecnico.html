@@ -421,11 +421,13 @@ input.invalid {
 .btn-buscar svg { width: 14px; height: 14px; }
 
 .placa-opcoes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
   margin-top: 10px;
 }
+.btn-esqueci { width: 80%; }
 .btn-esqueci {
   display: flex;
   align-items: center;
@@ -442,7 +444,8 @@ input.invalid {
   cursor: pointer;
   text-align: center;
   line-height: 1.3;
-  transition: background .18s, color .18s;
+  box-shadow: 0 3px 10px rgba(27,58,107,.2);
+  transition: background .18s, color .18s, box-shadow .18s;
 }
 .btn-esqueci:hover {
   background: var(--navy);
@@ -938,7 +941,7 @@ input.invalid {
       +       '</div>'
       +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
       +       '<div class="placa-opcoes">'
-      +         '<div style="font-size:.74rem;color:var(--text-3);display:flex;align-items:center;padding:2px 0">Ou se preferir:</div>'
+      +         '<div style="font-size:.78rem;font-weight:700;color:var(--text-2);text-align:center;padding:2px 0">Se você não lembra a placa ou não sabe, não tem problema.</div>'
       +         '<button type="button" class="btn-esqueci" data-abrir="' + i + '">'
       +           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>'
       +           'Preencher sem placa'
