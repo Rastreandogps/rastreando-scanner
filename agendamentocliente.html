@@ -133,13 +133,8 @@ body {
   padding: 5px 12px;
   border-radius: 99px;
   margin-bottom: 16px;
-  animation: badgePulse 2s ease-in-out infinite;
 }
 .hero-badge svg { width: 12px; height: 12px; }
-@keyframes badgePulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: .35; }
-}
 .hero h1 {
   font-family: var(--font-display);
   font-weight: 800;
@@ -313,6 +308,19 @@ input.invalid {
   min-width: 28px;
   text-align: center;
 }
+
+/* ── PLACA STATUS ── */
+.placa-status {
+  display: block;
+  font-size: .76rem;
+  margin-top: 6px;
+  line-height: 1.5;
+  min-height: 1.2em;
+  transition: color .2s;
+}
+.placa-status.loading { color: var(--text-3); }
+.placa-status.success { color: var(--green); }
+.placa-status.error   { color: var(--danger); }
 
 /* ── VEHICLE CARD ── */
 .vehicle-card {
@@ -550,7 +558,7 @@ input.invalid {
       <svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="4"/></svg>
       Agendamento online
     </div>
-    <h1>Agendamento</h1>
+    <h1>Solicite seu <em>atendimento</em></h1>
     <p>Preencha os dados abaixo. É rápido, e seu serviço já entra na nossa agenda.</p>
   </div>
 
@@ -720,7 +728,36 @@ input.invalid {
   var stageForm       = document.getElementById('stageForm');
   var stageSuccess    = document.getElementById('stageSuccess');
 
-  var vehicles = [{ modelo:'', ano:'', gnv:null, rastreio:null }];
+  var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
+
+  // ── Consulta de placa via fetch ──
+  function consultarPlaca(placa, index){
+    var statusEl = document.getElementById('placa-status-' + index);
+    var modeloEl = document.getElementById('modelo-' + index);
+    var anoEl    = document.getElementById('ano-' + index);
+
+    placa = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if(placa.length < 7){ if(statusEl) statusEl.textContent = ''; return; }
+
+    if(statusEl){ statusEl.className = 'placa-status loading'; statusEl.textContent = 'Consultando placa...'; }
+
+    fetch(CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa, { redirect: 'follow' })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if(res && res.ok && res.descricao){
+          if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; modeloEl.classList.remove('invalid'); }
+          if(res.dados && res.dados.ano_modelo)         { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
+          else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao;    vehicles[index].ano = res.dados.ano_fabricacao; }
+          if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '\u2713 ' + res.descricao; }
+          updateMeter();
+        } else {
+          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa n\u00e3o encontrada. Preencha o modelo manualmente.'; }
+        }
+      })
+      .catch(function(){
+        if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Erro na consulta. Preencha o modelo manualmente.'; }
+      });
+  }
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, function(c){
@@ -749,6 +786,11 @@ input.invalid {
       + '<div class="vehicle-card" data-index="' + i + '">'
       +   '<div class="vehicle-tag">Veículo ' + n + '</div>'
       +   '<div class="vehicle-body">'
+      +     '<div class="field">'
+      +       '<label for="placa-' + i + '">Placa do veículo <span style="font-weight:400;color:var(--text-3)">(opcional)</span></label>'
+      +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
+      +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
+      +     '</div>'
       +     '<div class="grid-2">'
       +       '<div class="field">'
       +         '<label for="modelo-' + i + '">Modelo <span class="req">*</span></label>'
@@ -788,9 +830,23 @@ input.invalid {
       inp.addEventListener('input', function(e){
         var i = +e.target.dataset.index;
         var field = e.target.dataset.field;
+        if(field === 'placa') e.target.value = e.target.value.toUpperCase();
         vehicles[i][field] = e.target.value;
         e.target.classList.remove('invalid');
         updateMeter();
+      });
+    });
+
+    // Dispara consulta ao sair do campo placa
+    vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
+      inp.dataset.ultimaPlaca = '';
+      inp.addEventListener('blur', function(e){
+        var i = +e.target.dataset.index;
+        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if(placa.length >= 7 && placa !== e.target.dataset.ultimaPlaca){
+          e.target.dataset.ultimaPlaca = placa;
+          consultarPlaca(placa, i);
+        }
       });
     });
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
@@ -817,7 +873,7 @@ input.invalid {
   function setVehicleCount(n){
     n = Math.max(1, Math.min(10, n));
     if(n > vehicles.length){
-      while(vehicles.length < n) vehicles.push({ modelo:'', ano:'', gnv:null, rastreio:null });
+      while(vehicles.length < n) vehicles.push({ placa:'', modelo:'', ano:'', gnv:null, rastreio:null });
     } else {
       vehicles.length = n;
     }
@@ -866,7 +922,8 @@ input.invalid {
     }
     linhas.push('');
     payload.veiculos.forEach(function(v, i){
-      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')');
+      var placaStr = v.placa ? ' — Placa: ' + v.placa : '';
+      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')' + placaStr);
       linhas.push('GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio'));
       linhas.push('');
     });
@@ -989,7 +1046,7 @@ input.invalid {
       pontoReferencia: referenciaInput.value.trim(),
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
-        return { modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
+        return { placa: (v.placa||'').trim(), modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
       })
     };
 
