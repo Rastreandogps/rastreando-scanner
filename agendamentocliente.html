@@ -904,24 +904,23 @@ input.invalid {
     // Dispara consulta ao digitar (mobile-friendly) e ao sair do campo
     vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
       inp.dataset.ultimaPlaca = '';
-      inp.dataset.timer = '';
+      var placaTimer = null;
 
-      function tentarConsulta(e){
-        var i = +e.target.dataset.index;
-        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        if(placa.length >= 7 && placa !== e.target.dataset.ultimaPlaca){
-          e.target.dataset.ultimaPlaca = placa;
+      function dispararConsulta(el){
+        var i = +el.dataset.index;
+        var placa = el.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if(placa.length >= 7 && placa !== el.dataset.ultimaPlaca){
+          el.dataset.ultimaPlaca = placa;
           consultarPlaca(placa, i);
         }
       }
 
-      // Dispara imediatamente ao sair do campo
-      inp.addEventListener('blur', tentarConsulta);
+      inp.addEventListener('blur', function(){ dispararConsulta(inp); });
 
-      // Dispara com pequeno delay ao digitar (captura celulares que não disparam blur)
-      inp.addEventListener('input', function(e){
-        clearTimeout(+e.target.dataset.timer);
-        e.target.dataset.timer = setTimeout(function(){ tentarConsulta(e); }, 600);
+      inp.addEventListener('input', function(){
+        clearTimeout(placaTimer);
+        var el = inp;
+        placaTimer = setTimeout(function(){ dispararConsulta(el); }, 800);
       });
     });
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
