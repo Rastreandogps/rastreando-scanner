@@ -387,6 +387,30 @@ input.invalid {
   animation: slideIn .3s ease;
 }
 .fields-manual.aberto { display: block; }
+.btn-buscar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: .87rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .18s, transform .1s;
+  box-shadow: 0 3px 10px rgba(27,58,107,.3);
+}
+.btn-buscar:hover { background: var(--navy-light); transform: translateY(-1px); }
+.btn-buscar:active { transform: translateY(0); }
+.btn-buscar:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-buscar svg { width: 15px; height: 15px; }
+
 .btn-esqueci {
   display: inline-flex;
   align-items: center;
@@ -890,6 +914,10 @@ input.invalid {
       +     '<div class="field">'
       +       '<label for="placa-' + i + '">Placa do veículo</label>'
       +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
+      +       '<button type="button" class="btn-buscar" id="btn-buscar-' + i + '" data-buscar="' + i + '">'
+      +         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+      +         'Buscar veículo'
+      +       '</button>'
       +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
       +       '<button type="button" class="btn-esqueci" data-abrir="' + i + '">'
       +         '<span class="check-box"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></span>'
@@ -962,12 +990,25 @@ input.invalid {
 
       inp.addEventListener('blur', function(){ dispararConsulta(inp); });
 
-      inp.addEventListener('input', function(){
-        clearTimeout(placaTimer);
-        var el = inp;
-        placaTimer = setTimeout(function(){ dispararConsulta(el); }, 800);
+      // Sem disparo automático por input — usar botão Buscar
+    });
+    // Botão "Buscar veículo"
+    vehiclesContainer.querySelectorAll('[data-buscar]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = +btn.dataset.buscar;
+        var inp = document.getElementById('placa-' + i);
+        if(!inp) return;
+        var placa = inp.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if(placa.length >= 7){
+          inp.dataset.ultimaPlaca = '';
+          dispararConsulta(inp);
+        } else {
+          var statusEl = document.getElementById('placa-status-' + i);
+          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Digite a placa completa antes de buscar.'; }
+        }
       });
     });
+
     // Botão "esqueci a placa"
     vehiclesContainer.querySelectorAll('[data-abrir]').forEach(function(btn){
       btn.addEventListener('click', function(){
