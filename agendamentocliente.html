@@ -835,6 +835,7 @@ input.invalid {
       .then(function(r){ return r.json(); })
       .then(function(res){
         setOverlay(index, false);
+        abrirCamposManuais(index);
         if(res && res.ok && res.descricao){
           var descComCor = res.descricao + (res.dados && res.dados.cor ? ' ' + res.dados.cor : '');
           if(modeloEl){ modeloEl.value = descComCor; vehicles[index].modelo = descComCor; modeloEl.classList.remove('invalid'); }
@@ -848,6 +849,7 @@ input.invalid {
       })
       .catch(function(){
         setOverlay(index, false);
+        abrirCamposManuais(index);
         if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Erro na consulta. Preencha os campos manualmente.'; }
       });
   }
