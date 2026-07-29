@@ -2686,8 +2686,8 @@ function atualizarPreviewMsg() {
     dataStr +
     '📍 *Endereço:* ' + d.endereco + (d.ref ? '\n📌 *Ref.:* ' + d.ref : '') + '\n\n' +
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
-    '\n💰 *Valores*\n' +
-    '🔧 Instalação: *' + valorStr + '*\n' +
+    '💰 *VALORES:*\n\n' +
+    'INSTALAÇÃO:\n  ↳🔧: *' + valorStr + '*\n\n' +
     '📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
@@ -3141,10 +3141,10 @@ function enviarConfirmacaoAgendamento(id, tech) {
       if (comBloqueio) {
         totalMensalidade += 59.90;
         totalDesconto    += 54.90;
-        return listaVeic.length > 1 ? '   ' + modeloCurto + ': *R$59,90/mês*' : '*R$59,90/mês*';
+        return listaVeic.length > 1 ? '  ↳' + modeloCurto + ': *R$59,90/mês*' : '*R$59,90/mês*';
       } else {
         totalMensalidade += 39.90;
-        return listaVeic.length > 1 ? '   ' + modeloCurto + ': *R$39,90/mês*' : '*R$39,90/mês*';
+        return listaVeic.length > 1 ? '  ↳' + modeloCurto + ': *R$39,90/mês*' : '*R$39,90/mês*';
       }
     });
 
@@ -3164,8 +3164,8 @@ function enviarConfirmacaoAgendamento(id, tech) {
       : '';
 
     blocoValores =
-      '\n💰 *Valores*\n' +
-      '🔧 Instalação: *' + valorStr + '*\n' +
+      '💰 *VALORES:*\n\n' +
+      'INSTALAÇÃO:\n  ↳🔧: *' + valorStr + '*\n\n' +
       '📋 Mensalidade:\n' + mensalidadeStr +
       (listaVeic.length > 1 ? '\nTotal: *R$' + totalMensalidade.toFixed(2).replace('.',',') + '/mês*' : '') +
       descontoStr + '\n\n';
@@ -3718,8 +3718,8 @@ function atualizarPreviewModalCliente() {
     '📍 *Endereço:* ' + (os.endereco || '') +
     (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
-    '\n💰 *Valores*\n' +
-    '🔧 Instalação: *' + valorStr + '*\n' +
+    '💰 *VALORES:*\n\n' +
+    'INSTALAÇÃO:\n  ↳🔧: *' + valorStr + '*\n\n' +
     '📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
