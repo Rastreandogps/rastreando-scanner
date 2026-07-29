@@ -5,18 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rastreando GPS — Agendamento de Serviço</title>
 <meta name="description" content="Preencha sua solicitação de serviço em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local.">
-<meta name="theme-color" content="#080C16">
+<meta name="theme-color" content="#1B3A6B">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://agendamento.rastreandogpsbr.com.br/">
 <meta property="og:title" content="📅 Solicite seu atendimento">
 <meta property="og:description" content="Preencha sua solicitação de serviço em menos de 1 minuto. Nossa equipe entrará em contato para confirmar a data, o horário e o local.">
 <meta property="og:image" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
-<meta property="og:image:secure_url" content="https://agendamento.rastreandogpsbr.com.br/og-image.jpg">
-<meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Rastreando GPS — Agendamento de serviço">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Rastreando GPS">
 
@@ -28,458 +23,659 @@
 <meta name="application-name" content="Agendamento Rastreando GPS">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Agendamento">
-
-<!-- <link rel="manifest" href="data:application/manifest+json;base64,...SEU_BASE64_AQUI..."> -->
-<!-- <link rel="apple-touch-icon" href="data:image/png;base64,...SEU_BASE64_AQUI..."> -->
-<!-- <link rel="icon" href="data:image/png;base64,...SEU_BASE64_AQUI..."> -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --bg-deep:#080C16;
-    --bg-mid:#0E1730;
-    --bg-soft:#131F3D;
-    --signal:#2EE6A8;
-    --signal-dim:rgba(46,230,168,.30);
-    --amber:#FFB454;
-    --amber-dim:rgba(255,180,84,.30);
-    --ink:#EEF2FA;
-    --ink-muted:#8B97B4;
-    --ink-faint:#54618A;
-    --glass:rgba(255,255,255,.045);
-    --glass-strong:rgba(255,255,255,.07);
-    --glass-border:rgba(255,255,255,.10);
-    --danger:#FF7A7A;
-    --radius-lg:22px;
-    --radius-md:14px;
-    --font-display:'Space Grotesk', sans-serif;
-    --font-body:'Inter', sans-serif;
-    --font-mono:'JetBrains Mono', monospace;
-  }
+:root {
+  --navy:      #1B3A6B;
+  --navy-light:#2451A0;
+  --green:     #00B37E;
+  --green-dim: rgba(0,179,126,.12);
+  --danger:    #E03131;
+  --danger-dim:rgba(224,49,49,.08);
+  --amber:     #E07B00;
+  --amber-dim: rgba(224,123,0,.12);
 
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    min-height:100vh;
-    font-family:var(--font-body);
-    color:var(--ink);
-    background:
-      radial-gradient(circle at 20% 15%, rgba(46,230,168,.07), transparent 45%),
-      radial-gradient(circle at 85% 80%, rgba(255,180,84,.06), transparent 45%),
-      linear-gradient(165deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-soft) 100%);
-    overflow-x:hidden;
-    -webkit-font-smoothing:antialiased;
-  }
+  --bg:        #F5F7FA;
+  --surface:   #FFFFFF;
+  --border:    #E2E8F0;
+  --border-focus: #2451A0;
 
-  .bg-fx{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
-  .grid-dots{
-    position:absolute; inset:-10%;
-    background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px);
-    background-size:26px 26px;
-    opacity:.35;
-    mask-image:radial-gradient(circle at 50% 30%, rgba(0,0,0,.9), transparent 75%);
-  }
-  .orb{position:absolute; border-radius:50%; filter:blur(60px); opacity:.55;}
-  .orb-teal{
-    width:340px; height:340px; left:-90px; top:-60px;
-    background:radial-gradient(circle, var(--signal), transparent 70%);
-    animation:drift1 16s ease-in-out infinite;
-  }
-  .orb-amber{
-    width:300px; height:300px; right:-80px; bottom:-40px;
-    background:radial-gradient(circle, var(--amber), transparent 70%);
-    animation:drift2 19s ease-in-out infinite;
-  }
-  @keyframes drift1{
-    0%,100%{transform:translate(0,0) scale(1);}
-    50%{transform:translate(40px,30px) scale(1.08);}
-  }
-  @keyframes drift2{
-    0%,100%{transform:translate(0,0) scale(1);}
-    50%{transform:translate(-35px,-25px) scale(1.1);}
-  }
+  --text:      #1A2035;
+  --text-2:    #4A5568;
+  --text-3:    #8A96AA;
 
-  .stage{
-    position:relative; z-index:1;
-    min-height:100vh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:48px 18px 56px;
-    gap:18px;
-  }
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.10);
 
-  .card{
-    width:100%; max-width:560px;
-    background:var(--glass);
-    border:1px solid var(--glass-border);
-    border-radius:var(--radius-lg);
-    backdrop-filter:blur(18px);
-    -webkit-backdrop-filter:blur(18px);
-    box-shadow:0 30px 80px -30px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.04);
-    padding:38px 32px 32px;
-    animation:float 7s ease-in-out infinite;
-  }
-  @keyframes float{
-    0%,100%{transform:translateY(0px);}
-    50%{transform:translateY(-7px);}
-  }
+  --font-display: 'Sora', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
 
-  .sat-signal{width:124px; height:96px; margin:0 auto 6px;}
-  .sat-signal svg{width:100%; height:100%; display:block;}
-  .sat-bob{
-    transform-box: fill-box; transform-origin:center;
-    animation:satBob 3.2s ease-in-out infinite;
-  }
-  @keyframes satBob{
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-3px);}
-  }
-  .sat-blink{animation:satBlink 1.6s ease-in-out infinite;}
-  @keyframes satBlink{
-    0%,100%{opacity:1;}
-    50%{opacity:.25;}
-  }
-  .signal-beam{
-    fill:none; stroke:var(--signal); stroke-width:1.6; stroke-linecap:round;
-    stroke-dasharray:3 7; opacity:.55;
-    animation:beamFlow 1.3s linear infinite;
-  }
-  .signal-beam.beam2{stroke:var(--amber); opacity:.4; animation-delay:.15s;}
-  .signal-beam.beam3{animation-delay:.3s;}
-  @keyframes beamFlow{to{stroke-dashoffset:-20;}}
-  .receiver-ping{
-    fill:none; stroke:var(--signal); stroke-width:1.2;
-    transform-box: fill-box; transform-origin:center;
-    animation:receiverPing 2.4s ease-out infinite;
-  }
-  @keyframes receiverPing{
-    0%{transform:scale(1); opacity:.6;}
-    70%{transform:scale(4.2); opacity:0;}
-    100%{transform:scale(4.2); opacity:0;}
-  }
-  .signal-tag{
-    text-align:center; font-family:var(--font-mono); font-size:.66rem;
-    letter-spacing:.12em; color:var(--ink-faint); margin:0 0 22px; text-transform:uppercase;
-    transition:color .3s;
-  }
-  .signal-tag.success{color:var(--signal);}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .eyebrow{
-    font-family:var(--font-mono); font-size:.68rem; letter-spacing:.14em;
-    color:var(--signal); text-transform:uppercase; margin:0 0 10px; text-align:center;
-  }
-  h1{
-    font-family:var(--font-display); font-weight:600; text-align:center;
-    font-size:clamp(1.5rem, 5vw, 2rem); line-height:1.2; margin:0 0 10px; color:var(--ink);
-  }
-  h2{
-    font-family:var(--font-display); font-weight:600; text-align:center;
-    font-size:clamp(1.4rem, 5vw, 1.8rem); margin:18px 0 8px; color:var(--ink);
-  }
-  .subtext{
-    text-align:center; color:var(--ink-muted); font-size:.92rem; line-height:1.55;
-    margin:0 0 26px;
-  }
+html { scroll-behavior: smooth; }
 
-  .signal-meter{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px;}
-  .bars{display:flex; align-items:flex-end; gap:3px; height:18px;}
-  .bar{
-    width:5px; border-radius:2px; background:rgba(255,255,255,.12);
-    transition:background .35s;
-  }
-  .bar[data-bar="1"]{height:7px;}
-  .bar[data-bar="2"]{height:11px;}
-  .bar[data-bar="3"]{height:15px;}
-  .bar[data-bar="4"]{height:19px;}
-  .bar.lit{background:var(--signal); box-shadow:0 0 8px var(--signal-dim);}
-  .meter-label{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.06em; color:var(--ink-faint);}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-  .cep-status{
-    font-size:.78rem; margin:8px 2px 0; line-height:1.5; color:var(--ink-faint);
-    transition:color .2s;
-  }
-  .cep-status.success{color:var(--signal);}
-  .cep-status.error{color:var(--danger);}
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.header-icon {
+  width: 40px; height: 40px;
+  background: rgba(255,255,255,.12);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.header-icon svg { width: 22px; height: 22px; }
+.header-text {}
+.header-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: .95rem;
+  color: #fff;
+  letter-spacing: .01em;
+}
+.header-sub {
+  font-size: .75rem;
+  color: rgba(255,255,255,.55);
+  margin-top: 1px;
+}
 
-  .form-section{margin-bottom:8px;}
-  .form-section + .form-section{
-    margin-top:6px; padding-top:22px; border-top:1px solid var(--glass-border);
-  }
-  .section-label{
-    display:flex; align-items:center; gap:10px;
-    font-family:var(--font-mono); font-size:.7rem; letter-spacing:.12em;
-    color:var(--ink-faint); text-transform:uppercase; margin:0 0 16px;
-  }
-  .section-label::after{
-    content:''; flex:1; height:1px; background:var(--glass-border);
-  }
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+}
+.progress-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-label span { color: var(--navy); }
+.progress-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--navy), var(--green));
+  border-radius: 99px;
+  width: 0%;
+  transition: width .4s ease;
+}
 
-  .field{margin-bottom:20px;}
-  .field label{
-    display:block; font-size:.78rem; font-weight:600; color:var(--ink-muted);
-    margin-bottom:8px; letter-spacing:.01em;
-  }
-  input[type="text"], input[type="number"], input[type="tel"]{
-    width:100%; padding:13px 14px; font-family:var(--font-body); font-size:.95rem;
-    color:var(--ink); background:rgba(255,255,255,.035);
-    border:1px solid var(--glass-border); border-radius:var(--radius-md);
-    outline:none; transition:border-color .2s, box-shadow .2s, background .2s;
-  }
-  input::placeholder{color:var(--ink-faint);}
-  input:focus{
-    border-color:var(--signal); background:rgba(255,255,255,.05);
-    box-shadow:0 0 0 3px var(--signal-dim);
-  }
-  input:focus-visible, button:focus-visible{
-    outline:2px solid var(--signal); outline-offset:2px;
-  }
-  input.invalid{border-color:var(--danger); animation:shake .35s;}
-  @keyframes shake{
-    0%,100%{transform:translateX(0);}
-    25%{transform:translateX(-4px);}
-    75%{transform:translateX(4px);}
-  }
+/* ── STAGE ── */
+.stage {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+}
 
-  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
-  @media (max-width:480px){ .grid-2{grid-template-columns:1fr;} }
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 32px 16px 28px;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-dim);
+  color: var(--green);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 99px;
+  margin-bottom: 16px;
+}
+.hero-badge svg { width: 12px; height: 12px; }
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--navy);
+}
+.hero p {
+  color: var(--text-2);
+  font-size: .92rem;
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto;
+}
 
-  .addr-row{display:grid; grid-template-columns:110px 1fr; gap:14px;}
-  .addr-row .field{margin-bottom:20px;}
-  @media (max-width:480px){ .addr-row{grid-template-columns:1fr;} }
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.card-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-header-icon {
+  width: 32px; height: 32px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-header-icon svg { width: 16px; height: 16px; color: var(--navy); }
+.card-header-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: .88rem;
+  color: var(--text);
+}
+.card-body {
+  padding: 22px 22px 8px;
+}
 
-  .stepper-field{
-    display:flex; align-items:center; justify-content:space-between; gap:14px;
-    margin-bottom:26px;
-    background:linear-gradient(135deg, rgba(46,230,168,.10), rgba(46,230,168,.03));
-    border:1px solid rgba(46,230,168,.35);
-    border-radius:var(--radius-md);
-    padding:18px 18px 18px 20px;
-    box-shadow:0 0 0 1px rgba(46,230,168,.04) inset;
-  }
-  .stepper-label-wrap{flex:1; min-width:0;}
-  .stepper-field label{margin-bottom:3px; flex:1; font-size:.9rem; color:var(--ink); display:block;}
-  .stepper-hint{display:block; font-size:.72rem; color:var(--ink-faint); line-height:1.4;}
-  .stepper{display:flex; align-items:center; gap:16px; flex-shrink:0;}
-  .stepper-btn{
-    width:44px; height:44px; border-radius:50%; border:1px solid rgba(46,230,168,.4);
-    background:rgba(46,230,168,.08); color:var(--signal); font-size:1.4rem; line-height:1;
-    cursor:pointer; transition:transform .15s, background .2s, opacity .2s;
-  }
-  .stepper-btn:hover:not(:disabled){background:var(--signal-dim); border-color:var(--signal);}
-  .stepper-btn:active:not(:disabled){transform:scale(.9);}
-  .stepper-btn:disabled{opacity:.3; cursor:not-allowed;}
-  .stepper-value{
-    font-family:var(--font-display); font-weight:700; font-size:1.7rem; min-width:30px; text-align:center; color:var(--signal);
-  }
+/* ── FIELDS ── */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 7px;
+  letter-spacing: .01em;
+}
+.field label .req { color: var(--danger); margin-left: 2px; }
 
-  .placa-wrap{position:relative;}
-  .placa-status{
-    display:block; font-size:.78rem; margin:6px 2px 0; line-height:1.5;
-    min-height:1.2em; transition:color .2s;
-  }
-  .placa-status.loading{color:var(--ink-faint);}
-  .placa-status.success{color:var(--signal);}
-  .placa-status.error{color:var(--danger);}
+input[type="text"],
+input[type="number"],
+input[type="tel"] {
+  width: 100%;
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: .93rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+}
+input::placeholder { color: var(--text-3); }
+input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(36,81,160,.10);
+}
+input:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+input.invalid {
+  border-color: var(--danger);
+  background: var(--danger-dim);
+  animation: shake .3s ease;
+}
+@keyframes shake {
+  0%,100%{ transform:translateX(0); }
+  25%    { transform:translateX(-4px); }
+  75%    { transform:translateX(4px); }
+}
 
-  .vehicle-card{
-    background:rgba(255,255,255,.03); border:1px solid var(--glass-border);
-    border-radius:var(--radius-md); padding:20px 18px 6px; margin-bottom:16px;
-    animation:slideIn .35s ease;
-  }
-  @keyframes slideIn{
-    from{opacity:0; transform:translateY(8px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-  .vehicle-eyebrow{
-    font-family:var(--font-mono); font-size:.68rem; letter-spacing:.12em;
-    color:var(--amber); text-transform:uppercase; margin:0 0 16px;
-  }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.addr-row { display: grid; grid-template-columns: 100px 1fr; gap: 14px; }
+@media(max-width:480px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .addr-row { grid-template-columns: 1fr; }
+}
 
-  .toggle-group{display:flex; gap:8px; border-radius:var(--radius-md); padding:2px;}
-  .toggle-group.group-error{box-shadow:0 0 0 1px var(--danger); border-radius:var(--radius-md);}
-  .toggle-btn{
-    flex:1; padding:11px 10px; font-family:var(--font-body); font-weight:600; font-size:.86rem;
-    border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,.03);
-    color:var(--ink-muted); cursor:pointer; transition:all .2s;
-  }
-  .toggle-btn:hover{border-color:rgba(255,255,255,.25); color:var(--ink);}
-  .toggle-btn.active.teal{background:rgba(46,230,168,.16); border-color:var(--signal); color:var(--signal);}
-  .toggle-btn.active.amber{background:rgba(255,180,84,.16); border-color:var(--amber); color:var(--amber);}
-  .helper-text{font-size:.78rem; color:var(--ink-faint); margin:10px 2px 4px; line-height:1.5;}
+/* ── CEP STATUS ── */
+.cep-hint {
+  font-size: .76rem;
+  color: var(--text-3);
+  margin-top: 6px;
+  line-height: 1.5;
+  transition: color .2s;
+}
+.cep-hint.success { color: var(--green); }
+.cep-hint.error   { color: var(--danger); }
 
-  .error-banner{
-    background:rgba(255,122,122,.08); border:1px solid rgba(255,122,122,.35);
-    color:var(--danger); font-size:.84rem; border-radius:var(--radius-md);
-    padding:12px 14px; margin-bottom:18px; line-height:1.4;
-  }
-  .submit-btn{
-    width:100%; padding:16px; border:none; border-radius:var(--radius-md);
-    background:linear-gradient(120deg, var(--signal), #4FD8FF);
-    color:#06140F; font-family:var(--font-display); font-weight:700; font-size:.95rem;
-    letter-spacing:.02em; text-transform:uppercase; cursor:pointer;
-    transition:transform .15s, box-shadow .2s, opacity .2s;
-    box-shadow:0 14px 30px -12px rgba(46,230,168,.55);
-  }
-  .submit-btn:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 18px 34px -10px rgba(46,230,168,.65);}
-  .submit-btn:active:not(:disabled){transform:translateY(0);}
-  .submit-btn:disabled{opacity:.7; cursor:not-allowed; transform:none;}
+/* ── STEPPER ── */
+.stepper-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(27,58,107,.05), rgba(27,58,107,.02));
+  border: 1.5px solid rgba(27,58,107,.18);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.stepper-info { flex: 1; min-width: 0; }
+.stepper-info strong {
+  display: block;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.stepper-info span {
+  font-size: .74rem;
+  color: var(--text-3);
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.stepper-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(27,58,107,.25);
+  background: var(--surface);
+  color: var(--navy);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+  display: flex; align-items: center; justify-content: center;
+}
+.stepper-btn:hover:not(:disabled) {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+.stepper-btn:active:not(:disabled) { transform: scale(.92); }
+.stepper-btn:disabled { opacity: .3; cursor: not-allowed; }
+.stepper-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--navy);
+  min-width: 28px;
+  text-align: center;
+}
 
-  .footer-note{
-    text-align:center; margin:20px 0 0; font-size:.76rem; color:var(--ink-faint);
-  }
-  .footer-note .mono{font-family:var(--font-mono); color:var(--ink-muted);}
+/* ── VEHICLE CARD ── */
+.vehicle-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 14px;
+  animation: slideIn .3s ease;
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.vehicle-tag {
+  background: var(--navy);
+  color: rgba(255,255,255,.8);
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .1em;
+  padding: 7px 16px;
+  text-transform: uppercase;
+}
+.vehicle-body { padding: 18px 18px 4px; }
 
-  /* ---------- card de sucesso ---------- */
-  .success-card{text-align:center;}
-  .check-wrap{width:72px; height:72px; margin:0 auto 4px;}
-  .check-svg{width:100%; height:100%;}
-  .check-circle{
-    fill:none; stroke:var(--signal); stroke-width:2.4;
-    stroke-dasharray:176; stroke-dashoffset:176;
-    animation:drawCircle .6s ease forwards;
-  }
-  .check-path{
-    fill:none; stroke:var(--signal); stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
-    stroke-dasharray:40; stroke-dashoffset:40;
-    animation:drawPath .4s ease forwards .55s;
-  }
-  @keyframes drawCircle{to{stroke-dashoffset:0;}}
-  @keyframes drawPath{to{stroke-dashoffset:0;}}
-  .ref-tag{
-    font-size:.85rem; color:var(--ink-muted); margin-top:18px;
-  }
-  .ref-tag .mono{font-family:var(--font-mono); color:var(--signal); letter-spacing:.03em;}
+/* ── TOGGLES ── */
+.toggle-group {
+  display: flex;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+}
+.toggle-group.group-error {
+  box-shadow: 0 0 0 2px var(--danger);
+  border-radius: var(--radius-sm);
+}
+.toggle-btn {
+  flex: 1;
+  padding: 10px 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .84rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .18s;
+}
+.toggle-btn:hover { border-color: var(--text-3); color: var(--text); }
+.toggle-btn.active.teal {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
+.toggle-btn.active.amber {
+  background: var(--amber-dim);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.helper-text {
+  font-size: .75rem;
+  color: var(--text-3);
+  margin: 8px 0 4px;
+  line-height: 1.5;
+}
 
-  /* Nota de redirecionamento */
-  .redirect-note{
-    margin-top:16px; padding:12px 16px;
-    background:rgba(46,230,168,.07); border:1px solid rgba(46,230,168,.2);
-    border-radius:var(--radius-md); font-size:.82rem; color:var(--ink-muted); line-height:1.5;
-  }
-  .redirect-note strong{color:var(--signal);}
+/* ── ERROR BANNER ── */
+.error-banner {
+  background: var(--danger-dim);
+  border: 1px solid rgba(224,49,49,.25);
+  color: var(--danger);
+  font-size: .84rem;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
 
-  @media (max-width:480px){
-    .card{padding:30px 22px 26px;}
-  }
+/* ── SUBMIT ── */
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: .95rem;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: background .18s, transform .12s, box-shadow .18s;
+  box-shadow: 0 4px 14px rgba(27,58,107,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.submit-btn:hover:not(:disabled) {
+  background: var(--navy-light);
+  box-shadow: 0 6px 20px rgba(27,58,107,.4);
+  transform: translateY(-1px);
+}
+.submit-btn:active:not(:disabled) { transform: translateY(0); }
+.submit-btn:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+.submit-btn svg { width: 18px; height: 18px; }
 
-  @media (prefers-reduced-motion: reduce){
-    *, *::before, *::after{
-      animation-duration:.001ms !important;
-      animation-iteration-count:1 !important;
-      transition-duration:.001ms !important;
-    }
+.footer-note {
+  text-align: center;
+  margin-top: 18px;
+  font-size: .76rem;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+.footer-note a {
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── SUCCESS CARD ── */
+.success-wrap {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+}
+.success-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 44px 32px 36px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+.check-wrap {
+  width: 72px; height: 72px;
+  margin: 0 auto 20px;
+}
+.check-svg { width: 100%; height: 100%; }
+.check-circle {
+  fill: none; stroke: var(--green); stroke-width: 2.4;
+  stroke-dasharray: 176; stroke-dashoffset: 176;
+  animation: drawCircle .6s ease forwards;
+}
+.check-path {
+  fill: none; stroke: var(--green); stroke-width: 3.4;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 40; stroke-dashoffset: 40;
+  animation: drawPath .4s ease forwards .55s;
+}
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawPath   { to { stroke-dashoffset: 0; } }
+
+.success-card h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.success-card p {
+  color: var(--text-2);
+  font-size: .9rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.ref-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  margin-bottom: 24px;
+  font-size: .78rem;
+  color: var(--text-3);
+}
+.ref-box strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: .9rem;
+  color: var(--navy);
+  margin-top: 3px;
+}
+.wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: #25D366;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: .92rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background .18s, transform .12s;
+  box-shadow: 0 4px 14px rgba(37,211,102,.3);
+}
+.wa-btn:hover { background: #1ebe59; transform: translateY(-1px); }
+.wa-btn svg { width: 20px; height: 20px; }
+
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
   }
+}
 </style>
 </head>
 <body>
 
-<div class="bg-fx" aria-hidden="true">
-  <div class="orb orb-teal"></div>
-  <div class="orb orb-amber"></div>
-  <div class="grid-dots"></div>
+<!-- HEADER -->
+<header class="header">
+  <div class="header-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <div class="header-brand">Rastreando GPS</div>
+    <div class="header-sub">Agendamento de serviço</div>
+  </div>
+</header>
+
+<!-- PROGRESS -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-label">
+    Progresso do formulário <span id="progressPct">0%</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
 </div>
 
-<main class="stage">
-
-  <form class="card" id="formAgendamento" novalidate>
-    <div class="sat-signal" aria-hidden="true">
-      <svg viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
-        <g transform="translate(65,20)">
-          <g class="sat-bob">
-            <rect x="-7" y="-6" width="14" height="12" rx="2" fill="var(--glass-strong)" stroke="var(--amber)" stroke-width="1.4"/>
-            <rect x="-22" y="-3" width="12" height="6" rx="1.5" fill="none" stroke="var(--amber)" stroke-width="1.4"/>
-            <rect x="10" y="-3" width="12" height="6" rx="1.5" fill="none" stroke="var(--amber)" stroke-width="1.4"/>
-            <line x1="-10" y1="0" x2="-7" y2="0" stroke="var(--amber)" stroke-width="1.4"/>
-            <line x1="7" y1="0" x2="10" y2="0" stroke="var(--amber)" stroke-width="1.4"/>
-            <line x1="0" y1="-6" x2="0" y2="-13" stroke="var(--amber)" stroke-width="1.2"/>
-            <circle cx="0" cy="-13" r="1.6" fill="var(--amber)" class="sat-blink"/>
-          </g>
-        </g>
-        <path d="M65,29 L48,70" class="signal-beam beam1"/>
-        <path d="M65,29 L65,70" class="signal-beam beam2"/>
-        <path d="M65,29 L82,70" class="signal-beam beam3"/>
-        <g transform="translate(65,78)">
-          <line x1="0" y1="-14" x2="0" y2="-6" stroke="var(--signal)" stroke-width="1.6"/>
-          <circle cx="0" cy="-14" r="2" fill="var(--signal)"/>
-          <circle cx="0" cy="-14" r="2" class="receiver-ping"/>
-          <rect x="-22" y="-6" width="44" height="10" rx="4" fill="var(--glass-strong)" stroke="var(--signal)" stroke-width="1.4"/>
-          <path d="M-14,-6 L-9,-13 L9,-13 L14,-6 Z" fill="none" stroke="var(--signal)" stroke-width="1.4"/>
-          <circle cx="-13" cy="5" r="3.4" fill="var(--bg-deep)" stroke="var(--signal)" stroke-width="1.4"/>
-          <circle cx="13" cy="5" r="3.4" fill="var(--bg-deep)" stroke="var(--signal)" stroke-width="1.4"/>
-        </g>
-      </svg>
+<!-- FORM -->
+<div class="stage" id="stageForm">
+  <div class="hero">
+    <div class="hero-badge">
+      <svg viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="6" r="4"/></svg>
+      Agendamento online
     </div>
-    <p class="signal-tag" id="signalTag">SINAL: AGUARDANDO DADOS</p>
+    <h1>Solicite seu <em>atendimento</em></h1>
+    <p>Preencha os dados abaixo. É rápido, e seu serviço já entra na nossa agenda.</p>
+  </div>
 
-    <p class="eyebrow">Rastreando GPS · Agendamento</p>
-    <h1>Solicite seu<br>atendimento</h1>
-    <p class="subtext">Preencha os dados abaixo. É rápido, e seu serviço já entra na nossa agenda.</p>
+  <form id="formAgendamento" novalidate>
 
-    <div class="signal-meter" aria-hidden="true">
-      <div class="bars">
-        <span class="bar" data-bar="1"></span>
-        <span class="bar" data-bar="2"></span>
-        <span class="bar" data-bar="3"></span>
-        <span class="bar" data-bar="4"></span>
+    <!-- DADOS PESSOAIS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <span class="card-header-label">Dados pessoais</span>
       </div>
-      <span class="meter-label" id="meterLabel">0% pronto</span>
-    </div>
-
-    <div class="form-section">
-      <p class="section-label">Dados pessoais</p>
-      <div class="field">
-        <label for="nomeCompleto">Nome completo</label>
-        <input type="text" id="nomeCompleto" placeholder="Seu nome completo" autocomplete="name">
-      </div>
-      <div class="field">
-        <label for="telefone">Telefone / WhatsApp</label>
-        <input type="tel" id="telefone" placeholder="(21) 98765-4321" autocomplete="tel" inputmode="numeric">
-      </div>
-    </div>
-
-    <div class="form-section">
-      <p class="section-label">Endereço</p>
-      <div class="field">
-        <label for="cep">CEP (opcional)</label>
-        <input type="text" id="cep" placeholder="00000-000" autocomplete="postal-code" inputmode="numeric" maxlength="9">
-        <p class="cep-status" id="cepStatus">Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.</p>
-      </div>
-      <div class="field">
-        <label for="rua">Rua / Avenida</label>
-        <input type="text" id="rua" placeholder="Ex: Rua das Flores" autocomplete="address-line1">
-      </div>
-      <div class="addr-row">
+      <div class="card-body">
         <div class="field">
-          <label for="numero">Número</label>
-          <input type="text" id="numero" placeholder="123" autocomplete="off">
+          <label for="nomeCompleto">Nome completo <span class="req">*</span></label>
+          <input type="text" id="nomeCompleto" placeholder="Seu nome completo" autocomplete="name">
         </div>
         <div class="field">
-          <label for="bairro">Bairro</label>
-          <input type="text" id="bairro" placeholder="Ex: Centro" autocomplete="address-level3">
+          <label for="telefone">Telefone / WhatsApp <span class="req">*</span></label>
+          <input type="tel" id="telefone" placeholder="(21) 98765-4321" autocomplete="tel" inputmode="numeric">
         </div>
-      </div>
-      <div class="field">
-        <label for="cidade">Cidade</label>
-        <input type="text" id="cidade" placeholder="Ex: Duque de Caxias" autocomplete="address-level2">
-      </div>
-      <div class="field">
-        <label for="referencia">Ponto de referência (opcional)</label>
-        <input type="text" id="referencia" placeholder="Ex: Perto do mercado, portão azul..." autocomplete="off">
       </div>
     </div>
 
-    <div class="field stepper-field">
-      <div class="stepper-label-wrap">
-        <label>Quantos veículos serão atendidos?</label>
-        <span class="stepper-hint">Cada veículo abre uma caixinha própria abaixo</span>
+    <!-- ENDEREÇO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/>
+          </svg>
+        </div>
+        <span class="card-header-label">Endereço do atendimento</span>
       </div>
-      <div class="stepper">
-        <button type="button" class="stepper-btn" id="btnMinus" aria-label="Diminuir quantidade">−</button>
-        <span class="stepper-value" id="qtyDisplay">1</span>
-        <button type="button" class="stepper-btn" id="btnPlus" aria-label="Aumentar quantidade">+</button>
+      <div class="card-body">
+        <div class="field">
+          <label for="cep">CEP <span style="font-weight:400;color:var(--text-3)">(opcional)</span></label>
+          <input type="text" id="cep" placeholder="00000-000" autocomplete="postal-code" inputmode="numeric" maxlength="9">
+          <p class="cep-hint" id="cepStatus">Digite o CEP para preenchimento automático do endereço.</p>
+        </div>
+        <div class="field">
+          <label for="rua">Rua / Avenida <span class="req">*</span></label>
+          <input type="text" id="rua" placeholder="Ex: Rua das Flores" autocomplete="address-line1">
+        </div>
+        <div class="addr-row">
+          <div class="field">
+            <label for="numero">Número <span class="req">*</span></label>
+            <input type="text" id="numero" placeholder="123" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="bairro">Bairro <span class="req">*</span></label>
+            <input type="text" id="bairro" placeholder="Ex: Centro" autocomplete="address-level3">
+          </div>
+        </div>
+        <div class="field">
+          <label for="cidade">Cidade <span class="req">*</span></label>
+          <input type="text" id="cidade" placeholder="Ex: Duque de Caxias" autocomplete="address-level2">
+        </div>
+        <div class="field">
+          <label for="referencia">Ponto de referência <span style="font-weight:400;color:var(--text-3)">(opcional)</span></label>
+          <input type="text" id="referencia" placeholder="Ex: Perto do mercado, portão azul..." autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <!-- VEÍCULOS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </div>
+        <span class="card-header-label">Veículos</span>
+      </div>
+      <div class="card-body">
+        <div class="stepper-card">
+          <div class="stepper-info">
+            <strong>Quantos veículos serão atendidos?</strong>
+            <span>Cada veículo abre uma seção abaixo</span>
+          </div>
+          <div class="stepper">
+            <button type="button" class="stepper-btn" id="btnMinus" aria-label="Diminuir">−</button>
+            <span class="stepper-value" id="qtyDisplay">1</span>
+            <button type="button" class="stepper-btn" id="btnPlus" aria-label="Aumentar">+</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -488,41 +684,45 @@
     <div class="error-banner" id="errorBanner" role="alert" hidden></div>
 
     <button type="submit" class="submit-btn" id="submitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.07 3h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L9.09 10.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 17z"/>
+      </svg>
       <span id="submitLabel">Confirmar solicitação</span>
     </button>
 
-    <p class="footer-note">Dúvidas? <span class="mono">(21) 9 8088-6087</span> · <span class="mono">(21) 9 6931-2625</span></p>
+    <p class="footer-note">
+      Dúvidas? Fale conosco:<br>
+      <a href="tel:+5521980886087">(21) 9 8088-6087</a> · <a href="tel:+5521969312625">(21) 9 6931-2625</a>
+    </p>
   </form>
+</div>
 
-  <div class="card success-card" id="successCard" hidden>
-    <div class="check-wrap" aria-hidden="true">
-      <svg viewBox="0 0 64 64" class="check-svg">
-        <circle cx="32" cy="32" r="28" class="check-circle"/>
-        <path d="M19 33 L28 42 L46 22" class="check-path"/>
-      </svg>
+<!-- SUCCESS -->
+<div class="stage" id="stageSuccess" hidden>
+  <div class="success-wrap">
+    <div class="success-card">
+      <div class="check-wrap" aria-hidden="true">
+        <svg viewBox="0 0 64 64" class="check-svg">
+          <circle cx="32" cy="32" r="28" class="check-circle"/>
+          <path d="M19 33 L28 42 L46 22" class="check-path"/>
+        </svg>
+      </div>
+      <h2>Solicitação recebida!</h2>
+      <p>Estamos abrindo o WhatsApp para confirmar com você. Se não abriu, toque no botão abaixo.</p>
+      <div class="ref-box">
+        Número do pedido
+        <strong id="refId"></strong>
+      </div>
+      <a href="#" id="whatsappBtn" class="wa-btn" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.862L.054 23.486a.5.5 0 0 0 .617.612l5.783-1.514A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.804 9.804 0 0 1-5.001-1.372l-.359-.214-3.714.973.993-3.624-.234-.373A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+        </svg>
+        Abrir WhatsApp
+      </a>
     </div>
-    <p class="signal-tag success">SINAL: CONECTADO</p>
-    <h2>Solicitação recebida!</h2>
-    <p class="subtext">Estamos abrindo o WhatsApp para confirmar com você. Se não abriu, toque no botão abaixo.</p>
-    <p class="ref-tag">Referência <span class="mono" id="refId"></span></p>
-
-    <div class="redirect-note">
-      🔄 Redirecionando para o WhatsApp automaticamente…<br>
-      <strong>Se não abrir</strong>, toque no botão abaixo.
-    </div>
-
-    <a href="#" id="whatsappBtn" class="whatsapp-btn" target="_blank" rel="noopener" style="margin-top:20px;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 11.5a8.4 8.4 0 0 1-1.1 4.2L21 20l-4.4-1a8.5 8.5 0 1 1 4.4-7.5z"/>
-        <circle cx="9" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
-        <circle cx="12.5" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
-        <circle cx="16" cy="11.5" r="0.6" fill="currentColor" stroke="none"/>
-      </svg>
-      Abrir WhatsApp
-    </a>
   </div>
-
-</main>
+</div>
 
 <script>
 (function(){
@@ -549,48 +749,16 @@
   var errorBanner     = document.getElementById('errorBanner');
   var submitBtn       = document.getElementById('submitBtn');
   var submitLabel     = document.getElementById('submitLabel');
-  var successCard     = document.getElementById('successCard');
-  var meterLabel      = document.getElementById('meterLabel');
-  var bars            = Array.prototype.slice.call(document.querySelectorAll('.bar'));
+  var stageForm       = document.getElementById('stageForm');
+  var stageSuccess    = document.getElementById('stageSuccess');
+  var progressFill    = document.getElementById('progressFill');
+  var progressPct     = document.getElementById('progressPct');
 
-  var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
-
-  // ── Consulta de placa via fetch ──
-  function consultarPlaca(placa, index){
-    var statusEl = document.getElementById('placa-status-' + index);
-    var modeloEl = document.getElementById('modelo-' + index);
-    var anoEl    = document.getElementById('ano-' + index);
-
-    placa = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    if(placa.length < 7){ if(statusEl) statusEl.textContent = ''; return; }
-
-    if(statusEl){ statusEl.className = 'placa-status loading'; statusEl.textContent = 'Consultando placa...'; }
-
-    var url = CONFIG.SCRIPT_URL + '?action=consultarPlaca&placa=' + placa;
-
-    fetch(url, { redirect: 'follow' })
-      .then(function(r){ return r.json(); })
-      .then(function(res){
-        if(res && res.ok && res.descricao){
-          if(modeloEl){ modeloEl.value = res.descricao; vehicles[index].modelo = res.descricao; modeloEl.classList.remove('invalid'); }
-          if(res.dados && res.dados.ano_modelo)         { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
-          else if(res.dados && res.dados.ano_fabricacao){ anoEl.value = res.dados.ano_fabricacao;   vehicles[index].ano = res.dados.ano_fabricacao; }
-          if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '\u2713 ' + res.descricao; }
-          updateMeter();
-        } else {
-          if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Placa n\u00e3o encontrada. Preencha o modelo manualmente.'; }
-        }
-      })
-      .catch(function(){
-        if(statusEl){ statusEl.className = 'placa-status error'; statusEl.textContent = 'Erro na consulta. Preencha o modelo manualmente.'; }
-      });
-  }
-
-
+  var vehicles = [{ modelo:'', ano:'', gnv:null, rastreio:null }];
 
   function escapeHtml(str){
     return String(str || '').replace(/[&<>"']/g, function(c){
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
     });
   }
 
@@ -613,38 +781,33 @@
     var n = String(i + 1).padStart(2, '0');
     return ''
       + '<div class="vehicle-card" data-index="' + i + '">'
-      +   '<p class="vehicle-eyebrow">Veículo ' + n + '</p>'
-      +   '<div class="field">'
-      +     '<label for="placa-' + i + '">Placa do veículo</label>'
-      +     '<div class="placa-wrap">'
-      +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
-      +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
+      +   '<div class="vehicle-tag">Veículo ' + n + '</div>'
+      +   '<div class="vehicle-body">'
+      +     '<div class="grid-2">'
+      +       '<div class="field">'
+      +         '<label for="modelo-' + i + '">Modelo <span class="req">*</span></label>'
+      +         '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +       '</div>'
+      +       '<div class="field">'
+      +         '<label for="ano-' + i + '">Ano <span class="req">*</span></label>'
+      +         '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
+      +       '</div>'
       +     '</div>'
-      +   '</div>'
-      +   '<div class="grid-2">'
       +     '<div class="field">'
-      +       '<label for="modelo-' + i + '">Modelo</label>'
-      +       '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, Honda Civic, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +       '<label>Possui kit de GNV? <span class="req">*</span></label>'
+      +       '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
+      +         '<button type="button" class="toggle-btn' + (v.gnv === 'sim' ? ' active amber' : '') + '" data-value="sim">Sim</button>'
+      +         '<button type="button" class="toggle-btn' + (v.gnv === 'nao' ? ' active teal' : '') + '" data-value="nao">Não</button>'
+      +       '</div>'
       +     '</div>'
       +     '<div class="field">'
-      +       '<label for="ano-' + i + '">Ano</label>'
-      +       '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
+      +       '<label>Tipo de rastreamento <span class="req">*</span></label>'
+      +       '<div class="toggle-group" data-group="rastreio" data-index="' + i + '">'
+      +         '<button type="button" class="toggle-btn' + (v.rastreio === 'com' ? ' active teal' : '') + '" data-value="com">Com bloqueio</button>'
+      +         '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
+      +       '</div>'
+      +       '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
       +     '</div>'
-      +   '</div>'
-      +   '<div class="field">'
-      +     '<label>Possui kit de GNV?</label>'
-      +     '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
-      +       '<button type="button" class="toggle-btn' + (v.gnv === 'sim' ? ' active amber' : '') + '" data-value="sim">Sim</button>'
-      +       '<button type="button" class="toggle-btn' + (v.gnv === 'nao' ? ' active' : '') + '" data-value="nao">Não</button>'
-      +     '</div>'
-      +   '</div>'
-      +   '<div class="field">'
-      +     '<label>Tipo de rastreamento</label>'
-      +     '<div class="toggle-group" data-group="rastreio" data-index="' + i + '">'
-      +       '<button type="button" class="toggle-btn' + (v.rastreio === 'com' ? ' active teal' : '') + '" data-value="com">Com bloqueio</button>'
-      +       '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
-      +     '</div>'
-      +     '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
       +   '</div>'
       + '</div>';
   }
@@ -659,28 +822,11 @@
       inp.addEventListener('input', function(e){
         var i = +e.target.dataset.index;
         var field = e.target.dataset.field;
-
         vehicles[i][field] = e.target.value;
         e.target.classList.remove('invalid');
-        e.target.value = field === 'placa' ? e.target.value.toUpperCase() : e.target.value;
-        vehicles[i][field] = e.target.value;
         updateMeter();
       });
     });
-
-    // Dispara consulta ao sair do campo placa (blur) — só se mudou
-    vehiclesContainer.querySelectorAll('input[data-field="placa"]').forEach(function(inp){
-      inp.dataset.ultimaPlaca = '';
-      inp.addEventListener('blur', function(e){
-        var i = +e.target.dataset.index;
-        var placa = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-        if(placa.length >= 7 && placa !== e.target.dataset.ultimaPlaca){
-          e.target.dataset.ultimaPlaca = placa;
-          consultarPlaca(placa, i);
-        }
-      });
-    });
-
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
       group.querySelectorAll('.toggle-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -705,7 +851,7 @@
   function setVehicleCount(n){
     n = Math.max(1, Math.min(10, n));
     if(n > vehicles.length){
-      while(vehicles.length < n) vehicles.push({ placa:'', modelo:'', ano:'', gnv:null, rastreio:null });
+      while(vehicles.length < n) vehicles.push({ modelo:'', ano:'', gnv:null, rastreio:null });
     } else {
       vehicles.length = n;
     }
@@ -732,9 +878,8 @@
       if(v.rastreio) filled++;
     });
     var pct = Math.round((filled / total) * 100);
-    meterLabel.textContent = pct + '% pronto';
-    var lit = Math.round(pct / 25);
-    bars.forEach(function(b, idx){ b.classList.toggle('lit', idx < lit); });
+    progressFill.style.width = pct + '%';
+    progressPct.textContent  = pct + '%';
   }
 
   function markInvalid(el){ if(el) el.classList.add('invalid'); }
@@ -757,8 +902,7 @@
     }
     linhas.push('');
     payload.veiculos.forEach(function(v, i){
-      var placaStr = v.placa ? ' — Placa: ' + v.placa : '';
-      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')' + placaStr);
+      linhas.push('Veículo ' + (i + 1) + ': ' + v.modelo + ' (' + v.ano + ')');
       linhas.push('GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio'));
       linhas.push('');
     });
@@ -767,13 +911,13 @@
   }
 
   function showSuccess(payload, waWindow){
-    form.hidden = true;
-    successCard.hidden = false;
+    stageForm.hidden = true;
+    stageSuccess.hidden = false;
+    document.getElementById('progressWrap').hidden = true;
     document.getElementById('refId').textContent = payload.idPedido;
 
     var mensagem = buildWhatsAppMessage(payload);
     var link = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
-
     var whatsappBtn = document.getElementById('whatsappBtn');
     whatsappBtn.href = link;
 
@@ -783,7 +927,7 @@
       window.location.href = link;
     }
 
-    successCard.scrollIntoView({ behavior:'smooth', block:'center' });
+    stageSuccess.scrollIntoView({ behavior:'smooth', block:'center' });
   }
 
   btnMinus.addEventListener('click', function(){ setVehicleCount(vehicles.length - 1); });
@@ -814,27 +958,22 @@
     fetch('https://viacep.com.br/ws/' + digits + '/json/')
       .then(function(r){ return r.json(); })
       .then(function(data){
-        if(data.erro){
-          setCepStatus('CEP não encontrado. Pode preencher o endereço manualmente abaixo.', 'error');
-          return;
-        }
+        if(data.erro){ setCepStatus('CEP não encontrado. Preencha o endereço manualmente abaixo.', 'error'); return; }
         if(data.logradouro){ ruaInput.value = data.logradouro; ruaInput.classList.remove('invalid'); }
-        if(data.bairro)     { bairroInput.value = data.bairro; bairroInput.classList.remove('invalid'); }
-        if(data.localidade) { cidadeInput.value = data.localidade; cidadeInput.classList.remove('invalid'); }
+        if(data.bairro)    { bairroInput.value = data.bairro; bairroInput.classList.remove('invalid'); }
+        if(data.localidade){ cidadeInput.value = data.localidade; cidadeInput.classList.remove('invalid'); }
         setCepStatus('Endereço encontrado! Confirme e complete com o número.', 'success');
         numeroInput.focus();
         updateMeter();
       })
-      .catch(function(){
-        setCepStatus('Não foi possível buscar o CEP agora. Pode preencher manualmente abaixo.', 'error');
-      });
+      .catch(function(){ setCepStatus('Não foi possível buscar o CEP. Preencha manualmente abaixo.', 'error'); });
   }
   cepInput.addEventListener('input', function(e){
     e.target.value = formatCEP(e.target.value);
     var digits = e.target.value.replace(/\D/g, '');
     if(digits.length === 8){ buscarCEP(digits); }
-    else if(digits.length === 0){ setCepStatus('Se souber, digite o CEP e a gente preenche rua, bairro e cidade pra você. Não sabe? Sem problema, pode preencher direto abaixo.', null); }
-    else{ setCepStatus('Continue digitando ou preencha o endereço manualmente abaixo.', null); }
+    else if(digits.length === 0){ setCepStatus('Digite o CEP para preenchimento automático do endereço.', null); }
+    else{ setCepStatus('Continue digitando...', null); }
   });
 
   form.addEventListener('submit', function(e){
@@ -849,12 +988,12 @@
     var cidade         = cidadeInput.value.trim();
     var firstInvalid   = null;
 
-    if(!nome)                       { markInvalid(nomeInput);     firstInvalid = firstInvalid || nomeInput; }
-    if(telefoneDigits.length < 10)  { markInvalid(telefoneInput); firstInvalid = firstInvalid || telefoneInput; }
-    if(!rua)                        { markInvalid(ruaInput);      firstInvalid = firstInvalid || ruaInput; }
-    if(!numero)                     { markInvalid(numeroInput);   firstInvalid = firstInvalid || numeroInput; }
-    if(!bairro)                     { markInvalid(bairroInput);   firstInvalid = firstInvalid || bairroInput; }
-    if(!cidade)                     { markInvalid(cidadeInput);   firstInvalid = firstInvalid || cidadeInput; }
+    if(!nome)                      { markInvalid(nomeInput);     firstInvalid = firstInvalid || nomeInput; }
+    if(telefoneDigits.length < 10) { markInvalid(telefoneInput); firstInvalid = firstInvalid || telefoneInput; }
+    if(!rua)                       { markInvalid(ruaInput);      firstInvalid = firstInvalid || ruaInput; }
+    if(!numero)                    { markInvalid(numeroInput);   firstInvalid = firstInvalid || numeroInput; }
+    if(!bairro)                    { markInvalid(bairroInput);   firstInvalid = firstInvalid || bairroInput; }
+    if(!cidade)                    { markInvalid(cidadeInput);   firstInvalid = firstInvalid || cidadeInput; }
 
     vehicles.forEach(function(v, i){
       var modeloEl = document.getElementById('modelo-' + i);
@@ -887,7 +1026,7 @@
       pontoReferencia: referenciaInput.value.trim(),
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
-        return { placa: (v.placa||'').trim(), modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
+        return { modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
       })
     };
 
@@ -910,11 +1049,8 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         setSending(false);
-        if(data && data.ok){
-          showSuccess(payload, waWindow);
-        } else {
-          throw new Error('resposta inválida');
-        }
+        if(data && data.ok){ showSuccess(payload, waWindow); }
+        else { throw new Error('resposta inválida'); }
       })
       .catch(function(){
         setSending(false);
