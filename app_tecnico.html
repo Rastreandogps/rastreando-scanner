@@ -2686,9 +2686,9 @@ function atualizarPreviewMsg() {
     dataStr +
     '📍 *Endereço:* ' + d.endereco + (d.ref ? '\n📌 *Ref.:* ' + d.ref : '') + '\n\n' +
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
-    '💰 *Valores:*\n' +
-    '    🔧 Instalação: *' + valorStr + '*\n' +
-    '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
+    '\n💰 *Valores*\n' +
+    '🔧 Instalação: *' + valorStr + '*\n' +
+    '📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
@@ -3141,10 +3141,10 @@ function enviarConfirmacaoAgendamento(id, tech) {
       if (comBloqueio) {
         totalMensalidade += 59.90;
         totalDesconto    += 54.90;
-        return listaVeic.length > 1 ? '   ' + (i+1) + '. ' + modeloCurto + ': *R$59,90/mês*' : '*R$59,90/mês*';
+        return listaVeic.length > 1 ? '   ' + modeloCurto + ': *R$59,90/mês*' : '*R$59,90/mês*';
       } else {
         totalMensalidade += 39.90;
-        return listaVeic.length > 1 ? '   ' + (i+1) + '. ' + modeloCurto + ': *R$39,90/mês*' : '*R$39,90/mês*';
+        return listaVeic.length > 1 ? '   ' + modeloCurto + ': *R$39,90/mês*' : '*R$39,90/mês*';
       }
     });
 
@@ -3160,14 +3160,14 @@ function enviarConfirmacaoAgendamento(id, tech) {
       : linhasMensalidade[0] || '*R$39,90/mês*';
 
     const descontoStr = temDesconto
-      ? '\n   💸 *Pagando até o vencimento: R$' + totalComDesconto.toFixed(2).replace('.',',') + '* 🎉'
+      ? '\n💸 Até o vencimento: *R$' + totalComDesconto.toFixed(2).replace('.',',') + '/mês*'
       : '';
 
     blocoValores =
-      '💰 *Valores:*\n' +
-      '   🔧 Instalação: *' + valorStr + '*\n' +
-      '   📋 Mensalidade: ' + (listaVeic.length > 1 ? '\n' : '') + mensalidadeStr +
-      (listaVeic.length > 1 ? '\n   Total: *R$' + totalMensalidade.toFixed(2).replace('.',',') + '/mês*' : '') +
+      '\n💰 *Valores*\n' +
+      '🔧 Instalação: *' + valorStr + '*\n' +
+      '📋 Mensalidade:\n' + mensalidadeStr +
+      (listaVeic.length > 1 ? '\nTotal: *R$' + totalMensalidade.toFixed(2).replace('.',',') + '/mês*' : '') +
       descontoStr + '\n\n';
   }
 
@@ -3718,9 +3718,9 @@ function atualizarPreviewModalCliente() {
     '📍 *Endereço:* ' + (os.endereco || '') +
     (os.obs ? '\n📌 *Ref.:* ' + os.obs : '') + '\n\n' +
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
-    '💰 *Valores:*\n' +
-    '    🔧 Instalação: *' + valorStr + '*\n' +
-    '    📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
+    '\n💰 *Valores*\n' +
+    '🔧 Instalação: *' + valorStr + '*\n' +
+    '📋 Mensalidade: *' + mensalidade + '*' + desconto + '\n\n' +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
