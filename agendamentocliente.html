@@ -381,6 +381,47 @@ input.invalid {
   letter-spacing: .01em;
 }
 
+/* ── CAMPOS MANUAIS DO VEÍCULO ── */
+.fields-manual {
+  display: none;
+  animation: slideIn .3s ease;
+}
+.fields-manual.aberto { display: block; }
+.btn-esqueci {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: .84rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  padding: 10px 14px;
+  width: 100%;
+  transition: border-color .18s, background .18s, color .18s;
+}
+.btn-esqueci:hover {
+  border-color: var(--navy);
+  background: rgba(27,58,107,.04);
+  color: var(--navy);
+}
+.btn-esqueci .check-box {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .18s, background .18s;
+}
+.btn-esqueci:hover .check-box {
+  border-color: var(--navy);
+}
+.btn-esqueci svg { width: 11px; height: 11px; display: none; }
+
 /* ── TOGGLES ── */
 .toggle-group {
   display: flex;
@@ -765,6 +806,13 @@ input.invalid {
   var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
 
   // ── Consulta de placa via fetch ──
+  function abrirCamposManuais(index){
+    var wrap = document.getElementById('fields-manual-' + index);
+    var btn  = vehiclesContainer.querySelector('[data-abrir="' + index + '"]');
+    if(wrap){ wrap.classList.add('aberto'); }
+    if(btn) { btn.style.display = 'none'; }
+  }
+
   function setOverlay(index, active){
     var overlay = document.getElementById('overlay-' + index);
     if(!overlay) return;
@@ -827,44 +875,54 @@ input.invalid {
 
   function vehicleCardHTML(v, i){
     var n = String(i + 1).padStart(2, '0');
+    var jaAberto = v.modelo || v.ano || v.gnv || v.rastreio;
     return ''
       + '<div class="vehicle-card" data-index="' + i + '">'
       +   '<div class="vehicle-overlay" id="overlay-' + i + '">'
       +     '<div class="vehicle-overlay-spinner"></div>'
-      +     '<span class="vehicle-overlay-text" id="overlay-msg-' + i + '">Buscando dados da placa...</span>'
+      +     '<span class="vehicle-overlay-text">Buscando dados da placa...</span>'
       +   '</div>'
       +   '<div class="vehicle-tag">Veículo ' + n + '</div>'
       +   '<div class="vehicle-body">'
+
       +     '<div class="field">'
-      +       '<label for="placa-' + i + '">Placa do veículo <span style="font-weight:400;color:var(--text-3)">(opcional)</span></label>'
+      +       '<label for="placa-' + i + '">Placa do veículo</label>'
       +       '<input type="text" id="placa-' + i + '" placeholder="ABC1D23" data-field="placa" data-index="' + i + '" value="' + escapeHtml(v.placa || '') + '" maxlength="8" style="text-transform:uppercase">'
       +       '<span class="placa-status" id="placa-status-' + i + '"></span>'
+      +       '<button type="button" class="btn-esqueci" data-abrir="' + i + '">'
+      +         '<span class="check-box"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></span>'
+      +         'Não sei / esqueci minha placa — preencher manualmente'
+      +       '</button>'
       +     '</div>'
-      +     '<div class="grid-2">'
-      +       '<div class="field">'
-      +         '<label for="modelo-' + i + '">Modelo <span class="req">*</span></label>'
-      +         '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+
+      +     '<div class="fields-manual' + (jaAberto ? ' aberto' : '') + '" id="fields-manual-' + i + '">'
+      +       '<div class="grid-2">'
+      +         '<div class="field">'
+      +           '<label for="modelo-' + i + '">Modelo <span class="req">*</span></label>'
+      +           '<input type="text" id="modelo-' + i + '" placeholder="Ex: Fiat Uno, VW Gol..." data-field="modelo" data-index="' + i + '" value="' + escapeHtml(v.modelo) + '">'
+      +         '</div>'
+      +         '<div class="field">'
+      +           '<label for="ano-' + i + '">Ano <span class="req">*</span></label>'
+      +           '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
+      +         '</div>'
       +       '</div>'
       +       '<div class="field">'
-      +         '<label for="ano-' + i + '">Ano <span class="req">*</span></label>'
-      +         '<input type="number" id="ano-' + i + '" placeholder="2020" min="1980" max="2027" data-field="ano" data-index="' + i + '" value="' + (v.ano || '') + '">'
+      +         '<label>Possui kit de GNV? <span class="req">*</span></label>'
+      +         '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
+      +           '<button type="button" class="toggle-btn' + (v.gnv === 'sim' ? ' active amber' : '') + '" data-value="sim">Sim</button>'
+      +           '<button type="button" class="toggle-btn' + (v.gnv === 'nao' ? ' active teal' : '') + '" data-value="nao">Não</button>'
+      +         '</div>'
+      +       '</div>'
+      +       '<div class="field">'
+      +         '<label>Tipo de rastreamento <span class="req">*</span></label>'
+      +         '<div class="toggle-group" data-group="rastreio" data-index="' + i + '">'
+      +           '<button type="button" class="toggle-btn' + (v.rastreio === 'com' ? ' active teal' : '') + '" data-value="com">Com bloqueio</button>'
+      +           '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
+      +         '</div>'
+      +         '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
       +       '</div>'
       +     '</div>'
-      +     '<div class="field">'
-      +       '<label>Possui kit de GNV? <span class="req">*</span></label>'
-      +       '<div class="toggle-group" data-group="gnv" data-index="' + i + '">'
-      +         '<button type="button" class="toggle-btn' + (v.gnv === 'sim' ? ' active amber' : '') + '" data-value="sim">Sim</button>'
-      +         '<button type="button" class="toggle-btn' + (v.gnv === 'nao' ? ' active teal' : '') + '" data-value="nao">Não</button>'
-      +       '</div>'
-      +     '</div>'
-      +     '<div class="field">'
-      +       '<label>Tipo de rastreamento <span class="req">*</span></label>'
-      +       '<div class="toggle-group" data-group="rastreio" data-index="' + i + '">'
-      +         '<button type="button" class="toggle-btn' + (v.rastreio === 'com' ? ' active teal' : '') + '" data-value="com">Com bloqueio</button>'
-      +         '<button type="button" class="toggle-btn' + (v.rastreio === 'sem' ? ' active' : '') + '" data-value="sem">Sem bloqueio</button>'
-      +       '</div>'
-      +       '<p class="helper-text" data-helper="' + i + '">' + rastreioHelper(v.rastreio) + '</p>'
-      +     '</div>'
+
       +   '</div>'
       + '</div>';
   }
@@ -908,6 +966,22 @@ input.invalid {
         placaTimer = setTimeout(function(){ dispararConsulta(el); }, 800);
       });
     });
+    // Botão "esqueci a placa"
+    vehiclesContainer.querySelectorAll('[data-abrir]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = btn.dataset.abrir;
+        var wrap = document.getElementById('fields-manual-' + i);
+        var box  = btn.querySelector('.check-box');
+        var tick = btn.querySelector('svg');
+        if(wrap){ wrap.classList.add('aberto'); }
+        if(box) { box.style.background = 'var(--navy)'; box.style.borderColor = 'var(--navy)'; }
+        if(tick){ tick.style.display = 'block'; tick.style.stroke = '#fff'; }
+        btn.style.color = 'var(--navy)';
+        btn.style.borderColor = 'var(--navy)';
+        btn.style.pointerEvents = 'none';
+      });
+    });
+
     vehiclesContainer.querySelectorAll('.toggle-group').forEach(function(group){
       group.querySelectorAll('.toggle-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
