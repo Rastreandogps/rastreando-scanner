@@ -6088,6 +6088,13 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '</a>' +
         '</div>' +
       '</div>' +
+      // Botão Editar (só no mapa do admin)
+      (modo === 'inicial' ?
+        '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
+          '<button onclick="abrirModalEdit(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
+            'style="width:100%;padding:7px;background:#eff6ff;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;">✏️ Editar OS</button>' +
+        '</div>'
+      : '') +
       // Controles do admin: ordem do dia + excluir (só no mapa do admin)
       (modo === 'inicial' ? (function() {
         const _ordemBtns = [0,1,2,3,4,5].map(function(n) {
