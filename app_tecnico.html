@@ -267,6 +267,26 @@
     padding:40px 20px; gap:16px;
   }
   .loading-car-wrap.show { display:flex; }
+  @keyframes kamehameha {
+    0%   { transform: scaleX(0.3); opacity:0.5; }
+    50%  { transform: scaleX(1.2); opacity:1; }
+    100% { transform: scaleX(0.3); opacity:0.5; }
+  }
+  @keyframes gokuFloat {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-6px); }
+  }
+  @keyframes auraFlicker {
+    0%,100% { opacity:0.6; transform:scale(1); }
+    50%      { opacity:1;   transform:scale(1.08); }
+  }
+  @keyframes energyBall {
+    0%,100% { r:7; opacity:0.8; }
+    50%      { r:10; opacity:1; }
+  }
+  .goku-wrap { animation: gokuFloat 1.4s ease-in-out infinite; }
+  .goku-aura { animation: auraFlicker 0.7s ease-in-out infinite; }
+  .goku-beam { transform-origin: left center; animation: kamehameha 1s ease-in-out infinite; }
   .loading-car-track {
     width:100%; max-width:280px; height:3px; background:#e2e8f0;
     border-radius:4px; overflow:visible; position:relative;
@@ -1465,12 +1485,84 @@ async function gasRequest(payload) {
 }
 
 function getDinoHTML(id, label) {
-  return '<div class="loading-car-wrap show" id="' + id + '">' +
-    '<div class="loading-car-track">' +
-      '<div class="loading-track-fill"></div>' +
-      '<div class="loading-car"><div class="dino-car-prey">🚗</div><span class="dino-rex">🦖</span></div>' +
+  return '<div class="loading-car-wrap show" id="' + id + '" style="gap:12px;">' +
+    '<div class="goku-wrap">' +
+      '<svg width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">' +
+
+        // Aura
+        '<ellipse cx="52" cy="75" rx="38" ry="45" fill="#fff9c4" opacity="0.35" class="goku-aura"/>' +
+        '<ellipse cx="52" cy="75" rx="26" ry="32" fill="#ffe082" opacity="0.4" class="goku-aura" style="animation-delay:.15s"/>' +
+
+        // ── CORPO (roupa laranja) ──
+        // Tronco
+        '<rect x="38" y="58" width="28" height="30" rx="5" fill="#FF6F00"/>' +
+        // Cinto azul
+        '<rect x="38" y="72" width="28" height="7" rx="2" fill="#1565C0"/>' +
+        // Ombros
+        '<rect x="30" y="58" width="10" height="18" rx="4" fill="#FF6F00"/>' +
+        '<rect x="66" y="58" width="10" height="18" rx="4" fill="#FF6F00"/>' +
+
+        // ── PERNAS ──
+        '<rect x="38" y="85" width="11" height="22" rx="4" fill="#FF6F00"/>' +
+        '<rect x="55" y="85" width="11" height="22" rx="4" fill="#FF6F00"/>' +
+        // Sapatos
+        '<ellipse cx="44" cy="108" rx="9" ry="5" fill="#1a1a1a"/>' +
+        '<ellipse cx="61" cy="108" rx="9" ry="5" fill="#1a1a1a"/>' +
+
+        // ── BRAÇOS (postura Kamehameha — braços estendidos à frente) ──
+        // Braço esquerdo
+        '<rect x="66" y="60" width="22" height="9" rx="4" fill="#FFCC80" transform="rotate(-8 66 60)"/>' +
+        // Braço direito
+        '<rect x="66" y="70" width="22" height="9" rx="4" fill="#FFCC80" transform="rotate(8 66 70)"/>' +
+        // Mãos juntas
+        '<ellipse cx="89" cy="68" rx="8" ry="7" fill="#FFCC80"/>' +
+
+        // ── CABEÇA ──
+        '<ellipse cx="52" cy="44" rx="16" ry="15" fill="#FFCC80"/>' +
+        // Olhos
+        '<ellipse cx="47" cy="42" rx="3" ry="3.5" fill="white"/>' +
+        '<ellipse cx="57" cy="42" rx="3" ry="3.5" fill="white"/>' +
+        '<circle cx="48" cy="43" r="1.8" fill="#111"/>' +
+        '<circle cx="58" cy="43" r="1.8" fill="#111"/>' +
+        // Sobrancelhas franzidas
+        '<line x1="44" y1="37" x2="51" y2="39" stroke="#5D4037" stroke-width="2" stroke-linecap="round"/>' +
+        '<line x1="53" y1="39" x2="60" y2="37" stroke="#5D4037" stroke-width="2" stroke-linecap="round"/>' +
+        // Nariz
+        '<circle cx="52" cy="46" r="1.2" fill="#e8a070"/>' +
+        // Boca
+        '<path d="M48 50 Q52 54 56 50" stroke="#c0785a" stroke-width="1.5" fill="none" stroke-linecap="round"/>' +
+        // Orelha
+        '<ellipse cx="36" cy="44" rx="3.5" ry="4.5" fill="#FFCC80"/>' +
+        '<ellipse cx="68" cy="44" rx="3.5" ry="4.5" fill="#FFCC80"/>' +
+
+        // ── CABELO ESPETADO (Super Saiyan dourado) ──
+        '<polygon points="42,32 38,14 46,28" fill="#FFD600"/>' +
+        '<polygon points="50,29 48,8 55,26" fill="#FFD600"/>' +
+        '<polygon points="58,31 60,12 64,28" fill="#FFD600"/>' +
+        '<polygon points="36,36 30,22 40,33" fill="#FFD600"/>' +
+        '<polygon points="64,34 70,20 63,31" fill="#FFD600"/>' +
+        // Base do cabelo
+        '<ellipse cx="52" cy="32" rx="17" ry="8" fill="#FFD600"/>' +
+
+        // ── KAMEHAMEHA ──
+        // Bola de energia nas mãos
+        '<circle cx="97" cy="68" r="9" fill="#64B5F6" opacity="0.9">' +
+          '<animate attributeName="r" values="7;11;7" dur="1s" repeatCount="indefinite"/>' +
+          '<animate attributeName="opacity" values="0.8;1;0.8" dur="1s" repeatCount="indefinite"/>' +
+        '</circle>' +
+        '<circle cx="97" cy="68" r="5" fill="white" opacity="0.7">' +
+          '<animate attributeName="r" values="4;7;4" dur="1s" repeatCount="indefinite"/>' +
+        '</circle>' +
+        // Feixe principal
+        '<rect x="97" y="62" width="58" height="12" rx="6" fill="#42A5F5" class="goku-beam" opacity="0.85"/>' +
+        '<rect x="97" y="64" width="58" height="8" rx="4" fill="#E3F2FD" class="goku-beam" opacity="0.7" style="animation-delay:.1s"/>' +
+        // Ondas do feixe
+        '<ellipse cx="130" cy="68" rx="10" ry="5" fill="#90CAF9" opacity="0.5" class="goku-beam" style="animation-delay:.2s"/>' +
+        '<ellipse cx="148" cy="68" rx="7" ry="4" fill="white" opacity="0.4" class="goku-beam" style="animation-delay:.3s"/>' +
+
+      '</svg>' +
     '</div>' +
-    '<div class="loading-car-label">' + label + ' 🏃</div>' +
+    '<div class="loading-car-label" style="font-weight:700;color:#1565C0;letter-spacing:.5px;">KAME... HAME... HA!! ⚡</div>' +
   '</div>';
 }
 
