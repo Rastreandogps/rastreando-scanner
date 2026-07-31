@@ -5047,22 +5047,30 @@ function abrirResumoUnicaOS(id, tech) {
   abrirModalDesconto(tech, msg, valor);
 }
 
+function _sugerirLogin(nome) {
+  if (!nome) return '';
+  const partes = nome.trim().split(/\s+/);
+  const base = partes.length === 1 ? partes[0] : partes[0] + partes[1];
+  // Remover acentos, cedilha, til e outros caracteres especiais
+  return base.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '');
+}
+
 function abrirModalAcessoDone(id, tech) {
   const os = (allDoneOrders[tech] || []).find(o => o.id === id);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _acessoOS = os;
-  document.getElementById('acesso-login').value = '';
+  document.getElementById('acesso-login').value = _sugerirLogin(os.nome || '');
   document.getElementById('modal-acesso-cliente').classList.add('open'); lockScroll();
-  setTimeout(() => document.getElementById('acesso-login').focus(), 150);
+  setTimeout(() => { const el = document.getElementById('acesso-login'); el.focus(); el.select(); }, 150);
 }
 
 function abrirModalAcesso(id, tech) {
   const os = (allOrders[tech] || []).find(o => o.id === id);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _acessoOS = os;
-  document.getElementById('acesso-login').value = '';
+  document.getElementById('acesso-login').value = _sugerirLogin(os.nome || '');
   document.getElementById('modal-acesso-cliente').classList.add('open'); lockScroll();
-  setTimeout(() => document.getElementById('acesso-login').focus(), 150);
+  setTimeout(() => { const el = document.getElementById('acesso-login'); el.focus(); el.select(); }, 150);
 }
 
 function fecharModalAcesso() {
