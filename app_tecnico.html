@@ -6561,10 +6561,12 @@ setTimeout(carregarLeaflet, 5000);
     const raw = localStorage.getItem('app_tecnico_session');
     if (raw) {
       const sess = JSON.parse(raw);
-      const TTL  = sess.role === 'admin' ? 4*60*60*1000 : 12*60*60*1000;
+      const TTL  = 30*24*60*60*1000; // 30 dias para admin e técnico
       if (sess.ts && (Date.now() - sess.ts) < TTL) {
         currentUser = sess.user;
         currentRole = sess.role;
+        // Renovar sessão a cada abertura para nunca expirar em uso regular
+        localStorage.setItem('session', JSON.stringify({ user: sess.user, role: sess.role, ts: Date.now() }));
         if (sess.role === 'admin') showAdminScreen();
         else showTechScreen();
         return;
