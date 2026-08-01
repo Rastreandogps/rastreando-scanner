@@ -4691,7 +4691,7 @@ async function adminVerTecnico(tech) {
           '</button>' +
         '</div>' : '') +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
-          '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;">Ordem:</span>' +
+          '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;"></span>' +
           '<div style="display:flex;gap:4px;">' +
             [0,1,2,3,4,5,6,7,8].map(function(n) {
               const ativo = (o.ordemDia || 0) === n;
@@ -4874,7 +4874,7 @@ function _renderAdminListaPorIds(ids) {
           '</button>' +
         '</div>' : '') +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
-          '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;">Ordem:</span>' +
+          '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;"></span>' +
           '<div style="display:flex;gap:4px;">' +
             [0,1,2,3,4,5,6,7,8].map(function(n) {
               const ativo = (o.ordemDia || 0) === n;
@@ -6206,7 +6206,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
         }).join('');
         return '<div style="border-top:1px solid #e2e8f0;margin-top:10px;padding-top:8px;">' +
           '<div style="display:flex;align-items:center;gap:5px;margin-bottom:8px;">' +
-            '<span style="font-size:10px;color:#64748b;font-weight:700;">ORDEM:</span>' + _ordemBtns +
+             _ordemBtns +
           '</div>' +
           '<button onclick="requestDelete(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" style="width:100%;padding:7px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🗑️ Excluir OS</button>' +
         '</div>';
