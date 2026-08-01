@@ -559,14 +559,13 @@ function getATOnly() {
   });
 }
 
-// IN exclusivo: em IN, não em AT, não cancelado, não retirada
+// IN: todos que estão em IN, exceto cancelados e retiradas (independente de estar em AT)
 function getINOnly() {
-  const keysAT   = new Set(clientsAT.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
   const keysRET  = new Set(clientsRetirada.map(c => clientKey(c.nome, c.telefone)));
   return clientsIN.filter(c => {
     const k = clientKey(c.nome, c.telefone);
-    return !keysAT.has(k) && !keysCANC.has(k) && !keysRET.has(k);
+    return !keysCANC.has(k) && !keysRET.has(k);
   });
 }
 
