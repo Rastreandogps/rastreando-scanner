@@ -6742,5 +6742,15 @@ setTimeout(carregarLeaflet, 5000);
   localStorage.removeItem('app_tecnico_session');
 })();
 </script>
+<!-- BARRA FLUTUANTE: REAGENDAR EM MASSA -->
+<div id="barra-reagendar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;
+  background:#1a2744;color:white;border-radius:16px;padding:14px 18px;box-shadow:0 8px 32px rgba(0,0,0,.4);
+  align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;min-width:300px;max-width:92vw;">
+  <span id="barra-reagendar-count" style="font-size:13px;font-weight:700;white-space:nowrap;">0 selecionadas</span>
+  <input type="date" id="barra-reagendar-data" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;">
+  <button onclick="reagendarSelecionadas()" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Reagendar</button>
+  <button onclick="limparSelecao()" style="padding:8px 12px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">✕</button>
+</div>
+
 </body>
 </html>
