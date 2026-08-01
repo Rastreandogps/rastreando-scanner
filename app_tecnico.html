@@ -1652,7 +1652,7 @@ function renderTechCalendar() {
     // (nunca em dias passados, nunca em dias futuros — fica sempre "hoje")
     const temPend  = isToday && pendentes.length > 0;
     let dots = '';
-    if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(Math.min(ids.length, 3));
+    if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(ids.length);
     if (temPend)         dots += '<div class="dot dot-yellow"></div>';
 
     // Clicável se tem OS agendadas OU se é hoje com pendentes
@@ -2703,14 +2703,14 @@ function renderCardConfirmacao() {
           '<option value="Instalação">🔧 Instalação</option>' +
           '<option value="Manutenção">🔨 Manutenção</option>' +
           '<option value="Remoção">📤 Remoção</option>' +
-          '<option value="Retirada">🔄 Retirada</option>' +
+          '' +
         '</select>' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">TIPO DE SERVIÇO</label>' +
         '<select id="ag-tipo-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px;">' +
           '<option value="Instalação">🔧 Instalação</option>' +
           '<option value="Manutenção">🔨 Manutenção</option>' +
           '<option value="Remoção">📤 Remoção</option>' +
-          '<option value="Retirada">🔄 Retirada</option>' +
+          '' +
         '</select>' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">💰 Valor da instalação</label>' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
@@ -4693,7 +4693,7 @@ async function adminVerTecnico(tech) {
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
           '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;">Ordem:</span>' +
           '<div style="display:flex;gap:4px;">' +
-            [0,1,2,3,4,5].map(function(n) {
+            [0,1,2,3,4,5,6,7,8].map(function(n) {
               const ativo = (o.ordemDia || 0) === n;
               const label = n === 0 ? '—' : String(n);
               const bg    = ativo ? '#1a2744' : '#e2e8f0';
@@ -4876,7 +4876,7 @@ function _renderAdminListaPorIds(ids) {
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
           '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;">Ordem:</span>' +
           '<div style="display:flex;gap:4px;">' +
-            [0,1,2,3,4,5].map(function(n) {
+            [0,1,2,3,4,5,6,7,8].map(function(n) {
               const ativo = (o.ordemDia || 0) === n;
               const label = n === 0 ? '—' : String(n);
               const bg    = ativo ? '#1a2744' : '#e2e8f0';
@@ -5355,7 +5355,7 @@ async function carregarAgendamentos() {
           '<option value="Instalação">🔧 Instalação</option>' +
           '<option value="Manutenção">🔨 Manutenção</option>' +
           '<option value="Remoção">📤 Remoção</option>' +
-          '<option value="Retirada">🔄 Retirada</option>' +
+          '' +
         '</select>' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">💰 Valor da instalação</label>' +
         '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
@@ -6197,7 +6197,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       : '') +
       // Controles do admin: ordem do dia + excluir (só no mapa do admin)
       (modo === 'inicial' ? (function() {
-        const _ordemBtns = [0,1,2,3,4,5].map(function(n) {
+        const _ordemBtns = [0,1,2,3,4,5,6,7,8].map(function(n) {
           const ativo = (o.ordemDia || 0) === n;
           const label = n === 0 ? '—' : String(n);
           const bg    = ativo ? '#1a2744' : '#e2e8f0';
