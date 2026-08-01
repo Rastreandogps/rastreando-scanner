@@ -4430,6 +4430,7 @@ async function enviarResumoDia(tech) {
 
 async function adminVerTecnico(tech) {
   adminTechSelecionado = tech;
+  limparSelecao();
   // Limpar busca ao trocar de técnico
   const buscaInput = document.getElementById('admin-cal-busca');
   if (buscaInput) buscaInput.value = '';
@@ -4606,8 +4607,15 @@ async function adminVerTecnico(tech) {
     const tech = adminTechSelecionado;
 
     return (
-      '<div data-os-id="' + o.id + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
-        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';">' +
+      '<div data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';position:relative;">' +
+
+        // ── Checkbox seleção em massa
+        '<label onclick="event.stopPropagation()" style="position:absolute;top:10px;right:10px;cursor:pointer;z-index:2;">' +
+          '<input type="checkbox" class="os-select-cb" data-id="' + o.id + '" data-tech="' + esc(tech) + '" ' +
+            'onchange="atualizarSelecao()" ' +
+            'style="width:18px;height:18px;cursor:pointer;accent-color:#3b82f6;">' +
+        '</label>' +
 
         // ── Linha 1: nome + WPP + badge data
         (function() {
@@ -4789,8 +4797,15 @@ function _renderAdminListaPorIds(ids) {
     const tech = adminTechSelecionado;
 
     return (
-      '<div data-os-id="' + o.id + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
-        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';">' +
+      '<div data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+        'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';position:relative;">' +
+
+        // ── Checkbox seleção em massa
+        '<label onclick="event.stopPropagation()" style="position:absolute;top:10px;right:10px;cursor:pointer;z-index:2;">' +
+          '<input type="checkbox" class="os-select-cb" data-id="' + o.id + '" data-tech="' + esc(tech) + '" ' +
+            'onchange="atualizarSelecao()" ' +
+            'style="width:18px;height:18px;cursor:pointer;accent-color:#3b82f6;">' +
+        '</label>' +
 
         // ── Linha 1: nome + WPP + badge data
         (function() {
@@ -5576,6 +5591,57 @@ function fecharModalNovaOS() {
 // ════════════════════════════════════════
 // ── BUSCA DE OS NO CALENDÁRIO ADMIN
 // Filtra os cards reais da lista: só ficam visíveis os que batem com o termo
+// ── REAGENDAMENTO EM MASSA
+let _selecaoAtiva = new Set();
+
+function atualizarSelecao() {
+  _selecaoAtiva.clear();
+  document.querySelectorAll('.os-select-cb:checked').forEach(function(cb) {
+    _selecaoAtiva.add(cb.getAttribute('data-id') + '|' + cb.getAttribute('data-tech'));
+  });
+  const barra = document.getElementById('barra-reagendar');
+  const count = document.getElementById('barra-reagendar-count');
+  if (_selecaoAtiva.size > 0) {
+    barra.style.display = 'flex';
+    count.textContent = _selecaoAtiva.size + ' OS selecionada' + (_selecaoAtiva.size > 1 ? 's' : '');
+  } else {
+    barra.style.display = 'none';
+  }
+}
+
+function limparSelecao() {
+  document.querySelectorAll('.os-select-cb').forEach(function(cb) { cb.checked = false; });
+  _selecaoAtiva.clear();
+  const barra = document.getElementById('barra-reagendar');
+  if (barra) barra.style.display = 'none';
+}
+
+async function reagendarSelecionadas() {
+  const dataVal = document.getElementById('barra-reagendar-data').value;
+  if (!dataVal) { showToast('Escolha uma data primeiro!', 'error'); return; }
+  if (_selecaoAtiva.size === 0) return;
+
+  const itens = Array.from(_selecaoAtiva).map(function(s) {
+    const p = s.split('|'); return { id: p[0], tech: p[1] };
+  });
+
+  setSyncStatus('syncing');
+  let okCount = 0;
+  for (const item of itens) {
+    const r = await gasRequest({ action: 'updateDate', id: item.id, tech: item.tech, data: dataVal });
+    if (r.ok) {
+      const o = (allOrders[item.tech] || []).find(function(x) { return x.id === item.id; });
+      if (o) o.data = isoParaBR(dataVal);
+      okCount++;
+    }
+  }
+
+  showToast(okCount + ' OS reagendada' + (okCount > 1 ? 's' : '') + ' para ' + formatDateBR(dataVal) + '! ✅', 'success');
+  limparSelecao();
+  marcarMapaDesatualizado();
+  await loadAllOrders();
+}
+
 function buscarOSAdmin(termo) {
   const lista = document.getElementById('admin-tech-os-list');
   const aviso = document.getElementById('admin-cal-busca-resultados');
