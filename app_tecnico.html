@@ -5599,11 +5599,22 @@ function atualizarSelecao() {
   document.querySelectorAll('.os-select-cb:checked').forEach(function(cb) {
     _selecaoAtiva.add(cb.getAttribute('data-id') + '|' + cb.getAttribute('data-tech'));
   });
+  _atualizarBarra();
+}
+
+function _atualizarBarra() {
   const barra = document.getElementById('barra-reagendar');
   const count = document.getElementById('barra-reagendar-count');
+  if (!barra) return;
   if (_selecaoAtiva.size > 0) {
     barra.style.display = 'flex';
-    count.textContent = _selecaoAtiva.size + ' OS selecionada' + (_selecaoAtiva.size > 1 ? 's' : '');
+    if (count) count.textContent = _selecaoAtiva.size + ' OS selecionada' + (_selecaoAtiva.size > 1 ? 's' : '');
+    // Restaurar estado dos checkboxes após re-render
+    _selecaoAtiva.forEach(function(s) {
+      const p = s.split('|');
+      const cb = document.querySelector('.os-select-cb[data-id="' + p[0] + '"]');
+      if (cb) cb.checked = true;
+    });
   } else {
     barra.style.display = 'none';
   }
@@ -5621,25 +5632,32 @@ async function reagendarSelecionadas() {
   if (!dataVal) { showToast('Escolha uma data primeiro!', 'error'); return; }
   if (_selecaoAtiva.size === 0) return;
 
+  // Snapshot do Set antes de qualquer re-render
   const itens = Array.from(_selecaoAtiva).map(function(s) {
     const p = s.split('|'); return { id: p[0], tech: p[1] };
   });
 
   setSyncStatus('syncing');
-  let okCount = 0;
-  for (const item of itens) {
-    const r = await gasRequest({ action: 'updateDate', id: item.id, tech: item.tech, data: dataVal });
-    if (r.ok) {
-      const o = (allOrders[item.tech] || []).find(function(x) { return x.id === item.id; });
-      if (o) o.data = isoParaBR(dataVal);
-      okCount++;
-    }
-  }
 
+  // Disparar todas as requisições em paralelo
+  const resultados = await Promise.all(itens.map(function(item) {
+    return gasRequest({ action: 'updateDate', id: item.id, tech: item.tech, data: dataVal })
+      .then(function(r) {
+        if (r.ok) {
+          const o = (allOrders[item.tech] || []).find(function(x) { return x.id === item.id; });
+          if (o) o.data = isoParaBR(dataVal);
+          return true;
+        }
+        return false;
+      });
+  }));
+
+  const okCount = resultados.filter(Boolean).length;
   showToast(okCount + ' OS reagendada' + (okCount > 1 ? 's' : '') + ' para ' + formatDateBR(dataVal) + '! ✅', 'success');
   limparSelecao();
   marcarMapaDesatualizado();
   await loadAllOrders();
+  setTimeout(_atualizarBarra, 100);
 }
 
 function buscarOSAdmin(termo) {
