@@ -5645,7 +5645,10 @@ async function reagendarSelecionadas() {
       .then(function(r) {
         if (r.ok) {
           const o = (allOrders[item.tech] || []).find(function(x) { return x.id === item.id; });
-          if (o) o.data = isoParaBR(dataVal);
+          if (o) {
+            const _p = dataVal.split('-');
+            o.data = _p[2] + '/' + _p[1] + '/' + _p[0];
+          }
           return true;
         }
         return false;
