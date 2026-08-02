@@ -126,6 +126,7 @@
   .cal-day {
     aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; font-size: 12px; gap: 2px;
+    overflow: hidden; position: relative;
   }
   .cal-day.today { background: #eff6ff; font-weight: 700; color: var(--accent); }
   .cal-day.cal-day-selected { background: #dbeafe !important; border-radius: 8px; outline: 2px solid var(--accent); }
@@ -1671,8 +1672,8 @@ function renderTechCalendar() {
     const temPend  = isToday && pendentes.length > 0;
     let dots = '';
     if (ids.length > 3) {
-      dots += '<div class="dot dot-blue"></div>'.repeat(3);
-      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">+' + (ids.length - 3) + '</span>';
+      // Muitas OS: mostrar só o número em vez de bolinhas
+      dots += '<span style="font-size:11px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">' + ids.length + '</span>';
     } else if (ids.length > 0) {
       dots += '<div class="dot dot-blue"></div>'.repeat(ids.length);
     }
@@ -4575,8 +4576,7 @@ async function adminVerTecnico(tech) {
     const temPend = isToday && pendentes.length > 0;
     let dots = '';
     if (count > 3) {
-      dots += '<div class="dot dot-blue"></div>'.repeat(3);
-      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">+' + (count - 3) + '</span>';
+      dots += '<span style="font-size:11px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">' + count + '</span>';
     } else if (count > 0) {
       dots += '<div class="dot dot-blue"></div>'.repeat(count);
     }
@@ -6775,6 +6775,9 @@ setTimeout(carregarLeaflet, 5000);
     const mapaAtivo = document.querySelector('.leaflet-container');
     if (mapaAtivo && mapaAtivo.contains(e.target)) return;
 
+    // Ignorar se o toque foi num dia do calendário
+    if (e.target.closest('.cal-clickable') || e.target.closest('.cal-clickable-admin')) return;
+
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
 
@@ -6808,6 +6811,16 @@ setTimeout(carregarLeaflet, 5000);
     }
   }, { passive: true });
 })();
+
+// Listener touchend dedicado para dias do calendário do técnico (mobile)
+document.addEventListener('touchend', function(e) {
+  const calDay = e.target.closest('.cal-clickable');
+  if (calDay) {
+    e.preventDefault();
+    const raw = calDay.getAttribute('data-ids');
+    if (raw) calDayClick(raw.split('|'));
+  }
+}, { passive: false });
 
 (function init() {
   // Virada de mês
