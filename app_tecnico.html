@@ -1692,8 +1692,8 @@ function renderTechCalendar() {
     const calCursor = clicavel ? ' style="cursor:pointer;"' : '';
     const calClass  = clicavel ? ' cal-clickable' : '';
 
-    const onclickAttr = clicavel ? ' onclick="calDayClick(this.getAttribute(\x27data-ids\x27).split(\x27|\x27))"' : '';
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + onclickAttr + '>' +
+    const onclickStr = clicavel ? ' onclick="if(this.dataset.ids){calDayClick(this.dataset.ids.split(String.fromCharCode(124)))}"' : '';
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + onclickStr + '>' +
       '<span>' + d + '</span>' +
       (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') +
     '</div>';
