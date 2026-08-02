@@ -1820,6 +1820,14 @@ function renderCalDayCards(ids) {
   const orders = allOrders[currentUser] || [];
   const hoje   = new Date();
 
+  // LOG TEMPORÁRIO
+  if (ids) {
+    const encontradas = orders.filter(o => ids.includes(o.id));
+    showToast('orders:' + orders.length + ' ids:' + ids.length + ' found:' + encontradas.length, 'success');
+    console.log('IDs buscados:', ids);
+    console.log('IDs em allOrders:', orders.map(o => o.id));
+  }
+
   let selecionadas;
   if (ids) {
     // Clicou num dia específico — mostra as OS daquele dia
