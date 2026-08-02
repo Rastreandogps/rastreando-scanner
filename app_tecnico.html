@@ -1670,8 +1670,13 @@ function renderTechCalendar() {
     // (nunca em dias passados, nunca em dias futuros — fica sempre "hoje")
     const temPend  = isToday && pendentes.length > 0;
     let dots = '';
-    if (ids.length > 0) dots += '<div class="dot dot-blue"></div>'.repeat(ids.length);
-    if (temPend)         dots += '<div class="dot dot-yellow"></div>';
+    if (ids.length > 3) {
+      dots += '<div class="dot dot-blue"></div>'.repeat(3);
+      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;">+' + (ids.length - 3) + '</span>';
+    } else if (ids.length > 0) {
+      dots += '<div class="dot dot-blue"></div>'.repeat(ids.length);
+    }
+    if (temPend) dots += '<div class="dot dot-yellow"></div>';
 
     // Clicável se tem OS agendadas OU se é hoje com pendentes
     const clicavel  = ids.length > 0 || temPend;
@@ -4569,7 +4574,12 @@ async function adminVerTecnico(tech) {
     const count   = dateMap[d] || 0;
     const temPend = isToday && pendentes.length > 0;
     let dots = '';
-    if (count > 0)  dots += '<div class="dot dot-blue"></div>'.repeat(count);
+    if (count > 3) {
+      dots += '<div class="dot dot-blue"></div>'.repeat(3);
+      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;">+' + (count - 3) + '</span>';
+    } else if (count > 0) {
+      dots += '<div class="dot dot-blue"></div>'.repeat(count);
+    }
     if (temPend)    dots += '<div class="dot dot-yellow"></div>';
     // IDs das ordens deste dia (para interatividade)
     const idsStr = count > 0
