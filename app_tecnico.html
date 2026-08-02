@@ -1672,7 +1672,7 @@ function renderTechCalendar() {
     let dots = '';
     if (ids.length > 3) {
       dots += '<div class="dot dot-blue"></div>'.repeat(3);
-      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;">+' + (ids.length - 3) + '</span>';
+      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">+' + (ids.length - 3) + '</span>';
     } else if (ids.length > 0) {
       dots += '<div class="dot dot-blue"></div>'.repeat(ids.length);
     }
@@ -1687,7 +1687,7 @@ function renderTechCalendar() {
 
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + '>' +
       '<span>' + d + '</span>' +
-      (dots ? '<div class="dots">' + dots + '</div>' : '') +
+      (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') +
     '</div>';
   }
 }
@@ -4124,7 +4124,7 @@ async function adminVerTodos() {
 
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavel ? ' cal-clickable-admin' : '') + '"' +
       (clicavel ? ' data-admin-ids="' + allIds.join('|') + '" style="cursor:pointer;"' : '') + '>' +
-      '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
+      '<span>' + d + '</span>' + (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') + '</div>';
   }
 
   // Listar todas as OS ativas de todos os técnicos
@@ -4576,7 +4576,7 @@ async function adminVerTecnico(tech) {
     let dots = '';
     if (count > 3) {
       dots += '<div class="dot dot-blue"></div>'.repeat(3);
-      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;">+' + (count - 3) + '</span>';
+      dots += '<span style="font-size:9px;font-weight:800;color:var(--accent);line-height:1;pointer-events:none;">+' + (count - 3) + '</span>';
     } else if (count > 0) {
       dots += '<div class="dot dot-blue"></div>'.repeat(count);
     }
@@ -4595,7 +4595,7 @@ async function adminVerTecnico(tech) {
       : idsStr;
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavelAdmin ? ' cal-clickable-admin' : '') + '"' +
       (clicavelAdmin ? ' data-admin-ids="' + allIdsAdmin + '" style="cursor:pointer;"' : '') + '>' +
-      '<span>' + d + '</span>' + (dots ? '<div class="dots">' + dots + '</div>' : '') + '</div>';
+      '<span>' + d + '</span>' + (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') + '</div>';
   }
 
   // Listar ordens do técnico — só as de hoje
