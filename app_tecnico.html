@@ -1997,7 +1997,8 @@ function renderCardInline(o) {
           '<div style="flex:1;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
           '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div>' +
           '</div>' +
-          '<button onclick="event.stopPropagation();descartarObs(\'' + esc(o.id) + '\',\'' + esc(o._tech || tech || currentUser) + '\',this)" ' +
+          '<button onclick="event.stopPropagation();descartarObs(this.dataset.id,this.dataset.tech,this)" ' +
+            'data-id="' + esc(o.id) + '" data-tech="' + esc(o._tech || tech || currentUser) + '" ' +
             'style="flex-shrink:0;width:22px;height:22px;border-radius:50%;border:none;background:#fde68a;color:#92400e;font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;" ' +
             'title="Descartar observação">×</button>' +
           '</div>' : '') +
@@ -2211,7 +2212,8 @@ function renderTechOSList() {
           '<div style="flex:1;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
           '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div>' +
           '</div>' +
-          '<button onclick="event.stopPropagation();descartarObs(\'' + esc(o.id) + '\',\'' + esc(o._tech || tech || currentUser) + '\',this)" ' +
+          '<button onclick="event.stopPropagation();descartarObs(this.dataset.id,this.dataset.tech,this)" ' +
+            'data-id="' + esc(o.id) + '" data-tech="' + esc(o._tech || tech || currentUser) + '" ' +
             'style="flex-shrink:0;width:22px;height:22px;border-radius:50%;border:none;background:#fde68a;color:#92400e;font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;" ' +
             'title="Descartar observação">×</button>' +
           '</div>'
@@ -4191,7 +4193,8 @@ async function adminVerTodos() {
           '<div style="flex:1;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
           '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div>' +
           '</div>' +
-          '<button onclick="event.stopPropagation();descartarObs(\'' + esc(o.id) + '\',\'' + esc(o._tech || tech || currentUser) + '\',this)" ' +
+          '<button onclick="event.stopPropagation();descartarObs(this.dataset.id,this.dataset.tech,this)" ' +
+            'data-id="' + esc(o.id) + '" data-tech="' + esc(o._tech || tech || currentUser) + '" ' +
             'style="flex-shrink:0;width:22px;height:22px;border-radius:50%;border:none;background:#fde68a;color:#92400e;font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;" ' +
             'title="Descartar observação">×</button>' +
           '</div>' : '') +
@@ -6332,7 +6335,8 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
         '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
         '<div style="flex:1;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
         '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
-        '<button onclick="event.stopPropagation();descartarObs(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\',this)" ' +
+        '<button onclick="event.stopPropagation();descartarObs(this.dataset.id,this.dataset.tech,this)" ' +
+          'data-id="' + esc(o.id) + '" data-tech="' + esc(o._tech || '') + '" ' +
           'style="flex-shrink:0;width:22px;height:22px;border-radius:50%;border:none;background:#fde68a;color:#92400e;font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>' +
       '</div>' : '') +
       // Nota do técnico no popup
