@@ -1390,6 +1390,9 @@ function gerarElementosDinamicos() {
 }
 
 function showTechScreen() {
+  // Garantir que o overlay do admin não bloqueia o técnico
+  const ov = document.getElementById('destaque-overlay');
+  if (ov) ov.style.display = 'none';
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-admin').style.display = 'none';
   document.getElementById('screen-tech').style.display  = 'block';
@@ -1419,6 +1422,9 @@ function showAdminScreen() {
 }
 
 function showTechTab(tab) {
+  // Garantir overlay sumido
+  const _ov = document.getElementById('destaque-overlay');
+  if (_ov) _ov.style.display = 'none';
   ['calendar','done','mapa'].forEach(t => {
     document.getElementById('tech-tab-' + t).classList.toggle('active', t === tab);
     document.getElementById('tt-' + t).classList.toggle('active', t === tab);
@@ -1686,7 +1692,8 @@ function renderTechCalendar() {
     const calCursor = clicavel ? ' style="cursor:pointer;"' : '';
     const calClass  = clicavel ? ' cal-clickable' : '';
 
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + '>' +
+    const onclickAttr = clicavel ? ' onclick="calDayClick(this.getAttribute(\x27data-ids\x27).split(\x27|\x27))"' : '';
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + onclickAttr + '>' +
       '<span>' + d + '</span>' +
       (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') +
     '</div>';
@@ -6812,15 +6819,7 @@ setTimeout(carregarLeaflet, 5000);
   }, { passive: true });
 })();
 
-// Listener touchend dedicado para dias do calendário do técnico (mobile)
-document.addEventListener('touchend', function(e) {
-  const calDay = e.target.closest('.cal-clickable');
-  if (calDay) {
-    e.preventDefault();
-    const raw = calDay.getAttribute('data-ids');
-    if (raw) calDayClick(raw.split('|'));
-  }
-}, { passive: false });
+
 
 (function init() {
   // Virada de mês
