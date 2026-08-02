@@ -4711,6 +4711,11 @@ async function adminVerTecnico(tech) {
         (o.msgLog
           ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
+        (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
+          '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
+          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
+          '<div style="font-size:12px;font-weight:600;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
+        '</div>' : '') +
         (_notaInfoTexto(o.notaTecnico) ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
           '<span style="font-size:18px;flex-shrink:0;">🗒️</span>' +
           '<div>' +
@@ -4901,6 +4906,11 @@ function _renderAdminListaPorIds(ids) {
         (o.msgLog
           ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
+        (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
+          '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
+          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
+          '<div style="font-size:12px;font-weight:600;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
+        '</div>' : '') +
         (_notaInfoTexto(o.notaTecnico) ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
           '<span style="font-size:18px;flex-shrink:0;">🗒️</span>' +
           '<div>' +
