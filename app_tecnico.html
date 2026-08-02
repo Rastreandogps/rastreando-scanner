@@ -1592,6 +1592,7 @@ function getDinoHTML(id, label) {
 
 
 async function loadTechOrders() {
+  _calDayAtivo = null; // Limpar dia ativo ao recarregar
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
@@ -1692,7 +1693,7 @@ function renderTechCalendar() {
     const calCursor = clicavel ? ' style="cursor:pointer;"' : '';
     const calClass  = clicavel ? ' cal-clickable' : '';
 
-    const onclickStr = clicavel ? ' onclick="console.log(\'dia clicado\',this.dataset.ids);if(this.dataset.ids){calDayClick(this.dataset.ids.split(String.fromCharCode(124)))}"' : '';
+    const onclickStr = clicavel ? ' onclick="if(this.dataset.ids){calDayClick(this.dataset.ids.split(String.fromCharCode(124)))}"' : '';
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + onclickStr + '>' +
       '<span>' + d + '</span>' +
       (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') +
@@ -1704,12 +1705,8 @@ function renderTechCalendar() {
 let _calDayAtivo = null; // IDs do dia atualmente selecionado
 
 function calDayClick(ids) {
-  // LOG TEMPORÁRIO — remover depois
-  showToast('calDayClick: ' + (ids ? ids.length + ' ids' : 'null'), 'success');
-  console.log('calDayClick chamado com ids:', ids);
   // Se clicar no mesmo dia, remove destaque
   const idsKey = ids ? ids.join(',') : '';
-  showToast('ativo:' + (_calDayAtivo ? 'sim' : 'nao') + ' igual:' + (_calDayAtivo === idsKey), '');
   if (_calDayAtivo === idsKey) {
     _calDayAtivo = null;
     limparDestaqueCalendario();
@@ -1820,14 +1817,6 @@ function renderCalDayCards(ids) {
 
   const orders = allOrders[currentUser] || [];
   const hoje   = new Date();
-
-  // LOG TEMPORÁRIO
-  if (ids) {
-    const encontradas = orders.filter(o => ids.includes(o.id));
-    showToast('orders:' + orders.length + ' ids:' + ids.length + ' found:' + encontradas.length, 'success');
-    console.log('IDs buscados:', ids);
-    console.log('IDs em allOrders:', orders.map(o => o.id));
-  }
 
   let selecionadas;
   if (ids) {
