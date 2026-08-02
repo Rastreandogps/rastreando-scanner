@@ -689,7 +689,7 @@ async function importarInadimplentes() {
           pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || ''),
           cpf: fresh.cpf || existing.cpf || '',
           justificativa: fresh.retorno || existing.justificativa || '',
-          justData: fresh.dataRetorno || existing.justData || null,
+          justData: normalizarDataRetorno(fresh.dataRetorno) || existing.justData || null,
           dataCompromisso: fresh.dataCompromisso || existing.dataCompromisso || '',
           retirada: fresh.retirada || existing.retirada || '',
           sent: fresh.enviado === 'SIM' ? true : existing.sent
@@ -712,7 +712,7 @@ async function importarInadimplentes() {
         pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
         cpf: c.cpf || '',
         justificativa: c.retorno || '',
-        justData: c.dataRetorno || null,
+        justData: normalizarDataRetorno(c.dataRetorno) || null,
         dataCompromisso: c.dataCompromisso || '',
         retirada: c.retirada || '',
         expanded: false,
@@ -1266,6 +1266,18 @@ function saveCompromisso(id, valor) {
     })
   }).catch(() => {});
   showToast(valor ? '📅 Compromisso salvo: ' + formatarDataBR(valor) : '📅 Compromisso removido');
+}
+
+function normalizarDataRetorno(str) {
+  if (!str) return null;
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+  } catch(e) {}
+  return str;
 }
 
 function copiarTexto(texto, msg) {
