@@ -1709,6 +1709,7 @@ function calDayClick(ids) {
   console.log('calDayClick chamado com ids:', ids);
   // Se clicar no mesmo dia, remove destaque
   const idsKey = ids ? ids.join(',') : '';
+  showToast('ativo:' + (_calDayAtivo ? 'sim' : 'nao') + ' igual:' + (_calDayAtivo === idsKey), '');
   if (_calDayAtivo === idsKey) {
     _calDayAtivo = null;
     limparDestaqueCalendario();
