@@ -6489,8 +6489,18 @@ function _desenharRotas(map, rotasPorTech, modo) {
     });
     if (comData.length < 2) return;
 
-    // Ordenar pelo algoritmo do vizinho mais próximo
-    const rotaOtimizada = _nearestNeighbor(comData);
+    // Se todos os pontos têm ordemDia definida, respeitar essa ordem
+    // Senão, usar o algoritmo do vizinho mais próximo
+    const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
+    let rotaOtimizada;
+    if (comOrdem.length >= 2) {
+      // Ordenar pelos que têm ordem definida, depois os sem ordem
+      const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
+      comOrdem.sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
+      rotaOtimizada = comOrdem.concat(semOrdem);
+    } else {
+      rotaOtimizada = _nearestNeighbor(comData);
+    }
     const latlngs = rotaOtimizada.map(function(p) { return [p.lat, p.lng]; });
 
     // Cor da linha
