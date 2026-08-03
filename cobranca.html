@@ -1653,7 +1653,6 @@ function copyMsg(id) {
 }
 
 function confirmClear() {
-  if (activeGroup === 'BOTH' || activeGroup === 'CANC' || activeGroup === 'RET') { showToast('Limpe pela aba AT ou IN'); return; }
   const label = importMode === 'IN' ? 'IN' : 'AT';
   openModal('Limpar lista ' + label + '?','Os clientes ' + label + ' serão apagados.',()=>{
     if (importMode === 'AT') clientsAT = []; else clientsIN = [];
