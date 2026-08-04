@@ -862,7 +862,7 @@
       <!-- Campo de busca -->
       <div style="position:relative;margin-bottom:12px;">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="admin-done-busca" placeholder="Buscar por nome do cliente..." oninput="renderAdminDoneList()"
+        <input type="text" id="admin-done-busca" placeholder="Buscar por nome ou veículo..." oninput="renderAdminDoneList()"
           style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
       </div>
       <!-- Filtro por mês -->
@@ -3177,10 +3177,13 @@ function renderAdminDoneList() {
     });
   }
 
-  // Filtro por nome
+  // Filtro por nome ou veículo
   const busca = (document.getElementById('admin-done-busca')?.value || '').toLowerCase().trim();
   if (busca) {
-    items = items.filter(o => (o.nome || '').toLowerCase().includes(busca));
+    items = items.filter(o =>
+      (o.nome    || '').toLowerCase().includes(busca) ||
+      (o.veiculo || '').toLowerCase().includes(busca)
+    );
   }
 
   // Atualizar contadores nos filtros
@@ -4999,16 +5002,6 @@ function fecharModalConcluir() {
   pendingConcluir = null;
 }
 
-// Concluir OS diretamente pelo popup do mapa
-function concluirDoMapa(id, tech, nome, veiculo) {
-  const popupEl = document.querySelector('.leaflet-popup');
-  if (popupEl) popupEl.remove();
-  pendingConcluir = { id, tech };
-  document.getElementById('concluir-nome').textContent    = nome    || '';
-  document.getElementById('concluir-veiculo').textContent = veiculo || '';
-  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
-}
-
 // Executa a conclusão após confirmação
 async function confirmarConcluir() {
   if (!pendingConcluir) return;
@@ -6369,11 +6362,6 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
             'Navegar' +
           '</a>' +
         '</div>' +
-      '</div>' +
-      // Botão Concluir OS (admin e técnico)
-      '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
-        '<button onclick="concluirDoMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser) + '\',\'' + esc(o.nome || '') + '\',\'' + esc(o.veiculo || '') + '\')" ' +
-          'style="width:100%;padding:8px;background:#f0fdf4;color:#16a34a;border:2px solid #86efac;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">✅ Concluir OS</button>' +
       '</div>' +
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
