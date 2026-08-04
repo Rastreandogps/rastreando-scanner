@@ -4999,6 +4999,16 @@ function fecharModalConcluir() {
   pendingConcluir = null;
 }
 
+// Concluir OS diretamente pelo popup do mapa
+function concluirDoMapa(id, tech, nome, veiculo) {
+  const popupEl = document.querySelector('.leaflet-popup');
+  if (popupEl) popupEl.remove();
+  pendingConcluir = { id, tech };
+  document.getElementById('concluir-nome').textContent    = nome    || '';
+  document.getElementById('concluir-veiculo').textContent = veiculo || '';
+  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
+}
+
 // Executa a conclusão após confirmação
 async function confirmarConcluir() {
   if (!pendingConcluir) return;
@@ -6359,6 +6369,11 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
             'Navegar' +
           '</a>' +
         '</div>' +
+      '</div>' +
+      // Botão Concluir OS (admin e técnico)
+      '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
+        '<button onclick="concluirDoMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser) + '\',\'' + esc(o.nome || '') + '\',\'' + esc(o.veiculo || '') + '\')" ' +
+          'style="width:100%;padding:8px;background:#f0fdf4;color:#16a34a;border:2px solid #86efac;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">✅ Concluir OS</button>' +
       '</div>' +
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
