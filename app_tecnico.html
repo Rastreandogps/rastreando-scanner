@@ -862,7 +862,7 @@
       <!-- Campo de busca -->
       <div style="position:relative;margin-bottom:12px;">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="admin-done-busca" placeholder="Buscar por nome ou veículo..." oninput="renderAdminDoneList()"
+        <input type="text" id="admin-done-busca" placeholder="Buscar por nome, veículo ou bairro..." oninput="renderAdminDoneList()"
           style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
       </div>
       <!-- Filtro por mês -->
@@ -3177,12 +3177,13 @@ function renderAdminDoneList() {
     });
   }
 
-  // Filtro por nome ou veículo
+  // Filtro por nome, veículo ou endereço/bairro
   const busca = (document.getElementById('admin-done-busca')?.value || '').toLowerCase().trim();
   if (busca) {
     items = items.filter(o =>
-      (o.nome    || '').toLowerCase().includes(busca) ||
-      (o.veiculo || '').toLowerCase().includes(busca)
+      (o.nome     || '').toLowerCase().includes(busca) ||
+      (o.veiculo  || '').toLowerCase().includes(busca) ||
+      (o.endereco || '').toLowerCase().includes(busca)
     );
   }
 
