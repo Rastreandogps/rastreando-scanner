@@ -6408,7 +6408,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
     if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
-    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data });
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0 });
 
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
