@@ -6491,28 +6491,18 @@ function _desenharRotas(map, rotasPorTech, modo) {
 
     // Se há pontos com ordemDia definida, respeitar essa ordem
     // e inserir os sem ordem otimizados entre eles
-    const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
+const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
     let rotaOtimizada;
-    if (comOrdem.length >= 2) {
+    if (comOrdem.length >= 1) {
+      // Ordenar pelos números definidos pelo admin (1, 2, 3...)
       comOrdem.sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
       const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
       if (semOrdem.length === 0) {
+        // Todos têm ordem — linha segue exatamente 1→2→3→...
         rotaOtimizada = comOrdem;
       } else {
-        // Inserir os sem ordem na posição ótima dentro da rota já ordenada
-        rotaOtimizada = comOrdem.slice();
-        semOrdem.forEach(function(ponto) {
-          var melhorPos = 1;
-          var melhorDist = Infinity;
-          for (var i = 1; i <= rotaOtimizada.length; i++) {
-            var prev = rotaOtimizada[i-1];
-            var next = rotaOtimizada[i] || rotaOtimizada[i-1];
-            var d = Math.hypot(ponto.lat - prev.lat, ponto.lng - prev.lng) +
-                    Math.hypot(ponto.lat - next.lat, ponto.lng - next.lng);
-            if (d < melhorDist) { melhorDist = d; melhorPos = i; }
-          }
-          rotaOtimizada.splice(melhorPos, 0, ponto);
-        });
+        // Pontos sem ordem vão ao final, em sequência de proximidade entre si
+        rotaOtimizada = comOrdem.concat(_nearestNeighbor(semOrdem));
       }
     } else {
       rotaOtimizada = _nearestNeighbor(comData);
