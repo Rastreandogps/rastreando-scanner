@@ -881,6 +881,7 @@ input.invalid {
         abrirCamposManuais(index);
         if(res && res.ok && res.descricao){
           var descComCor = res.descricao + (res.dados && res.dados.cor ? ' ' + res.dados.cor : '');
+          vehicles[index].placa = placa;
           if(modeloEl){ modeloEl.value = descComCor; vehicles[index].modelo = descComCor; modeloEl.classList.remove('invalid'); }
           if(statusEl){ statusEl.className = 'placa-status success'; statusEl.textContent = '\u2713 ' + descComCor; }
           if(res.dados && res.dados.ano_modelo)         { anoEl.value = res.dados.ano_modelo;        vehicles[index].ano = res.dados.ano_modelo; }
