@@ -5764,6 +5764,27 @@ function buscarOSAdmin(termo) {
 
 // ── NOTA DO TÉCNICO
 // Helper: extrai texto e timestamp da nota (novo formato JSON ou texto legado)
+async function concluirDoMapaAdmin(id, tech) {
+  const confirmar = await new Promise(function(resolve) {
+    window._telDupResolve = resolve;
+    window._telDupMode = true;
+    const el = document.getElementById('modal-confirm-ordem-msg');
+    const modal = document.getElementById('modal-confirm-ordem');
+    if (el) el.textContent = 'Confirmar conclusão desta OS?';
+    if (modal) { modal.classList.add('open'); lockScroll(); }
+  });
+  if (!confirmar) return;
+
+  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
+  if (result.ok) {
+    showToast('OS concluída! ✅', 'success');
+    marcarMapaDesatualizado();
+    await loadAllOrders();
+  } else {
+    showToast('Erro ao concluir OS.', 'error');
+  }
+}
+
 async function concluirDoMapa(id, tech) {
   // Modal de confirmação
   const confirmar = await new Promise(function(resolve) {
@@ -6396,6 +6417,14 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '<button onclick="abrirModalEdit(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
             'style="width:100%;padding:7px;background:#eff6ff;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;">✏️ Editar OS</button>' +
         '</div>'
+      : '') +
+      // Botão concluir (só no mapa do admin)
+      (modo === 'inicial' ?
+        '<button onclick="concluirDoMapaAdmin(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
+          'style="width:100%;padding:9px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+          'Marcar como Concluído' +
+        '</button>'
       : '') +
       // Controles do admin: ordem do dia + excluir (só no mapa do admin)
       (modo === 'inicial' ? (function() {
