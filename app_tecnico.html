@@ -862,7 +862,7 @@
       <!-- Campo de busca -->
       <div style="position:relative;margin-bottom:12px;">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="admin-done-busca" placeholder="Buscar por nome, veículo ou bairro..." oninput="renderAdminDoneList()"
+        <input type="text" id="admin-done-busca" placeholder="Buscar por nome do cliente..." oninput="renderAdminDoneList()"
           style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
       </div>
       <!-- Filtro por mês -->
@@ -3129,7 +3129,7 @@ function gerarFiltroMesDone() {
     });
   });
   const sorted = Array.from(meses).sort().reverse();
-  // Não forçar mês atual — exibe todos por padrão
+  if (!adminDoneMesFiltro) adminDoneMesFiltro = mesAtual;
   const MN = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   wrap.innerHTML = '<button onclick="filterDoneMes(&quot;&quot;)" id="afdm-all" style="padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Todos</button>' +
     sorted.map(m => {
@@ -3177,14 +3177,10 @@ function renderAdminDoneList() {
     });
   }
 
-  // Filtro por nome, veículo ou endereço/bairro
+  // Filtro por nome
   const busca = (document.getElementById('admin-done-busca')?.value || '').toLowerCase().trim();
   if (busca) {
-    items = items.filter(o =>
-      (o.nome     || '').toLowerCase().includes(busca) ||
-      (o.veiculo  || '').toLowerCase().includes(busca) ||
-      (o.endereco || '').toLowerCase().includes(busca)
-    );
+    items = items.filter(o => (o.nome || '').toLowerCase().includes(busca));
   }
 
   // Atualizar contadores nos filtros
@@ -5480,12 +5476,14 @@ async function confirmarAgendamentoAba(rowIndex) {
   let veiculoStr = '';
   if (veiculos.length === 1) {
     const v = veiculos[0];
-    const ano = v.ano ? ' ' + v.ano : '';
-    veiculoStr = (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+    const ano   = v.ano   ? ' ' + v.ano   : '';
+    const placa = v.placa ? ' | Placa: ' + v.placa : '';
+    veiculoStr = (v.modelo || '') + ano + placa + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
   } else if (veiculos.length > 1) {
     veiculoStr = veiculos.map(function(v) {
-      const ano = v.ano ? ' ' + v.ano : '';
-      return (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+      const ano   = v.ano   ? ' ' + v.ano   : '';
+      const placa = v.placa ? ' | Placa: ' + v.placa : '';
+      return (v.modelo || '') + ano + placa + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
     }).join(' || ');
   }
 
