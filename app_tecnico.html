@@ -6085,16 +6085,43 @@ async function _geocodificar(endereco) {
   const coordDireta = _detectarCoordenada(endereco);
   if (coordDireta) return coordDireta;
 
-  // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
+  const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
+
+  // ── Tentativa 1: query ESTRUTURADA (street + city + state) ──
+  // Extrai rua+número separando nos traços: "Rua X, 472 - Bairro - Cidade"
+  const partes = endereco.split(/\s*[-–]\s*/);
+  const ruaNum = partes[0] ? partes[0].trim() : '';
+  const cidadeRaw = partes.length >= 2 ? partes[partes.length - 1].trim() : '';
+  const cidadeEst = /rio de janeiro/i.test(cidadeRaw) ? 'Rio de Janeiro' :
+                    /duque de caxias/i.test(cidadeRaw) ? 'Duque de Caxias' :
+                    /nova igua/i.test(cidadeRaw) ? 'Nova Iguaçu' :
+                    /niter[oó]/i.test(cidadeRaw) ? 'Niterói' :
+                    /s[aã]o gon/i.test(cidadeRaw) ? 'São Gonçalo' :
+                    /belford/i.test(cidadeRaw) ? 'Belford Roxo' :
+                    /mesquita/i.test(cidadeRaw) ? 'Mesquita' :
+                    /mag[eé]/i.test(cidadeRaw) ? 'Magé' : cidadeRaw;
+  if (ruaNum && cidadeEst) {
+    try {
+      const urlEst = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
+        + '&street=' + encodeURIComponent(ruaNum)
+        + '&city='   + encodeURIComponent(cidadeEst)
+        + '&state=RJ&country=BR';
+      const resEst = await fetch(urlEst, { headers: hdrs });
+      const dataEst = await resEst.json();
+      if (dataEst && dataEst.length > 0) return { lat: parseFloat(dataEst[0].lat), lng: parseFloat(dataEst[0].lon) };
+    } catch(_) {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // ── Tentativa 2: query livre em cascata ──
   const tentativas = _montarTentativas(endereco);
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
+      const res  = await fetch(url, { headers: hdrs });
       const data = await res.json();
       if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } catch(_) {}
-    // Pequeno intervalo entre tentativas
     await new Promise(r => setTimeout(r, 400));
   }
   return null;
@@ -6156,11 +6183,8 @@ function _montarTentativas(endereco) {
   const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio|engenho|tijuca|jacarepagu|bonsucesso|iraj[aá]|olaria|penha|ramos|ilha do govern/i.test(end);
   const sufixoRJ = jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil';
 
-  // 1. Endereço completo — sempre força RJ, Brasil para evitar geocodificador bater na cidade genérica
-  const endComRJ = /rj|brasil/i.test(end)
-    ? end
-    : (jaTemRJ ? end + ', RJ, Brasil' : end + sufixoRJ);
-  tentativas.push(endComRJ);
+  // 1. Endereço completo
+  tentativas.push(end + sufixoRJ);
 
   // 2. Substituir "número" por extenso e limpar complementos
   const endLimpo = end
