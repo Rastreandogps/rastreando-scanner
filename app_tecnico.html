@@ -6086,40 +6086,52 @@ async function _geocodificar(endereco) {
   if (coordDireta) return coordDireta;
 
   const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
+  // viewbox restringe ao Rio metropolitano — evita cair no centro genérico da cidade
+  const VBOX = '&viewbox=-44.0,-22.5,-42.5,-23.2&bounded=1';
 
-  // ── Tentativa 1: query ESTRUTURADA (street + city + state) ──
-  // Extrai rua+número separando nos traços: "Rua X, 472 - Bairro - Cidade"
-  const partes = endereco.split(/\s*[-–]\s*/);
+  // Remove "Rio de Janeiro" do final do endereço antes de geocodificar
+  // O viewbox já garante que o resultado ficará dentro do RJ — manter a cidade causa ambiguidade
+  const endNorm = endereco
+    .replace(/,?\s*[-–]?\s*rio\s+de\s+janeiro\s*$/i, '')
+    .replace(/,?\s*rio\s+de\s+janeiro\s*$/i, '')
+    .trim();
+
+  // Extrai rua+número e bairro: "Rua X, 472 - Bairro"
+  const partes = endNorm.split(/\s*[-–]\s*/);
   const ruaNum = partes[0] ? partes[0].trim() : '';
-  const cidadeRaw = partes.length >= 2 ? partes[partes.length - 1].trim() : '';
-  const cidadeEst = /rio de janeiro/i.test(cidadeRaw) ? 'Rio de Janeiro' :
-                    /duque de caxias/i.test(cidadeRaw) ? 'Duque de Caxias' :
-                    /nova igua/i.test(cidadeRaw) ? 'Nova Iguaçu' :
-                    /niter[oó]/i.test(cidadeRaw) ? 'Niterói' :
-                    /s[aã]o gon/i.test(cidadeRaw) ? 'São Gonçalo' :
-                    /belford/i.test(cidadeRaw) ? 'Belford Roxo' :
-                    /mesquita/i.test(cidadeRaw) ? 'Mesquita' :
-                    /mag[eé]/i.test(cidadeRaw) ? 'Magé' : cidadeRaw;
-  if (ruaNum && cidadeEst) {
+  const bairro = partes.length >= 2 ? partes[1].trim() : '';
+
+  // ── Tentativa 1: rua + bairro + RJ dentro do viewbox ──
+  if (ruaNum) {
     try {
-      const urlEst = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
-        + '&street=' + encodeURIComponent(ruaNum)
-        + '&city='   + encodeURIComponent(cidadeEst)
-        + '&state=RJ&country=BR';
-      const resEst = await fetch(urlEst, { headers: hdrs });
-      const dataEst = await resEst.json();
-      if (dataEst && dataEst.length > 0) return { lat: parseFloat(dataEst[0].lat), lng: parseFloat(dataEst[0].lon) };
+      const q1 = ruaNum + (bairro ? ', ' + bairro : '') + ', RJ';
+      const url1 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q='
+        + encodeURIComponent(q1) + VBOX;
+      const data1 = await (await fetch(url1, { headers: hdrs })).json();
+      if (data1 && data1.length > 0) return { lat: parseFloat(data1[0].lat), lng: parseFloat(data1[0].lon) };
     } catch(_) {}
     await new Promise(r => setTimeout(r, 400));
   }
 
-  // ── Tentativa 2: query livre em cascata ──
+  // ── Tentativa 2: query estruturada street + suburb + state + viewbox ──
+  if (ruaNum) {
+    try {
+      const url2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
+        + '&street=' + encodeURIComponent(ruaNum)
+        + (bairro ? '&suburb=' + encodeURIComponent(bairro) : '')
+        + '&state=RJ&country=BR' + VBOX;
+      const data2 = await (await fetch(url2, { headers: hdrs })).json();
+      if (data2 && data2.length > 0) return { lat: parseFloat(data2[0].lat), lng: parseFloat(data2[0].lon) };
+    } catch(_) {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // ── Tentativa 3: cascata original sem viewbox (fallback para cidades fora do RJ) ──
   const tentativas = _montarTentativas(endereco);
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
-      const res  = await fetch(url, { headers: hdrs });
-      const data = await res.json();
+      const data = await (await fetch(url, { headers: hdrs })).json();
       if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } catch(_) {}
     await new Promise(r => setTimeout(r, 400));
