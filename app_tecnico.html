@@ -5764,49 +5764,6 @@ function buscarOSAdmin(termo) {
 
 // ── NOTA DO TÉCNICO
 // Helper: extrai texto e timestamp da nota (novo formato JSON ou texto legado)
-async function concluirDoMapaAdmin(id, tech) {
-  const confirmar = await new Promise(function(resolve) {
-    window._telDupResolve = resolve;
-    window._telDupMode = true;
-    const el = document.getElementById('modal-confirm-ordem-msg');
-    const modal = document.getElementById('modal-confirm-ordem');
-    if (el) el.textContent = 'Confirmar conclusão desta OS?';
-    if (modal) { modal.classList.add('open'); lockScroll(); }
-  });
-  if (!confirmar) return;
-
-  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
-  if (result.ok) {
-    showToast('OS concluída! ✅', 'success');
-    marcarMapaDesatualizado();
-    await loadAllOrders();
-  } else {
-    showToast('Erro ao concluir OS.', 'error');
-  }
-}
-
-async function concluirDoMapa(id, tech) {
-  // Modal de confirmação
-  const confirmar = await new Promise(function(resolve) {
-    window._telDupResolve = resolve;
-    window._telDupMode = true;
-    const el = document.getElementById('modal-confirm-ordem-msg');
-    const modal = document.getElementById('modal-confirm-ordem');
-    if (el) el.textContent = 'Confirmar conclusão desta OS?';
-    if (modal) { modal.classList.add('open'); lockScroll(); }
-  });
-  if (!confirmar) return;
-
-  const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
-  if (result.ok) {
-    showToast('OS concluída! ✅', 'success');
-    marcarMapaDesatualizado();
-    await loadTechOrders();
-  } else {
-    showToast('Erro ao concluir OS.', 'error');
-  }
-}
-
 async function descartarObs(id, tech, btn) {
   const r = await gasRequest({ action: 'limparObs', id, tech });
   if (r.ok) {
@@ -6199,8 +6156,11 @@ function _montarTentativas(endereco) {
   const jaTemRJ = /rio de janeiro|duque de caxias|nova igua|s[aã]o gon|niter[oó]|belford|mesquita|mag[eé]|araruama|cabo frio|engenho|tijuca|jacarepagu|bonsucesso|iraj[aá]|olaria|penha|ramos|ilha do govern/i.test(end);
   const sufixoRJ = jaTemRJ ? '' : ', Rio de Janeiro, RJ, Brasil';
 
-  // 1. Endereço completo
-  tentativas.push(end + sufixoRJ);
+  // 1. Endereço completo — sempre força RJ, Brasil para evitar geocodificador bater na cidade genérica
+  const endComRJ = /rj|brasil/i.test(end)
+    ? end
+    : (jaTemRJ ? end + ', RJ, Brasil' : end + sufixoRJ);
+  tentativas.push(endComRJ);
 
   // 2. Substituir "número" por extenso e limpar complementos
   const endLimpo = end
@@ -6390,14 +6350,6 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           'WhatsApp do cliente' +
         '</a>';
       })() : '') +
-      // Botão concluir (só no mapa do técnico)
-      (modo === 'car' ?
-        '<button onclick="concluirDoMapa(\'' + esc(o.id) + '\',\'' + esc(currentUser) + '\')" ' +
-          'style="width:100%;padding:9px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-          'Marcar como Concluído' +
-        '</button>'
-      : '') +
       // Rodapé: tipo + WhatsApp + botão navegar
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">' +
         '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + tipoCor + '22;color:' + tipoCor + ';">' + esc(tipo) + '</span>' +
@@ -6417,14 +6369,6 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '<button onclick="abrirModalEdit(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
             'style="width:100%;padding:7px;background:#eff6ff;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;">✏️ Editar OS</button>' +
         '</div>'
-      : '') +
-      // Botão concluir (só no mapa do admin)
-      (modo === 'inicial' ?
-        '<button onclick="concluirDoMapaAdmin(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
-          'style="width:100%;padding:9px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
-          'Marcar como Concluído' +
-        '</button>'
       : '') +
       // Controles do admin: ordem do dia + excluir (só no mapa do admin)
       (modo === 'inicial' ? (function() {
@@ -6467,7 +6411,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
     if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
-    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data });
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0 });
 
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
@@ -6550,28 +6494,18 @@ function _desenharRotas(map, rotasPorTech, modo) {
 
     // Se há pontos com ordemDia definida, respeitar essa ordem
     // e inserir os sem ordem otimizados entre eles
-    const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
+const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
     let rotaOtimizada;
-    if (comOrdem.length >= 2) {
+    if (comOrdem.length >= 1) {
+      // Ordenar pelos números definidos pelo admin (1, 2, 3...)
       comOrdem.sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
       const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
       if (semOrdem.length === 0) {
+        // Todos têm ordem — linha segue exatamente 1→2→3→...
         rotaOtimizada = comOrdem;
       } else {
-        // Inserir os sem ordem na posição ótima dentro da rota já ordenada
-        rotaOtimizada = comOrdem.slice();
-        semOrdem.forEach(function(ponto) {
-          var melhorPos = 1;
-          var melhorDist = Infinity;
-          for (var i = 1; i <= rotaOtimizada.length; i++) {
-            var prev = rotaOtimizada[i-1];
-            var next = rotaOtimizada[i] || rotaOtimizada[i-1];
-            var d = Math.hypot(ponto.lat - prev.lat, ponto.lng - prev.lng) +
-                    Math.hypot(ponto.lat - next.lat, ponto.lng - next.lng);
-            if (d < melhorDist) { melhorDist = d; melhorPos = i; }
-          }
-          rotaOtimizada.splice(melhorPos, 0, ponto);
-        });
+        // Pontos sem ordem vão ao final, em sequência de proximidade entre si
+        rotaOtimizada = comOrdem.concat(_nearestNeighbor(semOrdem));
       }
     } else {
       rotaOtimizada = _nearestNeighbor(comData);
