@@ -4709,7 +4709,7 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4904,7 +4904,7 @@ function _renderAdminListaPorIds(ids) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -6085,16 +6085,69 @@ async function _geocodificar(endereco) {
   const coordDireta = _detectarCoordenada(endereco);
   if (coordDireta) return coordDireta;
 
-  // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
+  const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
+  const VBOX = '&viewbox=-44.0,-22.5,-42.5,-23.2&bounded=1';
+
+  // Cidades da região metropolitana do RJ para detecção automática
+  const CIDADES_RJ = [
+    'duque de caxias','nova iguaçu','nova igua','são gonçalo','são gon',
+    'niterói','niteroi','belford roxo','mesquita','magé','mage',
+    'seropédica','queimados','japeri','itaguaí','itaguai',
+    'volta redonda','petrópolis','petropolis','rio de janeiro'
+  ];
+
+  // Remove CEP e UF do final: "- RJ, 25086-120" ou ", RJ 25086-120"
+  const endLimpo = endereco.replace(/,?\s*[-–]?\s*[A-Z]{2},?\s*\d{5}-?\d{3}\s*$/, '').trim();
+
+  // Detecta cidade no endereço
+  let cidadeDetectada = '';
+  for (const c of CIDADES_RJ) {
+    if (endLimpo.toLowerCase().includes(c)) { cidadeDetectada = c; break; }
+  }
+
+  // Remove cidade e "Rio de Janeiro" para isolar rua e bairro
+  const endSemCidade = (cidadeDetectada
+    ? endLimpo.replace(new RegExp(',?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*,?','i'), '')
+    : endLimpo.replace(/,?\s*[-–]?\s*rio\s+de\s+janeiro\s*$/i, ''))
+    .replace(/[-–,]\s*$/, '').trim();
+
+  const partes = endSemCidade.split(/\s*[-–]\s*/).map(p => p.trim()).filter(Boolean);
+  const ruaNum = partes[0] || '';
+  const bairro = partes[1] || '';
+  const cidade = cidadeDetectada || 'Rio de Janeiro';
+
+  // Tentativa 1: rua + bairro + cidade + RJ dentro do viewbox
+  if (ruaNum) {
+    try {
+      const q1 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ';
+      const d1 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q1) + VBOX, { headers: hdrs })).json();
+      if (d1 && d1.length > 0) return { lat: parseFloat(d1[0].lat), lng: parseFloat(d1[0].lon) };
+    } catch(_) {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // Tentativa 2: query estruturada street + suburb + city + state + viewbox
+  if (ruaNum) {
+    try {
+      const url2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
+        + '&street=' + encodeURIComponent(ruaNum)
+        + (bairro ? '&suburb=' + encodeURIComponent(bairro) : '')
+        + '&city=' + encodeURIComponent(cidade)
+        + '&state=RJ&country=BR' + VBOX;
+      const d2 = await (await fetch(url2, { headers: hdrs })).json();
+      if (d2 && d2.length > 0) return { lat: parseFloat(d2[0].lat), lng: parseFloat(d2[0].lon) };
+    } catch(_) {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // Tentativa 3: cascata original sem viewbox (fallback)
   const tentativas = _montarTentativas(endereco);
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
-      const data = await res.json();
+      const data = await (await fetch(url, { headers: hdrs })).json();
       if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } catch(_) {}
-    // Pequeno intervalo entre tentativas
     await new Promise(r => setTimeout(r, 400));
   }
   return null;
