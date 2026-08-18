@@ -6088,15 +6088,22 @@ async function _geocodificar(endereco) {
   const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
   const VBOX = '&viewbox=-44.0,-22.5,-42.5,-23.2&bounded=1';
 
-  // Cidades da região metropolitana do RJ
+  // Lista completa de municípios do RJ para detecção automática
   const CIDADES_RJ = [
-    'duque de caxias','nova iguaçu','nova igua','são gonçalo','são gon',
-    'niterói','niteroi','belford roxo','mesquita','magé','mage',
-    'seropédica','queimados','japeri','itaguaí','itaguai',
-    'volta redonda','petrópolis','petropolis','rio de janeiro'
+    'araruama','arraial do cabo','cabo frio','búzios','buzios','iguaba grande',
+    'são pedro da aldeia','maricá','marica','saquarema','rio das ostras',
+    'macaé','macae','campos dos goytacazes','angra dos reis','paraty','parati',
+    'mangaratiba','itaguaí','itaguai','seropédica','seropedica','queimados',
+    'japeri','paracambi','nova iguaçu','nova igua','duque de caxias',
+    'belford roxo','mesquita','nilópolis','nilopolis','são gonçalo','são gon',
+    'niterói','niteroi','magé','mage','guapimirim','cachoeiras de macacu',
+    'petrópolis','petropolis','teresópolis','teresopolis','nova friburgo',
+    'volta redonda','barra mansa','resende','itatiaia','pinheiral',
+    'piraí','pirai','valença','três rios','tres rios',
+    'paraíba do sul','paraiba do sul','rio de janeiro'
   ];
 
-  // Remove CEP e UF do final: '- RJ, 25086-120'
+  // Remove CEP e UF do final
   const endLimpo = endereco.replace(/,?\s*[-–]?\s*[A-Z]{2},?\s*\d{5}-?\d{3}\s*$/, '').trim();
 
   // Detecta cidade no endereço
@@ -6107,17 +6114,18 @@ async function _geocodificar(endereco) {
 
   // Remove cidade para isolar rua e bairro
   const endSemCidade = (cidadeDetectada
-    ? endLimpo.replace(new RegExp(',?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + '\\s*,?','i'), '')
+    ? endLimpo.replace(new RegExp(',?\\s*[-–]?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + '\\s*,?','i'), '')
     : endLimpo)
-    .replace(/[-–,]\s*$/, '').trim();
+    .replace(/[-–,\s]+$/, '').trim();
 
   const partes = endSemCidade.split(/\s*[-–]\s*/).map(p => p.trim()).filter(Boolean);
   const ruaNum = partes[0] || '';
   const bairro = partes[1] || '';
-  const cidade = cidadeDetectada || 'Rio de Janeiro';
+  // Se não detectou cidade, não assume Rio de Janeiro — usa o endereço como está
+  const cidade = cidadeDetectada || '';
 
   // ── T1: rua + bairro + cidade + RJ com viewbox ──
-  if (ruaNum) {
+  if (ruaNum && cidade) {
     try {
       const q1 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ';
       const d1 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q1) + VBOX, { headers: hdrs })).json();
@@ -6127,7 +6135,7 @@ async function _geocodificar(endereco) {
   }
 
   // ── T2: query estruturada street + suburb + city + state + viewbox ──
-  if (ruaNum) {
+  if (ruaNum && cidade) {
     try {
       const url2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
         + '&street=' + encodeURIComponent(ruaNum)
@@ -6140,8 +6148,8 @@ async function _geocodificar(endereco) {
     await new Promise(r => setTimeout(r, 400));
   }
 
-  // ── T3: rua + bairro + cidade + RJ sem bounded (rua pode não estar no OSM) ──
-  if (ruaNum) {
+  // ── T3: rua + bairro + cidade + RJ sem bounded ──
+  if (ruaNum && cidade) {
     try {
       const q3 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ, Brasil';
       const d3 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q3), { headers: hdrs })).json();
@@ -6150,8 +6158,9 @@ async function _geocodificar(endereco) {
     await new Promise(r => setTimeout(r, 400));
   }
 
-  // ── T4: cascata com endereço sem a cidade ambígua (fallback final) ──
-  const tentativas = _montarTentativas(endSemCidade + ', ' + cidade + ', RJ');
+  // ── T4: cascata original com endereço tratado (fallback final) ──
+  const endFallback = cidade ? (endSemCidade + ', ' + cidade + ', RJ') : endLimpo;
+  const tentativas = _montarTentativas(endFallback);
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
