@@ -6088,7 +6088,7 @@ async function _geocodificar(endereco) {
   const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
   const VBOX = '&viewbox=-44.0,-22.5,-42.5,-23.2&bounded=1';
 
-  // Cidades da região metropolitana do RJ para detecção automática
+  // Cidades da região metropolitana do RJ
   const CIDADES_RJ = [
     'duque de caxias','nova iguaçu','nova igua','são gonçalo','são gon',
     'niterói','niteroi','belford roxo','mesquita','magé','mage',
@@ -6096,7 +6096,7 @@ async function _geocodificar(endereco) {
     'volta redonda','petrópolis','petropolis','rio de janeiro'
   ];
 
-  // Remove CEP e UF do final: "- RJ, 25086-120" ou ", RJ 25086-120"
+  // Remove CEP e UF do final: '- RJ, 25086-120'
   const endLimpo = endereco.replace(/,?\s*[-–]?\s*[A-Z]{2},?\s*\d{5}-?\d{3}\s*$/, '').trim();
 
   // Detecta cidade no endereço
@@ -6105,10 +6105,10 @@ async function _geocodificar(endereco) {
     if (endLimpo.toLowerCase().includes(c)) { cidadeDetectada = c; break; }
   }
 
-  // Remove cidade e "Rio de Janeiro" para isolar rua e bairro
+  // Remove cidade para isolar rua e bairro
   const endSemCidade = (cidadeDetectada
-    ? endLimpo.replace(new RegExp(',?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s*,?','i'), '')
-    : endLimpo.replace(/,?\s*[-–]?\s*rio\s+de\s+janeiro\s*$/i, ''))
+    ? endLimpo.replace(new RegExp(',?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + '\\s*,?','i'), '')
+    : endLimpo)
     .replace(/[-–,]\s*$/, '').trim();
 
   const partes = endSemCidade.split(/\s*[-–]\s*/).map(p => p.trim()).filter(Boolean);
@@ -6116,7 +6116,7 @@ async function _geocodificar(endereco) {
   const bairro = partes[1] || '';
   const cidade = cidadeDetectada || 'Rio de Janeiro';
 
-  // Tentativa 1: rua + bairro + cidade + RJ dentro do viewbox
+  // ── T1: rua + bairro + cidade + RJ com viewbox ──
   if (ruaNum) {
     try {
       const q1 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ';
@@ -6126,7 +6126,7 @@ async function _geocodificar(endereco) {
     await new Promise(r => setTimeout(r, 400));
   }
 
-  // Tentativa 2: query estruturada street + suburb + city + state + viewbox
+  // ── T2: query estruturada street + suburb + city + state + viewbox ──
   if (ruaNum) {
     try {
       const url2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
@@ -6140,8 +6140,18 @@ async function _geocodificar(endereco) {
     await new Promise(r => setTimeout(r, 400));
   }
 
-  // Tentativa 3: cascata original sem viewbox (fallback)
-  const tentativas = _montarTentativas(endereco);
+  // ── T3: rua + bairro + cidade + RJ sem bounded (rua pode não estar no OSM) ──
+  if (ruaNum) {
+    try {
+      const q3 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ, Brasil';
+      const d3 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q3), { headers: hdrs })).json();
+      if (d3 && d3.length > 0) return { lat: parseFloat(d3[0].lat), lng: parseFloat(d3[0].lon) };
+    } catch(_) {}
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  // ── T4: cascata com endereço sem a cidade ambígua (fallback final) ──
+  const tentativas = _montarTentativas(endSemCidade + ', ' + cidade + ', RJ');
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
