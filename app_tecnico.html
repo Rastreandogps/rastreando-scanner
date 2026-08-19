@@ -4709,7 +4709,7 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4904,7 +4904,7 @@ function _renderAdminListaPorIds(ids) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4997,6 +4997,16 @@ function fecharModalConcluir() {
   document.getElementById('modal-concluir').classList.remove('open');
   unlockScroll();
   pendingConcluir = null;
+}
+
+// Concluir OS diretamente pelo popup do mapa
+function concluirDoMapa(id, tech, nome, veiculo) {
+  const popupEl = document.querySelector('.leaflet-popup');
+  if (popupEl) popupEl.remove();
+  pendingConcluir = { id, tech };
+  document.getElementById('concluir-nome').textContent    = nome    || '';
+  document.getElementById('concluir-veiculo').textContent = veiculo || '';
+  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
 }
 
 // Executa a conclusão após confirmação
@@ -5169,7 +5179,7 @@ function enviarAcessoCliente() {
     '👤 *Login:* ' + login + '\n' +
     '🔑 *Senha:* 123456\n\n' +
     '📱 *Aplicativo iPhone:*\n' +
-    'https://apps.apple.com/br/app/nobgps-2-0/id6739852876?l=en-GB\n\n' +
+    'https://apps.apple.com/br/app/rastreando-gps-2-0/id6762429184\n\n' +
     '📱 *Aplicativo Android:*\n' +
     'https://play.google.com/store/apps/details?id=br.com.nobgps\n\n' +
     '💻 *Acesso pelo site:*\n' +
@@ -6085,88 +6095,16 @@ async function _geocodificar(endereco) {
   const coordDireta = _detectarCoordenada(endereco);
   if (coordDireta) return coordDireta;
 
-  const hdrs = { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' };
-  const VBOX = '&viewbox=-44.0,-22.5,-42.5,-23.2&bounded=1';
-
-  // Lista completa de municípios do RJ para detecção automática
-  const CIDADES_RJ = [
-    'araruama','arraial do cabo','cabo frio','búzios','buzios','iguaba grande',
-    'são pedro da aldeia','maricá','marica','saquarema','rio das ostras',
-    'macaé','macae','campos dos goytacazes','angra dos reis','paraty','parati',
-    'mangaratiba','itaguaí','itaguai','seropédica','seropedica','queimados',
-    'japeri','paracambi','nova iguaçu','nova igua','duque de caxias',
-    'belford roxo','mesquita','nilópolis','nilopolis','são gonçalo','são gon',
-    'niterói','niteroi','magé','mage','guapimirim','cachoeiras de macacu',
-    'petrópolis','petropolis','teresópolis','teresopolis','nova friburgo',
-    'volta redonda','barra mansa','resende','itatiaia','pinheiral',
-    'piraí','pirai','valença','três rios','tres rios',
-    'paraíba do sul','paraiba do sul','rio de janeiro'
-  ];
-
-  // Remove CEP e UF do final
-  const endLimpo = endereco.replace(/,?\s*[-–]?\s*[A-Z]{2},?\s*\d{5}-?\d{3}\s*$/, '').trim();
-
-  // Detecta cidade no endereço
-  let cidadeDetectada = '';
-  for (const c of CIDADES_RJ) {
-    if (endLimpo.toLowerCase().includes(c)) { cidadeDetectada = c; break; }
-  }
-
-  // Remove cidade para isolar rua e bairro
-  const endSemCidade = (cidadeDetectada
-    ? endLimpo.replace(new RegExp(',?\\s*[-–]?\\s*' + cidadeDetectada.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&') + '\\s*,?','i'), '')
-    : endLimpo)
-    .replace(/[-–,\s]+$/, '').trim();
-
-  const partes = endSemCidade.split(/\s*[-–]\s*/).map(p => p.trim()).filter(Boolean);
-  const ruaNum = partes[0] || '';
-  const bairro = partes[1] || '';
-  // Se não detectou cidade, não assume Rio de Janeiro — usa o endereço como está
-  const cidade = cidadeDetectada || '';
-
-  // ── T1: rua + bairro + cidade + RJ com viewbox ──
-  if (ruaNum && cidade) {
-    try {
-      const q1 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ';
-      const d1 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q1) + VBOX, { headers: hdrs })).json();
-      if (d1 && d1.length > 0) return { lat: parseFloat(d1[0].lat), lng: parseFloat(d1[0].lon) };
-    } catch(_) {}
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  // ── T2: query estruturada street + suburb + city + state + viewbox ──
-  if (ruaNum && cidade) {
-    try {
-      const url2 = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br'
-        + '&street=' + encodeURIComponent(ruaNum)
-        + (bairro ? '&suburb=' + encodeURIComponent(bairro) : '')
-        + '&city=' + encodeURIComponent(cidade)
-        + '&state=RJ&country=BR' + VBOX;
-      const d2 = await (await fetch(url2, { headers: hdrs })).json();
-      if (d2 && d2.length > 0) return { lat: parseFloat(d2[0].lat), lng: parseFloat(d2[0].lon) };
-    } catch(_) {}
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  // ── T3: rua + bairro + cidade + RJ sem bounded ──
-  if (ruaNum && cidade) {
-    try {
-      const q3 = ruaNum + (bairro ? ', ' + bairro : '') + ', ' + cidade + ', RJ, Brasil';
-      const d3 = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q3), { headers: hdrs })).json();
-      if (d3 && d3.length > 0) return { lat: parseFloat(d3[0].lat), lng: parseFloat(d3[0].lon) };
-    } catch(_) {}
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  // ── T4: cascata original com endereço tratado (fallback final) ──
-  const endFallback = cidade ? (endSemCidade + ', ' + cidade + ', RJ') : endLimpo;
-  const tentativas = _montarTentativas(endFallback);
+  // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
+  const tentativas = _montarTentativas(endereco);
   for (const q of tentativas) {
     try {
       const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
-      const data = await (await fetch(url, { headers: hdrs })).json();
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
+      const data = await res.json();
       if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
     } catch(_) {}
+    // Pequeno intervalo entre tentativas
     await new Promise(r => setTimeout(r, 400));
   }
   return null;
@@ -6432,6 +6370,13 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '</a>' +
         '</div>' +
       '</div>' +
+      // Botão Concluir OS (só no mapa do admin)
+      (modo === 'inicial' ?
+        '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
+          '<button onclick="concluirDoMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\',\'' + esc(o.nome || '') + '\',\'' + esc(o.veiculo || '') + '\')" ' +
+            'style="width:100%;padding:8px;background:#f0fdf4;color:#16a34a;border:2px solid #86efac;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">✅ Marcar como Concluído</button>' +
+        '</div>'
+      : '') +
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
         '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
