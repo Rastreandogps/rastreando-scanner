@@ -4709,7 +4709,7 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4904,7 +4904,7 @@ function _renderAdminListaPorIds(ids) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + (o.msgLog.data ? ' em ' + esc(o.msgLog.data) : '') + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4997,16 +4997,6 @@ function fecharModalConcluir() {
   document.getElementById('modal-concluir').classList.remove('open');
   unlockScroll();
   pendingConcluir = null;
-}
-
-// Concluir OS diretamente pelo popup do mapa
-function concluirDoMapa(id, tech, nome, veiculo) {
-  const popupEl = document.querySelector('.leaflet-popup');
-  if (popupEl) popupEl.remove();
-  pendingConcluir = { id, tech };
-  document.getElementById('concluir-nome').textContent    = nome    || '';
-  document.getElementById('concluir-veiculo').textContent = veiculo || '';
-  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
 }
 
 // Executa a conclusão após confirmação
@@ -5179,9 +5169,9 @@ function enviarAcessoCliente() {
     '👤 *Login:* ' + login + '\n' +
     '🔑 *Senha:* 123456\n\n' +
     '📱 *Aplicativo iPhone:*\n' +
-    'https://apps.apple.com/br/app/rastreando-gps-2-0/id6762429184\n\n' +
+    'https://apps.apple.com/br/app/nobgps-2-0/id6739852876?l=en-GB\n\n' +
     '📱 *Aplicativo Android:*\n' +
-    'https://play.google.com/store/apps/details?id=br.com.nobgps\n\n' +
+    'https://play.google.com/store/apps/details?id=br.com.rastreandogps2\n\n' +
     '💻 *Acesso pelo site:*\n' +
     'http://web.nobgps.com.br\n\n' +
     'Qualquer dúvida, estou à disposição! 🚀';
@@ -6370,13 +6360,6 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '</a>' +
         '</div>' +
       '</div>' +
-      // Botão Concluir OS (só no mapa do admin)
-      (modo === 'inicial' ?
-        '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
-          '<button onclick="concluirDoMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\',\'' + esc(o.nome || '') + '\',\'' + esc(o.veiculo || '') + '\')" ' +
-            'style="width:100%;padding:8px;background:#f0fdf4;color:#16a34a;border:2px solid #86efac;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">✅ Marcar como Concluído</button>' +
-        '</div>'
-      : '') +
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
         '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
