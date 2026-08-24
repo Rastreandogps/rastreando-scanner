@@ -227,7 +227,7 @@
       </div>
 
       <div class="field">
-        <label><span class="ico">📮</span> CEP <span id="cep-status" style="font-size:0.7rem;color:#E8B4CC;margin-left:4px;"></span></label>
+        <label><span class="ico">📮</span> CEP <span style="font-size:0.65rem;opacity:0.6;font-weight:300;text-transform:none;letter-spacing:0;">(opcional)</span> <span id="cep-status" style="font-size:0.7rem;color:#E8B4CC;margin-left:4px;"></span></label>
         <input type="text" id="cep" placeholder="00000-000" maxlength="9" inputmode="numeric" />
       </div>
 
@@ -322,6 +322,7 @@
       const cidade   = document.getElementById('cidade').value.trim();
 
       if (!nome || !telefone || !email || !cpf || !rua || !numero || !bairro || !cidade) {
+        // CEP é opcional — não entra na validação
         alert('Por favor, preencha todos os campos antes de enviar 🌸');
         return;
       }
