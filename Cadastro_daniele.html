@@ -218,7 +218,11 @@
       </div>
 
       <div class="field">
-        <label><span class="ico">🪪</span> CPF</label>
+        <label><span class="ico">📧</span> E-mail</label>
+        <input type="email" id="email" placeholder="seuemail@exemplo.com" inputmode="email" />
+      </div>
+
+      <div class="field">
         <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" />
       </div>
 
@@ -309,6 +313,7 @@
     function enviar() {
       const nome     = document.getElementById('nome').value.trim();
       const telefone = document.getElementById('telefone').value.trim();
+      const email    = document.getElementById('email').value.trim();
       const cpf      = document.getElementById('cpf').value.trim();
       const rua      = document.getElementById('rua').value.trim();
       const numero   = document.getElementById('numero').value.trim();
@@ -316,7 +321,7 @@
       const bairro   = document.getElementById('bairro').value.trim();
       const cidade   = document.getElementById('cidade').value.trim();
 
-      if (!nome || !telefone || !cpf || !rua || !numero || !bairro || !cidade) {
+      if (!nome || !telefone || !email || !cpf || !rua || !numero || !bairro || !cidade) {
         alert('Por favor, preencha todos os campos antes de enviar 🌸');
         return;
       }
@@ -325,6 +330,7 @@
         `✨ *Novo Cadastro de Cliente* ✨\n\n` +
         `👤 *Nome:* ${nome}\n` +
         `📱 *WhatsApp:* ${telefone}\n` +
+        `📧 *E-mail:* ${email}\n` +
         `🪪 *CPF:* ${cpf}\n\n` +
         `📍 *Endereço:*\n` +
         `▪️ Rua: ${rua}, ${numero}\n` +
