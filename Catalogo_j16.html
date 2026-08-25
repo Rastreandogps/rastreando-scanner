@@ -173,6 +173,39 @@
   .copy-btn.ok     { color: var(--green); border-color: var(--green-br); background: var(--green-bg); }
   .copy-btn.err    { color: var(--red); }
 
+  /* ── NUMBER BAR ── */
+  .num-bar {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 10px 1rem; position: sticky; top: 0; z-index: 100;
+  }
+  .num-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .num-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px;
+    padding: 8px 12px; outline: none;
+  }
+  .num-input:focus { border-color: var(--blue); }
+  .num-input::placeholder { color: var(--faint); }
+  .num-save-btn {
+    background: var(--blue-bg); border: 1px solid var(--blue-br);
+    color: var(--blue); border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .num-save-btn.saved { color: var(--green); border-color: var(--green-br); background: var(--green-bg); }
+
+  /* ── SMS BTN ── */
+  .sms-btn {
+    flex-shrink: 0; width: 32px; height: 32px;
+    border-radius: 7px; border: 1px solid var(--green-br);
+    background: var(--green-bg); color: var(--green);
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .15s;
+    font-size: 15px;
+  }
+  .sms-btn:hover { background: rgba(45,214,122,.20); }
+  .sms-btn.no-num { border-color: var(--amber-br); background: var(--amber-bg); color: var(--amber); }
+
   /* ── DIVIDER ── */
   hr.div { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
@@ -224,9 +257,17 @@
   <p>Referência completa · Ativação, desativação e descrição</p>
 </header>
 
-<div class="tabs-wrap">
+<div class="num-bar">
+    <label>📱 Nº do chip:</label>
+    <input class="num-input" id="chip-num" type="tel" placeholder="Ex: 21999990000" oninput="saveNum()">
+    <button class="num-save-btn" id="save-indicator">Salvo ✓</button>
+  </div>
+  <div class="tabs-wrap">
   <div class="tabs">
-    <button class="tab active" onclick="showTab('moto',this)">
+    <button class="tab active" onclick="showTab('favoritos',this)">
+      <span class="tab-icon">⭐</span> Favoritos
+    </button>
+    <button class="tab" onclick="showTab('moto',this)">
       <span class="tab-icon">🏍</span> Moto / Bateria
     </button>
     <button class="tab" onclick="showTab('bloqueio',this)">
@@ -256,8 +297,85 @@
   </div>
 </div>
 
+<!-- ════════════ ABA: FAVORITOS ════════════ -->
+<div class="content active" id="tab-favoritos">
+
+  <div class="alert alert-green" style="margin-bottom:14px">⭐ Seus comandos de uso frequente — prontos para copiar ou enviar via SMS.</div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Servidor — DNS principal</span></div>
+    <p class="card-desc">Aponta o rastreador para o servidor gpsweb.app via DNS na porta 5023.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">DNS</span>
+      <span class="cmd-code" id="fav1a">SERVER,1,gpsweb.app,5023,0#</span>
+      <button class="copy-btn" onclick="cop('fav1a',this)">📋</button><button class="sms-btn" onclick="sms('fav1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Servidor — IP direto (backup)</span></div>
+    <p class="card-desc">Aponta via IP fixo 45.55.218.97 na porta 6023. Use quando o DNS não responder.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">IP</span>
+      <span class="cmd-code" id="fav2a">SERVER,0,45.55.218.97,6023,0#</span>
+      <button class="copy-btn" onclick="cop('fav2a',this)">📋</button><button class="sms-btn" onclick="sms('fav2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">APN — Vivo M2M</span></div>
+    <p class="card-desc">Configura a APN da Vivo M2M para os chips utilizados.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">APN</span>
+      <span class="cmd-code" id="fav3a">APN,ss.vivo.com.br,vivo,vivo#</span>
+      <button class="copy-btn" onclick="cop('fav3a',this)">📋</button><button class="sms-btn" onclick="sms('fav3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Ativar tensão bateria externa</span></div>
+    <p class="card-desc">Habilita leitura da tensão da bateria do veículo pela plataforma.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="fav4a">SZCS#GT06IEXVOL=1</span>
+      <button class="copy-btn" onclick="cop('fav4a',this)">📋</button><button class="sms-btn" onclick="sms('fav4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Bloqueio imediato</span></div>
+    <p class="card-desc">Ativa o bloqueio instantâneo ao cortar ignição ou alimentação.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="fav5a">SZCS#SOURCE_OFF_TYPE=1</span>
+      <button class="copy-btn" onclick="cop('fav5a',this)">📋</button><button class="sms-btn" onclick="sms('fav5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Bloquear veículo</span></div>
+    <p class="card-desc">Aciona o relé e corta o circuito do veículo imediatamente.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Bloquear</span>
+      <span class="cmd-code" id="fav6a">RELAY,1#</span>
+      <button class="copy-btn" onclick="cop('fav6a',this)">📋</button><button class="sms-btn" onclick="sms('fav6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Desbloquear veículo</span></div>
+    <p class="card-desc">Libera o relé e restaura o circuito do veículo.</p>
+    <div class="cmd-row">
+      <span class="badge b-off">Desbloquear</span>
+      <span class="cmd-code" id="fav7a">RELAY,0#</span>
+      <button class="copy-btn" onclick="cop('fav7a',this)">📋</button><button class="sms-btn" onclick="sms('fav7a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-favoritos -->
+
 <!-- ════════════ ABA: MOTO / BATERIA ════════════ -->
-<div class="content active" id="tab-moto">
+<div class="content" id="tab-moto">
 
   <div class="card featured">
     <div class="rec-banner">Recomendado para moto</div>
@@ -267,13 +385,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="m1a">SZCS#GPS_DISSLP=0</span>
-      <button class="copy-btn" onclick="cop('m1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m1a',this)">📋</button><button class="sms-btn" onclick="sms('m1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — GPS fica sempre ligado</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="m1b">SZCS#GPS_DISSLP=1</span>
-      <button class="copy-btn" onclick="cop('m1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m1b',this)">📋</button><button class="sms-btn" onclick="sms('m1b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -285,19 +403,19 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="m2a">SZCS#SLPDISCONNECT=1</span>
-      <button class="copy-btn" onclick="cop('m2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m2a',this)">📋</button><button class="sms-btn" onclick="sms('m2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Modo 2 — desconecta plataforma e SMS também</div>
     <div class="cmd-row">
       <span class="badge b-warn">Forte</span>
       <span class="cmd-code" id="m2b">SZCS#SLPDISCONNECT=2</span>
-      <button class="copy-btn" onclick="cop('m2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m2b',this)">📋</button><button class="sms-btn" onclick="sms('m2b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — mantém sempre conectado</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="m2c">SZCS#SLPDISCONNECT=0</span>
-      <button class="copy-btn" onclick="cop('m2c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m2c',this)">📋</button><button class="sms-btn" onclick="sms('m2c',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -309,13 +427,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Moto</span>
       <span class="cmd-code" id="m3a">TIMER,60,7200#</span>
-      <button class="copy-btn" onclick="cop('m3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m3a',this)">📋</button><button class="sms-btn" onclick="sms('m3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Padrão carro — 60s ligada / 3600s (1h) desligada</div>
     <div class="cmd-row">
       <span class="badge b-muted">Carro</span>
       <span class="cmd-code" id="m3b">TIMER,60,3600#</span>
-      <button class="copy-btn" onclick="cop('m3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m3b',this)">📋</button><button class="sms-btn" onclick="sms('m3b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-info">ℹ️ Mín: 5s · Máx: 18000s. Sempre reiniciar (RESET#) após alterar.</div>
   </div>
@@ -327,23 +445,23 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="m4a">SZCS#GPS_DISSLP=0</span>
-      <button class="copy-btn" onclick="cop('m4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m4a',this)">📋</button><button class="sms-btn" onclick="sms('m4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="m4b">SZCS#SLPDISCONNECT=1</span>
-      <button class="copy-btn" onclick="cop('m4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m4b',this)">📋</button><button class="sms-btn" onclick="sms('m4b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — enviar os dois</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="m4c">SZCS#GPS_DISSLP=1</span>
-      <button class="copy-btn" onclick="cop('m4c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m4c',this)">📋</button><button class="sms-btn" onclick="sms('m4c',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="m4d">SZCS#SLPDISCONNECT=0</span>
-      <button class="copy-btn" onclick="cop('m4d',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m4d',this)">📋</button><button class="sms-btn" onclick="sms('m4d',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -354,13 +472,13 @@
     <div class="cmd-row">
       <span class="badge b-warn">Ativar</span>
       <span class="cmd-code" id="m5a">SZCS#MTK_DISSLP=0</span>
-      <button class="copy-btn" onclick="cop('m5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m5a',this)">📋</button><button class="sms-btn" onclick="sms('m5a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao modo online normal</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="m5b">SZCS#MTK_DISSLP=1</span>
-      <button class="copy-btn" onclick="cop('m5b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m5b',this)">📋</button><button class="sms-btn" onclick="sms('m5b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-warn">⚠️ Neste modo o equipamento pode não responder SMS. Use DEFENSE para controlar o tempo antes de dormir (padrão 3 min).</div>
   </div>
@@ -372,13 +490,13 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="m6a">CXCS#VIBL</span>
-      <button class="copy-btn" onclick="cop('m6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m6a',this)">📋</button><button class="sms-btn" onclick="sms('m6a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Ajustar nível (1 a 6 — padrão: 3)</div>
     <div class="cmd-row">
       <span class="badge b-muted">Definir</span>
       <span class="cmd-code" id="m6b">SZCS#VIBL=3</span>
-      <button class="copy-btn" onclick="cop('m6b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m6b',this)">📋</button><button class="sms-btn" onclick="sms('m6b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -388,7 +506,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Enviar</span>
       <span class="cmd-code" id="m7a">RESET#</span>
-      <button class="copy-btn" onclick="cop('m7a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('m7a',this)">📋</button><button class="sms-btn" onclick="sms('m7a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -404,13 +522,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Bloquear</span>
       <span class="cmd-code" id="b1a">RELAY,1#</span>
-      <button class="copy-btn" onclick="cop('b1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b1a',this)">📋</button><button class="sms-btn" onclick="sms('b1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desbloquear</div>
     <div class="cmd-row">
       <span class="badge b-off">Desbloquear</span>
       <span class="cmd-code" id="b1b">RELAY,0#</span>
-      <button class="copy-btn" onclick="cop('b1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b1b',this)">📋</button><button class="sms-btn" onclick="sms('b1b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -421,13 +539,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="b2a">SZCS#SOURCE_OFF_TYPE=1</span>
-      <button class="copy-btn" onclick="cop('b2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b2a',this)">📋</button><button class="sms-btn" onclick="sms('b2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="b2b">SZCS#SOURCE_OFF_TYPE=0</span>
-      <button class="copy-btn" onclick="cop('b2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b2b',this)">📋</button><button class="sms-btn" onclick="sms('b2b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-warn">⚠️ Com bloqueio imediato ativo, ao acionar RELAY,1# o veículo trava na hora — mesmo em movimento. Use com cuidado.</div>
   </div>
@@ -439,13 +557,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="b3a">POWERALM,ON,1,2,1#</span>
-      <button class="copy-btn" onclick="cop('b3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b3a',this)">📋</button><button class="sms-btn" onclick="sms('b3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="b3b">POWERALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('b3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b3b',this)">📋</button><button class="sms-btn" onclick="sms('b3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -456,19 +574,19 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="b4a">JAMMER,ON,1#</span>
-      <button class="copy-btn" onclick="cop('b4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b4a',this)">📋</button><button class="sms-btn" onclick="sms('b4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="b4b">JAMMER,OFF#</span>
-      <button class="copy-btn" onclick="cop('b4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b4b',this)">📋</button><button class="sms-btn" onclick="sms('b4b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Consultar status</div>
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="b4c">SZCS#GL_MONI=0</span>
-      <button class="copy-btn" onclick="cop('b4c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b4c',this)">📋</button><button class="sms-btn" onclick="sms('b4c',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -479,13 +597,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="b5a">SENALM,ON#</span>
-      <button class="copy-btn" onclick="cop('b5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b5a',this)">📋</button><button class="sms-btn" onclick="sms('b5a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="b5b">SENALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('b5b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b5b',this)">📋</button><button class="sms-btn" onclick="sms('b5b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -496,12 +614,12 @@
     <div class="cmd-row">
       <span class="badge b-muted">Moto</span>
       <span class="cmd-code" id="b6a">DEFENSE,5#</span>
-      <button class="copy-btn" onclick="cop('b6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b6a',this)">📋</button><button class="sms-btn" onclick="sms('b6a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row">
       <span class="badge b-muted">Carro</span>
       <span class="cmd-code" id="b6b">DEFENSE,10#</span>
-      <button class="copy-btn" onclick="cop('b6b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('b6b',this)">📋</button><button class="sms-btn" onclick="sms('b6b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -517,13 +635,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="i1a">SZCS#ACCLINE=0</span>
-      <button class="copy-btn" onclick="cop('i1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i1a',this)">📋</button><button class="sms-btn" onclick="sms('i1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ignição por fio (ACC)</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="i1b">SZCS#ACCLINE=1</span>
-      <button class="copy-btn" onclick="cop('i1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i1b',this)">📋</button><button class="sms-btn" onclick="sms('i1b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-info">ℹ️ Valor 0 = ignição virtual ligada / Valor 1 = ignição por fio (pós-chave físico).</div>
   </div>
@@ -535,13 +653,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="i2a">ACCALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('i2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i2a',this)">📋</button><button class="sms-btn" onclick="sms('i2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="i2b">ACCALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('i2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i2b',this)">📋</button><button class="sms-btn" onclick="sms('i2b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -552,13 +670,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="i3a">ACCOFFALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('i3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i3a',this)">📋</button><button class="sms-btn" onclick="sms('i3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="i3b">ACCOFFALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('i3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i3b',this)">📋</button><button class="sms-btn" onclick="sms('i3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -569,13 +687,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="i4a">SZCS#GT06SEL=1</span>
-      <button class="copy-btn" onclick="cop('i4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i4a',this)">📋</button><button class="sms-btn" onclick="sms('i4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao GT06 padrão</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="i4b">SZCS#GT06SEL=0</span>
-      <button class="copy-btn" onclick="cop('i4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i4b',this)">📋</button><button class="sms-btn" onclick="sms('i4b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -585,7 +703,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Enviar</span>
       <span class="cmd-code" id="i5a">GMT,W,0,0#</span>
-      <button class="copy-btn" onclick="cop('i5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i5a',this)">📋</button><button class="sms-btn" onclick="sms('i5a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -596,7 +714,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Definir</span>
       <span class="cmd-code" id="i6a">SZCS#ANGLEVALUE=10-045</span>
-      <button class="copy-btn" onclick="cop('i6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('i6a',this)">📋</button><button class="sms-btn" onclick="sms('i6a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-info">ℹ️ Primeiros 2 dígitos = intervalo mínimo (10s), últimos 3 = ângulo mínimo (45°). Ajuste conforme necessidade.</div>
   </div>
@@ -613,13 +731,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ba1a">SZCS#GT06SEL=1#GT06IEXVOL=2</span>
-      <button class="copy-btn" onclick="cop('ba1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba1a',this)">📋</button><button class="sms-btn" onclick="sms('ba1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar monitoramento de tensão</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ba1b">SZCS#GT06SEL=1#GT06IEXVOL=0</span>
-      <button class="copy-btn" onclick="cop('ba1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba1b',this)">📋</button><button class="sms-btn" onclick="sms('ba1b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-info">ℹ️ Requer protocolo extendido ativo (GT06SEL=1). O comando já inclui os dois juntos.</div>
   </div>
@@ -631,13 +749,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ba2a">POWERALM,ON,1,2,1#</span>
-      <button class="copy-btn" onclick="cop('ba2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba2a',this)">📋</button><button class="sms-btn" onclick="sms('ba2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar alarme</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ba2b">POWERALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('ba2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba2b',this)">📋</button><button class="sms-btn" onclick="sms('ba2b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -648,13 +766,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ba3a">BATALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('ba3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba3a',this)">📋</button><button class="sms-btn" onclick="sms('ba3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ba3b">BATALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('ba3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba3b',this)">📋</button><button class="sms-btn" onclick="sms('ba3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -665,13 +783,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ba4a">ADT,on#</span>
-      <button class="copy-btn" onclick="cop('ba4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba4a',this)">📋</button><button class="sms-btn" onclick="sms('ba4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ba4b">ADT,off#</span>
-      <button class="copy-btn" onclick="cop('ba4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba4b',this)">📋</button><button class="sms-btn" onclick="sms('ba4b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -681,12 +799,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ba5a">SZCS#BATT_VERIFY=1</span>
-      <button class="copy-btn" onclick="cop('ba5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba5a',this)">📋</button><button class="sms-btn" onclick="sms('ba5a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ba5b">SZCS#BATT_VERIFY=0</span>
-      <button class="copy-btn" onclick="cop('ba5b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ba5b',this)">📋</button><button class="sms-btn" onclick="sms('ba5b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -702,32 +820,32 @@
     <div class="cmd-row">
       <span class="badge b-muted">Formato</span>
       <span class="cmd-code" id="r1f">APN,endereco,usuario,senha#</span>
-      <button class="copy-btn" onclick="cop('r1f',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r1f',this)">📋</button><button class="sms-btn" onclick="sms('r1f',this)" title="Enviar via SMS">💬</button>
     </div>
     <hr class="div">
     <div class="cmd-sublabel">Vivo M2M</div>
     <div class="cmd-row">
       <span class="badge b-muted">Vivo</span>
       <span class="cmd-code" id="r1a">APN,m2m.wc.br,vivo,vivo#</span>
-      <button class="copy-btn" onclick="cop('r1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r1a',this)">📋</button><button class="sms-btn" onclick="sms('r1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Claro M2M</div>
     <div class="cmd-row">
       <span class="badge b-muted">Claro</span>
       <span class="cmd-code" id="r1b">APN,mgdata.claro.com.br,claro,claro#</span>
-      <button class="copy-btn" onclick="cop('r1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r1b',this)">📋</button><button class="sms-btn" onclick="sms('r1b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Algar M2M</div>
     <div class="cmd-row">
       <span class="badge b-muted">Algar</span>
       <span class="cmd-code" id="r1c">APN,meta.br,algar,algar#</span>
-      <button class="copy-btn" onclick="cop('r1c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r1c',this)">📋</button><button class="sms-btn" onclick="sms('r1c',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Arqia / Emnify (sem login)</div>
     <div class="cmd-row">
       <span class="badge b-muted">Arqia</span>
       <span class="cmd-code" id="r1d">APN,meta.br,,#</span>
-      <button class="copy-btn" onclick="cop('r1d',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r1d',this)">📋</button><button class="sms-btn" onclick="sms('r1d',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -738,13 +856,13 @@
     <div class="cmd-row">
       <span class="badge b-muted">DNS</span>
       <span class="cmd-code" id="r2a">SERVER,1,seuservidor.com.br,PORTA,0#</span>
-      <button class="copy-btn" onclick="cop('r2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r2a',this)">📋</button><button class="sms-btn" onclick="sms('r2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Por IP direto</div>
     <div class="cmd-row">
       <span class="badge b-muted">IP</span>
       <span class="cmd-code" id="r2b">SERVER,0,xxx.xxx.xxx.xxx,PORTA,0#</span>
-      <button class="copy-btn" onclick="cop('r2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r2b',this)">📋</button><button class="sms-btn" onclick="sms('r2b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-info">ℹ️ Portas mais comuns: 5023 / 6023 / 7023. Confirme com sua plataforma antes de enviar.</div>
   </div>
@@ -755,12 +873,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ligar</span>
       <span class="cmd-code" id="r3a">GPRSON,1#</span>
-      <button class="copy-btn" onclick="cop('r3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r3a',this)">📋</button><button class="sms-btn" onclick="sms('r3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desligar</span>
       <span class="cmd-code" id="r3b">GPRSON,0#</span>
-      <button class="copy-btn" onclick="cop('r3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r3b',this)">📋</button><button class="sms-btn" onclick="sms('r3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -770,17 +888,17 @@
     <div class="cmd-row">
       <span class="badge b-on">Auto 2G/4G</span>
       <span class="cmd-code" id="r4a">SZCS#NETSELECT=0</span>
-      <button class="copy-btn" onclick="cop('r4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r4a',this)">📋</button><button class="sms-btn" onclick="sms('r4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-muted">Só 4G</span>
       <span class="cmd-code" id="r4b">SZCS#NETSELECT=1</span>
-      <button class="copy-btn" onclick="cop('r4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r4b',this)">📋</button><button class="sms-btn" onclick="sms('r4b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-muted">Só 2G</span>
       <span class="cmd-code" id="r4c">SZCS#NETSELECT=2</span>
-      <button class="copy-btn" onclick="cop('r4c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r4c',this)">📋</button><button class="sms-btn" onclick="sms('r4c',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -790,7 +908,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Definir</span>
       <span class="cmd-code" id="r5a">HBT,900,900#</span>
-      <button class="copy-btn" onclick="cop('r5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r5a',this)">📋</button><button class="sms-btn" onclick="sms('r5a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -800,12 +918,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="r6a">SZCS#TIMING_RESET=1</span>
-      <button class="copy-btn" onclick="cop('r6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r6a',this)">📋</button><button class="sms-btn" onclick="sms('r6a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="r6b">SZCS#TIMING_RESET=0</span>
-      <button class="copy-btn" onclick="cop('r6b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r6b',this)">📋</button><button class="sms-btn" onclick="sms('r6b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -815,7 +933,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Enviar</span>
       <span class="cmd-code" id="r7a">ASETAPN,OFF#</span>
-      <button class="copy-btn" onclick="cop('r7a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('r7a',this)">📋</button><button class="sms-btn" onclick="sms('r7a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -831,13 +949,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al1a">SPEED,80#</span>
-      <button class="copy-btn" onclick="cop('al1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al1a',this)">📋</button><button class="sms-btn" onclick="sms('al1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al1b">SPEED,0#</span>
-      <button class="copy-btn" onclick="cop('al1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al1b',this)">📋</button><button class="sms-btn" onclick="sms('al1b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -847,12 +965,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al2a">POWERALM,ON,1,2,1#</span>
-      <button class="copy-btn" onclick="cop('al2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al2a',this)">📋</button><button class="sms-btn" onclick="sms('al2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al2b">POWERALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('al2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al2b',this)">📋</button><button class="sms-btn" onclick="sms('al2b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -862,12 +980,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al3a">BATALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('al3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al3a',this)">📋</button><button class="sms-btn" onclick="sms('al3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al3b">BATALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('al3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al3b',this)">📋</button><button class="sms-btn" onclick="sms('al3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -877,12 +995,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al4a">SENALM,ON#</span>
-      <button class="copy-btn" onclick="cop('al4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al4a',this)">📋</button><button class="sms-btn" onclick="sms('al4a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al4b">SENALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('al4b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al4b',this)">📋</button><button class="sms-btn" onclick="sms('al4b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -893,23 +1011,23 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al5a">ACCALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('al5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al5a',this)">📋</button><button class="sms-btn" onclick="sms('al5a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:6px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al5b">ACCALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('al5b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al5b',this)">📋</button><button class="sms-btn" onclick="sms('al5b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:10px">Ignição desligada</div>
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al5c">ACCOFFALM,ON,0#</span>
-      <button class="copy-btn" onclick="cop('al5c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al5c',this)">📋</button><button class="sms-btn" onclick="sms('al5c',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:6px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al5d">ACCOFFALM,OFF#</span>
-      <button class="copy-btn" onclick="cop('al5d',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al5d',this)">📋</button><button class="sms-btn" onclick="sms('al5d',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -919,12 +1037,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="al6a">JAMMER,ON,1#</span>
-      <button class="copy-btn" onclick="cop('al6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al6a',this)">📋</button><button class="sms-btn" onclick="sms('al6a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="al6b">JAMMER,OFF#</span>
-      <button class="copy-btn" onclick="cop('al6b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('al6b',this)">📋</button><button class="sms-btn" onclick="sms('al6b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -940,13 +1058,13 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ho1a">SZCS#GT06SEL=1#GT06METER=1</span>
-      <button class="copy-btn" onclick="cop('ho1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho1a',this)">📋</button><button class="sms-btn" onclick="sms('ho1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Desativar hodômetro</div>
     <div class="cmd-row">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ho1b">SZCS#GT06METER=0</span>
-      <button class="copy-btn" onclick="cop('ho1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho1b',this)">📋</button><button class="sms-btn" onclick="sms('ho1b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -956,7 +1074,7 @@
     <div class="cmd-row">
       <span class="badge b-warn">Zerar</span>
       <span class="cmd-code" id="ho2a">MILEAGE=0#</span>
-      <button class="copy-btn" onclick="cop('ho2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho2a',this)">📋</button><button class="sms-btn" onclick="sms('ho2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-warn">⚠️ Ação irreversível — zera a quilometragem acumulada. Confirme antes de enviar.</div>
   </div>
@@ -967,12 +1085,12 @@
     <div class="cmd-row">
       <span class="badge b-on">Ativar</span>
       <span class="cmd-code" id="ho3a">SZCS#GT06ICCID=1</span>
-      <button class="copy-btn" onclick="cop('ho3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho3a',this)">📋</button><button class="sms-btn" onclick="sms('ho3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-off">Desativar</span>
       <span class="cmd-code" id="ho3b">SZCS#GT06ICCID=0</span>
-      <button class="copy-btn" onclick="cop('ho3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho3b',this)">📋</button><button class="sms-btn" onclick="sms('ho3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -982,7 +1100,7 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="ho4a">BLINDINFO#</span>
-      <button class="copy-btn" onclick="cop('ho4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho4a',this)">📋</button><button class="sms-btn" onclick="sms('ho4a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -992,7 +1110,7 @@
     <div class="cmd-row">
       <span class="badge b-warn">Limpar</span>
       <span class="cmd-code" id="ho5a">CLEAR#</span>
-      <button class="copy-btn" onclick="cop('ho5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('ho5a',this)">📋</button><button class="sms-btn" onclick="sms('ho5a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1007,7 +1125,7 @@
     <div class="cmd-row">
       <span class="badge b-muted">Enviar</span>
       <span class="cmd-code" id="cfg1a">RESET#</span>
-      <button class="copy-btn" onclick="cop('cfg1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg1a',this)">📋</button><button class="sms-btn" onclick="sms('cfg1a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1018,13 +1136,13 @@
     <div class="cmd-row">
       <span class="badge b-warn">Restaurar</span>
       <span class="cmd-code" id="cfg2a">FACTORY#</span>
-      <button class="copy-btn" onclick="cop('cfg2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg2a',this)">📋</button><button class="sms-btn" onclick="sms('cfg2a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Restaurar tudo inclusive servidor e APN</div>
     <div class="cmd-row">
       <span class="badge b-red">Total</span>
       <span class="cmd-code" id="cfg2b">FACTORYALL#</span>
-      <button class="copy-btn" onclick="cop('cfg2b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg2b',this)">📋</button><button class="sms-btn" onclick="sms('cfg2b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="alert alert-warn">⚠️ Após FACTORY# reconfigure servidor, APN e fuso horário antes de reiniciar.</div>
   </div>
@@ -1036,31 +1154,31 @@
     <div class="cmd-row">
       <span class="badge b-muted">1</span>
       <span class="cmd-code" id="cfg3a">GMT,W,0,0#</span>
-      <button class="copy-btn" onclick="cop('cfg3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg3a',this)">📋</button><button class="sms-btn" onclick="sms('cfg3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">2 — APN da operadora</div>
     <div class="cmd-row">
       <span class="badge b-muted">2</span>
       <span class="cmd-code" id="cfg3b">APN,apn,usuario,senha#</span>
-      <button class="copy-btn" onclick="cop('cfg3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg3b',this)">📋</button><button class="sms-btn" onclick="sms('cfg3b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">3 — Servidor (DNS)</div>
     <div class="cmd-row">
       <span class="badge b-muted">3</span>
       <span class="cmd-code" id="cfg3c">SERVER,1,seuservidor.com,PORTA,0#</span>
-      <button class="copy-btn" onclick="cop('cfg3c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg3c',this)">📋</button><button class="sms-btn" onclick="sms('cfg3c',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">4 — Timer de transmissão</div>
     <div class="cmd-row">
       <span class="badge b-muted">4</span>
       <span class="cmd-code" id="cfg3d">TIMER,60,3600#</span>
-      <button class="copy-btn" onclick="cop('cfg3d',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg3d',this)">📋</button><button class="sms-btn" onclick="sms('cfg3d',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">5 — Reiniciar</div>
     <div class="cmd-row">
       <span class="badge b-muted">5</span>
       <span class="cmd-code" id="cfg3e">RESET#</span>
-      <button class="copy-btn" onclick="cop('cfg3e',this)">📋</button>
+      <button class="copy-btn" onclick="cop('cfg3e',this)">📋</button><button class="sms-btn" onclick="sms('cfg3e',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1075,19 +1193,19 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d1a">PARAM#</span>
-      <button class="copy-btn" onclick="cop('d1a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d1a',this)">📋</button><button class="sms-btn" onclick="sms('d1a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Simples</div>
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d1b">SCXSZ#</span>
-      <button class="copy-btn" onclick="cop('d1b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d1b',this)">📋</button><button class="sms-btn" onclick="sms('d1b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Somente GPRS</div>
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d1c">GPRSSET#</span>
-      <button class="copy-btn" onclick="cop('d1c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d1c',this)">📋</button><button class="sms-btn" onclick="sms('d1c',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1097,7 +1215,7 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d2a">STATUS#</span>
-      <button class="copy-btn" onclick="cop('d2a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d2a',this)">📋</button><button class="sms-btn" onclick="sms('d2a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1107,12 +1225,12 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d3a">POSITION#</span>
-      <button class="copy-btn" onclick="cop('d3a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d3a',this)">📋</button><button class="sms-btn" onclick="sms('d3a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-row" style="margin-top:7px">
       <span class="badge b-info">Alternativo</span>
       <span class="cmd-code" id="d3b">WHERE#</span>
-      <button class="copy-btn" onclick="cop('d3b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d3b',this)">📋</button><button class="sms-btn" onclick="sms('d3b',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1121,7 +1239,7 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d4a">VERSION#</span>
-      <button class="copy-btn" onclick="cop('d4a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d4a',this)">📋</button><button class="sms-btn" onclick="sms('d4a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1132,19 +1250,19 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d5a">CXCS#SLPDISCONNECT</span>
-      <button class="copy-btn" onclick="cop('d5a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d5a',this)">📋</button><button class="sms-btn" onclick="sms('d5a',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">Super Sleep (MTK)</div>
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d5b">CXCS#MTK_DISSLP</span>
-      <button class="copy-btn" onclick="cop('d5b',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d5b',this)">📋</button><button class="sms-btn" onclick="sms('d5b',this)" title="Enviar via SMS">💬</button>
     </div>
     <div class="cmd-sublabel" style="margin-top:8px">GPS sleep</div>
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d5c">CXCS#GPS_DISSLP</span>
-      <button class="copy-btn" onclick="cop('d5c',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d5c',this)">📋</button><button class="sms-btn" onclick="sms('d5c',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1153,7 +1271,7 @@
     <div class="cmd-row">
       <span class="badge b-info">Consultar</span>
       <span class="cmd-code" id="d6a">CXCS#VIBL</span>
-      <button class="copy-btn" onclick="cop('d6a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d6a',this)">📋</button><button class="sms-btn" onclick="sms('d6a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1163,7 +1281,7 @@
     <div class="cmd-row">
       <span class="badge b-warn">Limpar</span>
       <span class="cmd-code" id="d7a">CLEAR#</span>
-      <button class="copy-btn" onclick="cop('d7a',this)">📋</button>
+      <button class="copy-btn" onclick="cop('d7a',this)">📋</button><button class="sms-btn" onclick="sms('d7a',this)" title="Enviar via SMS">💬</button>
     </div>
   </div>
 
@@ -1174,25 +1292,56 @@
 </footer>
 
 <script>
+// ── NÚMERO DO CHIP ──
+var chipNum = localStorage.getItem('chipNum') || '';
+window.onload = function() {
+  var inp = document.getElementById('chip-num');
+  if (inp && chipNum) { inp.value = chipNum; }
+};
+function saveNum() {
+  chipNum = document.getElementById('chip-num').value.replace(/\D/g,'');
+  localStorage.setItem('chipNum', chipNum);
+  var btn = document.getElementById('save-indicator');
+  btn.textContent = 'Salvo ✓';
+  btn.classList.add('saved');
+  setTimeout(function() { btn.classList.remove('saved'); }, 1000);
+}
+
+// ── ABAS ──
 function showTab(id, btn) {
   document.querySelectorAll('.content').forEach(function(el) { el.classList.remove('active'); });
   document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
 }
+
+// ── COPIAR ──
 function cop(id, btn) {
   var txt = document.getElementById(id).textContent;
   navigator.clipboard.writeText(txt).then(function() {
     btn.classList.add('ok');
     btn.textContent = '✅';
-    setTimeout(function() {
-      btn.classList.remove('ok');
-      btn.textContent = '📋';
-    }, 1500);
+    setTimeout(function() { btn.classList.remove('ok'); btn.textContent = '📋'; }, 1500);
   }).catch(function() {
     btn.textContent = '❌';
     setTimeout(function() { btn.textContent = '📋'; }, 1500);
   });
+}
+
+// ── ENVIAR VIA SMS ──
+function sms(id, btn) {
+  var num = (document.getElementById('chip-num').value || '').replace(/\D/g,'');
+  if (!num) {
+    btn.classList.add('no-num');
+    btn.textContent = '⚠️';
+    document.getElementById('chip-num').focus();
+    setTimeout(function() { btn.classList.remove('no-num'); btn.textContent = '💬'; }, 2000);
+    return;
+  }
+  var cmd = document.getElementById(id).textContent;
+  var encoded = encodeURIComponent(cmd);
+  // Tenta sms: URI — funciona no Android e iOS
+  window.location.href = 'sms:' + num + '?body=' + encoded;
 }
 </script>
 </body>
