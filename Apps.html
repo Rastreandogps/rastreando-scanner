@@ -264,7 +264,10 @@
   </div>
   <div class="tabs-wrap">
   <div class="tabs">
-    <button class="tab active" onclick="showTab('moto',this)">
+    <button class="tab active" onclick="showTab('favoritos',this)">
+      <span class="tab-icon">⭐</span> Favoritos
+    </button>
+    <button class="tab" onclick="showTab('moto',this)">
       <span class="tab-icon">🏍</span> Moto / Bateria
     </button>
     <button class="tab" onclick="showTab('bloqueio',this)">
@@ -294,8 +297,85 @@
   </div>
 </div>
 
+<!-- ════════════ ABA: FAVORITOS ════════════ -->
+<div class="content active" id="tab-favoritos">
+
+  <div class="alert alert-green" style="margin-bottom:14px">⭐ Seus comandos de uso frequente — prontos para copiar ou enviar via SMS.</div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Servidor — DNS principal</span></div>
+    <p class="card-desc">Aponta o rastreador para o servidor gpsweb.app via DNS na porta 5023.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">DNS</span>
+      <span class="cmd-code" id="fav1a">SERVER,1,gpsweb.app,5023,0#</span>
+      <button class="copy-btn" onclick="cop('fav1a',this)">📋</button><button class="sms-btn" onclick="sms('fav1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Servidor — IP direto (backup)</span></div>
+    <p class="card-desc">Aponta via IP fixo 45.55.218.97 na porta 6023. Use quando o DNS não responder.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">IP</span>
+      <span class="cmd-code" id="fav2a">SERVER,0,45.55.218.97,6023,0#</span>
+      <button class="copy-btn" onclick="cop('fav2a',this)">📋</button><button class="sms-btn" onclick="sms('fav2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">APN — Vivo M2M</span></div>
+    <p class="card-desc">Configura a APN da Vivo M2M para os chips utilizados.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">APN</span>
+      <span class="cmd-code" id="fav3a">APN,ss.vivo.com.br,vivo,vivo#</span>
+      <button class="copy-btn" onclick="cop('fav3a',this)">📋</button><button class="sms-btn" onclick="sms('fav3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Ativar tensão bateria externa</span></div>
+    <p class="card-desc">Habilita leitura da tensão da bateria do veículo pela plataforma.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="fav4a">SZCS#GT06IEXVOL=1</span>
+      <button class="copy-btn" onclick="cop('fav4a',this)">📋</button><button class="sms-btn" onclick="sms('fav4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Bloqueio imediato</span></div>
+    <p class="card-desc">Ativa o bloqueio instantâneo ao cortar ignição ou alimentação.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="fav5a">SZCS#SOURCE_OFF_TYPE=1</span>
+      <button class="copy-btn" onclick="cop('fav5a',this)">📋</button><button class="sms-btn" onclick="sms('fav5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Bloquear veículo</span></div>
+    <p class="card-desc">Aciona o relé e corta o circuito do veículo imediatamente.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Bloquear</span>
+      <span class="cmd-code" id="fav6a">RELAY,1#</span>
+      <button class="copy-btn" onclick="cop('fav6a',this)">📋</button><button class="sms-btn" onclick="sms('fav6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Desbloquear veículo</span></div>
+    <p class="card-desc">Libera o relé e restaura o circuito do veículo.</p>
+    <div class="cmd-row">
+      <span class="badge b-off">Desbloquear</span>
+      <span class="cmd-code" id="fav7a">RELAY,0#</span>
+      <button class="copy-btn" onclick="cop('fav7a',this)">📋</button><button class="sms-btn" onclick="sms('fav7a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-favoritos -->
+
 <!-- ════════════ ABA: MOTO / BATERIA ════════════ -->
-<div class="content active" id="tab-moto">
+<div class="content" id="tab-moto">
 
   <div class="card featured">
     <div class="rec-banner">Recomendado para moto</div>
