@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Central de aplicativos Rastreando GPS" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Rastreando GPS" />
+  <title>Rastreando GPS — Apps</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #273348;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.14);
+      --text:      #f1f5f9;
+      --muted:     #94a3b8;
+      --accent:    #3b82f6;
+      --radius:    14px;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 40px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 28px 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo i { color: #fff; font-size: 22px; }
+
+    .header-text h1 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── Section ── */
+    section {
+      padding: 20px 16px 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* ── App Button ── */
+    .app-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-btn:hover {
+      background: var(--surface2);
+      border-color: var(--border-h);
+    }
+
+    .app-btn:active {
+      transform: scale(0.96);
+      background: var(--surface2);
+    }
+
+    /* full-width variant */
+    .app-btn.wide {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .app-btn.wide .info { display: flex; flex-direction: column; gap: 2px; }
+
+    /* ── Icon ── */
+    .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .icon i { font-size: 19px; }
+
+    /* color variants */
+    .ic-blue   { background: rgba(59,130,246,0.15); } .ic-blue   i { color: #60a5fa; }
+    .ic-green  { background: rgba(34,197,94,0.13);  } .ic-green  i { color: #4ade80; }
+    .ic-red    { background: rgba(239,68,68,0.13);  } .ic-red    i { color: #f87171; }
+    .ic-orange { background: rgba(251,146,60,0.13); } .ic-orange i { color: #fb923c; }
+    .ic-purple { background: rgba(167,139,250,0.13);} .ic-purple i { color: #c084fc; }
+    .ic-teal   { background: rgba(45,212,191,0.12); } .ic-teal   i { color: #2dd4bf; }
+    .ic-indigo { background: rgba(99,102,241,0.14); } .ic-indigo i { color: #818cf8; }
+    .ic-pink   { background: rgba(244,114,182,0.13);} .ic-pink   i { color: #f472b6; }
+    .ic-sky    { background: rgba(56,189,248,0.13); } .ic-sky    i { color: #38bdf8; }
+    .ic-gray   { background: rgba(148,163,184,0.12);} .ic-gray   i { color: #94a3b8; }
+
+    /* ── Labels ── */
+    .app-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .app-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 28px 20px 0;
+      font-size: 12px;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .app-btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
+    <div class="header-text">
+      <h1>Rastreando GPS</h1>
+      <p>Central de Aplicativos</p>
+    </div>
+  </header>
+
+  <!-- GESTÃO INTERNA -->
+  <section>
+    <p class="section-label">Gestão Interna</p>
+    <div class="grid">
+
+      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/app_tecnico.html" target="_blank" rel="noopener">
+        <div class="icon ic-blue"><i class="ti ti-tool" aria-hidden="true"></i></div>
+        <span class="app-name">APP Técnico</span>
+        <span class="app-desc">Ordens de serviço</span>
+      </a>
+
+      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/financeiro.html" target="_blank" rel="noopener">
+        <div class="icon ic-green"><i class="ti ti-cash" aria-hidden="true"></i></div>
+        <span class="app-name">Financeiro</span>
+        <span class="app-desc">Dashboard financeiro</span>
+      </a>
+
+      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/cobranca.html" target="_blank" rel="noopener">
+        <div class="icon ic-red"><i class="ti ti-receipt" aria-hidden="true"></i></div>
+        <span class="app-name">CobrançaRápida</span>
+        <span class="app-desc">Cobranças e dívidas</span>
+      </a>
+
+      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/" target="_blank" rel="noopener">
+        <div class="icon ic-indigo"><i class="ti ti-scan" aria-hidden="true"></i></div>
+        <span class="app-name">Scanner</span>
+        <span class="app-desc">Leitor principal</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section>
+    <p class="section-label">Clientes</p>
+    <div class="grid">
+
+      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/agendamentocliente.html" target="_blank" rel="noopener">
+        <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
+        <span class="app-name">Agendamento</span>
+        <span class="app-desc">Formulário de OS</span>
+      </a>
+
+      <a class="app-btn" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
+        <div class="icon ic-purple"><i class="ti ti-user-circle" aria-hidden="true"></i></div>
+        <span class="app-name">Área do Cliente</span>
+        <span class="app-desc">Portal do cliente</span>
+      </a>
+
+      <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
+        <div class="icon ic-orange"><i class="ti ti-world" aria-hidden="true"></i></div>
+        <div class="info">
+          <span class="app-name">Site Rastreando GPS</span>
+          <span class="app-desc">rastreandogpsbr.com.br</span>
+        </div>
+      </a>
+
+      <a class="app-btn wide" href="https://rastreandogpsbrmarket.com.br/" target="_blank" rel="noopener">
+        <div class="icon ic-pink"><i class="ti ti-shopping-cart" aria-hidden="true"></i></div>
+        <div class="info">
+          <span class="app-name">Market</span>
+          <span class="app-desc">rastreandogpsbrmarket.com.br</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- SISTEMAS EXTERNOS -->
+  <section>
+    <p class="section-label">Sistemas Externos</p>
+    <div class="grid">
+
+      <a class="app-btn" href="https://dashboard.smsmarket.com.br/" target="_blank" rel="noopener">
+        <div class="icon ic-teal"><i class="ti ti-message" aria-hidden="true"></i></div>
+        <span class="app-name">SMS Market</span>
+        <span class="app-desc">Disparos de SMS</span>
+      </a>
+
+      <a class="app-btn" href="https://smartmanager2.smartsim.com.br/auth/realms/0d5a3954/protocol/openid-connect/auth?client_id=portal&redirect_uri=https%3A%2F%2Fsmartmanager2.smartsim.com.br%2Fmanagement%2Finventory%3Fmsisdn%3D11920631756&state=4104abac-f230-4236-8aa1-22c6f871a414&response_mode=fragment&response_type=code&scope=openid&nonce=0c559fc7-4b0c-4cae-af5e-0ed28a09ec36" target="_blank" rel="noopener">
+        <div class="icon ic-sky"><i class="ti ti-sim-card" aria-hidden="true"></i></div>
+        <span class="app-name">SmartSIM</span>
+        <span class="app-desc">Gestão de chips</span>
+      </a>
+
+      <a class="app-btn" href="https://shift.laboratoriodecorreas.com.br/shift/lis/correas/elis/s01.iu.web.Login.cls?config=UNICO" target="_blank" rel="noopener">
+        <div class="icon ic-orange"><i class="ti ti-package" aria-hidden="true"></i></div>
+        <span class="app-name">Shift / Correias</span>
+        <span class="app-desc">Sistema de estoque</span>
+      </a>
+
+      <a class="app-btn" href="https://apps.apple.com/br/app/traccar-client/id843156974" target="_blank" rel="noopener">
+        <div class="icon ic-gray"><i class="ti ti-location" aria-hidden="true"></i></div>
+        <span class="app-name">Traccar Client</span>
+        <span class="app-desc">App rastreamento</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- OUTROS -->
+  <section>
+    <p class="section-label">Outros</p>
+    <div class="grid">
+
+      <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/remedio.html" target="_blank" rel="noopener">
+        <div class="icon ic-red"><i class="ti ti-pill" aria-hidden="true"></i></div>
+        <div class="info">
+          <span class="app-name">Remédio</span>
+          <span class="app-desc">Controle de medicamentos</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <footer>Rastreando GPS &copy; 2025</footer>
+
+</body>
+</html>
