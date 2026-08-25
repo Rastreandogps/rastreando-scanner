@@ -905,7 +905,10 @@ input.invalid {
   }
 
   function formatPhone(value){
-    var digits = value.replace(/\D/g, '').slice(0, 11);
+    var digits = value.replace(/\D/g, '');
+    // Remove 55 do Brasil se vier com DDI
+    if(digits.length > 11 && digits.startsWith('55')) digits = digits.slice(2);
+    digits = digits.slice(0, 11);
     if(digits.length > 10) return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
     if(digits.length > 6)  return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
     if(digits.length > 2)  return digits.replace(/(\d{2})(\d{0,5})/, '($1) $2');
