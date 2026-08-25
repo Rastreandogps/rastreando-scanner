@@ -1,226 +1,1268 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
-  <meta name="description" content="Central de aplicativos Rastreando GPS" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Rastreando GPS" />
-  <title>Rastreando GPS — Apps</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J16 / GT06 — Catálogo de Comandos</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b24;
+    --card:     #1c2233;
+    --card2:    #212840;
+    --border:   #2a3350;
+    --text:     #e2e8f4;
+    --muted:    #6b7a99;
+    --faint:    #3a4566;
+    --green:    #2dd67a;
+    --green-bg: rgba(45,214,122,.10);
+    --green-br: rgba(45,214,122,.25);
+    --red:      #f86060;
+    --red-bg:   rgba(248,96,96,.10);
+    --red-br:   rgba(248,96,96,.25);
+    --amber:    #f5a623;
+    --amber-bg: rgba(245,166,35,.10);
+    --amber-br: rgba(245,166,35,.25);
+    --blue:     #4f87f8;
+    --blue-bg:  rgba(79,135,248,.10);
+    --blue-br:  rgba(79,135,248,.25);
+    --purple:   #a87cff;
+    --purple-bg:rgba(168,124,255,.10);
+    --purple-br:rgba(168,124,255,.25);
+    --mono: 'Courier New', Courier, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
 
-  <link rel="manifest" id="manifest-link" />
-  <link rel="apple-touch-icon" href="data:image/png;base64,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" />
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+  .header-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    color: var(--blue); text-transform: uppercase; margin-bottom: 5px;
+  }
+  header h1 { font-size: 21px; font-weight: 700; margin-bottom: 3px; }
+  header p  { font-size: 13px; color: var(--muted); }
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />
+  /* ── TABS ── */
+  .tabs-wrap {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+  .tabs {
+    display: flex;
+    min-width: max-content;
+    padding: 0 1rem;
+    gap: 2px;
+  }
+  .tab {
+    padding: 12px 15px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--blue); }
+  .tab-icon { font-size: 15px; }
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:        #0f172a;
-      --surface:   #1e293b;
-      --surface2:  #273348;
-      --border:    rgba(255,255,255,0.07);
-      --border-h:  rgba(255,255,255,0.14);
-      --text:      #f1f5f9;
-      --muted:     #94a3b8;
-      --accent:    #3b82f6;
-      --radius:    14px;
-    }
-    html, body {
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 15px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-    body { max-width: 480px; margin: 0 auto; padding: 0 0 40px; }
-    header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 28px 20px 20px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 6px;
-    }
-    .logo {
-      width: 44px; height: 44px; border-radius: 11px;
-      background: var(--accent);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .logo i { color: #fff; font-size: 22px; }
-    .header-text h1 { font-size: 17px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
-    .header-text p  { font-size: 13px; color: var(--muted); }
-    section { padding: 20px 16px 0; }
-    .section-label {
-      font-size: 11px; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.08em;
-      margin-bottom: 10px; padding-left: 4px;
-    }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .app-btn {
-      display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-      padding: 14px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      text-decoration: none; cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .app-btn:hover  { background: var(--surface2); border-color: var(--border-h); }
-    .app-btn:active { transform: scale(0.96); background: var(--surface2); }
-    .app-btn.wide {
-      grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 14px;
-    }
-    .app-btn.wide .info { display: flex; flex-direction: column; gap: 2px; }
-    .icon {
-      width: 38px; height: 38px; border-radius: 9px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .icon i { font-size: 19px; }
-    .ic-blue   { background: rgba(59,130,246,0.15); } .ic-blue   i { color: #60a5fa; }
-    .ic-green  { background: rgba(34,197,94,0.13);  } .ic-green  i { color: #4ade80; }
-    .ic-red    { background: rgba(239,68,68,0.13);  } .ic-red    i { color: #f87171; }
-    .ic-orange { background: rgba(251,146,60,0.13); } .ic-orange i { color: #fb923c; }
-    .ic-purple { background: rgba(167,139,250,0.13);} .ic-purple i { color: #c084fc; }
-    .ic-teal   { background: rgba(45,212,191,0.12); } .ic-teal   i { color: #2dd4bf; }
-    .ic-indigo { background: rgba(99,102,241,0.14); } .ic-indigo i { color: #818cf8; }
-    .ic-pink   { background: rgba(244,114,182,0.13);} .ic-pink   i { color: #f472b6; }
-    .ic-sky    { background: rgba(56,189,248,0.13); } .ic-sky    i { color: #38bdf8; }
-    .ic-gray   { background: rgba(148,163,184,0.12);} .ic-gray   i { color: #94a3b8; }
-    .ic-yellow { background: rgba(234,179,8,0.13);  } .ic-yellow i { color: #facc15; }
-    .app-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
-    .app-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
-    footer { text-align: center; padding: 28px 20px 0; font-size: 12px; color: var(--muted); opacity: 0.5; }
-    @media (prefers-reduced-motion: reduce) { .app-btn { transition: none; } }
-  </style>
+  /* ── CONTENT ── */
+  .content { display: none; padding: 1.25rem 1rem 3rem; max-width: 600px; margin: 0 auto; }
+  .content.active { display: block; }
+
+  /* ── SECTION ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 1.5rem 0 .6rem;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .card.featured { border-color: var(--green-br); }
+
+  .card-head {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px;
+  }
+  .card-num {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .card-desc  { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.55; padding-left: 32px; }
+  .card-desc.no-indent { padding-left: 0; }
+
+  /* ── ROW ── */
+  .cmd-sublabel {
+    font-size: 11px; color: var(--faint); margin-bottom: 5px; padding-left: 2px;
+  }
+  .cmd-row {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
+  }
+  .cmd-row:last-of-type { margin-bottom: 0; }
+
+  /* ── BADGE ── */
+  .badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 5px;
+    white-space: nowrap; flex-shrink: 0; border: 1px solid;
+  }
+  .b-on     { color: var(--green);  background: var(--green-bg);  border-color: var(--green-br);  }
+  .b-off    { color: var(--red);    background: var(--red-bg);    border-color: var(--red-br);    }
+  .b-warn   { color: var(--amber);  background: var(--amber-bg);  border-color: var(--amber-br);  }
+  .b-info   { color: var(--blue);   background: var(--blue-bg);   border-color: var(--blue-br);   }
+  .b-purple { color: var(--purple); background: var(--purple-bg); border-color: var(--purple-br); }
+  .b-muted  { color: var(--muted);  background: rgba(107,122,153,.10); border-color: rgba(107,122,153,.25); }
+
+  /* ── CODE ── */
+  .cmd-code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    flex: 1;
+    word-break: break-all;
+  }
+  .copy-btn {
+    flex-shrink: 0; width: 32px; height: 32px;
+    border-radius: 7px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--muted);
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .15s;
+    font-size: 15px;
+  }
+  .copy-btn:hover  { background: var(--card2); color: var(--text); border-color: var(--faint); }
+  .copy-btn.ok     { color: var(--green); border-color: var(--green-br); background: var(--green-bg); }
+  .copy-btn.err    { color: var(--red); }
+
+  /* ── NUMBER BAR ── */
+  .num-bar {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 10px 1rem; position: sticky; top: 0; z-index: 100;
+  }
+  .num-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .num-input {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px;
+    padding: 8px 12px; outline: none;
+  }
+  .num-input:focus { border-color: var(--blue); }
+  .num-input::placeholder { color: var(--faint); }
+  .num-save-btn {
+    background: var(--blue-bg); border: 1px solid var(--blue-br);
+    color: var(--blue); border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .num-save-btn.saved { color: var(--green); border-color: var(--green-br); background: var(--green-bg); }
+
+  /* ── SMS BTN ── */
+  .sms-btn {
+    flex-shrink: 0; width: 32px; height: 32px;
+    border-radius: 7px; border: 1px solid var(--green-br);
+    background: var(--green-bg); color: var(--green);
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .15s;
+    font-size: 15px;
+  }
+  .sms-btn:hover { background: rgba(45,214,122,.20); }
+  .sms-btn.no-num { border-color: var(--amber-br); background: var(--amber-bg); color: var(--amber); }
+
+  /* ── DIVIDER ── */
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* ── ALERT BOXES ── */
+  .alert {
+    display: flex; gap: 8px; align-items: flex-start;
+    border-radius: 8px; padding: 9px 11px;
+    font-size: 12px; line-height: 1.5; margin-top: 10px;
+    border: 1px solid;
+  }
+  .alert-warn   { background: var(--amber-bg);  border-color: var(--amber-br);  color: var(--amber); }
+  .alert-info   { background: var(--blue-bg);   border-color: var(--blue-br);   color: #7da4fc; }
+  .alert-green  { background: var(--green-bg);  border-color: var(--green-br);  color: var(--green); }
+  .alert-purple { background: var(--purple-bg); border-color: var(--purple-br); color: var(--purple); }
+
+  /* ── REC BANNER ── */
+  .rec-banner {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; color: var(--green);
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px;
+  }
+  .rec-banner::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--green);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; font-size: 12px; color: var(--muted);
+    padding: 1.5rem 1rem 2rem;
+    border-top: 1px solid var(--border);
+    max-width: 600px; margin: 0 auto;
+  }
+
+  /* ── PILL TAG ── */
+  .pill {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px; margin-left: 6px;
+    vertical-align: middle;
+  }
+  .pill-moto { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-br); }
+</style>
 </head>
 <body>
 
-  <header>
-    <div class="logo"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
-    <div class="header-text">
-      <h1>Rastreando GPS</h1>
-      <p>Central de Aplicativos</p>
+<header>
+  <p class="header-tag">Rastreador J16 · Protocolo GT06</p>
+  <h1>Catálogo de Comandos SMS</h1>
+  <p>Referência completa · Ativação, desativação e descrição</p>
+</header>
+
+<div class="num-bar">
+    <label>📱 Nº do chip:</label>
+    <input class="num-input" id="chip-num" type="tel" placeholder="Ex: 21999990000" oninput="saveNum()">
+    <button class="num-save-btn" id="save-indicator">Salvo ✓</button>
+  </div>
+  <div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('moto',this)">
+      <span class="tab-icon">🏍</span> Moto / Bateria
+    </button>
+    <button class="tab" onclick="showTab('bloqueio',this)">
+      <span class="tab-icon">🔒</span> Bloqueio
+    </button>
+    <button class="tab" onclick="showTab('ignition',this)">
+      <span class="tab-icon">🔑</span> Ignição
+    </button>
+    <button class="tab" onclick="showTab('bateria',this)">
+      <span class="tab-icon">🔋</span> Bat. Externa
+    </button>
+    <button class="tab" onclick="showTab('rede',this)">
+      <span class="tab-icon">📡</span> Rede / GPRS
+    </button>
+    <button class="tab" onclick="showTab('alarmes',this)">
+      <span class="tab-icon">🔔</span> Alarmes
+    </button>
+    <button class="tab" onclick="showTab('hodometro',this)">
+      <span class="tab-icon">📏</span> Hodômetro
+    </button>
+    <button class="tab" onclick="showTab('config',this)">
+      <span class="tab-icon">⚙️</span> Configuração
+    </button>
+    <button class="tab" onclick="showTab('diagnostico',this)">
+      <span class="tab-icon">🔍</span> Diagnóstico
+    </button>
+  </div>
+</div>
+
+<!-- ════════════ ABA: MOTO / BATERIA ════════════ -->
+<div class="content active" id="tab-moto">
+
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Desligar GPS com ignição off</span></div>
+    <p class="card-desc">Desativa o módulo GPS ~3 min após a ignição ser desligada. Principal comando para evitar descarga da bateria.</p>
+    <div class="cmd-sublabel">Ativar economia</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m1a">SZCS#GPS_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m1a',this)">📋</button><button class="sms-btn" onclick="sms('m1a',this)" title="Enviar via SMS">💬</button>
     </div>
-  </header>
-
-  <!-- GESTÃO INTERNA -->
-  <section>
-    <p class="section-label">Gestão Interna</p>
-    <div class="grid">
-      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/app_tecnico.html" target="_blank" rel="noopener">
-        <div class="icon ic-blue"><i class="ti ti-tool" aria-hidden="true"></i></div>
-        <span class="app-name">APP Técnico</span>
-        <span class="app-desc">Ordens de serviço</span>
-      </a>
-      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/financeiro.html" target="_blank" rel="noopener">
-        <div class="icon ic-green"><i class="ti ti-cash" aria-hidden="true"></i></div>
-        <span class="app-name">Financeiro</span>
-        <span class="app-desc">Dashboard financeiro</span>
-      </a>
-      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/cobranca.html" target="_blank" rel="noopener">
-        <div class="icon ic-red"><i class="ti ti-receipt" aria-hidden="true"></i></div>
-        <span class="app-name">CobrançaRápida</span>
-        <span class="app-desc">Cobranças e dívidas</span>
-      </a>
-      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/" target="_blank" rel="noopener">
-        <div class="icon ic-indigo"><i class="ti ti-scan" aria-hidden="true"></i></div>
-        <span class="app-name">Scanner</span>
-        <span class="app-desc">Leitor principal</span>
-      </a>
-      <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/Catalogo_j16.html" target="_blank" rel="noopener">
-        <div class="icon ic-yellow"><i class="ti ti-terminal-2" aria-hidden="true"></i></div>
-        <div class="info">
-          <span class="app-name">Catálogo J16 / GT06</span>
-          <span class="app-desc">Comandos SMS do rastreador</span>
-        </div>
-      </a>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — GPS fica sempre ligado</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m1b">SZCS#GPS_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m1b',this)">📋</button><button class="sms-btn" onclick="sms('m1b',this)" title="Enviar via SMS">💬</button>
     </div>
-  </section>
+  </div>
 
-  <!-- CLIENTES -->
-  <section>
-    <p class="section-label">Clientes</p>
-    <div class="grid">
-      <a class="app-btn" href="https://rastreandogps.github.io/rastreando-scanner/agendamentocliente.html" target="_blank" rel="noopener">
-        <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
-        <span class="app-name">Agendamento</span>
-        <span class="app-desc">Formulário de OS</span>
-      </a>
-      <a class="app-btn" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
-        <div class="icon ic-purple"><i class="ti ti-user-circle" aria-hidden="true"></i></div>
-        <span class="app-name">Área do Cliente</span>
-        <span class="app-desc">Portal do cliente</span>
-      </a>
-      <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
-        <div class="icon ic-orange"><i class="ti ti-world" aria-hidden="true"></i></div>
-        <div class="info">
-          <span class="app-name">Site Rastreando GPS</span>
-          <span class="app-desc">rastreandogpsbr.com.br</span>
-        </div>
-      </a>
-      <a class="app-btn wide" href="https://rastreandogpsbrmarket.com.br/" target="_blank" rel="noopener">
-        <div class="icon ic-pink"><i class="ti ti-shopping-cart" aria-hidden="true"></i></div>
-        <div class="info">
-          <span class="app-name">Market</span>
-          <span class="app-desc">rastreandogpsbrmarket.com.br</span>
-        </div>
-      </a>
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Desconectar heartbeat com ignição off</span></div>
+    <p class="card-desc">Para de pingar no servidor quando parado. Acorda ao detectar vibração, movimento ou corte de energia.</p>
+    <div class="cmd-sublabel">Modo 1 — desconecta da plataforma, SMS continua</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m2a">SZCS#SLPDISCONNECT=1</span>
+      <button class="copy-btn" onclick="cop('m2a',this)">📋</button><button class="sms-btn" onclick="sms('m2a',this)" title="Enviar via SMS">💬</button>
     </div>
-  </section>
-
-  <!-- SISTEMAS EXTERNOS -->
-  <section>
-    <p class="section-label">Sistemas Externos</p>
-    <div class="grid">
-      <a class="app-btn" href="https://dashboard.smsmarket.com.br/" target="_blank" rel="noopener">
-        <div class="icon ic-teal"><i class="ti ti-message" aria-hidden="true"></i></div>
-        <span class="app-name">SMS Market</span>
-        <span class="app-desc">Disparos de SMS</span>
-      </a>
-      <a class="app-btn" href="https://smartmanager2.smartsim.com.br/auth/realms/0d5a3954/protocol/openid-connect/auth?client_id=portal&redirect_uri=https%3A%2F%2Fsmartmanager2.smartsim.com.br%2Fmanagement%2Finventory%3Fmsisdn%3D11920631756&state=4104abac-f230-4236-8aa1-22c6f871a414&response_mode=fragment&response_type=code&scope=openid&nonce=0c559fc7-4b0c-4cae-af5e-0ed28a09ec36" target="_blank" rel="noopener">
-        <div class="icon ic-sky"><i class="ti ti-device-sim" aria-hidden="true"></i></div>
-        <span class="app-name">SmartSIM</span>
-        <span class="app-desc">Gestão de chips</span>
-      </a>
-      <a class="app-btn" href="https://shift.laboratoriodecorreas.com.br/shift/lis/correas/elis/s01.iu.web.Login.cls?config=UNICO" target="_blank" rel="noopener">
-        <div class="icon ic-orange"><i class="ti ti-package" aria-hidden="true"></i></div>
-        <span class="app-name">Shift / Correias</span>
-        <span class="app-desc">Sistema de estoque</span>
-      </a>
-      <a class="app-btn" href="https://apps.apple.com/br/app/traccar-client/id843156974" target="_blank" rel="noopener">
-        <div class="icon ic-gray"><i class="ti ti-location" aria-hidden="true"></i></div>
-        <span class="app-name">Traccar Client</span>
-        <span class="app-desc">App rastreamento</span>
-      </a>
+    <div class="cmd-sublabel" style="margin-top:8px">Modo 2 — desconecta plataforma e SMS também</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Forte</span>
+      <span class="cmd-code" id="m2b">SZCS#SLPDISCONNECT=2</span>
+      <button class="copy-btn" onclick="cop('m2b',this)">📋</button><button class="sms-btn" onclick="sms('m2b',this)" title="Enviar via SMS">💬</button>
     </div>
-  </section>
-
-  <!-- OUTROS -->
-  <section>
-    <p class="section-label">Outros</p>
-    <div class="grid">
-      <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/remedio.html" target="_blank" rel="noopener">
-        <div class="icon ic-red"><i class="ti ti-pill" aria-hidden="true"></i></div>
-        <div class="info">
-          <span class="app-name">Remédio</span>
-          <span class="app-desc">Controle de medicamentos</span>
-        </div>
-      </a>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — mantém sempre conectado</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m2c">SZCS#SLPDISCONNECT=0</span>
+      <button class="copy-btn" onclick="cop('m2c',this)">📋</button><button class="sms-btn" onclick="sms('m2c',this)" title="Enviar via SMS">💬</button>
     </div>
-  </section>
+  </div>
 
-  <footer>Rastreando GPS &copy; 2025</footer>
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Timer de transmissão</span></div>
+    <p class="card-desc">Intervalo de envio de posições. Formato: <strong>TIMER,<em>ligada</em>,<em>desligada</em>#</strong> (segundos).</p>
+    <div class="cmd-sublabel">Padrão moto — 60s ligada / 7200s (2h) desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Moto</span>
+      <span class="cmd-code" id="m3a">TIMER,60,7200#</span>
+      <button class="copy-btn" onclick="cop('m3a',this)">📋</button><button class="sms-btn" onclick="sms('m3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Padrão carro — 60s ligada / 3600s (1h) desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Carro</span>
+      <span class="cmd-code" id="m3b">TIMER,60,3600#</span>
+      <button class="copy-btn" onclick="cop('m3b',this)">📋</button><button class="sms-btn" onclick="sms('m3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Mín: 5s · Máx: 18000s. Sempre reiniciar (RESET#) após alterar.</div>
+  </div>
 
-  <script>
-    const manifestData = atob("eyJuYW1lIjogIlJhc3RyZWFuZG8gR1BTIFx1MjAxNCBBcHBzIiwgInNob3J0X25hbWUiOiAiUmFzdHJlYW5kbyBHUFMiLCAiZGVzY3JpcHRpb24iOiAiQ2VudHJhbCBkZSBhcGxpY2F0aXZvcyBSYXN0cmVhbmRvIEdQUyIsICJzdGFydF91cmwiOiAiLi8iLCAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwgImJhY2tncm91bmRfY29sb3IiOiAiIzBmMTcyYSIsICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIiwgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwgImxhbmciOiAicHQtQlIiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FZQUFBQlMzR3dIQUFBQUJtSkxSMFFBL3dEL0FQK2d2YWVUQUFBZ0FFbEVRVlI0bk8yZGQ1Z2N4WlhBZjlYZE03TjVOaWV0VU00U2traENCSkdFU1NLRFFSYlk1ckM1TStEREJwOHh4aHkyd2VGSU5tQU9IMkFiQTJkak9CQUNqQWhDZ0FBSklZU3lWa0tndUpJMng5bmRTZDExZjZ4MnRhdmRuZGd6MHl2MTcvdjIrelRkMWRWUE0vV3FYbFc5ZWs5Z0Fkd2xFMFlaT0thbzBwZ2doWnlBRkJNUTVJUElCSmtMWkFHT1ZNdHBFeFZlb0FVcG1oR3lSY0orZ2RpSWtPdU1vTEd1clg3TGw0Q1JhaUZGS2w1YVVEQittTzV3ekRYZ1RDSGxHY0R3Vk1oaGswcEVDN0JZWWl4U2ZLNDNtNXZYTnFkRWltUzlLRDkvYkk3aGRGNHVwZndtaURtQWtxeDMyMWllQUlKM2hSU1BOOWRzZXAwa2pnd0pWNENzc3FtVEZOMzRzUkRpS3BEcGlYNmZ6WkJudTVEaU1SSG8vRk5UMC9hV1JMOHNZUXFRVnp6MWFLbklIMG5KTjBDcWlYcVB6V0ZMRTBMOFYwdGErOFBzM09sTjFFdE1WNENNd2tsbERwVUhRVnlkaVBwdGpqaTJJN2lqcFhyemk0QTB1M0l6RzZqaUxwbnlIZUEra0c0VDY3V3hBZVRicXVhNHZuSHYraW96YXpWRkFkd2wwMGFEL2p4d3ZCbjEyZGdNUXFORTN0UmFVL204V1JYR3JRRHUwaWxYSUhuSzd2VnRrb1dBNTdJY3JUZFVWVlYxbWxCWHJKeXU1WmJVUGlUaCsvRUtZV01UQTZzY3VuNUpmZjNXZmZGVUVwc0NqQjNyY3JjNm4wTndSVHd2dDdHSkJ3bjdFT0xTMXVwTm44WmFSOVFLa0pzN0kxYzYvWXNRekluMXBUWTJKdElCOHVLV21zb2xzVHdjbFFMazVzN0lsUzcvZThDTVdGNW1ZNU1nWWxhQ2lOMFJLaW9xMGcybi8xWHN4bTlqUFRKQWVUV25lTW81MFQ0WXFRS29iY0hzNTRUZzFHaGZZR09USEdTNkVDek1LWmwwWWpSUFJhUUF1U1dUZjRjVWw4VW1tSTFOc3BEcEFyRXd0MnpTaUVpZkNEc0g2RnJubHkvR0o1aU5UZklRc0JtZjgrUklYS3hEamdEdWttbWp1emE1Ykd5R0RoSW1HeTcvMDBUUXdZZnkwbFRUc2dyZkJFYWJKWmlOVGJJUU1OR1ZYVmpyODlTdkNsVnUwQkVndDJUU3pkaStQVFpER0NIRmc3bkZVNmFITERQUXhTNlhackVGeUVtSVpEWTJTVU5zYUtsSk94WldCd2E2TytBSTBPWFBiemQrbThNQk9jMWQydkdEd2U3Mkd3RnlpNmJNa0lyOGZLQjdOalpEbEE2aHlNbk4reXQzSFhxajN3Z2doYndUdS9IYkhGNWtTRjA4TU5DTlBnMDl1M3phUkVYWE4yRkhiTEE1REpGQ3pEclVjN1JQUXhkQi9mWkRyOW5ZSEM0b2t2ODg5RnJQQ0pDZlB6WkhkemozQXhsSmxjckdKb2xJSVU1b3JkN1VzemZRMDlzYlR1ZmwySTNmNWpCSFNPN28vYmxIQWJvaXR0bllITzdJQ3dzTEo1UjNmMUlBOG9jZFhYRWdYS0dOemVHT0ZsQzFuczVlQVRCMGZTNzI1TmZtU0VISTZ6Z3cvKzFTQU1NNFBaWHkyTmdrRmNsNGQ5blVZK0dBQWdnaFRrK3BRRFkyU1VicThqd0F4VjB5WVJRUThRa2FHNXZEQVVVWTV3Sm9CbzRwU3VvVGRReUtLM2NrNlNWVDBUSUtFQ1k2YUVocEVHeXZvMzN2WndUYTY4MnAxS1hnbkpLTld1b0NsN2xUS3RscEVOelRTYkRTQTRZNU1XTEhPRFZtWkRnbzBsUlR2MXNkcUFub3JHajNVeHZRemF2WVJDVEtMUGRSMC9JMFJSb1RyZWo1a3ozaUZFcE92Skcwd3ZFSmZZODBkTnAyTEdQL3g3OGowQlpia0RFbFd5UDl5akxTemk0eXZlRWZpdEVRb09PRnZmaVcxTWNjSy9uTTdEUitWSkxONVBURVpwM1NwZVNkVmgvM1ZyZFM1UThtOUYzUkkxVjgrakhDWFRMbFNaRGZTYlU0M1FoRnBmVGtXeWs0K3Fxa3Z0Y0lkTExuN1ovU3R2UERxSjdUUm1lUWZjYzRsSUxrcGpEenIybkJjLzlYU0cva283Y3FCSGVWNWZEdGdzd0VTdGFmVGtOeTg1NG0zbTFOV0pqL21CQ0lXOVcwck9MYmdKR3BGcWFic2xOK2xQVEdEeUJVQis2eForT3QyNEsvWlhkRXo2amxhYmp2bllDU20vejhmV3BaR281SjJmaVhOVVNjVU9qdWNuZlNHeitBUXdndWNLZXpzVFBBRG11TkJIc1ZrQVdwbHFLYjdCR25wS1R4ZHlNVWxZcXo3OFdSVlJKQlljaTZaUlFpUzB1OFlJT2dUYzRpWTBGRlJHWFB6RTVMU2VQdlJoUHcrK0Y1bERtc2t5eElJQ2NxUUhhcUJlbW01TVFiVXkwQ3FpdUxraE8vRjdhYzgvaGN0SEdwYTFEZHVDNG9SaTFQQzF2dVJ5V3AvNWx6Vk1HUFNxMXowRkJLcGNBeUN1REtIUm4zaEZjQWVaa2k3am05ZSt5NXFHbWgweDA0VDgyUDh5M21JRFRSTmZrT3dSaVhsdkFKYjZSYzVFNG5UN1dJMDRHUXVRcGRTYWhUVG5ycHRMaWVkMm53K0hVdVhyczFqY2V2YytHS3d6SVJxa1pXeFFraHl6Z3MwUHQzNHpnMnRMTE96SEFtU1pMd09BU2NuT1ZLdFJqZDVDcUFKYjRkUjBaOFU1SFo0MVNtVm5UMUxGTXJGR2FQaTgvV2RPYVVoN3d2OHEzUm93S294YUYvd2lMTklqM3VBWVk3TFRNUFNQQ2lkUlFJTlQ0OVBMU1RpN2ZURTJyb1hrcFlxVkU1UTh2aU1uT1h5d1NzSkUvcWxqQU9ZeFFFLzFZeGp4TnlKcUxFK1dQcjB1Q0RwdlU4dmY5dGs2U0xIY2Z4eHhOWUZUTFEycEREVm9BRWNGN2hDZHgybEhuWm8rYmtUcVBLVjhlU3hqV20xUmt0U25rNW1iLzRCYTAzM0lCUlpXcW0wcFJpb1hIODhDRmJUVGU5emhKbm51bDFSa1BhZ2dYZ2NKQTJmMzVLNVRBYld3RVN3TUs2ajNtN2NUVzZqTjhSVEpjNnk1bzNzTEJ1dVFtU3hZWlNYbzd6ckxNQWNNNmRpMUlSMmViYlVNQTJnUktBendqd3ZTMlBwRm9NMDBoYnNBRFVBeXMzaWtMYS9QbDAzSDkvYW9VeUNYc0VzQWxKNzk2L204TnBGQmdTSTBDYUEyYVBWY2xPSDN4RlpWcEYzM3N6UnlobzZ1RGwyem9sSzc3VThRNFlNemcrQklMekM0OW5mRVlGa2U1TEc5SmdZL3ZPbEU1MEI2SlA3OS9OWVRRS1dGNEJCUEM3YTF4TXE0aHVzRHB2dXNaNUlTUER3NFlxZ3h2LzRvdlZyWDVRanNzWnp5VkZKMGY5M0pTc2tkUUhXbG5iOXBYSkVzWEdRTDEvTjg2NWMvSCsvZTlEZmtYSThpWlFicWFJdXZGSHlyUUtoZHhNOHpkbDBwWFlkK0Z5TlV0NHBnQ0Q5UDdkSEJnRmhqcVdWNERtZHNtR3FzUWMyZHhRWmREY2JuYi9EeXRhS2xuVDlpV0dqRnh1UXhwczh1eGtSY3RtMCtXSmhWQzlmemVIdzF6QThpYVFCSDc0bkMraU9jQjUwdy8rZHhhdkM3S2hhdkRHM1QwSE1MLzVRMEFHK2UrcTF4SlFjL0lJMmZ0M2N4ak1CU3l2QUFEZUFMeFhHWHBOUGFpcmZXeitOYnNNM2xobnpRUFpWaWVTM3IrYm9UNFhHQklLTU5RUUNJN0xHVStGcXpDbTV5V1NYZDRhMXFSb01oeFI3OS9ORUI4RmJBVklBT015aG5HU2UzSmNkWXhJSzZFbDJNSDJ6djBtU1JVWkEvWCtuWTg4Z3UrMWd5YWQ2NUpMU0wvcHBwN1BRM2tVc1B3a2VDamlWTXpwVjdMVThFY2R6V2FnM2wvZjNUZElnTDVqUjkrSGh2Q0trRDBDSklESzlqMk1TQ3RoZEhvWlNnd0hOQTBrZTd5MVZMYnZTWUIwb2ZHLy9UYitkOS90YzAzZnZyM2ZaOC90dC9kOVVCK2E4eTFiQVJLQUxuWCtXYjh5MVdMRVJIRGR1ckJsWkZzYndjOC9UNEkwaWNjMmdXeU9hQ3lqQUZMM3hmVjhoei8wNTJpUmV1Z0taTUE2OFZSbE1MUXNQcG1JM1k3WXNaSThsbEVBZjJ0OHF4MHJ0dWxzUExCanZMSEtZTVcyK0d6U1FFZm9nTGxHYlp3YVppS3lNYlJIWDVYZld2WjVUUmlGVFNhV21RTjQ5cXhBR2dHRUVsdTBCVjhRdnZjWEg3bVpndVoyR2ZjT2IyZjFocEQzQTZ0YlVJY2xmNVZtSUFLVm5wRDNsM2w4K0tYRWFaSEQ2R3ZqSFo1TnhESWpnTzVybytXTHQrS3FRd0pOWmpUK3VrcDh6YnRDbHZHK1hZY01XbU1vOTMvY0dQSitpMjd3ZW5ObmtxUUp6WVpPUDl0OTFva1BhaGtGQUtoWitUaTZMM1J2bGhRNVBua3NiQmw5bnhmZkc3VkprQ1kwZ1MzdCtGZTNoQzEzZjAwYnJYcnFGZmFCbXJaVWk5QUhTeWxBd0ZORDFUcy9ReHFwczFrYjF2NE56KzVQSWlyYjhWd1Z3YzJwVTFpakxVajd3OXNqeWhPd1A2RHpnejFOcEhMUStsTjlPeCsweGJmWVlUWnFXbGJSejFNdFJHLzhMYnZ4MW04bFo5UnBDRFc1MGRjYTF2Nk42aFVQUTZTckZBYjRsemVpanM1QUxVdnVmTUNvOTlONjd6YjBxc2hqN3Uvd0I5bmtEZkMxbkRRY1NaNFAvS20rblY5WHR5YkUrelllaEx0a3N0VmtBc0NSWFU3WnlUOGdlOVJwQ0NXeG9mUTY2eXFwK2VTeGlIditmZ2h3elMwazQrdkRFcDhvdzJ2Z2ZidU9qdi9iai9URVprdFhPRFh1TE0zaGF6a3UxQVFyd29aT1B3L1V0Rm11NSsvR3NnclFqU09qZ0l4aHgrSE1Ma054bVJmSTJ2QjdDTFRYMGJGL0hmNFdrMXdPRklFMk1RdHRlQnBLZ1JOQ25FbU9DbDBpbXdNRTkzc0piUEtBMzV4bHhDSk40Y1JNRnhWT2xSd1RJemEzNlFiVlFZUFBPL3pzdE5DRWR5QXNyd0EyTm9uRVVwTmdHNXRrWXl1QXpSR05yUUEyUnpTMkF0Z2MwZGdLWUhORVl5dUF6UkdOWmJ4QkQwVUE1d3ozYytrSUw4Y1hCU2xLTjB4TjZPVFZvYXBkWlZtMWcrZStUR05qWTN4ZmhYQzRjYnFQdzVFOUFjV1JoMUF6VEpLMEN5UG93ZkRYRW1oZGo3OTVMY2c0Z3BvS2dUNXVFc2JrNmNoaFJ5R3pza0Uxc1NrRUE0aldacFNkWDZLdVdZV28yV2RlM1NaanlYMkFVZGs2ajUvU3hqRUZ5ZGxFTVNROHZTMk5uNi9Pd2h1MUc1TEFWWEFxYVlWblFveXUzTkZpK0J2cDJQOHllc2VPOElVUFFlWVZFTGo0YW1UNThBUklOdEFMSmVxYVQ5Q1d2QUhCQkVRaWpoUExLY0RSK1VGZW5OdENualA1WXEyb2RiRGd2Unc4Z1VoM2NBVVo1WmZoY0IrVFVMa0dRa3FkenIwdkVHamJHUGt6SmNQd0w3Z2Uwc3dkblNKQjJiTUQ3UjlQSS96V2NvbXcxQnlnd0NWNTl2UzJsRFIrZ05uRkFSNmQ3WWs0am9PcjROU1VOSDRBSVZUU2gxMkptaDVoYk03MFRBSmYvMlpLR2orQU1Yd1V3WGxmQjRzY3l1bkdVZ3B3NjdRT3lqSlNlM3p2Z3FOOFhEWXFmQzhsSERsZFprOEtFVUlqdmZ3S0VPRi94dUFwWnlLelF5ZlVUalRHeENrWWs4UEVyRTh5bGxHQWRFMXl6ZGpJWFh2N29Ea1JaWk5RSnA2Sk11TVNsQWxuSUVvblFvenUxTGNmM1JGMkZIRGxIcGMwbXo4VXFyTUlaMDdvUmlVZERvd1pKeVJKb3RBRTUzek5VcU9BWlZhQlRpNE9rSzVGWi9vb2s4OUdPZlpLbElsbmdXdUF1UHJlTm93dFN6Rld2NGhSK1U3RTlZN00xam1tTU1qcStzRy9IaTFyWWxTeTlrWUlLTXhMbzZTZzZ3eEJUWU9YK2ladnhNY1Erc25pUGhwL3krQ1paZVJSWTVDTzFDc3JnTXpMUjVaVklQWWxQK2pYUUZoR0FVYmxSRzc2aU9FejBDNitGekh5K05BRjA3SlJabHlNTXVOaTVJNVBDQzc2VDJSVitNQlBBTlB5UXl1QTRzeVBXTjV1UmcvUDRwdVhqT0tjVThvcEwrNmJTblZmYlNkdmZiU1BaeGJ1WUh0VmRLZk1WRmQ1eVBzeXZ5QnFXUk9KVVRvTTFWYUF2dVJHT1BGVlpsNkdkdFh2UVhORlZiOFlkU0tPbTE4bitOSi9ZS3g2UG16NXdyVFFQdmRDaWZ3RVdKcEw1WTRicG5ETlJTUFJ0SUd0enZMaWRLNjdiQXpYWGpTS1oxL2R3VytmMkl6WEYxbW5vR2laWVFRSW5iZjR0SXBDcmh4ZnppaDNmQk5rS1dGcms0ZC9iTjNMcDlWTmd4Zk1EQ052RXJHTUFrU0NldnFOcVBQdTduK2p2UkdqY2dteTlrdGtSeU1pSXg5UlBCWmw4dG1RMFN2QnRPWkV1K3BoOUhRMytyTC9DZm11OEZacVpIWnNjVUVhVDkwN2kra1RJMHQwcldrSzExMDJocG1UOC9udXoxWlMyeERKdkNpMExLRzZsdHVPSGNzOUowK0tJWUxwd0p4MVZCRTNUQnZKdjcrM25yOXMyajFnR1duYTIrSm55Q2lBTXZscnFCZmMxZWVhYksxQmYrdS9NRmI5QTR3Qk5zMFVEZVg0cTFIUHZSMlJYZHh6V1oxM043THVLNHpLSlFtVk9UTmQ0NW43VG1MUzZKeW9uNTB4TVkrL1BYZ3lsOXo0QVo2T3hHd0lqc3ZONU9leko1cmVIRFZGOE9CcFUxbXl1NDQ5YmRZSXh6SVlRME1CMG5QUnJuNjB6M0tmM0xXYTROUGZScmFGQ0UxaUJERldQb2VzZkFmdDIwOGpqanF3WnErb2FGYy9pdjgzczhEYm1qQ3g3L3Z4ekpnYWZ6ZmpSbVR6bTl0bThQMTdQak5ScW9QTXFTaEVVN3FhLzdLcUJ2NXIxYmE0NmhNQ2ZqNTdJc2VWNUpLdXFaeDFWQkZQRHpJS1dJVWhvUURxV2JkQVJtN1BaMW03amNCVDg2RXpmRHdjNkJvcEF2OXpKWTd2djRFb25kQjFNVE1mOWN6dm83L3hxMFNJekluVEM1bDMrckM0Njdub3pBcWVXN1NEbGVzYlRKQ3FMMldaQitjeEgrNXRZT21ldXJqcm5GMld6M0VsWGI5VlJWYm91WWNWc013K3dLQTRNMUJQdnU3Z1owTW4rT3gzSTI3OFBmZzhCUC8yUGVpVnVWRTk1VHZnU015UGRQTTE0MFBlMzdxamxXY1g3ZURaUlR2WXVpUDBLSFR6dFJQTUZLMkhMTWZCL3UrWVluZmNFU0pVSVRpbStPQm1XKy82cllybEpWVEduOTZua1JwclhrYnVyK3hYVHBST1FKbjlMVVQrVWNqRzNSZ3Ivb3FzM3RxbmpOeTNDV1BOUXBSakx1KzY0TXhBR1g4YXhxWTNUWlU1TDhmSjdKbEZBOTZURW43NTJBYWVmbms3eG9HRmYwVUlycnQ4TkhmZE9HM0FQYUtUWmhhUjczYlMyR0p1VE0yOHRJTjdBK2VOS3VHVGI4emh4OHMyOGQ2ZTBJR0JCK0tNNFlYY04yY0tVd3NPbW55OTY3Y3FsaDhCbEVsOTgxVVpuNy9Vdjh6TXkzRGN1aFQxNU90UkpwMk5ldkwxT0c1ZGlqTHowbjVsRDMxZW1SaFpOc1JvT0g1YUFkb2dJVkZlWFZyRm4xLzZxcWZ4QXhoUzhxZi8rNHJYMzk4NzRET2FLamh1cXZscitZZE9VS2NXNVBER3BiTjVZZDd4ak0yTmJLbHliRzRtTDh3N25qY3VuZDJuOFE5VXZ4V3h2QUtRMTh2WlMwcU1yNWIzdmE4NTBTNzlEUnlhbDB2UjBDNzlMV2g5czdZYlgzM2NOL0pidnZsdXdXWEZnNXRWYjMwMGVCajRONWNON2pkZldwUlllM3BOYlF2NmdlL2x3dEdsZkg3TjZUeHcybFRjcm9GNzhTeUh4czltVGVDekJhZHo0ZWhTb0d1NXRiTFJXckUvdzJGNUJSQTVaUWMvZERSQnNLK2ptaWlkMUdlQzNJZU0zSzc3dlFsNG9iTzVWLzJsWm9uYVExYkc0SmFscDMxd24vaFF5NTNabVltMVZ0L1lVY01wLy9pUWovWjJUYllkaXNKTjAwZFIrYTJ6dUhuRzZKN1ZJa1VJRmt5cVlOTzN6dVRPV2VOeEhRaW90YXE2aVROZS9JaVh0eVUzcTJXOFdGNEIrbXpqbU9aRTFic2U4MTJ2NjVzRzl5WWRQMnJ3WmRIeG93YVBmRmZYbUhnLytyVzFMWno5MG5JV0xGN05ydFlPb011T3YzL09GRmJNbjhOM3A0MWc1VGZtOE5UWk15bk82TnFKMzlYYXdZTEZxNW56d2tlczNCOWk5OWVpV0Y0QlpHdk53US9wdWVEbzY0SWdxeXVobzVrQjZXanV1dDhiUnpxa0gxeXA2Rk8vU2F6Zk9vZzh3TDljUG9iY2JHZS82M2s1VHE2N2JNeWd6NjNia3J6RzlmSzJmY3g0OWozdVhyRUZUNkJyVkpwYWtNTWpaeHpkWStkN0FrSHVYckdGR2MrK3g4dmJySHZrTVJ5V1Z3Q2FlamxOQ1lFeTVxUys5NE4rZ2d2djZMOFRiQVFKTHZ3SkJQdXVuQ2hqVCs0N2tqU2F2MUd6ZFhzclZkVWRBOTRyTDA3bjFUK2V4cnpUaDFHUTY2SWcxOFc4MDRleDZQSFQram5JZGJObmZ3ZGY3RXpjaHQxQWVIV0QrMVp0WTlvejcvSE01ajA5azNaRFNwN1p2SWRwejd6SGZhdTI0ZFd0ays0b0ZpeS9ER3BVTGtHWmRVM1BaK1dZS3pDMkxPMWJaczNMQlBadkNyc00ydjE4bjJlM3ZOdXZUTnd5Uzhuei85ekZqNjZmTk9EOUVlV1pQSFozR0UvV1h2ejluenRqZHBXT2wrcDJMLys2WkMxL1hMK0RlYU5MZVgxN05XdHFvOXlEc1REV1Y0Q3Q3ME9nczJjdlFKbDVLZUw5eDVEN052VXBKNnUzb2kvOGFjaTZ4TENqVVdaY2ZQQ0N2d1BqaXcvTUZobUFweGR1NS9vcng1Q1gwOS9jaVlhbVZqOS9YYmc5Zk1FWThQWHF2WE9jb1p2Q210cVdpQnArZWk5dlY5OFFHQjBzcndBRU90RS9lZ3Ixak85M2ZSWUsyclZQRUhqay9PaDJnOU95MGI3eFdCOS9JdjNESjd0V2hSSkFXM3VBZXg3YndFTjNIQnRYUGIvNHc0YUVPY090clRzNFYvbTM2U001dWlpblp5azBGbFFoT0tIMG9OZnJ4dnJrbW0yeFlIMEZBUFNsZjBDZGRXM1BjcWNvR292anUvL29jb1pyclE3N3ZIQ1hkVG5EbGZSeVQyaHZSSC92RDRrU0dZQ1gzdDdET2FlV2M4NHBaZUVMRDhDN0s2cForRTdpRG80czNWM1B5djFOekNyTHc2RW9uRlpSYUZyZDYrdGJlZGNFMzZKRVkvMUpNRUJuTThIbmIrN2p4eU9PbW9uMnd5VW9zNy9aZnhPc0c5V0JNdnRiYUQ5Y2doZys0K0IxUXlmNDk1c1Q2Z25hemM5K3Y0N3ErdWhIbWVwNkx6OTVjRzBDSkRxSUxpVlh2UDRwaTNmV21Mb1l2S3lxZ1N0Zit4Uy9iUUtaaDdINUhmVFhmNEY2NFM5NnJvbnNJclRMNzRmemZucmdRTXcyWkhzaklqTWZVVHdlWmRMY0FUZko5TmQrbnBESjcwRFVObmo1bDUrdTRQOGVtVU5HV21TcG5ydytuUnZ1aXZRd1RIelVkL3E1N05WUHlVOXpNcTB3Snk2SE9GMUt0alo1cUc1UHZOeG1NV1FVQUVELzRJL0kxaHEwci8rKzczNUFSaDdLc1ZlR3J5RG9qL2hJWkhna2taNEsyN1N0aFgrL1p4Vi8vTVVKZ3g2SjdCRXhhSER6TDFkRnVlNGZ1ditPUk1wR3I1OFBxcUozZ29zRjY1d0hzNUFKMU9DTlRCUmp6VUlDajEyRTNCRmRRanZqcStVRUhqMC80c2JmNEEzOU14bkJnZGY1QitPZDVkWGNmTTluQklPRG13VzZJYm4xdDUvenp2THc4NXJlU0QyTUxPM3RVZFdYY0Rxc0k0OWxGR0I5Rk1GcFpkVTZBbzlkVFBCUEN6RFd2aks0TGU5dHhWaXprT0JUOHdrK2ZpbHk3NGFJMzdIVEU5cGNNYnpSNzM0dVhyYVBHMys1Q3ArLy8yRjNuMS9uZTNkL3lxSjNxNkt1Vi9lSHpoU3YxQXpzWlpvcVJMUDVoM3RpeFRJbTBPcDZqVjBlbFJGWmtZZEhNU3FYZEozclZSMklvdEZkam5NWnVWMHVFSzM3a1hYYlFZOCtJR3RIVUxDOEp2VDZ2Yjl0UFZyV3VLanJmdXZEL1N6NDBYS2UrdFdzSHBlSTVqWS8zN2x6SmFzMnhOWXdkRS8vRGIvZWlIMTdFTTJOeU56b1E3bVlqUWo0RWJ1aUQrcWJLQ3lWS0x2WnAzREJVVEVjK3BBR2VCcVFEVHVSMVZ1UURUdkIwOUJuMVNnYW50cVN6cEo5b1JYQThOWGd5SjRhUGlUSkFPeXI3ZVRWZDZzNDRlaENHbHQ4TExodE9adS9pbkYzMWZEVHVmOGxwQkg2ZXhPZEhSZ1Rwc2IyRGhOUlAxdU8rdFdXVkl2Umc2V2lRd3ZnTDNOYU9UOFdKVENKdmUwS1ovNHpqeVovK0ttYW1sNUI1b2p2SWtSc0EybTZxOHZNNm93dy9zOUFlR3NYNDJ2NEtIeEJJUWhjdGlDbFNpQmFtM0UrOVFoNG81cy9KUkxMekFHZ2F5M2o1aFhacktoTnpWRzZScC9nMmc5eUltcjhBSHBuRloxN1gwVEsyQnB3cDArUHEvSDdtei9EMS9CeFpJV2xSSHZ0UlpROUtUSS9PanR3dlBpTXBSby9XTXdFQXZBYmdsZDJwdUYyR1V6UER5WXRqdXFuZFE3bUw4MWhXMHQwdmJuaHJ5WFlzUk10WXlSQ1RWSVVCTU9QdCs1dHZMWHZFTTE1QnFIcnFKdlhRM282c3JRaWFVRnFSZFZ1blAvNE02SWhSQWliRkdFcEUraFFwdVlIdVdhc2oxTkxBd3pQREJMaFBsSkUrQXlvNlZENHRNN0JLenRkdkxQWEdkOXVxSERnZEUvSGtUTWR4VldNb2cwUXJEY09wTjZPNFc4azZObUt2L2t6akdCOFJ3OWxTVG42ak9NeFJvNUZ1bk5CTTNIVTFZT0l0bFpFMVM3VXpldFF2dHBLeXR4WncyQnBCYkN4U1RTV21nUFkyQ1FiV3dGc2ptaHNCYkE1b3JFVndPYUl4bFlBbXlNYVd3RnNqbWdzNHd3M0dLTmRlY3pJTEtWUXkwUUk4MVpzZGFEVzcrRVRUeFcxQVhQY2M5TTBnMk5MdlZSa0IzQnA1cDZHYWc4bzdHaHlzclkySGNPa3I4SHBkT0ZLVDBmVHpHMEdVb0FlQ05EWjNrNHdtSmp6ekdaaFdRVTRJMmNVdDVYTlpsTEd3RkdXelVLWEJrdGFkdkRydmN1bzhzZDJSRExYcFhQOTlFWXVIdDlHbXNrTi8xQnFPelNlV3B2SG9pL2NNVy9jWldabGsxOWNqQ3N0OGp4bnNTQ2xwS1BOUTExTk5jRkE2dnk3UW1HNWpUQlZLTnc1YkE3ZktrcHVRdVZPSThDLzcxek0wcGJvZkdVbTV2dDRZTzUraWpPUzI5TXQzNXZCSGUrWDBobUkzSW9WUWxCUVVrcHVmbkxkb3FWaHNIOXZGUjF0MWd1Y2F6bGZvTHNxVGt0NjR3ZHdDSlh6YzhlenFhT1duYjdCUXh2MlpuaE9nQ2ZPMzB0K1d2S3oydy9QQ1RDenhNdmk3ZGtZTWpLZm5zTFNzcVEzZnVoU3ZLd2NOMzZ2bDREZldpT0JwU2JCWitTTVNrbmo3MFlUZ29kR25FT1pJN3dmandCK09hZUdIR2Z5RzM4M00wbzZ1ZW1ZeUE3UlpHWmxwNlR4ZHlNRWxBeXJRRFBUNThnRUxEVUh1SzFzZGxUbHRRbkZaUDdyYkxSeFJUREFZWE1aMEFsVzF0RCt4K1hvTzBJZkcrd21SM054YS9sSi9NZXV0ME9XTy9Xb2RxWVV4aG45UURuZzNXZkVya1JYVFc1aDRUWTN1MXRDTjZ6ODR1S1E5NU9Cb2lvVWxCUlRzOWM2UnpRdE13S01jZVZGTmVGVkNqTEkrZFg1YUpOS0JtejhBTUtoNGppNkhQZHY1Nkc0STUvd1haZzNnVHcxZFBselJzVnZ6MmFNUG8yTTBYUGlxa05USkplT0MzMmF6T2wwSm56Q0d5bFpPVzVVMVVTMzNqaXhqQUxNeUl3dWVwcHoxZ2hFWm1SeE4wVk9HbzRUUjBaY3QwTW9uSlI5Vk1neVU0dmlqMzJUUGVNcXNxZGZGWGM5SncwUGZjakVsUjVmQm5nekVVS1FubW11cTNnOFdNWUVLbkpFOXlPcHd3N0crUGU5dXczZnUxLzBLK002YXp5dXM3b09ycXNWN243M1ExSGhHanhaQlVCQlJueTJ2MUNkWkUyK0NDRVVhaGZkZ2d6R25nQ2pQQ3Ywd1g4dHlteU5tcVpTWHRwbE11MnJyaVVZRFAxL2piYTh3MkdkZVlCbEZNQVo0YmxhYlhJcFdUK1lnenI4WU1RMzExbmplaHI2WUtSZlBoM0gwZVY0SG5vZmZWZjRvRk11RWZwSGNpcnhyUjVuVGp3UE5hTnJVcG81NFJ3OG0xNk51UzZYR2lZd2xvaDhvRDk1MWt4dXVuNCsrWGxkSFVaRFl6UC8vZWZuK1hqbEdsUEtBd2pGTW9hSGRVeWdTTkNtbE9LKy84SStqVDlpQkdqamkzQS9mQ25xeU5TSEI4bWVjZEQwTWNNTU1vTko0MGR6NTYwMzlEUm1nSUw4WE82ODlRWW1qUjhkZDNrcllwa1JJQkt5YnBrREI1SzFTVjhRNFlvaW1GWkFSemhVaEVzajY1WTV0UHp3bFVTSkdSYkZsVTNXeFBONlBtZE5ub2ZpeXNId3BUYWMrSGx6VDBYcDFUczdlcGxPMzU1L0NTKzk5azZmOGxkYzlEVmNyb1B6c01DQmRFcUtvbkR1V2FkUStVVmk4aHFZeVpBWkFaVDhqSjZlWDNwOHROeXlFTmthMlVSVWVueTAvZVNmU0cvWEQ2Uk5MRWJKVGRJQjlnSEltbkl4b3RlY1IyaHBaRTI1TUdYeWRGT1lmM0JrVlJTRnpJeDAwbHd1WEU0bkU4YU5aTzdwcy92OGpSODdBcGZUU1pyTFJXWkdPbW92NVNrcXlCdm9GWlpqeUl3QWF2bkJZVGE0c3hGOVZ4TXR0NzlPNXIrZGhEYTVCT0VZWUdrdGFCRGNXa3Y3azU4UTNGcEw4TXM2SEZPN1ZwdlVpbHlNNXNRa2N0YXlTeWk2OEVIVWpJR1RXenVMSnZTN1Zuak9QZVFjYzgwQXBVSHZhS0R1dGRzSXRwbWYwSzgzOVkwSGQ4QTFUY1V3SklhVStQMSt0bTdieVpMM1YvUXBuNXVUVGZhTVRKeE9KOEtRcUpxSzd1L3loYXByR0JvWkk0ZU1BblNiUGdEZDdwRDZ6a1phZi9KNjVIWDBkcU5VRWhjU0pOaFdRLzJiZDFIK3JaZHdsVXlKNkJuTlBRek5QYXpmZFgvZEY5UXV1aVhoalI5ZzhaSVBtWHZhaVNpS2d0OGZRTk0wRkNIUWRZT24vLzVLUDVPbXpkUE9qR2tURVVCUTEvSDd1MWFqRE1QZ3pYY2pDTlpsQVlhTUNUVFVDRFR1WU05amMvQnNYQmh6SGUxYkZyUDdzVlB3MS9WZjRrMEVsVjlzNTFjUFBVRmpVOWZHbXMvbncrdnpzMlpESmR0MzlRL2ErOVhPUGF6WlVJblA3OGZuNi9MeGFXaHM1bGNQUFRFazdIOFlTaVBBRU1Ud2U5ajN2L1BKbjNNYmhlZmUweWMvV1Vpa3BISFpnOVMvZVZmTThVMWo1ZU9WYTFpNWVuM1B1djZ4MDkxYXZTc0FBQWpnU1VSQlZDY3phY0lZVGozeFdKWjgwTmNFT3UyazQyaHA5ZkRvazMvajgzV2JnY2oyQWF5RXJRQ0pSa29hUDNnQVg4MG15cTcrSzBwYTZBMDV3KytoK29YcjhXeE0zU3BWTUtpenUyby8wTldqanhwWndmSEhUR1ZENVJmVTFIWTUzeFVYNW5QY3pLbjRmSDZXdkw4Q1Q3dTFRaDVHaXEwQVNhSjl5Mkk4bXhhUmMrdzNRNWJ6YkhnNXBZMy9VTm83T25uL28xV2NlOVlwTExoaUh0dSsyZ25BbU5FakVFTHczb2NyaDJ6akIxc0Jrb2RReUJoL1R0aGltUlBPNnpLVmttejZoR0x0aGkxODk5b3JtRHA1SFA0RC92eE9wNU9ObGR0WXV6RjBiZ0tyWTArQ2swUmF4WEZvMlNWaHk2bFpSYVJWeEpkYjJHem1uSFFzWTBZTlJ3QXVweE9YMDRrQXhvd2N6aWtuSHBOcThlTENWb0Fra1RYcC9ENmZaZEJMM1J0M1VQZkdIY2lnOTVDeUZ5UlR0TENjZE1KTURNTWdFQWlpcWlxcXFoQUlCREVNZzFObXpVeTFlSEZoSzBDU3lPelZxTDI3VjdMcmtWazBMWHVJcG1VUHNmTjNNK25jOGVIQnNoUFBINmlLbEpHWjBiVnI3ZzhFOFBwOGRIcDkrQU5kYS80WkdhbmJVVGVEb2FNQVpteGlEYkNabGd3MGR3V3UwbW5Jb0pmNnhYZXkrNDluNEs4OW1DWW8wTENkUFU5OGpacVhiOEx3dCtNcW40NGpML1I1aEdTeWMzZlhDUzRwSlQ2Zkg3OC9nRHdRN3J6NzNsQmx5Q2lBWHRWcm0zNXNVWi96QUpHZzVLV2o5ZklDMWZmRm1KTXJCckltejhPNzUxTjJQVEtMeGc4ZUdQZ0lwRFJvK2ZRcGRqMThISjA3UHV5YURGdUVSVzhzcGMzVGY2V24xZFBPb2plV3BrQWk4eGd5cTBCR2N5ZkJMYlZvRTRzUmFScnVSeThqK0VWZFpEMjVJdERHRkNDeVhBRG91NXN3R3BPM2RPZmR1NWJtbFU5R2RQWTMwTENkUFUrZVExckY4VW1RTERKcTZ4dTU1WTVmOCszNWx6Qjk2a1FBMW0zY3d0Ti9mMlhJK1B3TXhwQlJBQURQdzh0dy8vNFNoRXREcER0d1RDK1B2aEpENG5uNHcvRGxUTVM3TzdxazNoaDY5TThrbUgzVmRmejZkMCttV2d6VEdUSW1FSFE1djdYY3NwRGcxdHBvVW1NZGZINTNFeTMvOFJyQnpkRmxZcmM1ZkxITUNPQ1RrU1cwMW5jMTBmS0RWeEE1YVdpajhpT2JFQnNTZlU5elZHYVBYNGFPOU9iVFJkaWppTW5DYjRUK0RxUmhuVTAxQUdtaFRUNE44QUd1VkF1eTF4OWRtQkhaNmlXd2JsK0NwSUdhWU9pQXVmczlEa2E2clJIbHJMNGpkSmlSUUNDeXppVlpXQ2hncms4QmtyY2NFb0lQVzNmaGp6SGZiaUpZMng3YVRGcGVaWjFRSSt0cVFxL0ZkM2c4UGN1V1ZzRFhtWmlEU0RIUVpoa0ZhTkY5L0xNeE9YN3Y0ZGpZV2NNT2IralZqWmUvY0JNTVkzb2tpeVU3UXNmWk1Rd2RUNHNsZm1aODNrNzh2dGhEd0ppTGFGT0F5SUpMSm9FSDl5K25OWTc0T0tiSnNXOUYyREs3V3h5OFVCbmRYa1FpV0YrYnprZFZtV0hMTmRUV1l1aXB0NzBiYWkyVkxOdWpTTW1XOE9XU3cvNkFoMXQzdlVVd2hjUDFuMnZYc0t4MVYwUmwvN0M2Z0xWaHpJOUUwdUpUdWZ2RDRvZ1d4SUxCQURWN3ExS2FyN3E1b1lFT2p5ZDFBdlJEMXF2cG1jVmpFSVQzMDAwU08zM05iTzZzNVd6M2FCd2l1VEVrLzF5N2h0L3Urd2daNFJxcklRVkxkbVV4b2NESDhKemtUalNyMnpWKzhFNDVPMXNpQ3c4SkVQRDc4Zm04WkdWbkkwUnl6YmZtaGdZYWFoTi9yamtxQkcrcHJzekNMSVM0TnRXeTlHYUhyNWxYbTdaUzVzeG1sQ3NYSmNFLzFzYk9HbTdmdllUbjZ0ZEgzUGk3Q1JxQ3Q3Wm5VOWVoTXFIQVQ2WWpzV2FHTjZqd1FxV2J1ejRvWVo4bitoQ0RBYitmdHBaV05JY0RoOU9aY0VYd2VUdXAzYmVQbHFiSW9uTW5FNEg4WDVGVE1TVmZCS2dGYVoyUXZiMG9jbVF3SzJzNEZjNXNjc0pFYkk2R050MUhkZERENTU3OTdJb3dJVVk0RkFIVGl6c1psZWVuT0NPSVpsTGJDa3BvNnRUWTFlcGdUWFU2UHQyY2lqVk5JejBqRTgzcFFERXhZck9oNndTRFFid2RIWlpMaU5FYktUaGZBTGhMSnE4QVRreXhQRFkyU1VWUnhRZ0ZRQWplU3JVd05qWkpabGZUdmsyN0ZRQkRzampWMHRqWUpCZXhCQTQ0dzdYV2JQNFUrREtsOHRqWUpCRUpTK0dnTjZnRS9wSTZjV3hza29uUWRhT3ZBaEEweEo4QnkzZ3AyZGdra0tYdGRadXFvWmNDSExnUVJhUlpHNXVoaVpUR3M5My83bnNnUnBYM0VOTlJFeHViSVVPN1N5bzlFWXY3S0VETHZzclB3VjRSc2ptY0VjL1gxVzNxY1VqcWR5UlN3aStUSzVDTlRiSVF1cUhyOS9XKzBrOEJXbXMycjBUd1V2S0VzckZKRnNZTGJmVmIraHc2R2ZCUXZLb29Qd1NzNUxkcVl4TXZVa0grNXRDTEEzcEFkYmJWdHFabEZVdGdic0xGc3JGSkFsTHkxNWJheWljT3ZUNW9XSlNXUWg0Q05pWlVLaHViNU5Ca0NPMzJnVzRNSGhkbzB5YS9LcmdhaEdWT01Odll4SVNVZDNwcTFnOTRGak9rRTNpbnA2N09sVjNjTE1CYTRZcHRiQ0pHckdpcDNYd1RnK3h2aFQwRjRmUFVmZWJLS3BvaFlLTHBzdG5ZSkpZbW9jaXp2Wjc2UVU4OFJSSWFVV29CL3pkQnJqZFJNQnViUkNPRmxOYzM3NjhNR2VFZ290aWdqWTFmdGdxRml3QTdxS2JOMEVEd1VITnRaZGdrelZFZExuV1hUVHdXUS9rQUNCK0l4c1ltUlVoWTFGcXorWElnYktqQnFLSkR0K3pmc2xwS2NibTlNbVJqWGVUN3Jla2RWeE5CNDRjb1I0QnUzQ1dUNW9KWUJGZ25RS2FOamVSekplQTlzNmxwZThSeElHUEtEOUJTVTdsRU1UZ1gyMTNDeGpLSUQ2SnQvQkJIZ295bXVzMGZDa09jQ3V5T3RRNGJHNU40SmR2UmNsNjBqUjlpTklGNlUxZzRvVHlncWd1QkUrS3R5OFltU2lTQ2gxcXFOOTlPaERiL29jUWREcXlqbzZHdEtNLzF2d0daZGhRd1BkNzZiR3dpcEVuQS9KYWF6WThTeHlsR1V3TkR1a3NtWFFYaU1hREF6SHB0YlBvaVZnakZtQjl1a3l1aW1zd1FwemVaeFZOTFZHRThJZUFpcyt1Mk9lSnBGc2lmTjlkVS9vRVlUWjVEU1ZSb1lPRXVuWHdGa3Q4QVl4TDBEcHNqQnltbGZNWVFqaDhQNXRVWkt3a09FbitzdzEzaXZRNjRGMlJSWXQ5bGN4aGlDT1FiVXVYdUF3RWJUQ2NwV1JMeThrYTdwVFA5WHlUeUp1d1J3U1k4N1NDZU4zVDl2a1BQOEpwTnNyTzhLWGtsVXk0d3BQd2Vnck9BeU5PYjJCem1DQjFZS3FUeG5FTXFML2NPWFpMUXR5YmpKUU9SbHpmYWJUaGQ1d0lYZ3pnUHlFMlZMRGFwUXV3QWxrb3AzOU9sZUxjN1hHRlNKVWoyQ3dkQnlTbWFNbHFvekJBWVIwc3BwZ0dsZENsRjk1OTU2V0Zza29HZkxsZVpacEFlRUEzQUZ3S3gxUkJ5aTZxSVRVMzdOcVhjaStEL0FUNXJJTklMTGJBYUFBQUFBRWxGVGtTdVFtQ0MiLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9LCB7InNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQWdBQUFBSUFDQVlBQUFEMGVOVDZBQUFBQm1KTFIwUUEvd0QvQVArZ3ZhZVRBQUFnQUVsRVFWUjRuT3pkZDV3ZFZkMC84TStadVhYcjNWNlRiSHJaOUVBSVNlZ2xLRlVVUkgwQVJZb0s2azlGVkI0TDFZSStEL29JK0VnVHNhSDRxUFJlRXdLaGh2VGVkemViM1NUYjk3YVo4L3RqaWNhUWN1L3V6SnlaTzUvMzYrWHJKY205NTN4MjcyYm5PMmRPRVNEbGFtdG41Y1hOL3BGcHlBWkFhNEFweXpXQk1nbVVBYkljUWxSQW9oaUFCcUQ0ZzdlRkFPUXJDMDFFQkFBUW5ZQTBBZlFBU0VtZ1gwanNoc0JPQWV5VWtMdUVFTTBtc0ZOSWZXMW42L0t0QUF6Rm9RbUFVQjNBVC9MS0o5WUVOWDBLTkdPYWtHS3FCTVlDR0FtZ1VuVTJJaUtISkFDc2g4QmFTS3dGNURLaDRZMk9sdFZiVlFmekd4WUFOb25GcHNmTVNQSllUWXE1RXZKWUFOTUFsS3ZPUlVUa1VxMFNXQ0lnM3dTMDF6dWp2WXV4WlV0Y2RhaGN4Z0xBSXNYRHA1UWdhWndHaVpNQnpBTXdDUU5EOWtSRWxMMCtDTHdxcEhoV0UvTFpQVHRYclZRZEtOZXdBQmc4VVZ3ellTWk1jWWFBK0lpRW1BTklYWFVvSXFMY0pKb2c4WWpRakw5MDdGeXpFSUNwT3BIWHNRRElVbW4xcEVaRHlvc2x4TVVDcUZXZGg0akloM1lMSVo0VUVnL3ZiVjM1SkRpcGNGQllBR1NncUxweE5xUjVrWUQ0QklCaHF2TVFFZEUvYlpWUzNCYzBVdmZ2M3IydVNYVVlMMkVCY0FnbEphT0t6VkQwazREOElvRHBxdk1RRWRGaG1RQmVoTURkblRzci93NjhuRllkeU8xWUFCeWdwR0xTY1ZMRGxSTDRCSUNJNmp4RVJKUzFyUUx5NTBGVHU3ZXRiV1dQNmpCdXhRSmdnRlpTMVhpbUNYazlnRG1xd3hBUmtTVzZCUEJBd0RCKzB0Nit0bGwxR0xmeGRRRlFXanFteUF5RUw1ZENmZ1hBQ05WNWlJaklGbkVJOFJ0ZDEzKzRwMm5aRHRWaDNNS1hCVUI1K2ZqQ3BLNTlWVUI4QTBCTWRSNGlJbkpFWEVMOHJ5a1NQK3padWFGTmRSalZmRlVBMU5iT3l1c3orcTZRRU44QlVLVTZEeEVSS2RFTHlEdEVJdnpqam82bEhhckRxT0tUQW1CV3NLaXEvd3NDK0Uvd3drOUVSQU4yUStLN25idFczUU1mN2lXUTh3VkFjZFhFVXdGeE80REpxck1RRVpFckxkVk1mR1Z2MjZxRnFvTTRLV2NMZ01MYThlTTFRLzl2QUI5Vm5ZV0lpRnhQQXZoVElKMit6aThiQ3VWY0FWQmZYeC90VGhWOUg4QTNBQVJWNXlFaUlpOFJuUUN1NjJ4ZGVROEdpb0tjbFZNRlFFbEY0M3hUay9jQW1LQTZDeEVSZVplVVdDaE44L0x1OWpYclZHZXhTMDRVQUxIWTlKZ01KMjREeE9YSWthK0ppSWlVNnhPUS85blJ1dnAva0lPbkQzcitZamt3eVU5N0FKQjFxck1RRVZFdWtpL3JnZURGdWJhSmtJZlByNThWakZXWGZCOFE5d0FvVnAyR2lJaHlsV2lRcHZ4OHVLQjhTNkszZllYcU5GYng1QWhBUWMza2libzAvd0NKR2FxekVCR1Jmd2doZmhlVytoZGJXNWYxcXM0eVZKNHJBR0pWa3k2VEVIY0FNcW82Q3hFUitZOEVWa3JEUE4vckV3UzlVd0NNR1JPT2RZZHVrOEJYVkVjaElpTGY2eFpTKzJ6SHJoVi9VeDFrc0R3eEI2Q3NiRnhkS0IxOEVzREhWV2NoSWlJQ0VJYVFGMFlLeXFPSjN2WVg0Y0U5QTF3L0FsQlNNZWs0VThOZkFWU3F6a0pFUkhRZ0FmR0VTUFovWnUvZVRaMnFzMlREMVFWQWNmV2tDeUR4SUlDSTZpeEVSRVNISW9HVm1pYlA3R2hadlZWMWxreHBxZ01jU3F4cTRsY2g4UkI0OFNjaUlwY1RRS00weFJ2Rk5aT1BVcDBsVXk0Y0FUZ3hVRnkxNnc0QVY2bE9Ra1JFbEtWZUFmSHBqdGFWajZvT2NpU3VtZ1JZWDE4ZkZaSDBQeUJ3a2Vvc1JFUkVneEFDeElXUmdzcWRpZDYyZDFTSE9SelhGQUJWVlZQeis4emdJeEJZb0RvTEVSSFJFR2dBem9vVWx2Y2xldG9YcXc1ektLNG9BR0t4NlRFamtId2FFQ2VvemtKRVJHUUJBWWpUUGxnbStMenFNQWVqdkFBb3JCMVhMb1I4RGtMTVZwMkZpSWpJV21KK3VLQ3lKTkhiOW96cUpBZFNXZ0RFWXROalFwZlBBNWlwTWdjUkVaRmRCREFuVWxCUm5laHRlMEoxbHYwcEt3QnFhMmZsSlVUaUNRRWNveW9ERVJHUlE0NktGbFNVeG52Ym5sSWRaQjhsQlVCOWZYMjBKNjAvSVFUNHpKK0lpUHppbUhCQlpjd3Rqd01VRkFDemdpS2kveDBDcHpuZk54RVJrVG9EandNcWc0bmV0aGRWWjNHOEFDaXVLcmtYQWhjNDNTOFJFWkZMSEI4cHJJd25ldHBlVXhuQzBRS2dxTEx4ZTBMZzYwNzJTVVJFNUVLblJBc3J0OFo3MnBhcUN1RFlWc0RGVlJNL0NZZy9PZGtuRVJHUmk2V2tLYzdwYWx2NXRJck9IYmtZeDJvbUhpOU44U3lBc0JQOUVSRVJlVVEzTlBPa3pwWTFqbThiYkhzQlVGbzN0ZDVJcDk4QlVHbDNYMFJFUkI3VXF1bGk5dDdtbGR1YzdOVG00NEJuQmMxMCtpSHc0azlFUkhRb1ZhWWhINjJxbXBydlpLZTJGZ0RGVlgxM1NtQ2VuWDBRRVJIbGdHbHhHTCtEZy9Qa2JGc0ZVRlE1OFdJaHhDMTJ0VTlFUkpSakpvYnpLMlNpdCswVkp6cXpwZElvclo3VWFFanhGaUNqZHJSUFJFU1VvNlNRMmljNmRxMzRtOTBkV2Y4SVlNeVlzQ0h4ZTE3OGlZaUlzaWFrTUI4b3JCMC8zdTZPTEM4QWlucENQd1F3M2VwMmlZaUlmS0pRTTdTLzFOZlgyM29qYmVrY2dPS3FpYWNLaUR2QnpYNklpSWlHUUZRbFpiZ3MwV1BmRWNLV0ZRQ3gyUFFZQXZKWkFNVld0VWxFUk9SalI0VUxLdGNuZXR1VzI5RzRaWThBWkRoeEd5RHJyR3FQaUlqSTd3VGszVVVWaldQc2FOdVNBaUJXUGVFRVFGeHVSVnRFUkVUMFQvbWFKaCtBRGN2Mmg5N2dtREhoY0NMd09JQ0tvY2NoSWlLaUF3eVBGSmIzSm5yYUxUMCtlTWdqQU1YZG9Sc0FUQmg2RkNJaUlqb29LVzZLVlRaT3M3TEpJYzNXTDZ3ZFAxNHo5T1VBZ2hibElTSWlvb09TeXpyTHRhT3hjbVhTaXRhRzlBZ2dHcTM2SFFSczM2eUFpSWlJUkZXa1R5WVN2ZTBMTFdsdHNHOHNycHA0S2lDZXN5SUVFUkVSWlNSaGFOcU1ucFlWcTRmYTBDRG5BSndZa0JBL0gycm5SRVJFbEpXd2JzcGZ3WUlOOXdiMUNLQ29LdTlxQVZ3NjFNNkppSWdvYXczUmdvcHQ4ZDYyOTRiU1NOWVZSRlhWMVB3NDBoc0JWQTJsWXlJaUlocTAzVElveG5YdFdMbG5zQTFrL1FnZ0xsSlhneGQvSWlJaWxjcTBsTHhoS0Exa05RSlFVZEZZa05Ua1JnQ1ZRK21VaUlpSWhrb1lHb3daZTF2WERPcXNnS3hHQUJJQ1h3TXYva1JFUkM0Z2RSUGE3WU45ZDhZakFLV2xZNHFNWUdncmdOaGdPeU1pSWlKcmFSRG43RzFkK1ZqMjc4dVFHUWhkQVY3OGlZaUlYTVdBL0JFR3Nhb3Z3emVjR0FnWDlQNFJRSEcySFJBUkVaRjlCRkFaenE5WW4raHRXNWJOK3pJYUFTaXFhcnNRd1BCQkpTTWlJaUpiQ1lHYjBkZ1l5dVk5R1JVQUF2S3JnNHRFUkVSRURtZ29icE9meStZTlI1d0VXRkl4NlRoVHc2dUR6MFJFUkVUMkUwMmRoWW5SMkxBaGtjbXJqemdDSURWY09mUlFSRVJFWkM5WlY5d2R6bmliL3NPT0FNUmkwMk15bkd3Q2tEZmtYRVJFUkdTM1RaMnRxOFlCTUk3MHdzT09BSmpoNUNYZ3haK0lpTWdyUmhWWFR6by9reGNldGdBUXdHWFc1Q0VpSWlKSFNGeVBET2I0SGJJQUtLcHVuQTFnbXBXWmlJaUl5SGJUaTZzYVR6clNpdzQ5QWlETml5eU5RMFJFUk00UThrdEhlc21oQ2dBaElENXVjUndpSWlKeWdzUzVwWFZUNncvM2tvTVdBQ1VWamZQQW5mK0lpSWk4S21BYTZjc1A5NEtERmdCU2t4ZmFrNGVJaUlnY0lYRWxNQ3Q0cUw4K1dBRWdUSURELzBSRVJCNG1nWnBZWmQrWmgvcjdEeFVBeFRVVFpncWcxdDVZUkVSRVpEZXBpZjg0MU45OXFBQ1FwdmlJdlhHSWlJaklFUkpuRjlaTktEdllYMzJvQU5BQUZnQkVSRVM1SWFTbDlZTSsxdiszQXFCNCtKUVNDVEhibVV4RVJFUmtOeW5sUVI4RC9Qc0lRTkk0RFVEQWlVQkVSRVJrUHlFd3Y2eHNYTjJCZi83dkJZREVLWTRsSWlJaUlpZUl0SzZmYytBZi9sc0JJSUY1enVVaElpSWlSMmppM0FQLzZKK25CY1ZpMDJNeW5OeU5JNXdRU0VSRVJKNlRFb2xRWlVmSDBvNTlmL0RQaTcwWlNSNExYdnlKaUloeVVWQkdrcWZ2L3dmL3ZPQUxLVGo4VDBSRWxLc2tGdXovbi92ZDhjczVUbWNoSWlJaXg1eTgvMy9zVndDSXFVNG5JU0lpSXNjMEZGZU5IN252UHpRQUtDOGZYd3ZJQ25XWmlJaUl5SDdhUDBjQkFnQ1ExQUpUQktTNlBKUVJMWmlIL05vWnlLdWRpWERwYUlSajlRaEV5NkFGb2hCNmJ1M2ZaQm9KbUlsZXBQdmFFVzlmaC82MjFlamVzZ2pKcmliVjBTd2pJaHFDa3dvUmFDeUVQaXdLdlRZTXJUZ0loRFdJZ0RoeUF4NGlVeVprcndtNU40bjBsajRZRy91UWZLY1RSbXRDZFRUTDVHa0N4K1NITVRzL2hIR1JJQnJDT3NwMURYbWFobUJ1Zlp5SVM0bHVRNkl0WldCTlBJVmwvU204MkIzSHRxU2hPaG9kZ1lBNENjQjlBLzhmUUhIMXhPc2d4VStVcHFLREV3S0Z3NDVGYk5JNUtHdzRIcG9lVXAxSXFYajdldXhaK1RBNjFqNEZNOVd2T2s3MkJCQ2FYb3p3S2VVSXppNkdDUGg3NFkyeHBSL3haM1loL3ZKdUlHR3FqcE0xQWVDRWdqQXVLTTNEcVVVUmhFV09YZW16dExvL2hkL3Y2Y1hmT3ZyUmIvS20wcVUyZHJhdUdnTjhVQURFcWhzZmxGSmVyRFlUSGFoNDlLbW9QUHB5aE12R3FJN2lPdWw0QjlyZXVoZDdWdjRWMGtpcmpwT1IwTndTNUYxUUEzMUVudW9vcm1OMnB4SC9Td3Zpeit5Q1RIdmp3bkZtY1JSZnFTekErRWhRZFJUWDJXT1krR1ZyTjM2L3B4Y3BiM3ljZmlKbFVKUjM3Vmk1WjJBRW9HclNFZ0E4Qk1nbHdySGhxRG5oMnlpbzUwZHlKSW05bTdIaitSK2dmOWNxMVZFT1NhK05JUC9LNFFoT0xWSWR4ZldNSFhIMC9NOW1wRGYwcW81eVNDUERBZHhTVzR4NUJXSFZVVnh2UXlLTmIyemZpL2Y3VTZxajBQNmtQTDF6MStybmRBQ0lGRlQrRUVDKzRrZ0VJRGJ1SXhoeDV1MElselNvanVJSmdXZ0pTaWFlQTVncDlPMWNwanJPaDRTUEwwUGg5V09oMTBWVVIvRUVyU2lBOE1rVlFOcEVlbTJQNmpnZmNsNHNpdnNieWpBNm5GdHpidXhTR3RCd1FVaytVbExpbmI2azZqaTBqeENyRTcxdGkvU3FxcW41YVppM1lMOXRnVWtCSVZBMTUyclV6UDg2aE00aHhXd0lvYUZnMkRFSUZROUR6OWJYSUtVTEppSUpJTzgvNnBEL3VXRTVONkhQYmtJRGd0T0tvTmVFa1hxN0MzREJzMlFCNExycUlueXZwaGhCbnovbno1WW1nUGtGWVRTRUEzaXBPd0VYL09za2liMkozcmFIOVhCaDJUZ0pYSzA2ajY4Smdkcmp2NDN5Nlo5V25jVFRJbVZqRWFtWWdPNk5MNmt0QWdTUWYrVUlSTSt1VXBjaEJ3Ukc1RUVmbllmVTZ4MUtpd0FCNEpiYVlueSt2RUJaaGx3d0lSTEU1R2dRVDNmR1dRU29KbUFtZXR0K3BhVWhHMVJuOGJ1cVk3NkUwc2tmVngwakp4U09tSWY2TTM0Q29lbktNdVI5cGc2UkJkeFd3d3FobWNVbytPYm9nZHRJUmI1WlhZVFBsUEVKcVJWT0tvemdyaEdsMERtS290cFlBTG9lTHFnNFRVQ2NxVHFOWDhYR2ZRUTE4Nyt1T2taT0NjZUdRNC9FMExQMU5lZjdQcjRNK1o4YjVuaS91VXl2alVBckRDTDFicWZqZlo4WGkrSjdOY1dPOTV2TFJvVURLTkUxdk5TZE8zdEFlRkFnV2xqMkd6MWFVSGttZ0JOVnAvR2pjR3c0UnB4NU81LzUyeUN2cWhHcHJpYkVkNjkzckUrOU5vTEM2OGZ5bWI4TkFtUHpZYlltWUd4eGJ1K0hrZUVBN204bzR6Ti9HMHpMQzJGYnlzRHFPRmNIS0NQMXB6UklsS25PNFZjMUozd2JXcEJyd3UxU2MveDFDQlhWT2RaZi9wWERJU0wrM3RqSFR2bFhESWRlNWR6U3UxdHFpNUduOE5GRHJydTV0aGpEUStvZTFmbWQxSXd4bW9Rb1Z4M0VqNHBHbjhKMS9qYlRRdm1vT2VGYmp2UVZPcmFFNi94dEpxSTY4cTRjN2toZkh5MktjSjIvemZJMWdadnFZcXBqK0pZR1ZHc0FSd0FjSndTcWpyNUNkUXBmS0J3K0Y0VWpqN2UzRXdIa1hWaGpieDhFQUFqTktFYndhSHN2R2dMQVY2c0tiZTJEQnB4WUVNYXBSZHdqUXdVcFJaVUdJVGtDNExEQ1ljZHllMThIVmMzK0ltRGpjOXpROUdKdTcrdWcvRS9WMmJwcnlRa0ZZVzd2NjZCdlZCWnlFeG9GSkZDdFFZTGpsZzZMVFRwSGRRUmZpWlNQUmVId2ViYTFIejZGTmJTVDlJWW9RalB0R3dXNG9KVEZuSk1tUm9NNHFaQ2pBRTRUUUpVR0NUN29jcEFXeWtkaGc4MUQwdlFocFkwZnM2VmRFZFVSbk0xbFlrNExuMlpQMFpXdkNRNUpLL0FwRmwwcWxHa1FnZ1dBZy9LcnAvbitTRjhWQ2tiTWh4NjJmckFyT0tIQTkwZjZxaENjRllNb3NINC8vcVB6UXI0LzBsZUZrd29qaU9uOGQrU3djQUFBcjBZT3lxdWJwVHBDMXVhTzFYSFJuQUFtMWc3OEExM2RiT0toTjlKWXZONDdHM29LVFVmQjhHUFJ1ZjRaUzlzTlRPWmtNUldFRG9TbUZ5R3hhSStsN1I3RG1mOUtCQVJ3WEVFWWozVTZ0ODhERFN4YVpnSGdvSERwYU5VUnNuTGxTVUhjZGxFSU14czBSRU5BTkFUTWJOQncyMFVoWEhtU3R5Wks1ZGRhWDN6cHc2S1d0MG1aQ1RSYVgzeU40K1EvWmVhdytIS1laQUhndEhETU85dkV6aDJyNDVMNWh4NW12V1IrQUhQSGVtY2pqNGdOS3kvMFd2N1NVc1dPbFJjanVUR05NaE5ZZkRrdHFnR1NQL0VPQ2tTOHMvSEZSWE9PL0l3MWs5ZTRSYkRZK2wwQlJhRjN2djVjbzFkWmYrOVN3dmtjeW5CWFFNZnhwOTFwV3NnN3MxMzNQZk1mNm12Y1FnOWJQMlFzb3Z5bHBZb290UDU3bjgrdGY1VXAwdm05ZDVwM2Zudm5DS0Y1WjVncm1zRU5WaWF2Y1FzN1ZsL3c0QjkxN0ZoOUVlSUtBR1c0K3NKNUxBQ0lpSWg4aUFVQUVSR1JEN0VBSUNJaThpRk9ZU1p5b1ZOTForS3kyZ1dZa2o4U2VibzNseHAyRy8xNHMzTU5mcm5qRVN6djJhdzZUczRMVEpzR0FFaS8vNzdpSk9RVkxBQ0lYT2E2RVJmaXFyb3pWY2NZc2tJOWlsTktaK0RFa3FuNDVvWjc4RWpiNjZvajViVEl4UmNEQUhwWUFGQ0crQWlBeUVWT0xaMlpFeGYvL2VsQ3gwL0dYSTZKK2NOVlI4bFpnV25UL3UxL1JKbGdBVURrSXBmVkxsQWR3UlpCRWNBMTllZXFqcEd6OXQzOUgvai9pUTZIQlFDUmkwekpiMUFkd1Raeml5ZXBqcENURHJ6cjV5Z0FaWW9GQUpHTEdKQ3FJOWhHRi94MVk0ZUQzZkZ6RklBeXdYK1JSQzZ5dUdPbDZnaTJXZGF6U1hXRW5IT291MzJPQWxBbVdBQVF1Y2d2ZHp5Q2xFeXJqbUdMKzVxZlZoMGg1eHp1VHArakFIUWtMQUNJWEdSMTd6WjhhOE85U0V0RGRSUkwzYm5qVWJ5MGw4dlRySFNrdTN5T0F0Q1JjQjhBSXBkNXBPMTFiT2hyd1ZlR25ZZlpSZU5SRlBET0NaTDc2elBpZUw5bkUrNXJmcG9YZnh0a2NvY2Z1ZmhpN2d0QWg4UUNnTWlGVnZadXdWVnJmcTQ2QnJsVXBuZjMrMTdIM1FIcFlQZ0lnSWpJWTdKNXZzKzVBSFFvTEFDSWlEd2syMmY3bkF0QWg4SUNnSWpJUXdaelI4OVJBRG9ZRmdCRVJCNHgyTHQ1amdMUXdiQUFJQ0x5aUtIY3lYTVVnQTdFVlFCRUxqUzljRFJPSzUySkVaRXFoTFdna2d6OVJnTHIrcHJ3ZVBzYjJCSnZWWktCL21Xb2QvRmNFVUFIWWdIZ1lYUEg2cmhvVGdBVGF6VkVRK3B5TFBwZTFQSTIrNVBBNm1ZVEQ3MlJ4dUwxdWJVcHpwR2NYemtmSHlrN1duVU1SUFV3cGhXT3dwU0NCdHpmOGd5V2RLNVJIY25YckxpRDU3NEF0RDgrQXZDb0swOEs0cmFMUXBqWm9QYmliNWRvQ0pqWm9PRzJpMEs0OGlRMWQ4QXFUQzhjN1lxTC8vNDBvZUZ6TmFkaldLUkNkUlRmc3VvWlB1Y0MwUDVZQUhqUTNMRTZMcG52bjhHYlMrWUhNSGVzcmpxR0kwNHJuYWs2d2tIcFFzZFo1Y2VvanVGYlZqNi81MXdBMm9jRmdBZGROTWMvRi85OS9QSTFqNGhVcVk1d1NCUHpocXVPNEV0VzM3VnpGSUQyWVFIZ1FSTnIvZmV4K2VWck5xV3BPc0loQ1NGVVIvQWxPKzdZT1FwQUFBc0FUNUtxQXloZyt1U0xYdDIzVFhXRVE5clN6NVVBVHJQcmJwMmpBQVN3QVBDa05jM3V2VXUweTlvV2Yzek5qN2N2Z2VIU280Q2YyL09PNmdpK1krZWRPa2NCaUFXQUJ6MzBSbHAxQk1mNTVXdmVIbS9EYjFxZWRWMFI4RVQ3RWl6cjJhdzZocS9ZZlpmT1VRQmlBZUJCaTljYmVIQ1JQeTZJQVBEZ0luL3RCYkNrY3cxK3VPVWhMTzNlaUg0am9TeEh3a3hoVGU5Mi9ITDdQL0NQdHNYS2N2aVZFM2ZvSEFYd04zOU1yYzVCZDcrVXdvb2RwaXMyQXJLRG56Y0NBb0J0OFYyNGM4ZWpxbU9RSWs3ZG5YTjNRSDlqQWVCaGk5Y2J0bDRjTTkzaGIvN04vYlpsSVBJakorL011VHVnZi9FUkFCR1Jpemo5Yko1ekFmeUxCUUFSa1l1b2VDN1B1UUQreEFLQWlNZ2xWTjJOY3hUQW4xZ0FFQkc1aE1vN2NZNEMrQThuQVJLNTBPaG9EYVlYamtGVktJYWdjT2MvMDRTWlFsT2lIVzkyclVGcnNrTjFITTlUZlJmT0ZRSCt3eEVBSXBlWlY5eUlzOHJub0Q1Yzd0cUxQd0NFdFNCR1JXdHdZZFdKbUpBM1RIVWN6M1BESGJnYk1wQnozUHZiaGNpSFJrZHJjRlRST05VeHNxSkI0TlRTbWRpZDZrSmJxbE4xSEUvSzl1NC90V1FKK24vK2M1anQ3WWQ5blZaZGpienJya05neXBTc2NuQVV3Qjg0QWtEa0l0TUx4NmlPTUNpNjBEQzdlTHpxR0o2VjdaMTMveTkrY2NTTFB3Q1lPM2VpNzJjL3N6VUxlUmNMQUNJWHFRckZWRWNZdEdIaFN0VVJQR2t3ei83TnRyYk1YOXZjYkhzZThpWVdBRVF1WWtydm5uc3NoT29FM3VUR08yNDNaaUxyc1FBZ2NwSHRpY3p2N055R0t3R3k1OWE3YmJmbUltdXhBQ0J5a1RjNzE4Q1FwdW9ZZy9KZTl3YlZFVHpIelhmYWJzNUcxdUFxQUNJWGFVdDE0dms5NytMVTBwblFoWGZxOHplNzFtSnovMDdWTVR5bjU5cHJIZW1uNDdUVEhPbUh2SVVGQUpITHJPbmJqajNwYmh4VE5BRjE0WEtFdGFEcVNBZVZrbW5zVE83RmU5MGJlUEVuOGlBV0FFUXV0Q3ZaZ2NmYTMxQWRnNGh5bUhmR0dJbUlpTWd5TEFDSWlJaDhpQVVBRVJHUkQ3RUFJQ0lpOGlFV0FFUkVSRDdFQXNCaHBwRlVIU0ZqZlJsRTdVM1luOE1xZG56dlpkcWJtL2JrQWp1Kzl3a1BiOFhzZGZ6ZU80OEZnTVBNWksvcUNCbGIwM3prWDdCclc3eHpBVFJUZlphM0tYdTk4L1huR3Rsdi9mZSsyK0JGU0pWZWs5OTdwN0VBY0ZpeWM0ZnFDQmw3NkkyMEphOXhDNk4vcitWdG1xMXh5OXVrek1oTzYzLzJ0aWU5OC9PY2EvWndOTTF4TEFBY2x0aXpVWFdFakMxZWIrREJSWWYraGZqZ29qUVdyemNjVERRMHlZNXRscmRwYkdVQm9JclJiUDMzZmsyY0JZQXFteFA4M2p1TkJZRERlcHZlVmgwaEszZS9sTUoxRHlYeDdoWVQvVW1nUHdtOHU4WEVkUThsY2ZkTEtkWHhzaEszb2ZoS3JleXl2RTNLakxHOTMvSTIzL0RTcEpZY3N5N3VyZDhudVlCYkFUdXNaOXNia0tZQm9lbXFvMlJzOFhyRFUzZjZoOUxiOUs3bGJhYmU2NEkwQU9HZGp6Tm5wRlowVzk3bXd1NEUwaElJQ011YnBpTjRvOWM3RTZSekJVY0FISmFPZDZCbjIyTFZNWHhIcHVQb2JWbHFlYnRtZHhycDl6b3RiNWVPSUdFaXRhYkg4bWIzR0NaZTZlWmpIYWZGVFltM01sbDJSSlppQWFEQW5wVi9VeDNCZHpvM3Z3S1p0dWNYZS8renUyeHBsdzR0OFdZSGtMQm4wdGdmOTFxL1dvUU83OW11T09KY0JlQTRGZ0FLZEc5ZGhQanVEYXBqK0VySG1zZHNhenYxVGllTUxkWS9qNlpEUzd6VWJsdmJMM2JGT1JuUVlYL3RZTkdsQWdzQUZhVEVyamQvclRxRmI4VGIxcUpuK3hMN09wQkEzMSthN1d1Zi9rMTZVeDlTNzlzMytWSUN1SDJYOWZNTDZPQlc5cWV3c0p1VEwxVmdBYUJJMTZhWDBMT041NzA3b2ZXdFh3TTI3ektXZkdNdlVrdTVJc0FKZlg5dUhyaEsyK2laem42OHlvdVNJMjdmMVczM3gwbUh3QUpBb2VaWGYreXBuUUc5cUh2YlluUnZmdFdSdm5ydjNnclo3LzNWRW02V2ZLOFRxYmM2SE9ucmU4MGQzSjNPWmkvM0pQQjhGeWRkcXNJQ1FLRms1dzQwTC95cDZoZzV5MHowb09XVm56alduN0V6Z2Q1N3R6dlduOS9JM2pUNjdyWitNNmREMlpvMDhMMW1ydkN3UzdkaDR2dE56aFJ6ZEhCNnBLRGlCdFVoL0N6ZXZnNTZOSWE4cWtiVlVYSk8wMHMzb2JmNVBVZjdOTGIwUVNzS0lEQTIzOUYrL2FEM3JpMUlyYkorNmQvaHJJNm5VQkxRTUQwdjVHaS9mbkJkVXdmZTVOcC9wVGdDNEFJN0YvMFh1cllzVWgwanAreDY2eDUwckh0YVNkKzk5MjFIOG0zZU9WcXA3eTh0U0x5NlIwbmZON1YwNFFYT0I3RFVMMXE3OFVnSFY4Nm94aEVBTjVBUzNadGVSS1JpQXNLeDRhclRlTjd1NVEramRmRXYxQVdRUU9yMUR1aWo4NkRYUk5UbHlCSHhwOXJROTZDNlJ5c1N3RE9kY1V5T0JqRXl6TTFUaCtyQjNiMzQwVTVPbUhVREZnQXVJYVdCN28wdklsaFlnMGo1V05WeFBHdlhXL2VvdmZqdlkwcWtGbmRBcXd3aDBKQ25PbzFuOWYybFJlbkZmeDhEd05PZGNkUUhkVXlNQmxYSDhheGZ0SGJ6NHU4aUxBQmNSRW9EWFp0ZWdwbU9JNzkyRm9UR0p6U1pNaE05MlBIODk3Rm54Y09xby95TEtaRmMwZ0hFVFFRbUYwSm8zR0ErVTdJM2paNy8yWXpFVSs3WlpkRUE4RXhYSFAybXhKeUNNSFIrbkJuck5reDhmVWNISHR6RFZVOXVJb3FySm5HZGl3dEZLeWFpN3JRYkVTa1pwVHFLNjNWdlc0eVdWMzZDWkZlVDZpaUhGQmlWai96L054S0JlajRTT0pMa2U1M28vZlUybUx2Yys5eDlTalNFL3g0V3cxZytFamlpbDNzUytGNVRKN1ludWJ1aTI3QUFjREdoQjFEYStIRlVISDBGQXBHWTZqaXVFMjliaTlhM2Z1M1lPditoRWdHQnlPa1ZpSHl5RmxvaEx4d0hTbS9xUTkrZm14MWI1ejlVUVFGOHBqUWZYNmtxUktuTzBib0RyZXhQNGZaZDNWem43MklzQUR4QUJDSW9HZjhSbERaK0FwR0s4YXJqS0NYVGNYUnVmZ1VkYXg0YjJON1g1aDMrYkJIV0VEbWhET0hUS3hBWTVmUDVBVWtUaVNVZFNMelVQckM5cndjL3pvZ21jSDRzaXMrVTVxUFI1L01ERWxMaW1jNDQvdHJSaDRYZENTOStuTDdDQXNCalFrVjFLQnd4RDlIS2lZaVVqWU9lVndZOVVnaE5ENnVPWmlscHBtQ20rcEh1MjQxa3h6YkU5MnhFYjlPNzZHMVphdHVwZmlwb2xXR0VaaFVqTUNZZitvZ290SklnUklFT0VjeXRPMHFabGtEY2dObVJodEVjaDdHOUg2a1YzUU5IK3RwMHFwOEt3MElCbkZ3WXhwUm9FQk1qUVZRRU5CUUZORVJFYmswWVNFcUpQbE9pUFcxaWN5S05kZkVVM3VoTjRxMitKRS8xOHhBV0FFUkVSRDZVVzdjWlJFUkVsQkVXQUVSRVJEN0VBb0NJaU1pSFdBQVFFUkg1RUFzQUlpSWlIMklCUUVSRTVFTXNBSWlJaUh5SUJRQVJFWkVQc1FBZ0lpTHlJUllBUkVSRVBzUUNnSWlJeUlkWUFCQVJFZmtRQ3dBaUlpSWZZZ0ZBUkVUa1F5d0FpSWlJZklnRkFCRVJrUSt4QUNBaUl2SWhGZ0JFUkVRK3hBS0FpSWpJaHdLcUExRG04Z01TeDFhbWNHeFZHdU5qYVl3cU5GQWVrY2dQU0FRMXFUcWVwZUlHMEozUzBOcW5ZVldIanFXN0EzaXVLWVN0UGJycWFOYlJRZ2ptallTZTF3QXRYQVV0VkFvdFVBQ0lNSVRJcmRwY3lqU2tFWWRNZDhPTXQ4Q0lOeVBWdXdabWNxL3FhSmFSb1JEa3NGRXdoNCtFcktpQ0xDMkR6Q3NBZ21GQXo2M1BFK2tVa0VoQTlIUkIyOVVDMGRJRWJjTWFpSTQ5cXBOUkZrUngxYVRjdW5Ma0dBSGc1Tm9rUGpVbWdRWDFDWVJ6N1BkSXRsYnVEZUNCZFJFOHZEbU12clJRSFdjUUJJTDVZeEVzbVlWQXdRUUk0ZThhM0lqdlJMSmpDWktkU3dFenFUcE85b1NBT1dvY2pHbEh3Unc3RWREOS9YbHFyUzNRM25zRDJ2TDNJRkllL0R4OWhnV0FpNTB6UElGdlRPM0R4SmloT29ycjdFNEkvUGZ5UER5d0xvS1U2WTFDSUZnNEdaR0trNkNGcTFWSGNSMXA5Q0xSL2hLU2U1ZEFTbE4xbkl5WUU2YkFtSDhLekVwK25oL1MzNHZBb2hlaHYvczZZSGpqOC9RakZnQXVOS3JJd0U5bjkrQzQ2cFRxS0s2M3JrdkhsOGw0YjhvQUFDQUFTVVJCVkY4cnhIdTczWHZucFlYS0VLMCtGNEg4MGFxanVKNlJiRU4vMDhNdzRrMnFveHlTTEMxSCtvenpZRGFNVVIzRjljVHVYUWcrK2hlSWxoMnFvOUJCNkpHQ2lodFVoNkIvK2NUSUJINS9VaGZHRlBHdVB4TmxZWWxQalU0Z2FRSnZ0UVZWeC9tUVVQRTA1QSs3QkZxNFFuVVVUOUQwZklSaXN3QnB3T2pmcGpyT2g1aVRaeUI5d1djaHkvaDVaaVF2SDhhMG95Q01OTFFtOTMyZWZzY0N3Q1VFZ1ArYzNvZWJqK3BGeU9mUCtiT2xDZUNFbWhSR0ZocDR2aWtNd3hWaldnS1J5dE1ScVRvVEVEazBjZEVKUWlDUVB3WmFxQXhHejFvQUxoaENGZ0xwRTg5QSt0U3pBSjJmWjFhRWdEbHlMR1JKR2ZRTmF3R1BQT0x4QXhZQUxpQUEvR1IyRDc0d3NWOTFGRStiVkdKZ2Fsa2FUMndMSTYyMENCQ0lWcCtEY09rOGxTRThUNDlVUTR2VUl0MjlFa3FMQUNHUVhuQXVqTm56MVdYSUFiS3lCckttRnZyYWxZREpJc0FOZUsvcEF0ZFA3OE5ueDhWVng4Z0pwOVltY2UveFhkQVZ6Z3VNVko2R1VNbHNkUUZ5U0xCZ1BLTDFud1lVTG90TW43QUF4c3c1eXZyUEplYm9DVWlkL3hsQTQ2WEhEVGdDb05nblJpWnc4MUc5cW1Qa2xORkZCa29qRXM4M2hSenZPMVE4YldEWW55eWpoOG9oOUh5a2U5WTYzcmM1ZWNiQXNEOVpScGFXQTlFOGFCdWQvenpwMzdFTVUyaFVrWUdmSHRPak9rWk91bXhjUHk0Y2xYQzB6NEhaL3VjNTJxZGZoRXVPUWFoNGhxTjlEc3oyLzVpamZmcUZNZXRZbUZObXFvN2hleXdBRlBycDdCN2tCMXd4WXkwbi9mam9Ib3dvY0c0MVJiVDZYRUJ6ZnRUQkx5TFZaME1MbFRqV1gvcU04eUJEL0R6dGtsNXdMbVNzVkhVTVgyTUJvTWpad3hOYzUyK3pncURFajJjNzgzZ2xXRGlaNi94dEpyUXdJdFhuT05LWE9XRUsxL25iVEliQ1NDODRWM1VNWDJNQm9JQUFjTzNVUHRVeGZPR1UyaVFXMU51OUphbEFwT0lrbS9zZ0FBam1qME9nY0tLOW5RZ0JZLzRwOXZaQkFBQno5SGdZWTIzK1BPbVFXQUFvY0hKdGt0djdPdWpiMC9wZzU2S0FZUDVZYnUvcm9FajVxWUNObjZnNWFoeTM5M1dRZWZ6cGdQREdkdDY1aGdXQUFwOGE0K3prTkw5ckxFbmoxRHI3UmdHQ0piTnNhNXMrVEk5VUkxZ3d6cmIyaldsSDJkWTJmWmhaVlFOejlIalZNWHpKdlJ1bzU2aUNvTVNDZXZjV0FDSldCekZ5TmtUbE9JakswUkFWbzRGSUVVUzBDQWpsRDd3bzJRdloxd25FdXlEYk4wSHUyZ2padWhaeTg1dVFuYzFxdjRCRHVIaE1ITS9ac0N4UWFHRUVDaVpZM2k0ZFhpaDJORkkyTEF1VW9mREFxWDdrS0hQNmJHZ2IxcWlPNFRzc0FCeDJURVhLWFVmNmFqcTBNY2RCbTNZMnhKajVFR1VOUjM1UE5BWVJqUUVBUk4yVWYvc3IyYjRKY3NOck1OOS9GT2FHUmE3Wjl2UFV1aFJLUWhKN2s5WU9OUWFpSTN4L3BLOEtnWUx4RUhvVTByQjI5MHc1ck1IM1IvcXFZSXlaZ0VBa0Q0aHpicFNUK0pQdXNMbFZhZFVSQUFDaXBCN2EzTTlCbS9seGlPSWE2OW90SHdWUlBncmFuSXNoTzV0aHZ2dC9NRis3SDdKRDdjaEFRSk00c1RhRnYyK3hkaFJBeng5cGFYdVVJYUVoa0Q4V3FhNWxsalpyRGg5bGFYdVVJVTJET1dvc3RGWHZxMDdpS3l3QUhEWStwcllBRUdVam9CMTNCZlE1bHdJQmU5YzRpK0phNkNkOUdmcnhYNEM1OUI4d252ODVaTnNHVy9zOG5MbFZTY3NMQUMxY1pXbDdkaGhWWDRBNTA4c3hjWFFSUmc4dlJGMVZIb29MZ3lqSUcvam4zOU9YUm1kM0NrMnRmZGl3dFJ0ck5uWGhqYVh0MkxURDNadFVCZkpHV2w0QXlBcjNmNTY1eWh3K2lnV0F3MWdBT0d4MG9hTFovNkU4NktkOUhmb0pYd1EwaHo5MlBRaHQxZ1hRWm53TXh1TGZ3SGo2SjBDODI5a01nQzByTC9SZ21lVnRXcUZ4YkRFdVBHTUVUcHRYamJxcXZNTyt0cVFvaEpLaUVCcnE4akZ2NXIrT3VXMXE3Y096cjdYZzRhZTNZZVg2VHJzalo4Mk9sUmV5eEoyZnB4K1lsZGFOUkZKbVdBQTRyQ1RzL0ROeGJlcFowTSs3RmFKSThkSW1MUUI5L2hYUXBwd0Y0Ky9YdzF6eHBLUGROOWl3SzZBSUhQN2k2aVJOQ0p4NVlpMisrS2x4YUJ4YlBPVDI2cXJ5OExuelIrTno1NC9HeXZXZCtOV2YxdUdKbDV0aFNuZnNYcW1Gck45RlR1YmxXOTRtWlViR25OdmxrUWE0YVRxYUx4UUVIZnpsR1FoQlArOFdCQzY1VC8zRmZ6K2l1QWFCei80R2dVL2RBUVFqanZWYmJFZnhwWVd0YjNNUVRwOVhnK2QrY3pMdStQN1JsbHo4RDlRNHRoaDNmUDlvUFBlYmszSGFYSGY4TEFuZGhwK2RzRHMrVDErS1JsVW44QjJPQURnczVGREpKV0oxQ0h6dXR4K2FwZThtMnF3TEVLd2VqL1J2TG5Wa2txQWRxeStFMEsxdk5BdTFsVkhjK0pXcE9IMmVNOE9uWTBZVTR0NWI1K0NaUlMyNDRaZkwwTHpMMmxuNDJiQmw5WVZtL2VjWjBqV2NQYW9hNTR5dXh2U0tZdFFWUkpFZlZQdHprNjNPWkFyYnV2cnhUbXNIL3JSMkJ4WTE3YkYrSklpckx4ekg3M2dPRWxWakViaml6eEN4T3RWUmpralVUVVhnSzA4amZjOUZrQzJyVk1meGxGUG5WdU8vdmowVHNVTG5ENnhaTUw4RzgyWlc0SnUzdllzblgzSG4zZzl1Y083b0d2eG8vaVNNTEhiUG82TEJLQTRGTWFVOGlDbmxSZmhzNDNBc2FkbUxyN3kwRE12YXUxUkhveUhnSTRBY0k0YlBSUERxeHoxeDhkOUhGRlVoK01XL1F3eDM5cmhYcjlLRXdQVlhOZUxlVytZb3VmanZVNUFYd0YwL21JM3ZYTlVJalZ1NS9odE5DUHh3L2lROGRPWlJuci80SDh3eE5TVlkrTW5qY01FNDcveWVvUS9qQ0VBT0VkWGpFYno4VDBCZWJHZ045WFhBM0xSNFlHZS8xbldRdTdkQzlyUUR5UTlPMWd2bFF4U1VRWlNQaEtnYUI5RXdHOXFvWTRmV2IxNE13Y3YvaE5TZFowTzJyaDlhL2h3VzBBVis5STBadVBBancxVkhBVEN3aGZzWExocUxtb29vdnY3amQ1Rk91MlBqSjlWK09HOGl2am96dDArSERPa2FIbGd3QXdMQVg5WTFxWTVEZzhBQ0lFZUlXQjBDVnp3MCtJdHdPZ0Z6NlNNdzMva0x6QTJ2SFg0SHYvNE95UDRPeUxhTndPcm5BZHdGQ0EzYTJPTUdsdnROT3djSURHSXlWVjRKQWxmOEdlbGZudVhhTFlWVkNnUTAzSFB6Ykp3OHh4MlQ4UFozN2luMUtNd1A0SXJ2dmVuN0l1RGMwVFU1Zi9IZlJ4TUN2enAxR2xidTdzTEszYzR2N2FXaDRTT0FYQkFJSTNEWmd4REZ0ZG0vTjlVUDQrVzdrTHIxS0tRZitqTE05UXNIdDMydk5HR3Vld1hwUDEyRDFBK1Bodkh5WFVBcW5uVXpBNU1YSDdCOWt5S3ZFUUw0eWJYVFhYbngzK2ZrT2RYNDcyL1A5UFhqZ0pDdTRkWjUvanBMSUMrZzQvWVQzVHZabUE2TkJVQU9DSnh6RTBUdDVLemZaNjU2RnFtZkhnZmo4UnNodTNkWmxrZDJ0Y0o0L0Vha2Zub2N6TlhQWmYxK1VUOE4rdGszV0pZbkYzem55a1o4WW9FN2h2MFA1OXhUNm5IZEZaTlV4MURtN0ZIVkdCM3ozMTRDeDlXVllWNnQ5ZnN5a0wxWUFIaWNOdlVzYUhNL205MmJVbkdrSC80NjB2ZGZETGxudXkyNUFFRHUyWWIwZmYrQjlQOTlNK3ZSQUgzZTU2RTFubUZUTW04NTVkaHFYUG5Kc2FwalpPd0xGNDNGZ3VQOHVhdmJ1YVBkTzBKak4wNEk5QjdPQWZDeVNDSDA4MjdONmkyeXF4WHBlejhOMmJ6Q3BsQWZacjcrSUZMYmxpSncrUjhnQ2lzemZwOSsvbzlnYmxnSUpIcHRUT2R1dFpWUjNQNmRXZkRTcUxvUXdFKy9PUlBMMXJ5SWxqWjErd1NvTUwzeThITndIdHU0RTFlL3VBeHQvZTQ5RXZ4Z3hwVVU0S0V6ajhMRTBzSkR2bVplSFVjQXZJWWpBQjZtTDdndXF4Mys1TzZ0U045eGxxTVgvMy8yM2JSc29PL2RXek4ranlpdWhYN2F0VGFtY3I4YnZ6SVZ4WVZCMVRHeVZsd1l4STFmbnFvNmh1T3E4dzQvK2ZXYWw3eDM4UWVBZFh0N2NPblQ3eDcyTmNNS3VaT2YxN0FBOENoUk1ScjZ2TXN5ZnIzc2FrWDY3Z3NnOTJ5ek1kVVJNdXplaXZUZEYyWTEzMEEvN2dxSXNnYjdRcm5ZNmZOcUhOdmh6dzRManF2QnFTN1pOdGdwaGFIREQ2cnU2dlBleFgrZjVVZlk5S2M0NUwxQzFlOVlBSGlVZnRJMW1aL3FsNG9QRFB0bmNmZHRGN2w3QzlMM2ZnWklaL2lMVUE5Q1Avbkw5b1p5SVUwSVhQdDU3ODhtLzg2VjNDU0l5SzFZQUhpUWlOVkNtM1ZCeHE5UC8rTjZKY1AraHlLYmxpSDk2UGN6ZnIxMjFDY2hTdXB0VE9RK1o1MVVoL0VqaTFUSEdMSXhJd3J4MFJNR3NUeVZpR3pIQXNDRHRIbWZCL1RNaHR2TVZjL0NYUElIbXhObHoxejhBTXcxTDJUMllqMEk3ZGhMN1Eza01sKzR5RHV6L28va1M1OGVwem9DRVIwRVZ3RjRqZENnelR3L3M5ZW00akQrOFovMjVoa0M0Ky9YUS92bXF4bnRHcWpOdWdERzB6OEdUTU9CWkdvMWppMjI1VWpmVk5yRTB3dGI4TnhyTFZpK3JnTTdQNWloWDEwUnhaUnhNWncrdndZTDV0Y2dHTEQydnFCeGJERW1qU25HcWcyZGxyYnJSVitmTlFaM0x0MkVoT0d0M1JMRHVvYXJwNDlTSFlNc3hoRUFqOUhHSHAveGpuL0dhL2NwbmZSM0pITDNGaGl2L1NhajE0cmltb0h6Qm56Z3dqTkdXTjdtVTY4MjQrUkxYc0ExTjcyRlIxN1lnVTNiZTlBWE45QVhON0JwZXc4ZWVXRUhycjd4TFp4eTZRdDRlcUgxMnpDNzVld0MxVzZkTnhIdi9zZUpPTWREK3dXY003b2E3LzdIaWI3YjRkQVBPQUxnTWRxMHN6TjdZVG9CODVYL0hWcG5laERhbEk5Q2Evd0lSUDJVZnhZZXNyTVpjc2R5bUN1ZWdybmlTY0JJRGJvTDg1VmZRWi8zdWN4R0FhYWVEWFBEb2tIMzVSVld6cHczVElrZi9Yb2w3dm5MaG94ZXY3VzVGMWQ5LzAxYytja3hBeFA0TkdzbThKMCtyd1kzL0hLNUpXMTUzYWppZlB6NXpLUHh5bzUyWFBmcVN0Y2VxVHUxdkFpM0hkK0lFK3JMVlVjaG03QUE4Qmd4Wm41R3J6UGZmM1JJMi90cVU4K0NmdWIzSWNvK2ZEY3FLc1pBVkl5Qk51TmpBM2Z4ajk4RWMva1RnK3BIZHUyRXVleHhhRE0vZnNUWGlyR1pmZTFlTnFxK0FQWFYxaDBmbTgzRmYzOTMvM2tETkNId25hc2FMY2xSVjVXSGhycDhiR255NzZaT0J6cWh2aHlMUDNVOGZydHlHMjU4WTYxcmxnaFc1b1h4Z3puamNXbmpjT2hjd1pIVCtBakFRMFNzTnVNMThlYmJmeGxjSjVvTy9ld2JFTGprdm9OZS9EK1VxYXdCZ1V2dmgzN1dEd0F4dUI4bjg1MkhNM3FkcUJnenVBT1BQT1RZR2RiZGJUMzFhdk9nTHY3Ny9POUQ2L0hNb2hiTDhzeWRVV0ZaVzdsQ0Z3S1hUUjZCNVplY2pLL1BHb093cnU1WGNsalg4UFZaWTdEOGtwTngyZVFSdlBqN0FBc0FEeEVqajhuc2hYMGRneDRxMTgvOEh2UVR2cGo5KzA3OEV2U1BEbTdDb2JuK1ZhQS9zd2xpWXVUUmcrckRLeWFNc21icFh5cHQ0a2UvWGpua2RtNithemxTRmgzdm13dkxHdTFTRkFvb25SK3cvM1Arb2lOc1prUzVnd1dBaDRqS3pKWlRtWnNXRCtwSVgyM3FXWU82K08ram4zUU50TWtmeWY2TnBnRnoweHNadlZSVTVzN3l1SU1aTStMUWU2MW40K21GTGRqYVBQVGg5dTB0ZlhqV29sRUFxNzYyWExadmZzQXo1OC9GMUFyN0M2WUpwUVY0NU54ajhPY3pqOGFvWXYrZFl1aDNMQUE4UkZTT3p1aDFjdk9iMlRldUI2R2YrYjNzMzNkZ00rZmNsUEVlQmZ1VG01ZGs5THBjTHdEcXFxeDUvbS9WUlJzQW5uMXRweVh0REt1eGJtNURyanUrdmd5dlgzUTg3anQ5QnFxT2NMN0FZSlJHUXZqWkNaUHg5bWRPeE9rak1qK2dpM0lMQ3dBUEVlV1pyY09WdTlabjNiWTI1YU9XN0xrdlNvY1BhaFJBN2xxWFdmdmxJN051MjBzSzg2M1pUMzM1dWc1TDJnR0FaV3YzV3RKT1FSNkhsdTk4ZnpNTUtUTjZyU1lFUGoyaEhpc3ZQUVhmUFdZOEloYk1Ed2hxR3E2WlBncXJQbnN5cnA0Mk11UG4vS2FVK09PYUhVUHVuOXlGQllDWFJBOS8xT2crc20xajFrMXJreithOVhzTzJWYmpHVm0vUjdadHl1eUZlU1ZadCswbGhmbldYQ1IzN1k1YjBnNEF0TFpiMDVaVnhZMlhYZnZLQ2h6MWg1Zng3TmJNVitqa0IzWDg1ekhqc1B5U2svR1ppWVBmRXZ2TWtWVllldkdKK09ueGpWa2QzUFBxanQwNDlxRlg4ZmxuM3h0MDMrUk9MQUE4UkVReWU0WXErN0svWXhQMTFoM2RLb1pOeS9vOW1XWVc0WUtzMi9ZU044Njd0bW95T0NlVkQxaXpwd2ZuUHJJRW4zanNUV3pxekh5ZVJuMWhGUGVlTmlQcitRSDdudlAvOWV6WldUM24zOTdkajh1ZmV3OEwvcllZeTlyY3VWY0JEUTBMQUM4SlovaVBONUg5NUM5UldKWDFldzdaVnRFZ2pyQk45R1QydWh3dkFQcmkxbXgxWEZVV3NhUWRBS2dxdCthYzk3NyszTi9HT1J0UGJHN0Y5Tis5akcrK3VoS2R5Y3czMDhwMGZzQmduL1AzcGd6Y3VtUWRwajc0SXY2d21zUCt1WXdGQUZsdkVDc1FhRURiSG11RzI2ZU16K3h4VVNhbVd0VFdMb3UrdGx5U01rM2NzWFFUSmozd29tWHpBNGI2bkwveHR5L2dsaVZyRWZmWWVRV1VQUllBWHBMcG5YMm1Jd1g3a1YzV3pQUWVkRnVaM3Rsbk9sTGdVZHRiK2l4cDUvVDVneGlGT1ZSYjg2eHBhOGRPYTc2MlhMUW5uc1MxcjZ6QTNEKzlpbGQydEdmOHZuM3pBOTc1WVArQWMwWlhEK281L3lzNzJuSHNud2FlODdlNlpFZENzaDhMQUErUkdWNzhSRjVwOW0zdldKYjFldzdaMXZiM3MzNVBwcGt6L1I1NDFmc1d6YmcvWTM0Tkd1cUd2cTU3ZUUwK1RwdG56Y1kwNzYreDVtdkxaY3ZhdTNERzMxN0hKNTk0SzZ2NUFmdjJEOGgyUGYrbXpsNTg4b20zY01iZlhuZnRtUVJrSHhZQVhwTHBSTG1LN0kvdE5GYzhsZlY3RHRuV3lxZXpmbytveUhCNTN5QW1PSHJKbTh0Mlc5Sk9JS0Jac28vLzk2NmViTm54d0ZaOWJYN3c2TWFkZzVvZmtLbDl6L2xuL2Y1bFBMclJ1dEUvOGhZV0FCNlM2Vks1d1d5V1k2NTRFcko5Yzlidk81RGN2WFZ3QlVDR3V4eG12RnpRbzk1ZHVRZHBpN2JlUGVPNFdsejV5VEdEZnY4WFB6WFdzdUgvdENHeGRIVnVGMjlXRyt6OGdNUGhjMzdhSHdzQUQ4bDBmWC9HWndic3owakJlT0xtN045M1lET1BmbjlReHdPTFVYTXllcDFzRy96aE5sN1FGemV3MU1LaDh1OWMyWWlyTHNxK0lQekNSV054M2VXVExNdXhkUFVlOVBhbkxXdlBUd1k3UCtCQWZNNVBCMklCNENHWjdwYW5qVG9XMFBTczJ6ZVhQd0hqNWJ1eWZ0OCt4a3UvSE5UZFA3UUF0RXdMZ0VIc2N1ZzFmMy9PdXFWWG1pWncvVldOdVB2bVl6S2FFOUJRbDQ5N2Jqa0czN21xRVpwbTNjTDkvM3RtdTJWdCtkVysrUUhaN2grd2J6MC9uL1BUZ2JnM3A0ZGt1bDgrOG1MUVJzOGJPR1V2U3dPakFCTDZpVmRuOTc2WDdvRHg1QSt6N2c4QXRISEhBNUhNTmpZWjFEa0hIdlBJQ3p2dzNTOU5SalNjZlJGM0tBdm0xK0NVT1ZWNFpsRUxubjF0SjVhdjY4RE90bjRBUUhWRkZGUEd4YkJnZmcxT24xZU5nRVhQL1BkSkpBMDgvbktUcFczNjJST2JXL0hzMWpaY05iVUIzNTB6N3BDei9YdFRCbjcrN2tiODdPMzFIT3FuZzJJQjRDR3lveG15ZlhORysrRnJSMTA0cUFJQTBvVHgrRTJRVzk2Q2Z0WVBqdGlYYk44TTQ3RWJCbmZuL3dGdDFnV1pSZHUxSHJMVHVrTnUzS3E3TjRWbkY3WGczRk1HdiszcndRUUNHczQ4c1E1bm5saG5hYnRIOHZUQ0ZuVDFXRCtSemMvMnpRLzQ0NW9kdVA2WWNmakMxSVovcnZjM3BjUkRhNXR3L2FKVkhPcW53MklCNERGeXc2TE1Db0JwNTBBOGNUTmtWK3VnK2pGWFBBVno5ZlBRSm44RVd1TVpFUFZUSVlwckJ6SjBOa1B1V0Rid21wVlBEK3FaL3o2aXVBYmFsTE15ZXEzY3NHalEvWGpOYi8rK3lmSUNRSlVIL3A3YkV6ZFYyamMvNE5mdmI4YUNob0hkUEovWjBvcjFIVU0vQ3BweUh3c0FqekhmZnhUYW5JdVAvTUpBR05yeFg0RHgrSTJENzh4SXdYei9VWmp2UHpyNE5vNUFPL0ZMUUNDVTBXdk5aWS9abHNOdDNsbTVCNisrdlF2SEgrWHRvMXBmZnJNVjc2N2NvenBHemx2ZjBZdjFTMWxvVVhZNENkQmp6QTJMSURzeWU1NnF6N3NNb215RXpZa0dUNVNQaEg3c3BSbTlWblkwd2R6NHVzMkozT1cvZjdOR2RZUWh1K1AzbVUxY0pTTG5zUUR3R21uQ2ZPOXZtYjAyR0lGKzNxMzI1aGtDL1dNL0FnS0hQc3hrZithN2YvWGRHUVB2cmRxRGw1Y003aEdPRzd5OHBCVnZMZmZYNWo5ZHljTXZkWnhTbnZrcGZtNXp1SU9IQUtEN0NGODd1UThMQUE4eVg3cy80K2Z1MnNUVE1udGs0REI5M3VlaGpUOHBzeGNiS1ppTGYydHZJSmU2NFk3bFNDUzlkNHBlS20zaXBydFdxSTdodUIzZC9ZZjkrOStlTVJQalM3eDNvbVZWWGhpL1BQbndSNGEzOVBLd0o2L2hIQUFQa2gzTk1OOTVHTnJzVDJmMCtzQjV0eUsxZlNsazAzS2JrMlZHREpzTy9ld2JNbjY5K2RaREdULzJ5RFdiZC9UZzdqOXZ3SmN2SHE4NlNsYnUrdU02Yk56V3JUcUc0eFkyN2Nha3NzSkQvdjNFMGtJc3ZUakR3dGRqM203dFVCMkJzc1FSQUk4eVh2d2Z3TXh3eUMwUVJ1RHlQN3BpUG9Bb2EwRGdzdDluUFBFUFJnckdTNyswTjVUTDNmR0hkZGphN0oxWjNWdWJlM0huSDNKL3c2YUQrZXY2WnRVUmxIbDhFODhVOEJvV0FCNGwyemZEV0hodnhxOFhoWlVJWFBrd1JGbURmYUdPbEtHc0FZR3JIb1lvck1qNFBjYXJ2NGJjdmRYR1ZPNFhUeGo0MXMvZWcya09mUzk0dTVtbXhIVS9mYytUankyc3NLaHBOMTdhUHZqdGVyMXFjMmNmbnRqczNma3Fmc1VDd01PTVozK2ExY1k0b213RUF0YzhCbEUvemNaVWgraDcySFFFcm5rY29uUjR4dStSSFUwd252c3ZHMU41eCt2dnRlUFhmM2IvT1FqLys5QjZ2TEhVZnhmQS9WMzM2a3IwcGYxVkFIMXIwVW9rdWR1ZzU3QUE4TEpFRDR5L1g1L1ZXMFJoSllMWFBBWnQ3bWZ0eVhRUStyekxFTHo2c2F6dS9DRWxqTDk5RzBqMjJSZk1ZMzUyM3lxODUrSVQ5WmF2NjhpSnBZdER0V0ozRjc3MHd2c3dMVGk5end2KzY1ME5lSXhIQ25zU0N3Q1BNMWM4Q2VPMSs3TjdVeUNNd1BrLytXQmVRSU10dVlDQmRmNkJLeDc2WUxsZmhzLzhQMkFzdWhmbXFtZHRTdVpOYVVQaWF6OThCOTI5N3R0V3Q3czNoUy9mL0RaU0ZoMWw3SFYvWHR1RXp6N3pYczdmRmQvKzdrWjhmekdMUHE5aUFaQURqTWQrQU5tMExPdjNhUk5PUWZEYVY2Q2ZmU05FVWJWbGVVUlJOZlJ6YjBidzJsY3lYK3EzSDdsOTZkQjJNTXhobTNmMDRPb2IzNExob3ZrQXBpbngxVnZmd2VZZFBhcWp1TXJENjVvdy84OEw4VVpMN3UyRXVMR2pGeGMrOFJhdVg3VEtOeU1kdVlqTEFITkJPb24wYnk0ZGVNWWV5L0tnbDJBRStnbGZnRDd2TXBqTEhvUDU3bDlocm5zRk1MTjhocWtGb0kwN0FkcXNUd3pzN1ovbEhmOCtzcU1KNlFjK082VHpCWExkSzIvdHd1Mi9XWU5yUHo5UmRSUUF3TS91WDQwWFh1Y1E4TUVzYisvQ0tYOWRqTG0xcGZqVStEb2NYVjJDNFVYUlE1N2c1MVk5cVRSMmRNZXh0SzBUajI1c3dlT2JXcEV5YzN0MHd3OVlBT1FJMmRHTTlEMFhJWGoxbzBCZVNmWU5CRUxRWm40YzJzeVBBL0V1bUJ0Zmg5eThCSExYT3NqMkxaQTliVURpZzZWbzRYeUlnZ3FJOGdhSXluRVFvK1pBR3pVbjR5TjlENmx2TDlKM2Y5SVhKLzROMVIxL1dJc0pvNHR3bHNNbit4M29zWmVhY05jZnVkM3Y0WmhTWWxIVGJpeHE4dGV1aU9SK0xBQnlpR3hkaDlTOW4wTHc4b2VBdk5qZ0c0b1VRV3RjQURRdXNDN2NrZlR0UmVxZWl5QjMrWFA5ZUxha0JQN2ZyZStncENpRWVUT3ptRnhwb1NYTGR1TWJQMzRYSEFFbThpYk9BY2d4Y3R0N1NOMTVscWQyenBOZE81SDYxY2NndHk5VkhjVlRVbWtUVjM1dkNWWnY3SFM4NzNWYnVuSEZkOS93N1hwL29sekFBaUFIeWRiMVNOOXhGdVNPOTFWSE9TSzVmU25TdnpnRHNtVzE2aWllMU5PWHh1ZSs4d1oyN0hSdXVlU09uWDI0NUxyRjZPem1QQTBpTDJNQjRMQ0VRL05tWkVjelVuZWNCV1BSUFhEckdLMzV4dStRdXVNc3g1NzUyL0c5bDFMOUNXZ3RiZjI0NEtzTEhka3V1SGxYUHk3NitpSzB0QjMrMEJzbjJQSzlOOVIvbnI3Rjc3M2pXQUE0ckR2cDRMYzhuWVR4ais4aS9jQm5JVHZkczBlNTdHaEMrdjZMa2Y3cnRZN085dTlKQ2N2YmxFYkM4allIbzNsWFB5NzYyaUpiaTRDbTFqNWMrUDhXWW51TFN6Wm5NbTM0M3NmZDhYbjZVcExmZTZleEFIRFlsaDduditYbXlxZVIrdkZjR00vK1RPM3lPak1OWTlFOVNQMzBlQ1diL094T1dQKzlOMVB1V2VOdFp4SFExTnFIVDM1dGtYc3UvZ0JNdy9vc29vTXo5VlVSZmQ0NThDcFhzQUJ3Mk9xOWloWmVwUHBoUFB0VHBINXk3TUJqZ2JTRDFiYVJndm5PdzBqZGRoeU1mM3dYU0tqWk1HWlRwMjU1bTJiQ1hRZWcyRkVFdVBIaUR3QXlZZjJaQTFvYjl6TlFSZHZ0N3pNa1ZHQUI0TERGdTlSdUFDTDNiSWZ4ais4aTllTTVNRjc4SDF0WEM4aU9KaGd2L2dLcEg4NUcray9YUUxadnNxMnZUS3l4b1FBdyt0UitUUWV6cndpd1ltZSt6VHQ2OEltdnVHallmeitHRGNXWHR0VjluNmR2dEx1cm1QWUQ3Z1Bnc0plYlEwaWJBZ0ZON2NRODJkRU00OGxiWVR6MUkyaWo1MEtiZGc3RW1Ia1FGV09HMXU2dTlaQWJGZzNzS3JqeGRVQzZaN2V3MTFvSHR6dmg0YVI2TmlBcVRVQzRxNVp1M3RXUDg3NzBLdTY5OVJnY1BhVnNVRzI4dDNvdlBuLzlHOWpkNGM1bnMrbSt6WmEzcVcxYUQ1Z21vTG5yOC9RREZsL09Zd0hnc04wSmdSZWJnemk5UHFrNnlnQnB3dHl3Q09hR1JRQUFVVndETVhMMndBNS9sV01HRGd2S0s0R0lGZ1BoL0lIM0pIb2grenVCdnIyUXU3Y01YUFIzcllmY3RBU3l5NTFEcVAxcGdUZmJyUDl4bDBZdjByM3JFQ2lZWUhuYlE5WFJuY1Nudi9FYWJyOStWdFk3Qmo2enFBVmZ2ZVZ0OUNkY3VzN2ZUQ0hkdjlYNmR2dDdvVzljQzJPc083Wlo5Z3VSU2tIczJLSTZodSt3QUZEZ3dRMFI5eFFBQjVDZExaQkxIMUVkdzNKUDdRaWhQMjM5S2dBQVNPeDl5NVVGQUFBa1V5YXV1ZWt0Tk8zc3cxVVhqYzNvUFEvOGJSTnV1bk81cXc0Y09sQ3FaelZnMmpPaFZTeDlFMkFCNENpeGJoVkVpdnRLT0kzalhBbzh0eU9FVmFvbUEvclVRNXZDdHJXZDdsa0xNKzdPa1E5Z1lCdUlILzU2Slc2NWE4VmhMK3FHS1hITFhTdndnMTh1Yy9YRkh3Q1NuZS9ZMXJhK1lRMjBYZTc5UEhPUnZ2eHQxUkY4aVFXQUFoTEFiY3Z6Vk1md2plVjdBbmlsMmZybi8vOGlFVzkvMGNiMnJYSFB3eHZ3cWE4dFF2dmVEei9UMzl1VnhLWGZlaDMzUEx4QlFiTHNHUEZtcEhzMjJ0ZUJsTkFYUG05ZisvUnZ4TTVtYUp2ZC8zT1hpMWdBS1BMa3RoQmV0dldpUlB2Y3Rpd1BkdC9QcHJwWEl0M2ovbDlpUzVidHhsbFh2WXozVnYxci80SVY2enR3MWxVdlkrSGJ1eFFteTl4QXNXWHZKNnF0WFRFd0laQnNweTk4enJXN2xlWTZGZ0FLWGZkV3ZpMjcwOUcvdk5BY3dqTTduQ20wK2xzZmdiUmpkenFMdGJUMTQ4TC90d2dQUGJFVkR6MnhGUis3K2xWSHp4SVlpbFR2T3FTN25UazNJdkRNM3lHNE81MnR0STFyb2Evbk9TQ3E2SkdDaWh0VWgvQ3JqcVNHbG40ZEh4M216Z21CWHRlVkZMams1U0owT3JUOXNqVDZZUnJkQ0JaT2NxUy9vVEJNaWVjWDc4VHppM2U2L25uL1B0S0lvMi9IN3lDTnVDUDlpWGcvME4wTmMzeWpJLzM1allqSEVmenJnd1BmWjFLQ0l3Q0svV1ZUR1BldGphcU9rWk8rOVZZQnR2Wll2L25QNGFRNjNrVmk3eHVPOXVrWDhkWkhZU2IzT3RxbnZ2d2Q2Tys4N21pZmZoRjQ1aDhRSGU3WlN0dVBXQUM0d0hmZnpzZXpUWndQWUtXZkxjdkQvMjIyYitiLzRjUmJuMENxWjYyU3ZuTlZ2TzBsSkR2VkhHOGRlTzR4YUJ2V0tPazdWK2tMWDRDMmNxbnFHTDdIQXNBRkRBbDgvcFVpUE05SmdaYTRmMTBVdHkxVHVNcENtdWpmOFVjV0FSWko3RjJDUkx2Q1dmbW1pZUQvL1I3YTkzc1hrUUFBSUFCSlJFRlVSaFlCVnREZmVSMkJoYytwamtIZ0hBRFhNQ1R3K05Zd2hoVVlhQ3h4NmU1ckh2Q3paWG00OGQxODFURUFtRWgzcjRRSWxrQ1BWS3NPNDFueHRwZVEyUFdVNmhpQU5LR3ZXUUVaSzRHc3JGR2R4clAwaFM4ZzhPS1RxbVBRQjFnQXVJZ2hnU2UzaDlHWEZwaFhsWWJPQlFJWjYwb0tYUDFhSWU1ZjU2YjVGQ2JTM2FzQU13VTlmeFNFNEFlYUtXbkUwZC84TUpJZExwcFBJVTNvYTFkQ3BGSXdoNDhHTkg2ZW1STHhPSUtQL2huNnU1eFA0U2FpdUdxU042WUErOHkwMGpUdW1OZU44Y1VjRFRpU0Y1cEQrTmFiQmRqVzQ5NG5XbnFrRHRIYVQwQVBWNnFPNG5xcDNuV0l0endHTStYZUNXS3l1aDZwY3k2RUxPZm5lU1RheHJVSVBQTUlKL3k1RUFzQUZ3dHFFcGVPamVNYlUvdFFGdWJIZEtEbGV3SzRiVm1lWSt2OGgwb0lEYUhZTVFoWG5BU2h1K0V4aGJzWThXYkUyMTkwYkozL2tPa2FqQmx6a0Q3dUZDREt6L05BWW1jejlJWFBjWjIvaTdFQThJQm9RT0tDa1FsY09qYU9LYVZwMVhHVWloc0RqMGtlMmhUR0s4MGgyM2Y0czRVV1JLaDRPa0t4MmRBanRhclRxQ1ZUU0hXdlJyTHpuUSsyOS9YZUp5cURRWmlUWjhDWU1RZXkydCtmcDBpbklOYXVncjc4N1lIdGZibkRuNnV4QVBDWTRRVW1UcXRMWUZxWmdjWllHcFZSRThVaEV4Rm5sN3ZiTG1rQ3ZXbUJ0cmlHVFowNjFuVHFlSzAxaERmYkFyYWQ2cWVDRml4RnNHQWM5R2dkdEhBMVJLQVFRbzlDaU53NkxFcEtBekNUTUkwZXlFUTdqRVFyMG4yYkI0NzB0ZWxVUHhWa3JCVG02UEdRTmZVd0syc2dDd3FCU0FRSUJGVkhzNVpwQU1rRVJHOFB0TjN0UUhzcnRLMmJJSFpzNGFsK0hzSUNnSWlJeUlmY08ydUtpSWlJYk1NQ2dJaUl5SWRZQUJBUkVma1FDd0FpSWlJZllnRkFSRVRrUXl3QWlJaUlmSWdGQUJFUmtRK3hBQ0FpSXZJaEZnQkVSRVEreEFLQWlJakloMWdBRUJFUitSQUxBQ0lpSWg5aUFVQkVST1JETEFDSWlJaDhpQVVBRVJHUkQ3RUFJQ0lpOGlFV0FFUkVSRDdFQW9DSWlNaUhXQUFRRVJINVVFQjFBTXBjbmhiRTdJSTZ6QzZveDlob0tSckNNWlFGOHBDbkJSRVV1VlhMSldRYTNVWVNiY2xlck9sdngvTCtWcnpZdFJuYkUxMnFvMWttR2pReHN5cU9HVlg5R0ZtU3hQQ2lKRW9qSnFJQkV3Rk5xbzVucVlRaDBKUFVzTHMvZ0ExN1FsaTlPNEpGTy9MUTFCMVVIYzB5UXRPUWw1ZVBTSDRlUXVFSWdxRWdBb0VBaE5BZ2hGQWR6MUttTkdFYUpveDBHc2w0SElsNFAzcDd1cEZLcGxSSG95eUk0cXBKdWZXYkpzY0lDSnhRTkFJZkw1dUVVNHRISVNSMDFaR1VXdDNmamorMEw4TS85cXhCdittOVh6WUN3TEYxZlRoN2JCZU9HOTZMVUk1ZDZMTzFmazhZLzdlMkNFOXVMRVE4N2MwaU5yK2dBSVd4RXVRWEZ1YmNoVDVieVhnY25YdjNvS3V6RTlJMFZjZWhJMkFCNEdJZmpZM0ZOZFd6TVQ1YXJqcUs2K3hKOStQT25XL2lEKzNMa0pMZStFVnpTa01QTHArMkI2TkxrcXFqdUU1SFFzZjlTMHZ4MTdWRlNKdmV1SWdXRkJXaHRLSUNvWEJFZFJUWE1ZdzA5cmExbzNQdkhrakpTNHhic1FCd29ZWndERGNQT3hsekM0ZXBqdUo2RytKNzhNMnR6MkpaWDZ2cUtJYzByQ2lGYngrN0MwZlg5S3VPNG5xYk8wTzRjV0VsVnJXNzk2SWFESVZRV1ZPTGFINis2aWl1bDB3bXNLdXBDZkYrL3V5N2tSNHBxTGhCZFFqNmwzTkxKK0RlMGVkZ1ZLUkVkUlJQS0ExRThZbXlScVJrR3UvMjdsUWQ1MFBPR05XTjIwOXB3WWhpN3oydVVLRWtZdURzTWQxSW1RTExka1ZWeC9tUXd1SmkxQTRmZ1dBNHJEcUtKK2g2QUlXeEVrQkt4UHY3Vk1laEE3QUFjQWtCZ1d0cjUrSzdkY2NqNlBQbi9OblNoTUM4d3VFWUVTN0dTMTFiWUVEOW9KWUE4S1ZadS9HMTJlMEk2dXJ6ZUlrbWdObTEvUmhXbE1KcjIvTmhTSGM4RWlpcnJFSjVkYlh2bi9OblN3Z2dyNkFBd1ZBWWZUM2RxdVBRZmxnQXVJQ0F3RTNEVHNKbGxUTlVSL0cwQ2RGeVRNNnJ4RE1kRzJGQTNid0FBZUM2T1czNGRHT0hzZ3k1WUV4SkV1UExFbmg1YTRIeUlxQ2l1Z2F4c2pLbEdid3VISWtnSEkyZ3I2c2IwZ1ZGT3JFQWNJVnJhK2Z5NG0rUmhuQU1FL01xOEdUSGVtVy9aTDQwYXpjdi9oWVpYcFRDMkxJa1h0aGNxT3lTVVZaWnhZdS9SVUtoTUVMUktIcTdjbWM1cjVleEFGRHMzTklKK0c3ZDhhcGo1SlNSNFJMRUFsRzgzTFhGOGI3UEdOV05yODF1ZDd6ZlhEYWlLSVhpaUlIRk81eWZkRmRZWEl6eTZtckgrODFsb1ZBSWVrQkhYMCtQNmlpK3h3SkFvWVp3RFBlT1BvZlAvRzB3TGE4SzI1TmRXTlB2M01WNFdGRUt0NS9Td21mK05tZ3NUNkNwTzRqMWU1MmJmQmNNaFZBN2ZBU2YrZHNnRW8waW5Vb2hFWStyanVKcjN0eDVJMGZjUE94azVHbTVzeE9hMjl4WWZ5S0doWXNjNisvYngrNUNOT2lOUFFtODZMbzViYWdyZEc0MVJXVk5MWVRHWDVGMkthK3VRVERFMzM4cThhZGJrWS9FeG5DZHY4M3k5UkJ1cUQvSmtiNU9IdEhEZGY0Mnl3dWErT2FjTmtmNktpZ3M0anAvbTJtYWh2THFXdFV4ZkkxbkFTZ2dJUERsNm1OVXh3QUE2UFV4Uk02Y2hPQ01PbWhWaFJDUm9mMUl5TjRrak5adXBON2Nodmd6YTJEdVZMdnM1OFNpQnB4U1BBb3ZkRzZ5clE4QjRJcnBlMnhybi81bGJsMGZqaHZXaTRYYjdiMDRsMVpXMk5vK0RjZ3ZLRUIrWVNGNnU3azhVQVdPQUNod1F0RUk5ZHY3Q29ISStWTlJmT2Y1aUp3M0dmcUlraUZmL0FGQTVJY1FHRldHNkVVekVQdjFoWWhlT0gzZ0NxblExMnFPaGJBeHhMRjFmZHplMTBGZm1MSEgxaCtwL0lJQ2J1L3JvTEtLU3RVUmZJc0ZnQUlmTDV1a05vQVFLTHJwRE9SZk1RY2laTjhna0FqcHlQdmNiT1IvUmUwcWg0blJjcHhZMUdCYisyZVA5ZWFTcG5ETkZJU3JKNnVPa2JXeHBRbk1xN2R2VjduQ0dIZmhkRklvRWtGK1FhSHFHTDdFQXNCaCtYb0lweGFQVXByaC83ZDM1MUZ5VmZXK3dMLzdWSFYxVlEvcGROSkRKa0lDWkNJaEpFQkNKaFFRa0VFRncrQUVYQlhrUHE4dTEvTjY5VjJmM3F1WHEwdkZDUWYwM1VoVUpBZ0dJaUNpRUNJRVFxWU9tZWwwNW5RNlBWY1BWZFZkYzUyejN4OU5kM3FxNnVydU9tZlg4UDJzeFZxa3Eyci9mdW1rYzM1bm43MS8yN1gyTXVSZFpkMzZBK2ZOODVGLzdTV1d4UnZPeDh2TXVkQVY1Qm00WnFiZmxMSE5Wbno1eDFCOCtjZFVwekVtZDh6MW1qS3VwbWtvTE9iRnlHb1RTbGwwcWNBQ3dHTExDcWNwUGRMWE5tTWlYUGRmWlhuY3dzK3ZnalpSWFcvM2F5Zk14a1JiNnFkMWwxU0VNdk5JWHlGUXZQaHVGQy81ZUUrdjFneXpla1lBRXh4NnlzZDFGUlJ3MjU4Q0JVWEZzTm00SGRwcUxBQXN0cnhvaHRMNHpnOWRhdXEwZnp4aWdoUE9EeSswUEc0dnV4QllNK0hDbEk5N3haVE1YUG52bXJrQ2VaTm1JYTkwSnB3WHBNZUMxTkd3YVJJcnBxZitlKy9reW44bGhBQUtDb3RVcDVGeldBQlliSTVya3RMNGVVdW5xNHU5ZktheTJBQ3dvaWoxdi9mWkdicjRyLy9VLzRRbG1ma1l3SXppaTR2LzFHSHhaVDBXQUJhYjdaaW9OTDVXcnE3S3RrMjFyaW5QY09hYXNQUGl3dUxNS3dDRVprZng0anY3ZmwxOCtkMFFXdWJ0Q0w3RWhPSXJMNCtOYVZSaDhXVzl6UHVwejNBVDg5U2VjUzVjaWYrQmE3OWwzZGdIdDJtWS9OY0g0OGN1ZEl4OTdCU1k2U2hKK1pnbHpzenIvRmR3eVhXd0ZaM2ZlbVVyTElmcjRtc1JPTEZGWVZhak45MkU0c3RtNXorSnFyQXJvUFU0QTJDeHdteHUvYXVuOThXd3hKNzZQdklGR2RqNmQ3aVYvNW40R0tBNFAvWGZlNDJ0ZjVYaElrRHJzZHkxbUlvZEFGcDVFUndyTDRSajJjalA0Q2YvL1NGVGN5bit4bzJJN0RpRHlQWmF5RWpNMUZpRG1mRzl6OHV3SFFEQzdrVFJ3bzhNK1hyUm9qc2dYdmdTWkRSekZqV2FzZnRDNVE0QXU5MkdWY3VYWXRYeUpiaGs5a3lVVGU3Wkd0Zlczb21UWitxd28rb0FkbFR0Unl5Vyt0MFA2UkNmdXkrc3h3SWdpMmxsaFNpNDd5cmszekFYME5Mamg4dXhaalljYTJaREJpSUlQck1md2VjUEE3SE11NHZPVkVVTGJvWG1IUG9vUk11ZmdNSjVONlA3M2VjVlpFVnJWbHlCQis2OUUxTXJoNjVUbVRHdEVqT21WZUxhMWN2UTJPTEcraWMzWWZ2dS9Wa1ZuOVRnZkZlV2NxeWNoWW5yN2tIK1RmUFM1dUxmbnlod29PQ3pWMlBpTDliQ05rM3Q0c0Jja3FqeFR5WStCc2gwbXFiaGMvZmZoVzkrNVorSHZmZ09OcTJ5SFAveGIvOExEOTUzSjdRVTNER3Jqazlxc1FESVFzNDdGcUg0UDI0Y2NjRmZPckRObW9RSlA3b2Q5a3NVbjQyUUEzcnU4ajhZOS9YQytiY01PenRBNW5uZzNyVzQ4OE0zanZwemQzM2tKbnptVTJzelBqNnB4UUlneXpoV3prTGhReXN6cXJ1YlZ1ckNoTy9lQ20wS1c3Q2FxZWl5ajBJazJJWFNzejdnZGdzenltMXJWbHd4cG90dnI3dHZ2d21ybGkvSjJQaWtIZ3VBTEtLVkZhTG9xOWRsMU1XL2w1amdSUEhYYndCcy9DdHBsZ2xKOVAzbll3QnIyTzAyZlBiZThkOUJQL1JQZDhOdUgvM2lWdFh4S1Qzd1g5c3NVbkRmVlJreDdSK1BmVzQ1bkRmUFY1MUdWcklWbGNOMThmdEhmRi9CeFFON0JKQTVWaTFmaW1tVjVlTWVaMHBGR1ZZdEcvMWR1T3I0bEI2NEN5QkxhT1ZGUGF2OU01enIzaXNSZnUyNDVWc0VzMTN4NWZjazErMVBzNkY0OFYzdzdQaVYrVW5sc05WWEwwM3FmWTRrbXVPc0hlTXovR1RHamtTaUk3NW54YklsZUd2bjNsSG5RT3F4QU1nU2pwVVhqcmphWHovblFleFlxN0pDSVhxb0VmYTVGUkRPK0gvdHRJa3U1QzI3QUpIdFp5ek1MUHNsTS8zZjk5NGxIMk1CWUxJNUZ5VjNMb1lqaWRiRUMrWmVoRFVycnh4Vi9QbHpaaVUxZGpJRndOeUxVMy9JRmxtRGp3Q3l4RWhOZnZSekhuaS8vQUlDNjNkRCtrSVdaWFdlRE1mZy8vazIrTDd4TjhobzRrWWlqdFd6TGNvcU4vU2MrTGM4NmZjN0w3Z2FlWk5tbVpjUW9YUmljcnN0aEJDdzIrMEp1K1RsNTQrK3hiYkRFZjh6TnBzTmRyczk2YTZJa3llcFBkK0V4bzRGUUpiUVJqaG9KL0M3S2toL0JJWW5DUCt2ZDFpVVZiLzR2NjJDM3VCRjdFZ3pnczhrYmlKaW42WDJ4TVJzVTd6a0U2TmJHQ29FaWkrL3g3eUVhRVJDQ0RpZCtiRGJiUkFDMERSaFNhYzhJY1I3c1FDYlRZUFRtVDlpWENrenF4c21uY2NDSUV0b2t3b1N2aDQ5Mk5qMy8rR3RKeEY2NFYyelUrb1RxYXBENktYcTgvRmZPWnJ3L1ZvRnp3VlBwZUl4ck95ZnNQU1RKbVJDdlRvNnZRbGZMM0E1WVI5MDF4OXZGaUFVSHYyaFNPRTRueGtjdzI2em9jQ1YrSlMrOWs3UHFPTlRldUFhZ0N3eDB1cC9HUmo0QSsvL254MklIbTVFMGI5ZWE5b3BmVElTUTNERFBnUTNIUVQ2M1NVWUhZR0VuMU45YXFCS0pjc2ZSTVh0UDRXd3FmMGVPQ29XWU83M3d5a2JUeG94dUYvK0dqemJIMHZabUpuc3hPbXptRDQxL202TFNEU0tmSWNEdWpHd1RiWWhqU0c5K0k4ZVA0MjNSN2tJcjdKaU1pNWJNR2ZBMSt4Mkd3eHBBSU51NkNQUnhPc0FUcHc2TzZyWWxENVlBT1N3eUk1YWVFNCtCK2N0QzVDM2ZDWnNsY1hqdnZqS1lCUkdTeGVpK3hzUWV2a0k5SWJFZHpvMGtMZnFjVVJham1EcXZjL0FYbHlwT3AyVTBQMXRhUHJqSnhFNDlhYnFWTkxHanFvRHVIYjFzcml2UjZNeDJJYzVtbGdUR21MUk1JeCtCZldtbDE3RHR0R3V3aGNDOHk2ZTFlK1hBbmw1ZVRBR25laXBHd2FpMGNRN2NuYnVPVGk2MkpRMldBRGtPS08xRzRFbjlnQlA3RkdkQ3IwbmVIWUg2bjZ4QXRQdWZ4Yk9HVmVwVG1kY3drMkgwUGlIdXhEdDVGMWlmenVxOXFPeHhaMXdMMzQ0SEJsMitqMC8zNEZncUdkMnBxbWxEVHYzSEJoMy9QeDhCNFo3MGgvdlVVR3ZzY2FuOU1BMUFFUnBLT1pyeExuLzl3SDQ5bTFRbmNxWWRSMTZGblcvZWo4di9zT0l4WFNzZjNKVHd2Y1ljZTYrZTFicDl6eXJYL2ZFeGpFZHo5cy92dDF1RzdMZUFPaVpoVENNeENkMWpqVStwUWNXQUVScFNzWkNhTjc0QU53dmZRVXdNdWdmV1NuUnZ1VTdhSHI2UHNobzR2VWV1V3o3N3YxNDdpK2JFNzRuSElrTXU4byszK0hBcHIrK05xN3A5KzI3OStQUGY5MkMvR0cyQkVvcEVZa212dnZmK09Lcm5QN1BjQ3dBaU5KYzUvWmZvdUgzZDhBSXB2OXFheVBjaGNZbjcwYjdsdjhlc1BDVGh2ZmJEWC9Hc3krT1hBUU1kcWF1QVdkcTY4Y2QvMHh0UGM3VU5Rd2JNOUVmMzdNdmJzYnZuM3ArM1BGSkxSWUFSQm5BZjN3ejZoNWJqVWhyamVwVTRvcTBuVVRkWTllZys4aExxbFBKR0lhVVdMOWhFeDcrNGEvUjJPSWU5ajJ4bUk2WTNqTURGQWlHc1BmZ0VSdzljUWJMcnJnTWxSV1R4eHk3ZkhJcHJseTZFRWRQbk1HK1EwY1FDUFkwQ05OMVBlNjBmbU9MRy8vMXlLK3dmc09tQVFzUktUTnhFU0JSaHVpOXdFNzUyTzlRZE9tSFZhY3pnUC80WmpROWZWOUd6Rktrb3gxVkIxQzE3ekJXTFZ1Q0ZjdVdZTTdGTTFFMnFSUUEwTmJSaWJQbm1qQzV0QVR0blI0WVJzK0ZWd2lCVzI5NEgzNy85QXVqYnNZamhNQXRONzZ2cjl0ZmMyczdXdHM2VURhcEZPMGRYc3k4WU1xQStDZE8xV0hubmdQWXVlY0FuL2xuRVJZQVJCbWtkNHA5OGdlK2lja2YrRVphSFAzczJmNFlXbC8rYW1hdFUwaERzWmlPdDNidWpYdXd6cXJsUzNIdG1vRmJCNmRPS2NlU1JmT3gvL0RvWm9hV0xKcVBHZE1HYmpNMURJbU5MN3lDSFZWYzFaOHIrQWlBS05OSWlmWXQvNDJtcCs5VnVzaXVkNUZpNjB2L3lvdS9CWGJ2UFlTMjlzNGhYNy91bXVVb0tIQWxQWTdMbVQra2tBQjZ1aFB1M250NFhEbFNabUVCUUpTaHVnNDlwMnliWGN6YmtQSGJGRE9OcnV0NDVSOXZEMWxjNlhUbTQvcHJrai9zNllaclY4STF1TCtBbFBqN2xtM1FkUlp5dVlRRkFGRUdDemNkUXQwdlYxbmFaUzk0ZGdmTy9tSUZRdlh2V0JhVGV0VFZOK0Z3ellraFgxOTg2VnhjZU1HMEVUOC9jOGJVSVMyQUFlRFFrZU00ZTY1eG1FOVFObU1CUUpUaGRIOGJHdGJmaW80M2YyUjZMRy9WNDZoZjkwSG8zYTJteDZMaGJkbTZFOEhnb0NPOWhjQXROMXlUOE5oZ204Mkdteit3WnNpNmtWQW9qTmUzVlptUktxVTVGZ0JFV1VBYU1mamVlY0wwT0oxdlBRcXBqLzcwT1VxZFlDaU1yVzhQYmQwOXFiUUVWMTk1V2R6UFhYM2xZcFJOTGgzeTlUZTJWU0VRQ0tZMFI4b00zQVZBbENVS0Y5eG1TWXpJdGtkTmowT0pIWGozS0M1Yk9IZkFTbjVORTdqbm96Zmp4bXRYNG9McFUvc3U5bTN0bmFocmFFTHB4QkswZDNUMmJTTUVnS1ptTnc2OG0vaDRic3BlTEFDSXNrVFIvRnROajFHNDREWjBzZ0JRVGtxSnY3LzJGaDY0NzA1b21vWXBGV1dZUDJjMkNseE82THJlZDFnUUFNeVlWb2xMTHBvSnU4MkdRRENFb3lmT29MbTFEVkpLL0czTFc2UHVJVURaZzQ4QWlMS0F6VlVLNTZ4VnBzY3BtTFVhdG9LeGQ1K2oxSEczZDJMdmdXb3NtSHNScmxpOG9PL2t3UDZIQlFFREQvc3BjRGx4eGVJRm1EOW5OdmJzTzR5VzFuWWx1Vk42WUFGQWxBVUs1bjBRUXJOZ1FrK3pvV0RPRGViSG9hUmNOT3NDekJwbTlYKyt3OUczMW0rNHczNW16NXlPaTJaZFlIWjZsT1pZQUJCbGdTSUxudi8zeGJyVXVsZ1UzNW9WVitDanQzMWcyTU9DaEJCdzVEbmVLd1NHZG9zTVJ5SlkrNkVic0dyNUVpdFNwVFRGQW9Bb3d3bk5qb0s1TjFvV3IzRGV6UkMyUE12aTBWQjJ1dzJmdlhjdGdJR0hCZlhuY09UQjRSajY1OVQvc0orSC91bnVBWThMS0xld0FDREtjSzdacTJGekRkM2VaUmJOV1FMWGhTc3RpMGREclZxK0ZOTXF5L3QrSFE1SE1IZ3BuODJtd1dZYitrOThPSHgreG1CS1JSbFdMZU1zUUs1aUFVQ1U0UXJuajM1S1h2ZTcwZlRVSjlId3hGckV1cHBISDlQQ1J3NDAxT3FybHc3NHRaUVMwVWkwNzllYXBrRUlBU0ZFMzRsL0FCQ0pSSWNjNDd1Q0JVRE9ZZ0ZBbE9FS0Y0eHUrMS9YNFUyby9jbFNkQjNlQkgvTnl6ajdreVh3VmowK3FqSFM3VGppWERQbm9wbER2aGFKbnIrNDk3L285LzYvSVNVaTBlaVF6ODI5K0VLVHNxUjB4d0tBS0lNNXl1ZkNVVGEwdC90d2V1LzZtNTc2SkhTLysvelhnNTFvK2ZNWFJqVWJrRGY1NHFUalV1cVZUaXdaOXV2aGNNLysvNWl1d3pBa0RFUDJIZkRUZitxL3Y4bVRKcHFUSktVOUZnQkVHU3pacWZqK2QvM3hqSFkyZ0k4QjBvK3VHNGpGWXBDR0FYOGdBTDgvQU1Nd0VJM0Y0cDcweDBaQXVZc0ZBRkVHRzZuN1g3eTcvcmp2SDhWc0FBc0FkVG82dlhGZkMwZWlDQVNEZmJzREFzRWdJcEdoVS8rOTJqczlacVJJR1lBRkFGR0dHcW43WHpKMy9mRWtNeHZBcm9EcW5EaDlOdTVyVWtyMHY2bVhNdkZkL29sVDhjZWk3TVlDZ0NoRHhlditOOXE3L25oR25BMWdWMEJsZGxRZFNObFlPL2NjVE5sWWxGbFlBR1FKNlU5OFJLdFc2cklvazVHSndxR3RTZnVUd2ZqVGxYVGVjTjMveG5QWEgwK2kyUUIyQlZSalI5VitOTGFNdmJqcjFkVFNocDE3VWxkTVVHWmhBWkFsREhkM3d0ZnpiMTVnVVNZankxczZQZUhyUnJ2Zm9rd3kxK0R1ZjZtNjY0OG4zbXdBdXdLcUVZdnBXUC9rK0l1OGRVOXM3T3NLU0xtSEJVQ1dpTlYySkh6ZDlmR2xzRjg2eGFKczRoUEYrU2o0OVBLRTc5RWJmUlpsazduNmQvOHo0NjQvbnNHekFld0txTTcyM2Z2eDNGODJqL256RzE5OGxkUC9PWTRGUUphSWJEK1Q4SFhoc0dIQ2QyK0ZjKzFpaUFsT2k3THFGNy9BQWNlYTJTajU2UjJ3VFI5K0QzT3ZhRldkUlZsbHJzTDV0NWwrMXgvUDROa0E3Z1pRNTdjYi9veG5YeHg5RWZEc2k1dngrNmVlTnlFanlpUVduQjlLVm9oV25ZUGhDVUtiR1A5WnYzRGFVZmk1RlNqODNBb0xNeHNsM1VCa0YxY2xqMFJHZzZqOXlWSkxML3lEK1d0ZXh0bEhyMExwNmk4cXl5SFhHVkppL1laTnFEbCtDZy9lZjllQTh3R0cwOWppeG0rZWVKWjMvZ1NBQlVEV2tKRVlnbi9jaDhKL1dhMDZsWEVKdlhxTWF3Q1MwTGI1VzZwVEFOQ3o5aUJkY3NsbE82b09vR3JmWWF4YXRnUXJsaTNCbkl0bm9teFN6eU9pdG81T25EaFZoNTE3RG1Ebm5nTjg1azk5V0FCa2tkRGZhNUIvdzF6WTV5YStDMGhYMGg5QjhLbTlxdE1neWtpeG1JNjNkdTdGV3p2NU0wVEo0UnFBYkJJejBQV2QxMkI0UTZvekdUMHAwZjNETjJCMEJGUm5Ra1NVRTFnQVpCbkQzWTJ1Yi80TlJtZFFkU3JKa3hMK1grOUFaRGVmL1JNUldZVUZRQmFLbld5RDd5c3ZRaitUZUd0Z09wRCtDTHErL1NwQ0wxV3JUb1dJS0tkd0RVQ1cwcHQ4OEh6cHozRGR2Z2l1VDF3eFl2Yzl5K2tHUXE4ZVEzRERYaGlkblBZbklySWFDNEJzRmpNUTNIUUlvWmVPd0xGcUZoeXJaMEdiVmdKYlpiSGxCWUVNUm1HMCthRTMrUkN0cWtOazExbXU5aWNpVW9nRmdNVWlVb2REMkN5TktTTXhoTGVlUkhqclNVdmpwcHVJVFAzMnA0Z2g0TkI0bnJvS0VVT2tmRXdwSllSSS9iZzBza1FuRnBJNXVBYkFZbDE2NGtON3lEemRKbnp2dXlQOEVWSWxFRTM5OTk3UWpaU1BTY2t4RFBZbnNKb0dDSDdYTFZRWDlxaE9JV2QxeEZLL002S2hpd2ZocU5JWlN2MU1XalFhVHZtWWxCeGQ1NlhJV2tMWEFKbUJtOFl6MS9GZ3Urb1VjbGF0Q2NYWHFjNzhsSTlKeVRublRYM3hGUW14QUZBbEd1YnNxTFZrV0FQQXYvRVcydFZkcnpxRm5IVThsUHJpYTErejlRY3JVWTlUbnRRdlpBMEd1REJWbFVpWTk2SVdDMnNTNEhmZFFtOTMxU0hHeFM1SzdPNUtmZkcxcTZFQXVnbUwwV2hrKzVvTFVqNW1vTnNQL25pcUVReHdPN0RGSXBvQU1xaGxYT2JyaUFYeGxxOVdkUm81SjJURThJNi9NZVhqZXNJMjdHaEkvWVdJRWd2Rk5CeHNUZjNqRjEyUElkamRsZkp4S1RGcFNNNitXQytzQWVCRGFZczkzWDVZZFFvNTV6WHZhWVNNbUNsanYzQjhnaW5qVW54djFoVWlGRE5uQjRiSDAybkt1QlJmZDVjUDB1RFVpOFhDbWdSYVZHZVJhOTd3MXVKb3NFMTFHamxsVTRkNXJZYmZQbGVJazF3TWFLbVhUeFdiTm5hZ3E0dUxBUzNXNVdYUnBZQkhFeEFzQUN3bUlmR3o1dDJxMDhnWlJ3SnV2TzA3WjlyNEVzQzZBNU5NRzU4R090YWVqOTBtUDNacGIyczFkWHc2THh3S0lkRE42WC9MU2JScDRBeUFFcHM5SjdITlY2YzZqWnp3YVBNdVNKZzd2YmoxYkNGMmNTMkFKZFlkbUdUeW55Ymc5L2w0VWJKSWg1dkZsZ3BDb0YyVEFrMnFFOGxWLzFuL092enNER2lxcmI1YS9NTjcycEpZait3cU42VTdIWjIzbzZFQTI4NFZXaExMM2R3SXcyQm5RRFA1dTd2aDcrS2lTeFVNaUhZTk9rNnBUaVJYMVlXOStGYkRWdFZwWkswdVBZeHYxNzloV2J6NnJqdzhzcnZjc25pNXBqdWk0WWU3clB2K1JpTVJ1SnQ1ZjJRV1E5ZlIxcHo2blRtVUxLTk5FNXAyWEhVYXVlejU5aHI4b2UyZzZqU3kwbitlZXdQbndqNUxZLzd0WkRFMkhpMnhOR2F1ZUdSWHVlV3RsN3M4SG5nNk9peU5tU3ZjelUySVJxS3EwOGhaUW9vMnpkdHkrQ3pZRFZDcDc5Uy9oZGQ5WjFTbmtWViszclFiZitrOHBpVDJUM2VYWTF1OU5kUFV1ZUx4QTVQd3ltbnpWdjRuMHQ3U0RIOTN0NUxZMmFyRDdVYVgxNnM2alp3bXBhalZBT2dBckhsSVNzUFNwWUV2bkg0Wlc5a2dLQ1dlYkR1RW56WHZVaFpmbDhEWFg1K0M3ZlZjRkpnS3p4NHRVYnJMUWtxSjVuTjE4TE5CVUVwNE96dTQ4QzhOeUx6WUdSc0FPSXZMcmdmRUF0VUo1VElkRXE5NFRtS0dZd0xtdThwVXA1T3hmdDYwR3o5b2ZGdDFHdENsd0J1MVJaaGFGTU9jU1Z6b09WYVBINWlFWDd5VEhqOFBmcDhQZVk0ODVEdDUvc05ZZGJqZGFHL2h4ck0wSUgzTzBOZDZDb0RDOGptQXVGNTFScmxPaDhSbTd5a0VqUml1THA0Qm0yQ1ArV1IxNldIODI5bk4yTkIyU0hVcWZYUXBzTFd1Q0tHWWhpdW5CS0h4anpOcDNSRU4zOXBXaWVmU2JEMkZ2NnNMaGlIaEtpeUU0TTluMGd4ZFIwdGpBN3lkWEUrUkRpVFFGRzQ0OFlnTkFQSUxLd3VFd0wycWs2SWUrL3hOMk9vOWk2dUtwbUd5M2FVNm5iUzMxVmVMZno3OVYrdzFvZGQvS2h4cWRXSjdmU0V1cnd5aDFNa3p6MGV5bzZFQVgvbkhOQnhxVGM4NzdWQXdnRUIzTjF3RkJiRFo3YXJUU1h2KzdtNDBuenVIVUpDSC9hUUxEZkp3eU4vMld3RUF4ZFBuVDlaaW1oc0FTOW8wa2ljMGZMTHNNbnh4eXRXWXhFSmdpQ01CTng1dDNtWFpQdi94c21zU2Q4N3o0WUVsSFppWXowSmdzR1B0K1ZoM1lKSmwrL3pIU3dpQmt0SlNsSmFYdzJaaklUQllPQlJDaDd1VisvelRrSlQ0dmEvMXlHZjZMdmdsbFF0UEEzSzJ5cVJvZUU3Tmpqc216Y2VuSmkvR3BRVzV2Yzg4Yk1TdzJYc2FtenFxOGJidm5Pa2Qvc3pndEJ1NDVlSXVySjNydzd6SnViMEJKNndMYkQxYmhKZFBGV04zUTBFRy9ta0NRaE1vTHBtSWt0SkpPYjgrUUVvRDNiNHVkSGs3MlVreGpRbklMM3RhYWg3dFZ3QXMrQ01nUHFFeUtSclpCWTRTWERkaEZoWVZWbUNCc3h4bGVRVW9zZWNqWDJUWEhVaEU2Z2dZVWJSRkE2Z05lM0E4MUk3ZFhmVjR4OTlvMnFsK0trd3JpbUhOREQvbWw0VXhwelNNeWE0WWl2TU41TnN5OFZJWVg5UVFDTVkwdEFkdE9PZk53eW1QQS91YUMzQ3dOZCswVS8xVXlNdHpvTEM0Q1BrdUZ4ejVUdGpzZG1nMkRackludDhqMExNendqQU02SG9NMFhBRWtYQUl3VUFBd1lDZnAvcGxCSG1qdDZWbVMvOFpnTThCY3AzS2xJaUlpTWhjT3V5VjNTMkhXdnZLVW1uQXVwNnBSRVJFcEVKemQ4dWhWZ0RvS3dCODd1cVRBSGc4SFJFUlVkYVNmWHVsQnp5WWtsSnlGb0NJaUNoTFNTbDI5UDcvd0pVcFFudlY4bXlJaUlqSUVnSnkrQUpXaEVoUkFBQUtoVWxFUVZUQUZnbitEUUQ3bGhJUkVXVWRvZWNaUnQ5QktRTUtnTTdPMDE1QXZHbDlVa1JFUkdRcUtRKzJ0UjNyNjh3MFpIT3FGSGpSMm95SWlJakliRUpnZS85ZkR5a0E3RGJiaTBCR051UWlJaUtpZUFZdDlCOVNBSFEwSEtvWGtEdXR5NGlJaUloTUZoWFI4T3Y5dnpCc2Ywb3BzY0dhZklpSWlNaDhjbnZQT3IvemhpOEFITnFmQU9UMktTVkVSRVRaUW1pdkRQN1NzQVdBcjc2NkE4RGZUVStJaUlpSVRLY1pZc2cxUGU0UlZVSnFUNXFiRGhFUkVWbWdyclAxM2NPRHZ4aTNBUEMwNXI4RWlBWnpjeUlpSWlKVENXekVNTHY3RWh4U3ZUY3FoRnh2WWtwRVJFUmtNZ214Y2Jpdkp5Z0FBSHRNL3g4QVVWTXlJaUlpSXBPSk03N202bmVHZXlWaEFkRFdkcXdSUXI1a1RsSkVSRVJrTHZrbnhHbnVsN0FBNlBtcytGV3EweUVpSWlMekNVUDhLZTVyeVF4UVVybndIVUJlbWJxVWlJaUl5RnhpcjdlbCtxcDRyNDQ4QXdBQVFqNlNzbnlJaUlqSWZGSStudWpscEdZQUFOaEtLaSt0QVRCbi9Ca1JFUkdSdVVSUWhQT21lVHdIUFBIZWtkd01BS0JENHNjcHlvcUlpSWhNSlo5SmRQRUhraThBNEMwSVBDR0J4dkVuUlVSRVJHWXlwUEdia2Q2VGRBR0EydG9RaFB6dXVESWlJaUlpcyszcGFqMjZjNlEzSlY4QUFQQTFGL3dHd09reHAwUkVSRVRta3VJSHlieHRWQVZBVDN0ZzhmQlk4aUVpSWlLemlUUGUxdW9Ya25ubktBc0F3Tk5jdlFGQXphaHpJaUlpSWxOSmdSOEQwSk41NzZnTEFBQzZBTDQraHM4UkVSR1JhWVM3U0hQK0x0bDNqNlVBZ0tmbHlJdUEzRHlXenhJUkVaRUpwSHlrc1hGdklObTNqNmtBQUFCZGFGOEdFQnZyNTRtSWlDaGxtZ3Z0cmxHZDNXTWJhNlJJdDl2dEtpeXJoQkRMeHpvR0VSRVJqWjhFdnRIV2ZPanQwWHhtekRNQUFLRG55VzhCNkJqUEdFUkVSRFFPRXZVK1YyRGRhRDgycmdLZ3ErRm9PeUQvejNqR0lDSWlvbkVRNG1IVTFvWkcvYkZVaEM2cHZIUUxnT3RUTUJZUkVSRWw3NEMzNWNoVlNITHJYMy9qbWdGNGp6UjA0L01BUmwxOUVCRVIwZGdKWWZ4dmpPSGlENHhqRVdCL2tVQmJlMzVoaFUwSVhKZUs4WWlJaUdnRUVzOTVXMnArT05hUHAySUdBQURnSzhmM0FYRTRWZU1SRVJGUlhDRUkvV3ZqR1NCbEJRQ3FxeVBDd1AwQUlpa2JrNGlJaUlhUVVuelAyM0xzekhqR1NNa2pnRjZoZ0x2WldWUVJBM0JES3NjbElpS2lQa2Q5RXlMM29hTmpUTS8rZTZWaUY4QmdXa25sd3RjQitYNFR4aVlpSXNwbGhpSEYrN3BhcTdlUGQ2RFVQUUk0endCaW53SFFaY0xZUkVSRU9Vc0FqNlhpNGcraytCRkFyN0MvM1pOZldINU9DS3cxWTN3aUlxSWNkRFpQMSs4S0JOcFRzdGJPbEFJQUFNSis5eUZuVWRsMFFGeHBWZ3dpSXFJY1lRZ2g3dXhvclRtV3FnSE5lQVRReCtzS2Zna0MrODJNUVVSRWxQM0U5enpOMVcra2NrUlRDd0RVMW9ha0x1NEJoTmZVT0VSRVJGbEw3UFdXNGVGVWoycmFJNEJlNFlDN3cxbFljUUlDZDhPY1hRZEVSRVRacWxzYThxWnc3UkYzcWdjMnZRQUFnTERmWGVNcUx0Y0FjR3NnRVJGUmtvU1VuL082YTFJNjlkL0xrZ0lBQUVMZDdqZWRSZVVMQUN5MEtpWVJFVkdta3BBLzliYldQR0xXK09hdUFSaElGdWY1UGcySXZSYkdKQ0lpeWpnQ2NvZXZUUHQzYzJOWWJPTFVCUmRLUSt3R1VHbDFiQ0lpb25RbmdVYmRFRmY2M2RYTlpzYXhjZ1lBQU9CcHFqa0x6YmdOUUxmVnNZbUlpTktiQ0FKWWEvYkZIMUJRQUFDQXQrbm9Ya0RjRGlDc0lqNFJFVkVhTWlCeG42L2x5RzRyZ2xtMkNIQ3dzTjk5SnIrbzRwUUExb0xiQTRtSUtNY0ppYTk2VzQrc3R5cWVzZ0lBQU1KKzk3dk80b29RZUh3d0VSSGxNaWwrNVcwOThrMHJReW90QUFBZzNPM2U3aXlxeUFQd1B0VzVFQkVSS2ZDQ3QvWElad0JJSzRNcUx3QUFJT3gzdis0c0tuY0NXS002RnlJaUlndHQ4Ym9DZDhMamlWb2RPQzBLQUFBSSs5My9jQmFYRndGWXBUb1hJaUlpODRtZERrTjhLTkI0SXFBaWV0b1VBQUFRN25admNSYVZUd0Z3bGVwY2lJaUlUTFRIRm8zYzFONStyRXRWQW1sVkFBQkEyTzkrT2Irb1lxSUFWcWpPaFlpSXlBUjdaSjY0MmROeXpLTXlpYlFyQUFBZzdIZS93dDBCUkVTVWJhVEVObnNzb3Z6aUQ2UnBBUUQwN0E3SUw2NW9GOEF0WUo4QUlpTEtmRy9rUy9FaGxkUCsvYVZ0QVFBQTRXNTNsYk9vb2hFUXQwSlIxMElpSXFMeEU4OTdpeU1mRGRRZkM2ck9wRmRHM0ZtWFZDeTZDY0o0RnNBRTFia1FFUkdOam5qYzIxTCtlV0JyVEhVbS9XVkVBUUFBcFJXTEZodkMrQ3VBQzFUblFrUkVsQVFwQkI3Mk5CLzV0dXBFaHBNeEJRQUFsSlhObXhhMTJWNEdzRVIxTGtSRVJBbUVKZVNuZlMwMXo2aE9KSjZNS2dBQW9MVDBvaExwY0QwbElXOVRuUXNSRWRGZ0VtZ0U1SjIrbHBwZHFuTkpKSzBYQVE0bkZPb01oL3p1cDUzRkZVRUExeU1EaXhnaUlzcE9VdUR0bUM1djdIYlhIRldkeTBneSt1STVZY3FDVzRVVUd3Q1VxczZGaUloeTNqcHZpK3VMd0Y3TCsvcVBSVVlYQUFCUVhEWi9ybWJUTmdGWXBEb1hJaUxLU2QwUzRpRmZTL1hUcWhNWmpZeDdCREJZSk5EV0hpNHYvSjBybGpjQndISmtRVkZEUkVRWlk0K2hHemQzdVd2ZVZKM0lhR1hWeFhKaTVhVzNTMkE5Z01tcWN5RWlvcXdtQmZBTFQ1bjRLcXFySTZxVEdZdXNLZ0FBWVBMa3VkTmpkdnVUQUs1VG5Rc1JFV1dsczBLVDkzdWFhdDVTbmNoNFpQd2pnTUdDd2ZhdXNOLzlwS3VvckJNUTF3QndxTTZKaUlpeWdpR0FYK2JwK2wwZHJVZFBxRTVtdkxKdUJxQy9pVlBtejVMU3RnNlFONnJPaFlpSU10b0pJYlNIUE0zdmJsV2RTS3BrZFFId0hsRlN1ZUFCUVBzUklFdFVKME5FUkJrbEpLWDRucThjMzgvVVovM3g1RUlCQUtDbmpYRE1adnVCQkQ2RkhQcDlFeEhSR0Fsc2d0Uy82bTA1ZGtaMUttYkl1UXZoaENrTGx3a3BmdzVnaGVwY2lJZ29MZFZJS2I3c2E2MStWWFVpWnNxNUF1QTlXa25sd2djQitWMEFaYXFUSVNLaU5DQlJEeUVlOXJaVS94YUFyam9kcytWcUFRQUFLQzlmV0JTeDRRdVErRHJYQnhBUjVTcmhoc0NQaSszZW45Zlgxd2RWWjJPVm5DNEFlaFZOdWFSY2crUGZoY1MvQUhDcXpvZUlpQ3pSQmlFZktkUUtIbXRzM0J0UW5ZelZXQUQwTTJuNjRobTZydjlmU0h3YWtDN1YrUkFSa1NsT1NTRitXcVE1ZjVlTEYvNWVMQUNHVVRUbGtuSTdIRitRRWw4RTJ3b1RFV1VIaVgwQzhtZWUxc28vQWx0anF0TlJqUVZBQXBXVml3dURpRDBnZ0M4RG1LVTZIeUlpR3JXQWxOZ29ZYXpyYWoyNlUzVXk2WVFGUUhLMGtzb0Yxd1BpSVFCM0FNaFRuUkFSRWNVbmdDTlNpRDlJTzM3anE2L3VVSjFQT21JQk1FcGxaZk9tUlczYVp3RHhJRGdyUUVTVVJzUVp3TmdvRE8wWmo3djZnT3BzMGgwTGdMRVR4UlVMVjltRXZNY0E3aExBTk5VSkVSSGxvRG9JUENzaE52cWFxNnRVSjVOSldBQ2tobFphZnVscXFlRWVDWHdFd0V6VkNSRVJaYWtvSUxkRGFLOElBNjk0V3FzUHFrNG9VN0VBTUVIUjFFVUw3SVorazVUaWd4QjRQNEFDMVRrUkVXVW1vVVBJUTBKaU82UjhYWXRGLzlIUmNkS25PcXRzd0FMQWJKZGNrait4MjdsU1NtTWxnT1VDdUZvQ1UxV25SVVNVcGxvQWVWQUlzVk1hY251ZVlleHFhenZXcFRxcGJNUUNRSUZKMHhaZG9NZmtjaUd3UkVMT0JURHZ2Zi9ZaFpDSWNvSUFtZ0I1UmtJY0UxSzhLNFZ4U0VmZW9lNldRNjJxYzhzVkxBRFNoMVpTT2U5Q0tlMXpOUTFUcGNRVUNVd1JNQ29BYlJvZ0p3SW9CcUFCS0VIUG45MUVwUmtURVFIZEFLSUFEQURlOTc3V0RvRjJJZEZ1UUxSQm9sMUF1cVVVdFRKUHErMXlkTldpdGpha0xtVUNnUDhQYlFWbVJndTVNRDBBQUFBQVNVVk9SSzVDWUlJPSIsICJzaXplcyI6ICI1MTJ4NTEyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiwgInB1cnBvc2UiOiAiYW55IG1hc2thYmxlIn1dfQ==");
-    const blob = new Blob([manifestData], {type: 'application/json'});
-    document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blob));
-  </script>
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Deep Sleep — sono profundo</span></div>
+    <p class="card-desc">Hiberna completamente. Acorda com vibração ou movimento, mesmo com veículo desligado. Use os comandos 1 + 2 juntos.</p>
+    <div class="cmd-sublabel">Ativar — enviar os dois</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m4a">SZCS#GPS_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m4a',this)">📋</button><button class="sms-btn" onclick="sms('m4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m4b">SZCS#SLPDISCONNECT=1</span>
+      <button class="copy-btn" onclick="cop('m4b',this)">📋</button><button class="sms-btn" onclick="sms('m4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — enviar os dois</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m4c">SZCS#GPS_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m4c',this)">📋</button><button class="sms-btn" onclick="sms('m4c',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m4d">SZCS#SLPDISCONNECT=0</span>
+      <button class="copy-btn" onclick="cop('m4d',this)">📋</button><button class="sms-btn" onclick="sms('m4d',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
 
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Super Sleep — último recurso</span></div>
+    <p class="card-desc">Desliga todos os módulos. Economia máxima. Usar só se a bateria ainda descarregar com os outros modos ativos.</p>
+    <div class="cmd-sublabel">Ativar Super Sleep</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Ativar</span>
+      <span class="cmd-code" id="m5a">SZCS#MTK_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m5a',this)">📋</button><button class="sms-btn" onclick="sms('m5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao modo online normal</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m5b">SZCS#MTK_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m5b',this)">📋</button><button class="sms-btn" onclick="sms('m5b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Neste modo o equipamento pode não responder SMS. Use DEFENSE para controlar o tempo antes de dormir (padrão 3 min).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Sensibilidade de vibração</span></div>
+    <p class="card-desc">Controla a sensibilidade do acelerômetro para acordar do sleep. Nível 1 = menos sensível · 6 = mais sensível.</p>
+    <div class="cmd-sublabel">Consultar nível atual</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="m6a">CXCS#VIBL</span>
+      <button class="copy-btn" onclick="cop('m6a',this)">📋</button><button class="sms-btn" onclick="sms('m6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Ajustar nível (1 a 6 — padrão: 3)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="m6b">SZCS#VIBL=3</span>
+      <button class="copy-btn" onclick="cop('m6b',this)">📋</button><button class="sms-btn" onclick="sms('m6b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Reiniciar equipamento</span></div>
+    <p class="card-desc">Sempre enviar por último, após qualquer configuração.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="m7a">RESET#</span>
+      <button class="copy-btn" onclick="cop('m7a',this)">📋</button><button class="sms-btn" onclick="sms('m7a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-moto -->
+
+<!-- ════════════ ABA: BLOQUEIO ════════════ -->
+<div class="content" id="tab-bloqueio">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Bloquear / Desbloquear veículo</span></div>
+    <p class="card-desc">Corta ou restaura o circuito de combustível/ignição via relé. Requer fio de relé devidamente instalado.</p>
+    <div class="cmd-sublabel">Bloquear</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Bloquear</span>
+      <span class="cmd-code" id="b1a">RELAY,1#</span>
+      <button class="copy-btn" onclick="cop('b1a',this)">📋</button><button class="sms-btn" onclick="sms('b1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desbloquear</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desbloquear</span>
+      <span class="cmd-code" id="b1b">RELAY,0#</span>
+      <button class="copy-btn" onclick="cop('b1b',this)">📋</button><button class="sms-btn" onclick="sms('b1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Bloqueio imediato</span></div>
+    <p class="card-desc">Quando ativado, bloqueia o veículo instantaneamente ao desligar a ignição ou ao cortar a alimentação, sem esperar o veículo parar.</p>
+    <div class="cmd-sublabel">Ativar bloqueio imediato</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b2a">SZCS#SOURCE_OFF_TYPE=1</span>
+      <button class="copy-btn" onclick="cop('b2a',this)">📋</button><button class="sms-btn" onclick="sms('b2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b2b">SZCS#SOURCE_OFF_TYPE=0</span>
+      <button class="copy-btn" onclick="cop('b2b',this)">📋</button><button class="sms-btn" onclick="sms('b2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Com bloqueio imediato ativo, ao acionar RELAY,1# o veículo trava na hora — mesmo em movimento. Use com cuidado.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de corte de alimentação</span></div>
+    <p class="card-desc">Envia alerta quando a alimentação externa do rastreador for cortada (tentativa de furto / remoção do equipamento).</p>
+    <div class="cmd-sublabel">Ativar alarme de corte</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b3a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('b3a',this)">📋</button><button class="sms-btn" onclick="sms('b3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b3b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('b3b',this)">📋</button><button class="sms-btn" onclick="sms('b3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Monitor de Jammer (bloqueador de sinal)</span></div>
+    <p class="card-desc">Detecta dispositivos que tentam bloquear o sinal GPS/GSM do rastreador e emite alerta.</p>
+    <div class="cmd-sublabel">Ativar monitoramento</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b4a">JAMMER,ON,1#</span>
+      <button class="copy-btn" onclick="cop('b4a',this)">📋</button><button class="sms-btn" onclick="sms('b4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b4b">JAMMER,OFF#</span>
+      <button class="copy-btn" onclick="cop('b4b',this)">📋</button><button class="sms-btn" onclick="sms('b4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Consultar status</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="b4c">SZCS#GL_MONI=0</span>
+      <button class="copy-btn" onclick="cop('b4c',this)">📋</button><button class="sms-btn" onclick="sms('b4c',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Alarme de vibração / sensor</span></div>
+    <p class="card-desc">Ativa alertas quando o sensor de vibração detecta movimento ou choque no veículo.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b5a">SENALM,ON#</span>
+      <button class="copy-btn" onclick="cop('b5a',this)">📋</button><button class="sms-btn" onclick="sms('b5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b5b">SENALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('b5b',this)">📋</button><button class="sms-btn" onclick="sms('b5b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Armar / Desarmar defesa <span class="pill pill-moto">Moto</span></span></div>
+    <p class="card-desc">Tempo em segundos que o rastreador aguarda após a ignição desligar antes de entrar em modo defesa/sleep. Padrão: 3 min. Para moto, use 5.</p>
+    <div class="cmd-sublabel">Definir tempo de defesa (segundos)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Moto</span>
+      <span class="cmd-code" id="b6a">DEFENSE,5#</span>
+      <button class="copy-btn" onclick="cop('b6a',this)">📋</button><button class="sms-btn" onclick="sms('b6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Carro</span>
+      <span class="cmd-code" id="b6b">DEFENSE,10#</span>
+      <button class="copy-btn" onclick="cop('b6b',this)">📋</button><button class="sms-btn" onclick="sms('b6b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-bloqueio -->
+
+<!-- ════════════ ABA: IGNIÇÃO ════════════ -->
+<div class="content" id="tab-ignition">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ignição virtual (acelerômetro) <span class="pill pill-moto">Moto</span></span></div>
+    <p class="card-desc">A ignição virtual usa o acelerômetro do rastreador para detectar se o veículo está em movimento, sem depender do fio ACC. Ideal para motos que não têm fio de pós-chave acessível.</p>
+    <div class="cmd-sublabel">Ativar ignição virtual — ignição por movimento</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i1a">SZCS#ACCLINE=0</span>
+      <button class="copy-btn" onclick="cop('i1a',this)">📋</button><button class="sms-btn" onclick="sms('i1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ignição por fio (ACC)</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i1b">SZCS#ACCLINE=1</span>
+      <button class="copy-btn" onclick="cop('i1b',this)">📋</button><button class="sms-btn" onclick="sms('i1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Valor 0 = ignição virtual ligada / Valor 1 = ignição por fio (pós-chave físico).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de ignição ligada</span></div>
+    <p class="card-desc">Envia alerta para a plataforma quando a ignição é ligada.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i2a">ACCALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('i2a',this)">📋</button><button class="sms-btn" onclick="sms('i2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i2b">ACCALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('i2b',this)">📋</button><button class="sms-btn" onclick="sms('i2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de ignição desligada</span></div>
+    <p class="card-desc">Envia alerta para a plataforma quando a ignição é desligada.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i3a">ACCOFFALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('i3a',this)">📋</button><button class="sms-btn" onclick="sms('i3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i3b">ACCOFFALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('i3b',this)">📋</button><button class="sms-btn" onclick="sms('i3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Protocolo extendido GT06</span></div>
+    <p class="card-desc">Ativa o protocolo extendido que envia dados adicionais como hodômetro, tensão e ICCID. Necessário para usar recursos avançados na plataforma.</p>
+    <div class="cmd-sublabel">Ativar protocolo extendido</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i4a">SZCS#GT06SEL=1</span>
+      <button class="copy-btn" onclick="cop('i4a',this)">📋</button><button class="sms-btn" onclick="sms('i4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao GT06 padrão</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i4b">SZCS#GT06SEL=0</span>
+      <button class="copy-btn" onclick="cop('i4b',this)">📋</button><button class="sms-btn" onclick="sms('i4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Fuso horário</span></div>
+    <p class="card-desc">Define o fuso horário. Deixe em 0,0 para usar o horário do servidor (recomendado para Brasil).</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="i5a">GMT,W,0,0#</span>
+      <button class="copy-btn" onclick="cop('i5a',this)">📋</button><button class="sms-btn" onclick="sms('i5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Envio por ângulo de curva</span></div>
+    <p class="card-desc">Define quantos graus de curvatura disparam um envio de posição adicional. Útil para melhorar o traçado de rota. Formato: <em>intervalo-ângulo</em>.</p>
+    <div class="cmd-sublabel">Configurar ângulo de disparo</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="i6a">SZCS#ANGLEVALUE=10-045</span>
+      <button class="copy-btn" onclick="cop('i6a',this)">📋</button><button class="sms-btn" onclick="sms('i6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Primeiros 2 dígitos = intervalo mínimo (10s), últimos 3 = ângulo mínimo (45°). Ajuste conforme necessidade.</div>
+  </div>
+
+</div><!-- /tab-ignition -->
+
+<!-- ════════════ ABA: BATERIA EXTERNA ════════════ -->
+<div class="content" id="tab-bateria">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ativar monitoramento de tensão externa</span></div>
+    <p class="card-desc">Habilita a leitura da tensão da bateria do veículo (bateria externa). Permite monitorar a carga da bateria pela plataforma em tempo real.</p>
+    <div class="cmd-sublabel">Ativar tensão da bateria externa</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba1a">SZCS#GT06SEL=1#GT06IEXVOL=2</span>
+      <button class="copy-btn" onclick="cop('ba1a',this)">📋</button><button class="sms-btn" onclick="sms('ba1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar monitoramento de tensão</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba1b">SZCS#GT06SEL=1#GT06IEXVOL=0</span>
+      <button class="copy-btn" onclick="cop('ba1b',this)">📋</button><button class="sms-btn" onclick="sms('ba1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Requer protocolo extendido ativo (GT06SEL=1). O comando já inclui os dois juntos.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de variação de tensão</span></div>
+    <p class="card-desc">Envia alerta quando a tensão da bateria externa cair abaixo do limite configurado. Ideal para avisar descarga antes de o veículo não dar partida.</p>
+    <div class="cmd-sublabel">Ativar alarme de bateria baixa</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba2a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('ba2a',this)">📋</button><button class="sms-btn" onclick="sms('ba2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar alarme</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba2b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('ba2b',this)">📋</button><button class="sms-btn" onclick="sms('ba2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de bateria interna fraca</span></div>
+    <p class="card-desc">Envia alerta quando a bateria interna do rastreador (backup) estiver baixa.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba3a">BATALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('ba3a',this)">📋</button><button class="sms-btn" onclick="sms('ba3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba3b">BATALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('ba3b',this)">📋</button><button class="sms-btn" onclick="sms('ba3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Ativar leitura de ADT (tensão)</span></div>
+    <p class="card-desc">Habilita o parâmetro de leitura de tensão ADT para monitoramento.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba4a">ADT,on#</span>
+      <button class="copy-btn" onclick="cop('ba4a',this)">📋</button><button class="sms-btn" onclick="sms('ba4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba4b">ADT,off#</span>
+      <button class="copy-btn" onclick="cop('ba4b',this)">📋</button><button class="sms-btn" onclick="sms('ba4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Verificação de bateria (BATT_VERIFY)</span></div>
+    <p class="card-desc">Ativa verificação contínua do estado da bateria externa para maior precisão nas leituras.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba5a">SZCS#BATT_VERIFY=1</span>
+      <button class="copy-btn" onclick="cop('ba5a',this)">📋</button><button class="sms-btn" onclick="sms('ba5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba5b">SZCS#BATT_VERIFY=0</span>
+      <button class="copy-btn" onclick="cop('ba5b',this)">📋</button><button class="sms-btn" onclick="sms('ba5b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-bateria -->
+
+<!-- ════════════ ABA: REDE / GPRS ════════════ -->
+<div class="content" id="tab-rede">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Configurar APN</span></div>
+    <p class="card-desc">Define a APN da operadora do chip. Substitua os campos conforme o chip utilizado.</p>
+    <div class="cmd-sublabel">Formato</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Formato</span>
+      <span class="cmd-code" id="r1f">APN,endereco,usuario,senha#</span>
+      <button class="copy-btn" onclick="cop('r1f',this)">📋</button><button class="sms-btn" onclick="sms('r1f',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <hr class="div">
+    <div class="cmd-sublabel">Vivo M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Vivo</span>
+      <span class="cmd-code" id="r1a">APN,m2m.wc.br,vivo,vivo#</span>
+      <button class="copy-btn" onclick="cop('r1a',this)">📋</button><button class="sms-btn" onclick="sms('r1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Claro M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Claro</span>
+      <span class="cmd-code" id="r1b">APN,mgdata.claro.com.br,claro,claro#</span>
+      <button class="copy-btn" onclick="cop('r1b',this)">📋</button><button class="sms-btn" onclick="sms('r1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Algar M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Algar</span>
+      <span class="cmd-code" id="r1c">APN,meta.br,algar,algar#</span>
+      <button class="copy-btn" onclick="cop('r1c',this)">📋</button><button class="sms-btn" onclick="sms('r1c',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Arqia / Emnify (sem login)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Arqia</span>
+      <span class="cmd-code" id="r1d">APN,meta.br,,#</span>
+      <button class="copy-btn" onclick="cop('r1d',this)">📋</button><button class="sms-btn" onclick="sms('r1d',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Configurar servidor (DNS / IP)</span></div>
+    <p class="card-desc">Aponta o rastreador para a plataforma. Use DNS (tipo 1) ou IP direto (tipo 0).</p>
+    <div class="cmd-sublabel">Por DNS (recomendado)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">DNS</span>
+      <span class="cmd-code" id="r2a">SERVER,1,seuservidor.com.br,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('r2a',this)">📋</button><button class="sms-btn" onclick="sms('r2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Por IP direto</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">IP</span>
+      <span class="cmd-code" id="r2b">SERVER,0,xxx.xxx.xxx.xxx,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('r2b',this)">📋</button><button class="sms-btn" onclick="sms('r2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Portas mais comuns: 5023 / 6023 / 7023. Confirme com sua plataforma antes de enviar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">GPRS — Ligar / Desligar</span></div>
+    <p class="card-desc">Habilita ou desabilita o envio de dados pela rede GSM/4G.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ligar</span>
+      <span class="cmd-code" id="r3a">GPRSON,1#</span>
+      <button class="copy-btn" onclick="cop('r3a',this)">📋</button><button class="sms-btn" onclick="sms('r3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desligar</span>
+      <span class="cmd-code" id="r3b">GPRSON,0#</span>
+      <button class="copy-btn" onclick="cop('r3b',this)">📋</button><button class="sms-btn" onclick="sms('r3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Seleção de rede 2G / 4G</span></div>
+    <p class="card-desc">Define qual rede o rastreador utiliza. Automático é o padrão recomendado.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Auto 2G/4G</span>
+      <span class="cmd-code" id="r4a">SZCS#NETSELECT=0</span>
+      <button class="copy-btn" onclick="cop('r4a',this)">📋</button><button class="sms-btn" onclick="sms('r4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-muted">Só 4G</span>
+      <span class="cmd-code" id="r4b">SZCS#NETSELECT=1</span>
+      <button class="copy-btn" onclick="cop('r4b',this)">📋</button><button class="sms-btn" onclick="sms('r4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-muted">Só 2G</span>
+      <span class="cmd-code" id="r4c">SZCS#NETSELECT=2</span>
+      <button class="copy-btn" onclick="cop('r4c',this)">📋</button><button class="sms-btn" onclick="sms('r4c',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Heartbeat (pulso de vida)</span></div>
+    <p class="card-desc">Intervalo de envio do sinal de "estou vivo" para a plataforma. Formato: <em>HBT,intervalo_ligada,intervalo_desligada#</em> (segundos).</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="r5a">HBT,900,900#</span>
+      <button class="copy-btn" onclick="cop('r5a',this)">📋</button><button class="sms-btn" onclick="sms('r5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Watchdog — reinício automático diário</span></div>
+    <p class="card-desc">Reinicia o rastreador automaticamente uma vez por dia para evitar travamentos e manter a conexão estável.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="r6a">SZCS#TIMING_RESET=1</span>
+      <button class="copy-btn" onclick="cop('r6a',this)">📋</button><button class="sms-btn" onclick="sms('r6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="r6b">SZCS#TIMING_RESET=0</span>
+      <button class="copy-btn" onclick="cop('r6b',this)">📋</button><button class="sms-btn" onclick="sms('r6b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Desativar APN automática</span></div>
+    <p class="card-desc">Impede que o rastreador altere a APN automaticamente. Use antes de configurar APN manualmente.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="r7a">ASETAPN,OFF#</span>
+      <button class="copy-btn" onclick="cop('r7a',this)">📋</button><button class="sms-btn" onclick="sms('r7a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-rede -->
+
+<!-- ════════════ ABA: ALARMES ════════════ -->
+<div class="content" id="tab-alarmes">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Alarme de velocidade</span></div>
+    <p class="card-desc">Envia alerta quando o veículo ultrapassa a velocidade configurada (em km/h).</p>
+    <div class="cmd-sublabel">Ativar — ex: limite de 80 km/h</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al1a">SPEED,80#</span>
+      <button class="copy-btn" onclick="cop('al1a',this)">📋</button><button class="sms-btn" onclick="sms('al1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al1b">SPEED,0#</span>
+      <button class="copy-btn" onclick="cop('al1b',this)">📋</button><button class="sms-btn" onclick="sms('al1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de corte de alimentação</span></div>
+    <p class="card-desc">Dispara quando a alimentação externa do rastreador é cortada (remoção ou furto).</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al2a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('al2a',this)">📋</button><button class="sms-btn" onclick="sms('al2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al2b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al2b',this)">📋</button><button class="sms-btn" onclick="sms('al2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de bateria interna baixa</span></div>
+    <p class="card-desc">Alerta quando a bateria de backup interna do rastreador estiver descarregando.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al3a">BATALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al3a',this)">📋</button><button class="sms-btn" onclick="sms('al3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al3b">BATALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al3b',this)">📋</button><button class="sms-btn" onclick="sms('al3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Alarme de sensor / vibração</span></div>
+    <p class="card-desc">Alerta ao detectar choque ou vibração no veículo enquanto armado.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al4a">SENALM,ON#</span>
+      <button class="copy-btn" onclick="cop('al4a',this)">📋</button><button class="sms-btn" onclick="sms('al4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al4b">SENALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al4b',this)">📋</button><button class="sms-btn" onclick="sms('al4b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Alarme de ignição ligada / desligada</span></div>
+    <p class="card-desc">Notifica a plataforma a cada vez que a ignição é acionada ou desligada.</p>
+    <div class="cmd-sublabel">Ignição ligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al5a">ACCALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al5a',this)">📋</button><button class="sms-btn" onclick="sms('al5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:6px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al5b">ACCALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al5b',this)">📋</button><button class="sms-btn" onclick="sms('al5b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:10px">Ignição desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al5c">ACCOFFALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al5c',this)">📋</button><button class="sms-btn" onclick="sms('al5c',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:6px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al5d">ACCOFFALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al5d',this)">📋</button><button class="sms-btn" onclick="sms('al5d',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Alarme de Jammer</span></div>
+    <p class="card-desc">Detecta bloqueadores de sinal e notifica.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al6a">JAMMER,ON,1#</span>
+      <button class="copy-btn" onclick="cop('al6a',this)">📋</button><button class="sms-btn" onclick="sms('al6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al6b">JAMMER,OFF#</span>
+      <button class="copy-btn" onclick="cop('al6b',this)">📋</button><button class="sms-btn" onclick="sms('al6b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-alarmes -->
+
+<!-- ════════════ ABA: HODÔMETRO ════════════ -->
+<div class="content" id="tab-hodometro">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ativar hodômetro e horímetro internos</span></div>
+    <p class="card-desc">Habilita a contagem interna de quilometragem (hodômetro) e horas de uso (horímetro) pelo próprio rastreador. Requer protocolo extendido ativo.</p>
+    <div class="cmd-sublabel">Ativar hodômetro + horímetro</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ho1a">SZCS#GT06SEL=1#GT06METER=1</span>
+      <button class="copy-btn" onclick="cop('ho1a',this)">📋</button><button class="sms-btn" onclick="sms('ho1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar hodômetro</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ho1b">SZCS#GT06METER=0</span>
+      <button class="copy-btn" onclick="cop('ho1b',this)">📋</button><button class="sms-btn" onclick="sms('ho1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Zerar hodômetro</span></div>
+    <p class="card-desc">Limpa a contagem de quilometragem interna do rastreador. Útil ao instalar em novo veículo ou reiniciar contagem.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Zerar</span>
+      <span class="cmd-code" id="ho2a">MILEAGE=0#</span>
+      <button class="copy-btn" onclick="cop('ho2a',this)">📋</button><button class="sms-btn" onclick="sms('ho2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Ação irreversível — zera a quilometragem acumulada. Confirme antes de enviar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Ativar ICCID no protocolo</span></div>
+    <p class="card-desc">Inclui o número ICCID do chip nos dados enviados para a plataforma. Facilita identificação do chip associado ao equipamento.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ho3a">SZCS#GT06ICCID=1</span>
+      <button class="copy-btn" onclick="cop('ho3a',this)">📋</button><button class="sms-btn" onclick="sms('ho3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ho3b">SZCS#GT06ICCID=0</span>
+      <button class="copy-btn" onclick="cop('ho3b',this)">📋</button><button class="sms-btn" onclick="sms('ho3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Verificar capacidade da memória</span></div>
+    <p class="card-desc">Retorna informações sobre o armazenamento interno de posições (blind tracking).</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="ho4a">BLINDINFO#</span>
+      <button class="copy-btn" onclick="cop('ho4a',this)">📋</button><button class="sms-btn" onclick="sms('ho4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Limpar memória de backup</span></div>
+    <p class="card-desc">Apaga posições armazenadas na memória interna (blind tracking). Use quando a memória estiver cheia ou ao reinstalar.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Limpar</span>
+      <span class="cmd-code" id="ho5a">CLEAR#</span>
+      <button class="copy-btn" onclick="cop('ho5a',this)">📋</button><button class="sms-btn" onclick="sms('ho5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-hodometro -->
+
+<!-- ════════════ ABA: CONFIGURAÇÃO ════════════ -->
+<div class="content" id="tab-config">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Reiniciar equipamento</span></div>
+    <p class="card-desc">Reinicia o módulo. Sempre enviar por último após qualquer configuração.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="cfg1a">RESET#</span>
+      <button class="copy-btn" onclick="cop('cfg1a',this)">📋</button><button class="sms-btn" onclick="sms('cfg1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Restaurar padrão de fábrica</span></div>
+    <p class="card-desc">Retorna todas as configurações ao padrão original, <strong>exceto servidor e APN</strong>. Use ao reconfigurar um equipamento usado.</p>
+    <div class="cmd-sublabel">Restaurar (mantém servidor e APN)</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Restaurar</span>
+      <span class="cmd-code" id="cfg2a">FACTORY#</span>
+      <button class="copy-btn" onclick="cop('cfg2a',this)">📋</button><button class="sms-btn" onclick="sms('cfg2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Restaurar tudo inclusive servidor e APN</div>
+    <div class="cmd-row">
+      <span class="badge b-red">Total</span>
+      <span class="cmd-code" id="cfg2b">FACTORYALL#</span>
+      <button class="copy-btn" onclick="cop('cfg2b',this)">📋</button><button class="sms-btn" onclick="sms('cfg2b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Após FACTORY# reconfigure servidor, APN e fuso horário antes de reiniciar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Sequência de configuração inicial recomendada</span></div>
+    <p class="card-desc">Ordem sugerida para configurar um equipamento do zero.</p>
+    <div class="cmd-sublabel">1 — Fuso horário</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">1</span>
+      <span class="cmd-code" id="cfg3a">GMT,W,0,0#</span>
+      <button class="copy-btn" onclick="cop('cfg3a',this)">📋</button><button class="sms-btn" onclick="sms('cfg3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">2 — APN da operadora</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">2</span>
+      <span class="cmd-code" id="cfg3b">APN,apn,usuario,senha#</span>
+      <button class="copy-btn" onclick="cop('cfg3b',this)">📋</button><button class="sms-btn" onclick="sms('cfg3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">3 — Servidor (DNS)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">3</span>
+      <span class="cmd-code" id="cfg3c">SERVER,1,seuservidor.com,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('cfg3c',this)">📋</button><button class="sms-btn" onclick="sms('cfg3c',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">4 — Timer de transmissão</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">4</span>
+      <span class="cmd-code" id="cfg3d">TIMER,60,3600#</span>
+      <button class="copy-btn" onclick="cop('cfg3d',this)">📋</button><button class="sms-btn" onclick="sms('cfg3d',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">5 — Reiniciar</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">5</span>
+      <span class="cmd-code" id="cfg3e">RESET#</span>
+      <button class="copy-btn" onclick="cop('cfg3e',this)">📋</button><button class="sms-btn" onclick="sms('cfg3e',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-config -->
+
+<!-- ════════════ ABA: DIAGNÓSTICO ════════════ -->
+<div class="content" id="tab-diagnostico">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Consultar todas as configurações</span></div>
+    <div class="cmd-sublabel">Completo</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1a">PARAM#</span>
+      <button class="copy-btn" onclick="cop('d1a',this)">📋</button><button class="sms-btn" onclick="sms('d1a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Simples</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1b">SCXSZ#</span>
+      <button class="copy-btn" onclick="cop('d1b',this)">📋</button><button class="sms-btn" onclick="sms('d1b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Somente GPRS</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1c">GPRSSET#</span>
+      <button class="copy-btn" onclick="cop('d1c',this)">📋</button><button class="sms-btn" onclick="sms('d1c',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Status do equipamento</span></div>
+    <p class="card-desc">Retorna status de GPS, GPRS, bateria e ignição.</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d2a">STATUS#</span>
+      <button class="copy-btn" onclick="cop('d2a',this)">📋</button><button class="sms-btn" onclick="sms('d2a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Solicitar posição atual</span></div>
+    <p class="card-desc">Retorna latitude, longitude, velocidade e data/hora da última posição conhecida.</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d3a">POSITION#</span>
+      <button class="copy-btn" onclick="cop('d3a',this)">📋</button><button class="sms-btn" onclick="sms('d3a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-info">Alternativo</span>
+      <span class="cmd-code" id="d3b">WHERE#</span>
+      <button class="copy-btn" onclick="cop('d3b',this)">📋</button><button class="sms-btn" onclick="sms('d3b',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Versão do firmware</span></div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d4a">VERSION#</span>
+      <button class="copy-btn" onclick="cop('d4a',this)">📋</button><button class="sms-btn" onclick="sms('d4a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Consultar modo sleep</span></div>
+    <p class="card-desc">Verifica o estado atual de economia de dados e bateria.</p>
+    <div class="cmd-sublabel">Modo sleep padrão</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5a">CXCS#SLPDISCONNECT</span>
+      <button class="copy-btn" onclick="cop('d5a',this)">📋</button><button class="sms-btn" onclick="sms('d5a',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Super Sleep (MTK)</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5b">CXCS#MTK_DISSLP</span>
+      <button class="copy-btn" onclick="cop('d5b',this)">📋</button><button class="sms-btn" onclick="sms('d5b',this)" title="Enviar via SMS">💬</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">GPS sleep</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5c">CXCS#GPS_DISSLP</span>
+      <button class="copy-btn" onclick="cop('d5c',this)">📋</button><button class="sms-btn" onclick="sms('d5c',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Consultar sensibilidade de vibração</span></div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d6a">CXCS#VIBL</span>
+      <button class="copy-btn" onclick="cop('d6a',this)">📋</button><button class="sms-btn" onclick="sms('d6a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Limpar memória de backup</span></div>
+    <p class="card-desc">Apaga posições armazenadas na memória interna.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Limpar</span>
+      <span class="cmd-code" id="d7a">CLEAR#</span>
+      <button class="copy-btn" onclick="cop('d7a',this)">📋</button><button class="sms-btn" onclick="sms('d7a',this)" title="Enviar via SMS">💬</button>
+    </div>
+  </div>
+
+</div><!-- /tab-diagnostico -->
+
+<footer>
+  Rastreando GPS · J16 / GT06 · Catálogo completo de comandos SMS
+</footer>
+
+<script>
+// ── NÚMERO DO CHIP ──
+var chipNum = localStorage.getItem('chipNum') || '';
+window.onload = function() {
+  var inp = document.getElementById('chip-num');
+  if (inp && chipNum) { inp.value = chipNum; }
+};
+function saveNum() {
+  chipNum = document.getElementById('chip-num').value.replace(/\D/g,'');
+  localStorage.setItem('chipNum', chipNum);
+  var btn = document.getElementById('save-indicator');
+  btn.textContent = 'Salvo ✓';
+  btn.classList.add('saved');
+  setTimeout(function() { btn.classList.remove('saved'); }, 1000);
+}
+
+// ── ABAS ──
+function showTab(id, btn) {
+  document.querySelectorAll('.content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── COPIAR ──
+function cop(id, btn) {
+  var txt = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(function() {
+    btn.classList.add('ok');
+    btn.textContent = '✅';
+    setTimeout(function() { btn.classList.remove('ok'); btn.textContent = '📋'; }, 1500);
+  }).catch(function() {
+    btn.textContent = '❌';
+    setTimeout(function() { btn.textContent = '📋'; }, 1500);
+  });
+}
+
+// ── ENVIAR VIA SMS ──
+function sms(id, btn) {
+  var num = (document.getElementById('chip-num').value || '').replace(/\D/g,'');
+  if (!num) {
+    btn.classList.add('no-num');
+    btn.textContent = '⚠️';
+    document.getElementById('chip-num').focus();
+    setTimeout(function() { btn.classList.remove('no-num'); btn.textContent = '💬'; }, 2000);
+    return;
+  }
+  var cmd = document.getElementById(id).textContent;
+  var encoded = encodeURIComponent(cmd);
+  // Tenta sms: URI — funciona no Android e iOS
+  window.location.href = 'sms:' + num + '?body=' + encoded;
+}
+</script>
 </body>
 </html>
