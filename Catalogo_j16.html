@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J16 / GT06 — Catálogo de Comandos</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b24;
+    --card:     #1c2233;
+    --card2:    #212840;
+    --border:   #2a3350;
+    --text:     #e2e8f4;
+    --muted:    #6b7a99;
+    --faint:    #3a4566;
+    --green:    #2dd67a;
+    --green-bg: rgba(45,214,122,.10);
+    --green-br: rgba(45,214,122,.25);
+    --red:      #f86060;
+    --red-bg:   rgba(248,96,96,.10);
+    --red-br:   rgba(248,96,96,.25);
+    --amber:    #f5a623;
+    --amber-bg: rgba(245,166,35,.10);
+    --amber-br: rgba(245,166,35,.25);
+    --blue:     #4f87f8;
+    --blue-bg:  rgba(79,135,248,.10);
+    --blue-br:  rgba(79,135,248,.25);
+    --purple:   #a87cff;
+    --purple-bg:rgba(168,124,255,.10);
+    --purple-br:rgba(168,124,255,.25);
+    --mono: 'Courier New', Courier, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+  .header-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    color: var(--blue); text-transform: uppercase; margin-bottom: 5px;
+  }
+  header h1 { font-size: 21px; font-weight: 700; margin-bottom: 3px; }
+  header p  { font-size: 13px; color: var(--muted); }
+
+  /* ── TABS ── */
+  .tabs-wrap {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+  .tabs {
+    display: flex;
+    min-width: max-content;
+    padding: 0 1rem;
+    gap: 2px;
+  }
+  .tab {
+    padding: 12px 15px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--blue); }
+  .tab-icon { font-size: 15px; }
+
+  /* ── CONTENT ── */
+  .content { display: none; padding: 1.25rem 1rem 3rem; max-width: 600px; margin: 0 auto; }
+  .content.active { display: block; }
+
+  /* ── SECTION ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 1.5rem 0 .6rem;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 10px;
+  }
+  .card.featured { border-color: var(--green-br); }
+
+  .card-head {
+    display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px;
+  }
+  .card-num {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .card-desc  { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.55; padding-left: 32px; }
+  .card-desc.no-indent { padding-left: 0; }
+
+  /* ── ROW ── */
+  .cmd-sublabel {
+    font-size: 11px; color: var(--faint); margin-bottom: 5px; padding-left: 2px;
+  }
+  .cmd-row {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
+  }
+  .cmd-row:last-of-type { margin-bottom: 0; }
+
+  /* ── BADGE ── */
+  .badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 5px;
+    white-space: nowrap; flex-shrink: 0; border: 1px solid;
+  }
+  .b-on     { color: var(--green);  background: var(--green-bg);  border-color: var(--green-br);  }
+  .b-off    { color: var(--red);    background: var(--red-bg);    border-color: var(--red-br);    }
+  .b-warn   { color: var(--amber);  background: var(--amber-bg);  border-color: var(--amber-br);  }
+  .b-info   { color: var(--blue);   background: var(--blue-bg);   border-color: var(--blue-br);   }
+  .b-purple { color: var(--purple); background: var(--purple-bg); border-color: var(--purple-br); }
+  .b-muted  { color: var(--muted);  background: rgba(107,122,153,.10); border-color: rgba(107,122,153,.25); }
+
+  /* ── CODE ── */
+  .cmd-code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    flex: 1;
+    word-break: break-all;
+  }
+  .copy-btn {
+    flex-shrink: 0; width: 32px; height: 32px;
+    border-radius: 7px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--muted);
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all .15s;
+    font-size: 15px;
+  }
+  .copy-btn:hover  { background: var(--card2); color: var(--text); border-color: var(--faint); }
+  .copy-btn.ok     { color: var(--green); border-color: var(--green-br); background: var(--green-bg); }
+  .copy-btn.err    { color: var(--red); }
+
+  /* ── DIVIDER ── */
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* ── ALERT BOXES ── */
+  .alert {
+    display: flex; gap: 8px; align-items: flex-start;
+    border-radius: 8px; padding: 9px 11px;
+    font-size: 12px; line-height: 1.5; margin-top: 10px;
+    border: 1px solid;
+  }
+  .alert-warn   { background: var(--amber-bg);  border-color: var(--amber-br);  color: var(--amber); }
+  .alert-info   { background: var(--blue-bg);   border-color: var(--blue-br);   color: #7da4fc; }
+  .alert-green  { background: var(--green-bg);  border-color: var(--green-br);  color: var(--green); }
+  .alert-purple { background: var(--purple-bg); border-color: var(--purple-br); color: var(--purple); }
+
+  /* ── REC BANNER ── */
+  .rec-banner {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; color: var(--green);
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px;
+  }
+  .rec-banner::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--green);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; font-size: 12px; color: var(--muted);
+    padding: 1.5rem 1rem 2rem;
+    border-top: 1px solid var(--border);
+    max-width: 600px; margin: 0 auto;
+  }
+
+  /* ── PILL TAG ── */
+  .pill {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px; margin-left: 6px;
+    vertical-align: middle;
+  }
+  .pill-moto { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-br); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="header-tag">Rastreador J16 · Protocolo GT06</p>
+  <h1>Catálogo de Comandos SMS</h1>
+  <p>Referência completa · Ativação, desativação e descrição</p>
+</header>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('moto',this)">
+      <span class="tab-icon">🏍</span> Moto / Bateria
+    </button>
+    <button class="tab" onclick="showTab('bloqueio',this)">
+      <span class="tab-icon">🔒</span> Bloqueio
+    </button>
+    <button class="tab" onclick="showTab('ignition',this)">
+      <span class="tab-icon">🔑</span> Ignição
+    </button>
+    <button class="tab" onclick="showTab('bateria',this)">
+      <span class="tab-icon">🔋</span> Bat. Externa
+    </button>
+    <button class="tab" onclick="showTab('rede',this)">
+      <span class="tab-icon">📡</span> Rede / GPRS
+    </button>
+    <button class="tab" onclick="showTab('alarmes',this)">
+      <span class="tab-icon">🔔</span> Alarmes
+    </button>
+    <button class="tab" onclick="showTab('hodometro',this)">
+      <span class="tab-icon">📏</span> Hodômetro
+    </button>
+    <button class="tab" onclick="showTab('config',this)">
+      <span class="tab-icon">⚙️</span> Configuração
+    </button>
+    <button class="tab" onclick="showTab('diagnostico',this)">
+      <span class="tab-icon">🔍</span> Diagnóstico
+    </button>
+  </div>
+</div>
+
+<!-- ════════════ ABA: MOTO / BATERIA ════════════ -->
+<div class="content active" id="tab-moto">
+
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Desligar GPS com ignição off</span></div>
+    <p class="card-desc">Desativa o módulo GPS ~3 min após a ignição ser desligada. Principal comando para evitar descarga da bateria.</p>
+    <div class="cmd-sublabel">Ativar economia</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m1a">SZCS#GPS_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — GPS fica sempre ligado</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m1b">SZCS#GPS_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m1b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Desconectar heartbeat com ignição off</span></div>
+    <p class="card-desc">Para de pingar no servidor quando parado. Acorda ao detectar vibração, movimento ou corte de energia.</p>
+    <div class="cmd-sublabel">Modo 1 — desconecta da plataforma, SMS continua</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m2a">SZCS#SLPDISCONNECT=1</span>
+      <button class="copy-btn" onclick="cop('m2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Modo 2 — desconecta plataforma e SMS também</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Forte</span>
+      <span class="cmd-code" id="m2b">SZCS#SLPDISCONNECT=2</span>
+      <button class="copy-btn" onclick="cop('m2b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — mantém sempre conectado</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m2c">SZCS#SLPDISCONNECT=0</span>
+      <button class="copy-btn" onclick="cop('m2c',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card featured">
+    <div class="rec-banner">Recomendado para moto</div>
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Timer de transmissão</span></div>
+    <p class="card-desc">Intervalo de envio de posições. Formato: <strong>TIMER,<em>ligada</em>,<em>desligada</em>#</strong> (segundos).</p>
+    <div class="cmd-sublabel">Padrão moto — 60s ligada / 7200s (2h) desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Moto</span>
+      <span class="cmd-code" id="m3a">TIMER,60,7200#</span>
+      <button class="copy-btn" onclick="cop('m3a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Padrão carro — 60s ligada / 3600s (1h) desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Carro</span>
+      <span class="cmd-code" id="m3b">TIMER,60,3600#</span>
+      <button class="copy-btn" onclick="cop('m3b',this)">📋</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Mín: 5s · Máx: 18000s. Sempre reiniciar (RESET#) após alterar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Deep Sleep — sono profundo</span></div>
+    <p class="card-desc">Hiberna completamente. Acorda com vibração ou movimento, mesmo com veículo desligado. Use os comandos 1 + 2 juntos.</p>
+    <div class="cmd-sublabel">Ativar — enviar os dois</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m4a">SZCS#GPS_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m4a',this)">📋</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="m4b">SZCS#SLPDISCONNECT=1</span>
+      <button class="copy-btn" onclick="cop('m4b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — enviar os dois</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m4c">SZCS#GPS_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m4c',this)">📋</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m4d">SZCS#SLPDISCONNECT=0</span>
+      <button class="copy-btn" onclick="cop('m4d',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Super Sleep — último recurso</span></div>
+    <p class="card-desc">Desliga todos os módulos. Economia máxima. Usar só se a bateria ainda descarregar com os outros modos ativos.</p>
+    <div class="cmd-sublabel">Ativar Super Sleep</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Ativar</span>
+      <span class="cmd-code" id="m5a">SZCS#MTK_DISSLP=0</span>
+      <button class="copy-btn" onclick="cop('m5a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao modo online normal</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="m5b">SZCS#MTK_DISSLP=1</span>
+      <button class="copy-btn" onclick="cop('m5b',this)">📋</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Neste modo o equipamento pode não responder SMS. Use DEFENSE para controlar o tempo antes de dormir (padrão 3 min).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Sensibilidade de vibração</span></div>
+    <p class="card-desc">Controla a sensibilidade do acelerômetro para acordar do sleep. Nível 1 = menos sensível · 6 = mais sensível.</p>
+    <div class="cmd-sublabel">Consultar nível atual</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="m6a">CXCS#VIBL</span>
+      <button class="copy-btn" onclick="cop('m6a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Ajustar nível (1 a 6 — padrão: 3)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="m6b">SZCS#VIBL=3</span>
+      <button class="copy-btn" onclick="cop('m6b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Reiniciar equipamento</span></div>
+    <p class="card-desc">Sempre enviar por último, após qualquer configuração.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="m7a">RESET#</span>
+      <button class="copy-btn" onclick="cop('m7a',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-moto -->
+
+<!-- ════════════ ABA: BLOQUEIO ════════════ -->
+<div class="content" id="tab-bloqueio">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Bloquear / Desbloquear veículo</span></div>
+    <p class="card-desc">Corta ou restaura o circuito de combustível/ignição via relé. Requer fio de relé devidamente instalado.</p>
+    <div class="cmd-sublabel">Bloquear</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Bloquear</span>
+      <span class="cmd-code" id="b1a">RELAY,1#</span>
+      <button class="copy-btn" onclick="cop('b1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desbloquear</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desbloquear</span>
+      <span class="cmd-code" id="b1b">RELAY,0#</span>
+      <button class="copy-btn" onclick="cop('b1b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Bloqueio imediato</span></div>
+    <p class="card-desc">Quando ativado, bloqueia o veículo instantaneamente ao desligar a ignição ou ao cortar a alimentação, sem esperar o veículo parar.</p>
+    <div class="cmd-sublabel">Ativar bloqueio imediato</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b2a">SZCS#SOURCE_OFF_TYPE=1</span>
+      <button class="copy-btn" onclick="cop('b2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b2b">SZCS#SOURCE_OFF_TYPE=0</span>
+      <button class="copy-btn" onclick="cop('b2b',this)">📋</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Com bloqueio imediato ativo, ao acionar RELAY,1# o veículo trava na hora — mesmo em movimento. Use com cuidado.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de corte de alimentação</span></div>
+    <p class="card-desc">Envia alerta quando a alimentação externa do rastreador for cortada (tentativa de furto / remoção do equipamento).</p>
+    <div class="cmd-sublabel">Ativar alarme de corte</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b3a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('b3a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b3b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('b3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Monitor de Jammer (bloqueador de sinal)</span></div>
+    <p class="card-desc">Detecta dispositivos que tentam bloquear o sinal GPS/GSM do rastreador e emite alerta.</p>
+    <div class="cmd-sublabel">Ativar monitoramento</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b4a">JAMMER,ON,1#</span>
+      <button class="copy-btn" onclick="cop('b4a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b4b">JAMMER,OFF#</span>
+      <button class="copy-btn" onclick="cop('b4b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Consultar status</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="b4c">SZCS#GL_MONI=0</span>
+      <button class="copy-btn" onclick="cop('b4c',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Alarme de vibração / sensor</span></div>
+    <p class="card-desc">Ativa alertas quando o sensor de vibração detecta movimento ou choque no veículo.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="b5a">SENALM,ON#</span>
+      <button class="copy-btn" onclick="cop('b5a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="b5b">SENALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('b5b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Armar / Desarmar defesa <span class="pill pill-moto">Moto</span></span></div>
+    <p class="card-desc">Tempo em segundos que o rastreador aguarda após a ignição desligar antes de entrar em modo defesa/sleep. Padrão: 3 min. Para moto, use 5.</p>
+    <div class="cmd-sublabel">Definir tempo de defesa (segundos)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Moto</span>
+      <span class="cmd-code" id="b6a">DEFENSE,5#</span>
+      <button class="copy-btn" onclick="cop('b6a',this)">📋</button>
+    </div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Carro</span>
+      <span class="cmd-code" id="b6b">DEFENSE,10#</span>
+      <button class="copy-btn" onclick="cop('b6b',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-bloqueio -->
+
+<!-- ════════════ ABA: IGNIÇÃO ════════════ -->
+<div class="content" id="tab-ignition">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ignição virtual (acelerômetro) <span class="pill pill-moto">Moto</span></span></div>
+    <p class="card-desc">A ignição virtual usa o acelerômetro do rastreador para detectar se o veículo está em movimento, sem depender do fio ACC. Ideal para motos que não têm fio de pós-chave acessível.</p>
+    <div class="cmd-sublabel">Ativar ignição virtual — ignição por movimento</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i1a">SZCS#ACCLINE=0</span>
+      <button class="copy-btn" onclick="cop('i1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ignição por fio (ACC)</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i1b">SZCS#ACCLINE=1</span>
+      <button class="copy-btn" onclick="cop('i1b',this)">📋</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Valor 0 = ignição virtual ligada / Valor 1 = ignição por fio (pós-chave físico).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de ignição ligada</span></div>
+    <p class="card-desc">Envia alerta para a plataforma quando a ignição é ligada.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i2a">ACCALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('i2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i2b">ACCALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('i2b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de ignição desligada</span></div>
+    <p class="card-desc">Envia alerta para a plataforma quando a ignição é desligada.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i3a">ACCOFFALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('i3a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i3b">ACCOFFALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('i3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Protocolo extendido GT06</span></div>
+    <p class="card-desc">Ativa o protocolo extendido que envia dados adicionais como hodômetro, tensão e ICCID. Necessário para usar recursos avançados na plataforma.</p>
+    <div class="cmd-sublabel">Ativar protocolo extendido</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="i4a">SZCS#GT06SEL=1</span>
+      <button class="copy-btn" onclick="cop('i4a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar — volta ao GT06 padrão</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="i4b">SZCS#GT06SEL=0</span>
+      <button class="copy-btn" onclick="cop('i4b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Fuso horário</span></div>
+    <p class="card-desc">Define o fuso horário. Deixe em 0,0 para usar o horário do servidor (recomendado para Brasil).</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="i5a">GMT,W,0,0#</span>
+      <button class="copy-btn" onclick="cop('i5a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Envio por ângulo de curva</span></div>
+    <p class="card-desc">Define quantos graus de curvatura disparam um envio de posição adicional. Útil para melhorar o traçado de rota. Formato: <em>intervalo-ângulo</em>.</p>
+    <div class="cmd-sublabel">Configurar ângulo de disparo</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="i6a">SZCS#ANGLEVALUE=10-045</span>
+      <button class="copy-btn" onclick="cop('i6a',this)">📋</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Primeiros 2 dígitos = intervalo mínimo (10s), últimos 3 = ângulo mínimo (45°). Ajuste conforme necessidade.</div>
+  </div>
+
+</div><!-- /tab-ignition -->
+
+<!-- ════════════ ABA: BATERIA EXTERNA ════════════ -->
+<div class="content" id="tab-bateria">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ativar monitoramento de tensão externa</span></div>
+    <p class="card-desc">Habilita a leitura da tensão da bateria do veículo (bateria externa). Permite monitorar a carga da bateria pela plataforma em tempo real.</p>
+    <div class="cmd-sublabel">Ativar tensão da bateria externa</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba1a">SZCS#GT06SEL=1#GT06IEXVOL=2</span>
+      <button class="copy-btn" onclick="cop('ba1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar monitoramento de tensão</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba1b">SZCS#GT06SEL=1#GT06IEXVOL=0</span>
+      <button class="copy-btn" onclick="cop('ba1b',this)">📋</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Requer protocolo extendido ativo (GT06SEL=1). O comando já inclui os dois juntos.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de variação de tensão</span></div>
+    <p class="card-desc">Envia alerta quando a tensão da bateria externa cair abaixo do limite configurado. Ideal para avisar descarga antes de o veículo não dar partida.</p>
+    <div class="cmd-sublabel">Ativar alarme de bateria baixa</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba2a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('ba2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar alarme</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba2b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('ba2b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de bateria interna fraca</span></div>
+    <p class="card-desc">Envia alerta quando a bateria interna do rastreador (backup) estiver baixa.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba3a">BATALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('ba3a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba3b">BATALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('ba3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Ativar leitura de ADT (tensão)</span></div>
+    <p class="card-desc">Habilita o parâmetro de leitura de tensão ADT para monitoramento.</p>
+    <div class="cmd-sublabel">Ativar</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba4a">ADT,on#</span>
+      <button class="copy-btn" onclick="cop('ba4a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba4b">ADT,off#</span>
+      <button class="copy-btn" onclick="cop('ba4b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Verificação de bateria (BATT_VERIFY)</span></div>
+    <p class="card-desc">Ativa verificação contínua do estado da bateria externa para maior precisão nas leituras.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ba5a">SZCS#BATT_VERIFY=1</span>
+      <button class="copy-btn" onclick="cop('ba5a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ba5b">SZCS#BATT_VERIFY=0</span>
+      <button class="copy-btn" onclick="cop('ba5b',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-bateria -->
+
+<!-- ════════════ ABA: REDE / GPRS ════════════ -->
+<div class="content" id="tab-rede">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Configurar APN</span></div>
+    <p class="card-desc">Define a APN da operadora do chip. Substitua os campos conforme o chip utilizado.</p>
+    <div class="cmd-sublabel">Formato</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Formato</span>
+      <span class="cmd-code" id="r1f">APN,endereco,usuario,senha#</span>
+      <button class="copy-btn" onclick="cop('r1f',this)">📋</button>
+    </div>
+    <hr class="div">
+    <div class="cmd-sublabel">Vivo M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Vivo</span>
+      <span class="cmd-code" id="r1a">APN,m2m.wc.br,vivo,vivo#</span>
+      <button class="copy-btn" onclick="cop('r1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Claro M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Claro</span>
+      <span class="cmd-code" id="r1b">APN,mgdata.claro.com.br,claro,claro#</span>
+      <button class="copy-btn" onclick="cop('r1b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Algar M2M</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Algar</span>
+      <span class="cmd-code" id="r1c">APN,meta.br,algar,algar#</span>
+      <button class="copy-btn" onclick="cop('r1c',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Arqia / Emnify (sem login)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">Arqia</span>
+      <span class="cmd-code" id="r1d">APN,meta.br,,#</span>
+      <button class="copy-btn" onclick="cop('r1d',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Configurar servidor (DNS / IP)</span></div>
+    <p class="card-desc">Aponta o rastreador para a plataforma. Use DNS (tipo 1) ou IP direto (tipo 0).</p>
+    <div class="cmd-sublabel">Por DNS (recomendado)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">DNS</span>
+      <span class="cmd-code" id="r2a">SERVER,1,seuservidor.com.br,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('r2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Por IP direto</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">IP</span>
+      <span class="cmd-code" id="r2b">SERVER,0,xxx.xxx.xxx.xxx,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('r2b',this)">📋</button>
+    </div>
+    <div class="alert alert-info">ℹ️ Portas mais comuns: 5023 / 6023 / 7023. Confirme com sua plataforma antes de enviar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">GPRS — Ligar / Desligar</span></div>
+    <p class="card-desc">Habilita ou desabilita o envio de dados pela rede GSM/4G.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ligar</span>
+      <span class="cmd-code" id="r3a">GPRSON,1#</span>
+      <button class="copy-btn" onclick="cop('r3a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desligar</span>
+      <span class="cmd-code" id="r3b">GPRSON,0#</span>
+      <button class="copy-btn" onclick="cop('r3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Seleção de rede 2G / 4G</span></div>
+    <p class="card-desc">Define qual rede o rastreador utiliza. Automático é o padrão recomendado.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Auto 2G/4G</span>
+      <span class="cmd-code" id="r4a">SZCS#NETSELECT=0</span>
+      <button class="copy-btn" onclick="cop('r4a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-muted">Só 4G</span>
+      <span class="cmd-code" id="r4b">SZCS#NETSELECT=1</span>
+      <button class="copy-btn" onclick="cop('r4b',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-muted">Só 2G</span>
+      <span class="cmd-code" id="r4c">SZCS#NETSELECT=2</span>
+      <button class="copy-btn" onclick="cop('r4c',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Heartbeat (pulso de vida)</span></div>
+    <p class="card-desc">Intervalo de envio do sinal de "estou vivo" para a plataforma. Formato: <em>HBT,intervalo_ligada,intervalo_desligada#</em> (segundos).</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Definir</span>
+      <span class="cmd-code" id="r5a">HBT,900,900#</span>
+      <button class="copy-btn" onclick="cop('r5a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Watchdog — reinício automático diário</span></div>
+    <p class="card-desc">Reinicia o rastreador automaticamente uma vez por dia para evitar travamentos e manter a conexão estável.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="r6a">SZCS#TIMING_RESET=1</span>
+      <button class="copy-btn" onclick="cop('r6a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="r6b">SZCS#TIMING_RESET=0</span>
+      <button class="copy-btn" onclick="cop('r6b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Desativar APN automática</span></div>
+    <p class="card-desc">Impede que o rastreador altere a APN automaticamente. Use antes de configurar APN manualmente.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="r7a">ASETAPN,OFF#</span>
+      <button class="copy-btn" onclick="cop('r7a',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-rede -->
+
+<!-- ════════════ ABA: ALARMES ════════════ -->
+<div class="content" id="tab-alarmes">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Alarme de velocidade</span></div>
+    <p class="card-desc">Envia alerta quando o veículo ultrapassa a velocidade configurada (em km/h).</p>
+    <div class="cmd-sublabel">Ativar — ex: limite de 80 km/h</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al1a">SPEED,80#</span>
+      <button class="copy-btn" onclick="cop('al1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al1b">SPEED,0#</span>
+      <button class="copy-btn" onclick="cop('al1b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Alarme de corte de alimentação</span></div>
+    <p class="card-desc">Dispara quando a alimentação externa do rastreador é cortada (remoção ou furto).</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al2a">POWERALM,ON,1,2,1#</span>
+      <button class="copy-btn" onclick="cop('al2a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al2b">POWERALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al2b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Alarme de bateria interna baixa</span></div>
+    <p class="card-desc">Alerta quando a bateria de backup interna do rastreador estiver descarregando.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al3a">BATALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al3a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al3b">BATALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Alarme de sensor / vibração</span></div>
+    <p class="card-desc">Alerta ao detectar choque ou vibração no veículo enquanto armado.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al4a">SENALM,ON#</span>
+      <button class="copy-btn" onclick="cop('al4a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al4b">SENALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al4b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Alarme de ignição ligada / desligada</span></div>
+    <p class="card-desc">Notifica a plataforma a cada vez que a ignição é acionada ou desligada.</p>
+    <div class="cmd-sublabel">Ignição ligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al5a">ACCALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al5a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:6px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al5b">ACCALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al5b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:10px">Ignição desligada</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al5c">ACCOFFALM,ON,0#</span>
+      <button class="copy-btn" onclick="cop('al5c',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:6px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al5d">ACCOFFALM,OFF#</span>
+      <button class="copy-btn" onclick="cop('al5d',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Alarme de Jammer</span></div>
+    <p class="card-desc">Detecta bloqueadores de sinal e notifica.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="al6a">JAMMER,ON,1#</span>
+      <button class="copy-btn" onclick="cop('al6a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="al6b">JAMMER,OFF#</span>
+      <button class="copy-btn" onclick="cop('al6b',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-alarmes -->
+
+<!-- ════════════ ABA: HODÔMETRO ════════════ -->
+<div class="content" id="tab-hodometro">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Ativar hodômetro e horímetro internos</span></div>
+    <p class="card-desc">Habilita a contagem interna de quilometragem (hodômetro) e horas de uso (horímetro) pelo próprio rastreador. Requer protocolo extendido ativo.</p>
+    <div class="cmd-sublabel">Ativar hodômetro + horímetro</div>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ho1a">SZCS#GT06SEL=1#GT06METER=1</span>
+      <button class="copy-btn" onclick="cop('ho1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Desativar hodômetro</div>
+    <div class="cmd-row">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ho1b">SZCS#GT06METER=0</span>
+      <button class="copy-btn" onclick="cop('ho1b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Zerar hodômetro</span></div>
+    <p class="card-desc">Limpa a contagem de quilometragem interna do rastreador. Útil ao instalar em novo veículo ou reiniciar contagem.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Zerar</span>
+      <span class="cmd-code" id="ho2a">MILEAGE=0#</span>
+      <button class="copy-btn" onclick="cop('ho2a',this)">📋</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Ação irreversível — zera a quilometragem acumulada. Confirme antes de enviar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Ativar ICCID no protocolo</span></div>
+    <p class="card-desc">Inclui o número ICCID do chip nos dados enviados para a plataforma. Facilita identificação do chip associado ao equipamento.</p>
+    <div class="cmd-row">
+      <span class="badge b-on">Ativar</span>
+      <span class="cmd-code" id="ho3a">SZCS#GT06ICCID=1</span>
+      <button class="copy-btn" onclick="cop('ho3a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-off">Desativar</span>
+      <span class="cmd-code" id="ho3b">SZCS#GT06ICCID=0</span>
+      <button class="copy-btn" onclick="cop('ho3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Verificar capacidade da memória</span></div>
+    <p class="card-desc">Retorna informações sobre o armazenamento interno de posições (blind tracking).</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="ho4a">BLINDINFO#</span>
+      <button class="copy-btn" onclick="cop('ho4a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Limpar memória de backup</span></div>
+    <p class="card-desc">Apaga posições armazenadas na memória interna (blind tracking). Use quando a memória estiver cheia ou ao reinstalar.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Limpar</span>
+      <span class="cmd-code" id="ho5a">CLEAR#</span>
+      <button class="copy-btn" onclick="cop('ho5a',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-hodometro -->
+
+<!-- ════════════ ABA: CONFIGURAÇÃO ════════════ -->
+<div class="content" id="tab-config">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Reiniciar equipamento</span></div>
+    <p class="card-desc">Reinicia o módulo. Sempre enviar por último após qualquer configuração.</p>
+    <div class="cmd-row">
+      <span class="badge b-muted">Enviar</span>
+      <span class="cmd-code" id="cfg1a">RESET#</span>
+      <button class="copy-btn" onclick="cop('cfg1a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Restaurar padrão de fábrica</span></div>
+    <p class="card-desc">Retorna todas as configurações ao padrão original, <strong>exceto servidor e APN</strong>. Use ao reconfigurar um equipamento usado.</p>
+    <div class="cmd-sublabel">Restaurar (mantém servidor e APN)</div>
+    <div class="cmd-row">
+      <span class="badge b-warn">Restaurar</span>
+      <span class="cmd-code" id="cfg2a">FACTORY#</span>
+      <button class="copy-btn" onclick="cop('cfg2a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Restaurar tudo inclusive servidor e APN</div>
+    <div class="cmd-row">
+      <span class="badge b-red">Total</span>
+      <span class="cmd-code" id="cfg2b">FACTORYALL#</span>
+      <button class="copy-btn" onclick="cop('cfg2b',this)">📋</button>
+    </div>
+    <div class="alert alert-warn">⚠️ Após FACTORY# reconfigure servidor, APN e fuso horário antes de reiniciar.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Sequência de configuração inicial recomendada</span></div>
+    <p class="card-desc">Ordem sugerida para configurar um equipamento do zero.</p>
+    <div class="cmd-sublabel">1 — Fuso horário</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">1</span>
+      <span class="cmd-code" id="cfg3a">GMT,W,0,0#</span>
+      <button class="copy-btn" onclick="cop('cfg3a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">2 — APN da operadora</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">2</span>
+      <span class="cmd-code" id="cfg3b">APN,apn,usuario,senha#</span>
+      <button class="copy-btn" onclick="cop('cfg3b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">3 — Servidor (DNS)</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">3</span>
+      <span class="cmd-code" id="cfg3c">SERVER,1,seuservidor.com,PORTA,0#</span>
+      <button class="copy-btn" onclick="cop('cfg3c',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">4 — Timer de transmissão</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">4</span>
+      <span class="cmd-code" id="cfg3d">TIMER,60,3600#</span>
+      <button class="copy-btn" onclick="cop('cfg3d',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">5 — Reiniciar</div>
+    <div class="cmd-row">
+      <span class="badge b-muted">5</span>
+      <span class="cmd-code" id="cfg3e">RESET#</span>
+      <button class="copy-btn" onclick="cop('cfg3e',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-config -->
+
+<!-- ════════════ ABA: DIAGNÓSTICO ════════════ -->
+<div class="content" id="tab-diagnostico">
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><span class="card-title">Consultar todas as configurações</span></div>
+    <div class="cmd-sublabel">Completo</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1a">PARAM#</span>
+      <button class="copy-btn" onclick="cop('d1a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Simples</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1b">SCXSZ#</span>
+      <button class="copy-btn" onclick="cop('d1b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Somente GPRS</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d1c">GPRSSET#</span>
+      <button class="copy-btn" onclick="cop('d1c',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">2</span><span class="card-title">Status do equipamento</span></div>
+    <p class="card-desc">Retorna status de GPS, GPRS, bateria e ignição.</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d2a">STATUS#</span>
+      <button class="copy-btn" onclick="cop('d2a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><span class="card-title">Solicitar posição atual</span></div>
+    <p class="card-desc">Retorna latitude, longitude, velocidade e data/hora da última posição conhecida.</p>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d3a">POSITION#</span>
+      <button class="copy-btn" onclick="cop('d3a',this)">📋</button>
+    </div>
+    <div class="cmd-row" style="margin-top:7px">
+      <span class="badge b-info">Alternativo</span>
+      <span class="cmd-code" id="d3b">WHERE#</span>
+      <button class="copy-btn" onclick="cop('d3b',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">4</span><span class="card-title">Versão do firmware</span></div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d4a">VERSION#</span>
+      <button class="copy-btn" onclick="cop('d4a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">5</span><span class="card-title">Consultar modo sleep</span></div>
+    <p class="card-desc">Verifica o estado atual de economia de dados e bateria.</p>
+    <div class="cmd-sublabel">Modo sleep padrão</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5a">CXCS#SLPDISCONNECT</span>
+      <button class="copy-btn" onclick="cop('d5a',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">Super Sleep (MTK)</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5b">CXCS#MTK_DISSLP</span>
+      <button class="copy-btn" onclick="cop('d5b',this)">📋</button>
+    </div>
+    <div class="cmd-sublabel" style="margin-top:8px">GPS sleep</div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d5c">CXCS#GPS_DISSLP</span>
+      <button class="copy-btn" onclick="cop('d5c',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">6</span><span class="card-title">Consultar sensibilidade de vibração</span></div>
+    <div class="cmd-row">
+      <span class="badge b-info">Consultar</span>
+      <span class="cmd-code" id="d6a">CXCS#VIBL</span>
+      <button class="copy-btn" onclick="cop('d6a',this)">📋</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-num">7</span><span class="card-title">Limpar memória de backup</span></div>
+    <p class="card-desc">Apaga posições armazenadas na memória interna.</p>
+    <div class="cmd-row">
+      <span class="badge b-warn">Limpar</span>
+      <span class="cmd-code" id="d7a">CLEAR#</span>
+      <button class="copy-btn" onclick="cop('d7a',this)">📋</button>
+    </div>
+  </div>
+
+</div><!-- /tab-diagnostico -->
+
+<footer>
+  Rastreando GPS · J16 / GT06 · Catálogo completo de comandos SMS
+</footer>
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function cop(id, btn) {
+  var txt = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(function() {
+    btn.classList.add('ok');
+    btn.textContent = '✅';
+    setTimeout(function() {
+      btn.classList.remove('ok');
+      btn.textContent = '📋';
+    }, 1500);
+  }).catch(function() {
+    btn.textContent = '❌';
+    setTimeout(function() { btn.textContent = '📋'; }, 1500);
+  });
+}
+</script>
+</body>
+</html>
