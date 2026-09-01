@@ -323,6 +323,17 @@
     </div>
   </div>
 
+  <div class="field" id="campo-assinatura-atual">
+    <label>Assinatura atual do cliente</label>
+    <div style="position:relative">
+      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#6b70a0;font-size:14px;font-weight:600">R$</span>
+      <input type="number" id="assinaturaAtual" min="0" step="0.01" placeholder="0,00"
+        style="width:100%;background:#12141e;border:1px solid #2a2d3a;border-radius:10px;padding:12px 14px 12px 36px;color:#e8eaf0;font-size:14px;outline:none;"
+        oninput="calcular()">
+    </div>
+    <div style="font-size:11px;color:#5a5f7a;margin-top:6px">Valor da mensalidade que o cliente já paga atualmente</div>
+  </div>
+
   <div class="field">
     <label>Veículos</label>
     <div class="veiculos-grid">
@@ -372,6 +383,14 @@
     <div class="resultado-linha destaque">
       <span class="resultado-label">Proporcional</span>
       <span class="resultado-valor vermelho" id="res-proporcional">—</span>
+    </div>
+    <div class="resultado-linha destaque" id="linha-mes-vigente" style="display:none">
+      <span class="resultado-label">Cobrança do mês vigente</span>
+      <span class="resultado-valor vermelho" id="res-mes-vigente">—</span>
+    </div>
+    <div class="resultado-linha" id="linha-proxima-mensal" style="display:none">
+      <span class="resultado-label">Nova mensalidade cheia</span>
+      <span class="resultado-valor azul" id="res-proxima-mensal">—</span>
     </div>
     <div class="resultado-linha">
       <span class="resultado-label">Vencimento do proporcional</span>
@@ -460,6 +479,26 @@
       document.getElementById('res-venc-prop').textContent = '—';
       document.getElementById('res-inicio-mensal').textContent = formatarData(proxVenc);
       document.getElementById('aviso').classList.add('visivel');
+    }
+
+    // Se tiver assinatura atual, mostra cobrança do mês vigente e nova mensalidade
+    const assinaturaAtual = parseFloat(document.getElementById('assinaturaAtual').value) || 0;
+    const mesFmt = f => 'R$ ' + f.toFixed(2).replace('.', ',');
+
+    if (assinaturaAtual > 0) {
+      if (cobrarProporcional) {
+        const cobMesVigente = assinaturaAtual + valorProporcional;
+        document.getElementById('res-mes-vigente').textContent = mesFmt(cobMesVigente);
+      } else {
+        document.getElementById('res-mes-vigente').textContent = mesFmt(assinaturaAtual);
+      }
+      const novaMensal = assinaturaAtual + valorMensal;
+      document.getElementById('res-proxima-mensal').textContent = mesFmt(novaMensal);
+      document.getElementById('linha-mes-vigente').style.display = 'flex';
+      document.getElementById('linha-proxima-mensal').style.display = 'flex';
+    } else {
+      document.getElementById('linha-mes-vigente').style.display = 'none';
+      document.getElementById('linha-proxima-mensal').style.display = 'none';
     }
   }
 
