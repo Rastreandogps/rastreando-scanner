@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora — Rastreando GPS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e8eaf0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 16px;
+    padding: 36px;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: #e63946;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #a0a4b8;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #5a5f7a;
+    margin-bottom: 32px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b70a0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .field { margin-bottom: 20px; }
+
+  input[type="date"] {
+    width: 100%;
+    background: #12141e;
+    border: 1px solid #2a2d3a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #e8eaf0;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="date"]:focus { border-color: #e63946; }
+
+  .venc-toggle {
+    display: flex;
+    gap: 10px;
+  }
+
+  .venc-btn {
+    flex: 1;
+    padding: 12px;
+    background: #12141e;
+    border: 1px solid #2a2d3a;
+    border-radius: 10px;
+    color: #6b70a0;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .venc-btn.active {
+    background: #1e1020;
+    border-color: #e63946;
+    color: #e63946;
+  }
+
+  /* Veículos */
+  .veiculos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .veiculo-box {
+    background: #12141e;
+    border: 1px solid #2a2d3a;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .veiculo-titulo {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b70a0;
+    margin-bottom: 4px;
+  }
+
+  .veiculo-preco {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2196f3;
+    margin-bottom: 12px;
+  }
+
+  .veiculo-box.bloqueio .veiculo-preco { color: #2196f3; }
+  .veiculo-box.sem .veiculo-preco { color: #4caf50; }
+
+  .counter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .counter-btn {
+    width: 32px;
+    height: 32px;
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+    color: #e8eaf0;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .counter-btn:hover { border-color: #e63946; color: #e63946; }
+
+  .counter-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    min-width: 24px;
+    text-align: center;
+  }
+
+  .desconto-hint {
+    font-size: 11px;
+    color: #4caf50;
+    margin-top: 6px;
+  }
+
+  .divider {
+    height: 1px;
+    background: #2a2d3a;
+    margin: 24px 0;
+  }
+
+  .resultado {
+    background: #12141e;
+    border: 1px solid #2a2d3a;
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .resultado.visivel { display: block; }
+
+  .resultado-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 18px;
+    border-bottom: 1px solid #1e2130;
+  }
+
+  .resultado-linha:last-child { border-bottom: none; }
+  .resultado-linha.destaque { background: #0e1a20; }
+
+  .resultado-label {
+    font-size: 12px;
+    color: #5a5f7a;
+    font-weight: 500;
+  }
+
+  .resultado-valor {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e8eaf0;
+    text-align: right;
+  }
+
+  .resultado-valor.verde { color: #4caf50; }
+  .resultado-valor.vermelho { color: #e63946; }
+  .resultado-valor.azul { color: #2196f3; }
+
+  .aviso {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #1a1410;
+    border: 1px solid #3a2a10;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #f0a020;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .aviso.visivel { display: block; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">📍</div>
+    <span class="logo-text">Rastreando GPS</span>
+  </div>
+
+  <h1>Calculadora de Cobrança</h1>
+  <p class="subtitle">Calcule o proporcional e a mensalidade do cliente</p>
+
+  <div class="field">
+    <label>Data da instalação</label>
+    <input type="date" id="dataInstalacao">
+  </div>
+
+  <div class="field">
+    <label>Vencimento escolhido</label>
+    <div class="venc-toggle">
+      <div class="venc-btn" data-dia="15" onclick="selecionarVencimento(15)">Dia 15</div>
+      <div class="venc-btn" data-dia="20" onclick="selecionarVencimento(20)">Dia 20</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Veículos</label>
+    <div class="veiculos-grid">
+      <div class="veiculo-box bloqueio">
+        <div class="veiculo-titulo">Com bloqueio</div>
+        <div class="veiculo-preco">R$ 59,90/mês</div>
+        <div class="counter">
+          <div class="counter-btn" onclick="alterar('bloqueio', -1)">−</div>
+          <div class="counter-val" id="qtd-bloqueio">0</div>
+          <div class="counter-btn" onclick="alterar('bloqueio', +1)">+</div>
+        </div>
+        <div class="desconto-hint">− R$ 5,00 se pagar em dia</div>
+      </div>
+      <div class="veiculo-box sem">
+        <div class="veiculo-titulo">Sem bloqueio</div>
+        <div class="veiculo-preco">R$ 39,90/mês</div>
+        <div class="counter">
+          <div class="counter-btn" onclick="alterar('sem', -1)">−</div>
+          <div class="counter-val" id="qtd-sem">0</div>
+          <div class="counter-btn" onclick="alterar('sem', +1)">+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="resultado" id="resultado">
+    <div class="resultado-linha">
+      <span class="resultado-label">Dias até o vencimento</span>
+      <span class="resultado-valor" id="res-dias">—</span>
+    </div>
+    <div class="resultado-linha">
+      <span class="resultado-label">Mensalidade cheia</span>
+      <span class="resultado-valor azul" id="res-mensal">—</span>
+    </div>
+    <div class="resultado-linha">
+      <span class="resultado-label">Desconto pontualidade</span>
+      <span class="resultado-valor verde" id="res-desconto">—</span>
+    </div>
+    <div class="resultado-linha destaque">
+      <span class="resultado-label">Proporcional</span>
+      <span class="resultado-valor vermelho" id="res-proporcional">—</span>
+    </div>
+    <div class="resultado-linha">
+      <span class="resultado-label">Vencimento do proporcional</span>
+      <span class="resultado-valor" id="res-venc-prop">—</span>
+    </div>
+    <div class="resultado-linha">
+      <span class="resultado-label">Início da mensalidade cheia</span>
+      <span class="resultado-valor" id="res-inicio-mensal">—</span>
+    </div>
+  </div>
+
+  <div class="aviso" id="aviso">
+    ⚠️ Menos de 10 dias até o vencimento — <strong>não cobra proporcional.</strong> A mensalidade cheia começa no próximo vencimento.
+  </div>
+</div>
+
+<script>
+  let diaVencimento = null;
+  let qtdBloqueio = 0;
+  let qtdSem = 0;
+
+  const PRECO_BLOQUEIO = 59.90;
+  const PRECO_SEM = 39.90;
+  const DESCONTO_BLOQUEIO = 5.00;
+  const DIAS_MINIMOS = 10;
+
+  function alterar(tipo, delta) {
+    if (tipo === 'bloqueio') {
+      qtdBloqueio = Math.max(0, qtdBloqueio + delta);
+      document.getElementById('qtd-bloqueio').textContent = qtdBloqueio;
+    } else {
+      qtdSem = Math.max(0, qtdSem + delta);
+      document.getElementById('qtd-sem').textContent = qtdSem;
+    }
+    calcular();
+  }
+
+  function selecionarVencimento(dia) {
+    diaVencimento = dia;
+    document.querySelectorAll('.venc-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.venc-btn[data-dia="${dia}"]`).classList.add('active');
+    calcular();
+  }
+
+  document.getElementById('dataInstalacao').addEventListener('change', calcular);
+
+  function calcular() {
+    const dataStr = document.getElementById('dataInstalacao').value;
+    if (!dataStr || !diaVencimento || (qtdBloqueio + qtdSem) === 0) {
+      document.getElementById('resultado').classList.remove('visivel');
+      document.getElementById('aviso').classList.remove('visivel');
+      return;
+    }
+
+    const hoje = new Date(dataStr + 'T00:00:00');
+    const valorMensal = (qtdBloqueio * PRECO_BLOQUEIO) + (qtdSem * PRECO_SEM);
+    const desconto = qtdBloqueio * DESCONTO_BLOQUEIO;
+
+    // Próximo vencimento
+    let proxVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento);
+    if (proxVenc <= hoje) {
+      proxVenc = new Date(hoje.getFullYear(), hoje.getMonth() + 1, diaVencimento);
+    }
+
+    const diffMs = proxVenc.getTime() - hoje.getTime();
+    const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    const inicioMensal = new Date(proxVenc.getFullYear(), proxVenc.getMonth() + 1, diaVencimento);
+
+    const cobrarProporcional = diffDias > DIAS_MINIMOS;
+    const valorProporcional = cobrarProporcional
+      ? Math.round((valorMensal / 30) * diffDias * 100) / 100
+      : 0;
+
+    document.getElementById('resultado').classList.add('visivel');
+    document.getElementById('res-dias').textContent = diffDias + ' dias';
+    document.getElementById('res-mensal').textContent = 'R$ ' + valorMensal.toFixed(2).replace('.', ',');
+
+    if (desconto > 0) {
+      const comDesconto = valorMensal - desconto;
+      document.getElementById('res-desconto').textContent =
+        '− R$ ' + desconto.toFixed(2).replace('.', ',') + '  →  R$ ' + comDesconto.toFixed(2).replace('.', ',') + ' em dia';
+    } else {
+      document.getElementById('res-desconto').textContent = 'Não há desconto neste plano';
+    }
+
+    if (cobrarProporcional) {
+      document.getElementById('res-proporcional').textContent = 'R$ ' + valorProporcional.toFixed(2).replace('.', ',');
+      document.getElementById('res-venc-prop').textContent = formatarData(proxVenc);
+      document.getElementById('res-inicio-mensal').textContent = formatarData(inicioMensal);
+      document.getElementById('aviso').classList.remove('visivel');
+    } else {
+      document.getElementById('res-proporcional').textContent = 'Não cobrado';
+      document.getElementById('res-venc-prop').textContent = '—';
+      document.getElementById('res-inicio-mensal').textContent = formatarData(proxVenc);
+      document.getElementById('aviso').classList.add('visivel');
+    }
+  }
+
+  function formatarData(data) {
+    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  const hoje = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('dataInstalacao').value =
+    hoje.getFullYear() + '-' + pad(hoje.getMonth() + 1) + '-' + pad(hoje.getDate());
+</script>
+
+</body>
+</html>
