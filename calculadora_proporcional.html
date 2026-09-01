@@ -450,14 +450,6 @@
     document.getElementById('res-dias').textContent = diffDias + ' dias';
     document.getElementById('res-mensal').textContent = 'R$ ' + valorMensal.toFixed(2).replace('.', ',');
 
-    if (desconto > 0) {
-      const comDesconto = valorMensal - desconto;
-      document.getElementById('res-desconto').textContent =
-        '− R$ ' + desconto.toFixed(2).replace('.', ',') + '  →  R$ ' + comDesconto.toFixed(2).replace('.', ',') + ' em dia';
-    } else {
-      document.getElementById('res-desconto').textContent = 'Não há desconto neste plano';
-    }
-
     if (cobrarProporcional) {
       document.getElementById('res-proporcional').textContent = 'R$ ' + valorProporcional.toFixed(2).replace('.', ',');
       document.getElementById('res-venc-prop').textContent = formatarData(proxVenc);
