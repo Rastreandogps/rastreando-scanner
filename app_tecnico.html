@@ -3467,9 +3467,28 @@ function enviarOSParaTecnico(id, tech) {
       : (dataStr ? 'Consegue fazer a instalação no dia *' + dataStr + '*? 📍' : 'Quando você consegue fazer essa instalação? 📍');
   }
 
+  // Destaque no início: data (com dia da semana) + tipo de serviço
+  const DIAS_SEMANA_MSG = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  let dataDestaque;
+  if (dataStr) {
+    const dpDest    = parseDate(os.data);
+    const diaSemMsg = dpDest ? DIAS_SEMANA_MSG[dpDest.getDay()] : '';
+    dataDestaque = eHoje
+      ? '📅 *Data:* Hoje' + (diaSemMsg ? ' (' + diaSemMsg + ')' : '')
+      : '📅 *Data:* ' + dataStr + (diaSemMsg ? ' (' + diaSemMsg + ')' : '');
+  } else {
+    dataDestaque = '📅 *Data:* a combinar';
+  }
+  let servicoLabel, servicoEmoji;
+  if (tipo.includes('manut')) { servicoLabel = 'Manutenção'; servicoEmoji = '🔧'; }
+  else if (tipo.includes('retir') || tipo.includes('remo')) { servicoLabel = 'Retirada'; servicoEmoji = '🔩'; }
+  else { servicoLabel = 'Instalação'; servicoEmoji = '📍'; }
+
   const msg =
     'Fala, *' + primeiroNome + '*! 👋\n\n' +
-    'Tem uma OS de *' + acaoLabel + '* aqui pra você:\n\n' +
+    'Tem uma OS pra você 👇\n\n' +
+    dataDestaque + '\n' +
+    servicoEmoji + ' *Serviço:* ' + servicoLabel + '\n\n' +
     '👤 *Cliente:* ' + (os.nome || '') + '\n\n' +
     '📍 *Endereço:* ' + (os.endereco || '') + '\n\n' +
     (os.obs ? '📌 *Obs.:* ' + os.obs + '\n\n' : '') +
