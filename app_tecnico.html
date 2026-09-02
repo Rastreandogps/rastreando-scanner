@@ -2815,7 +2815,9 @@ function atualizarPreviewMsg() {
     ? d.veiculos.map((v, i) => '    ' + (d.veiculos.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 ') + v.modelo + (v.obs ? '\n       ↳ ' + v.obs : '')).join('\n')
     : '    🚗 ____';
 
-  const dataStr = d.dataISO ? '📅 *Data agendada:* ' + formatDateBR(d.dataISO) + '\n\n' : '';
+  const _DIAS_CLI = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const _dpCliI = d.dataISO ? parseDate(d.dataISO) : null;
+  const dataStr = d.dataISO ? '📅 *Data agendada:* ' + formatDateBR(d.dataISO) + (_dpCliI ? ' (' + _DIAS_CLI[_dpCliI.getDay()] + ')' : '') + '\n\n' : '';
 
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
@@ -3325,8 +3327,10 @@ function enviarConfirmacaoAgendamento(id, tech) {
     veiculosTxt = '    🚗 ____';
   }
 
+  const _DIAS_CLI = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const _dpCliA = (os.data && os.data.trim() && os.data !== 'undefined') ? parseDate(os.data) : null;
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + '\n\n'
+    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + (_dpCliA ? ' (' + _DIAS_CLI[_dpCliA.getDay()] + ')' : '') + '\n\n'
     : '';
 
   // Confirmação varia por tipo
@@ -3480,15 +3484,15 @@ function enviarOSParaTecnico(id, tech) {
     dataDestaque = '📅 *Data:* a combinar';
   }
   let servicoLabel, servicoEmoji;
-  if (tipo.includes('manut')) { servicoLabel = 'Manutenção'; servicoEmoji = '🔧'; }
-  else if (tipo.includes('retir') || tipo.includes('remo')) { servicoLabel = 'Retirada'; servicoEmoji = '🔩'; }
-  else { servicoLabel = 'Instalação'; servicoEmoji = '📍'; }
+  if (tipo.includes('manut')) { servicoLabel = 'MANUTENÇÃO'; servicoEmoji = '🔧'; }
+  else if (tipo.includes('retir') || tipo.includes('remo')) { servicoLabel = 'RETIRADA'; servicoEmoji = '🔩'; }
+  else { servicoLabel = 'INSTALAÇÃO'; servicoEmoji = '📍'; }
 
   const msg =
     'Fala, *' + primeiroNome + '*! 👋\n\n' +
     'Tem uma OS pra você 👇\n\n' +
     dataDestaque + '\n' +
-    servicoEmoji + ' *Serviço:* ' + servicoLabel + '\n\n' +
+    servicoEmoji + ' *Serviço: ' + servicoLabel + '*\n\n' +
     '👤 *Cliente:* ' + (os.nome || '') + '\n\n' +
     '📍 *Endereço:* ' + (os.endereco || '') + '\n\n' +
     (os.obs ? '📌 *Obs.:* ' + os.obs + '\n\n' : '') +
@@ -3864,8 +3868,10 @@ function atualizarPreviewModalCliente() {
     veiculosTxt = '    🚗 ____';
   }
 
+  const _DIAS_CLI = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const _dpCliM = (os.data && os.data.trim() && os.data !== 'undefined') ? parseDate(os.data) : null;
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + '\n\n'
+    ? '📅 *Data agendada:* ' + formatDateBR(os.data) + (_dpCliM ? ' (' + _DIAS_CLI[_dpCliM.getDay()] + ')' : '') + '\n\n'
     : '';
 
   const msg =
