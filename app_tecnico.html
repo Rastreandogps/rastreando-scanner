@@ -3477,9 +3477,13 @@ function enviarOSParaTecnico(id, tech) {
   if (dataStr) {
     const dpDest    = parseDate(os.data);
     const diaSemMsg = dpDest ? DIAS_SEMANA_MSG[dpDest.getDay()] : '';
+    const amanhaMsg = new Date(hoje); amanhaMsg.setDate(hoje.getDate() + 1);
+    const eAmanha   = dpDest && dpDest.getDate() === amanhaMsg.getDate() && dpDest.getMonth() === amanhaMsg.getMonth() && dpDest.getFullYear() === amanhaMsg.getFullYear();
     dataDestaque = eHoje
       ? '📅 *Data:* Hoje' + (diaSemMsg ? ' (' + diaSemMsg + ')' : '')
-      : '📅 *Data:* ' + dataStr + (diaSemMsg ? ' (' + diaSemMsg + ')' : '');
+      : eAmanha
+        ? '📅 *Data:* Amanhã' + (diaSemMsg ? ' (' + diaSemMsg + ')' : '')
+        : '📅 *Data:* ' + dataStr + (diaSemMsg ? ' (' + diaSemMsg + ')' : '');
   } else {
     dataDestaque = '📅 *Data:* a combinar';
   }
@@ -5425,7 +5429,7 @@ async function carregarAgendamentos() {
         }).join('');
 
     const optsTec = TECH_NAMES.map(function(n) {
-      return '<option value="' + n + '">' + n + '</option>';
+      return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
     }).join('');
 
     return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.06);" id="ag-card-' + ag.rowIndex + '">' +
@@ -5605,7 +5609,7 @@ function mostrarProximaNovaOS() {
   }
   const refFull = _novaOSAtual.pontoReferencia || '';
   const optsTec = TECH_NAMES.map(function(n) {
-    return '<option value="' + n + '">' + n + '</option>';
+    return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
   }).join('');
   const body = document.getElementById('nova-os-body');
   if (body) {
