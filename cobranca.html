@@ -331,6 +331,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <button class="var-btn" onclick="insertVar('{mes}')">+ Data</button>
           <button class="var-btn" onclick="insertVar('{valor}')">+ Valor</button>
           <button class="var-btn" onclick="insertVar('{link}')">+ Link</button>
+          <button class="var-btn" onclick="insertVar('{link_in}')">+ Link IN</button>
         </div>
       </div>
     </div>
@@ -490,6 +491,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="agmodal-var" onclick="agInsertVar('{valor}')">💰 Valor</button>
       <button class="agmodal-var" onclick="agInsertVar('{data}')">📅 Data</button>
       <button class="agmodal-var" onclick="agInsertVar('{link}')">🔗 Link</button>
+      <button class="agmodal-var" onclick="agInsertVar('{link_in}')">🔗 Link IN</button>
     </div>
     <div class="agmodal-btns">
       <button class="agmodal-skip" onclick="agSkip()">Pular (sem mensagem)</button>
@@ -526,7 +528,6 @@ let currentClassifFilter = 'all';
 let modalCallback = null;
 let importMode = 'AT';
 
-// Getter dinâmico — retorna a lista do grupo ativo (com exclusividade)
 function currentClients() {
   if (activeGroup === 'AT')   return getATOnly();
   if (activeGroup === 'IN')   return getINOnly();
@@ -537,7 +538,6 @@ function currentClients() {
 }
 function setCurrentClients(arr) { if (activeGroup === 'AT') clientsAT = arr; else clientsIN = arr; }
 
-// Calcula a interseção AT ∩ IN, excluindo já cancelados
 function getBothClients() {
   const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
@@ -548,7 +548,6 @@ function getBothClients() {
   });
 }
 
-// AT exclusivo: em AT, não em IN, não cancelado, não retirada
 function getATOnly() {
   const keysIN   = new Set(clientsIN.map(c => clientKey(c.nome, c.telefone)));
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
@@ -559,7 +558,6 @@ function getATOnly() {
   });
 }
 
-// IN: todos que estão em IN, exceto cancelados e retiradas (independente de estar em AT)
 function getINOnly() {
   const keysCANC = new Set(clientsCancelados.map(c => clientKey(c.nome, c.telefone)));
   const keysRET  = new Set(clientsRetirada.map(c => clientKey(c.nome, c.telefone)));
@@ -589,16 +587,12 @@ function updateGroupCounts() {
 
 window.addEventListener('load', () => { loadFromStorage(); updateGroupCounts(); switchTab('clientes'); });
 
-// ── CHAVE DE IDENTIDADE ──────────────────────────────────
-// Normaliza para os últimos 11 dígitos (sem código do país 55)
-// garantindo matching correto entre planilha e clientes salvos
 function clientKey(nome, telefone) {
   let tel = String(telefone).replace(/\D/g,"");
   if (tel.startsWith("55") && tel.length > 11) tel = tel.slice(2);
   return nome.trim().toLowerCase() + "|" + tel;
 }
 
-// ── SELETOR AT / IN ──────────────────────────────────────
 function setImportType(mode) {
   importMode = mode;
   const btnAT = document.getElementById('btnTypeAT');
@@ -624,7 +618,6 @@ function setImportType(mode) {
   document.getElementById('import-status').innerHTML = '';
 }
 
-// ── IMPORTAR COM LÓGICA INTELIGENTE ─────────────────────
 async function importarInadimplentes() {
   const btn = document.getElementById('btnImportar');
   const statusEl = document.getElementById('import-status');
@@ -632,7 +625,6 @@ async function importarInadimplentes() {
   btn.innerHTML = '<span class="spin">⏳</span> Verificando...';
   statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Verificando planilha...</div>';
 
-  // ── Verifica se a planilha está sendo atualizada ──────────────────────────
   try {
     const statusUrl = API_URL + '?secret=' + API_SECRET + '&action=status';
     const statusRes = await fetch(statusUrl);
@@ -644,8 +636,7 @@ async function importarInadimplentes() {
       openModal('⏳ Planilha atualizando', 'A planilha está sendo atualizada agora. Aguarde alguns minutos e tente novamente.', null);
       return;
     }
-  } catch(e) { /* se falhar a verificação, continua normalmente */ }
-  // ─────────────────────────────────────────────────────────────────────────
+  } catch(e) {}
 
   btn.innerHTML = '<span class="spin">⏳</span> Buscando...';
   statusEl.innerHTML = '<div class="import-loading"><span class="spin">🔄</span> Conectando com a planilha...</div>';
@@ -666,14 +657,12 @@ async function importarInadimplentes() {
       return;
     }
 
-    // Monta mapa dos clientes que vieram da planilha agora
     const novosMap = new Map();
     json.inadimplentes.forEach(c => {
       const key = clientKey(c.nome, c.telefone);
       novosMap.set(key, c);
     });
 
-    // Processa clientes existentes do grupo importado
     const listaAtual = importMode === 'AT' ? clientsAT : clientsIN;
     const clientesMantidos = [];
     listaAtual.forEach(existing => {
@@ -684,7 +673,8 @@ async function importarInadimplentes() {
           ...existing,
           valor: fresh.valor,
           mes:   fresh.mes,
-          link:  fresh.link || existing.link,
+          link:   fresh.link   || existing.link,
+          linkMP: fresh.linkMP || existing.linkMP || '',
           classificacao: fresh.classificacao || existing.classificacao || '',
           pontuacao: fresh.pontuacao !== undefined ? fresh.pontuacao : (existing.pontuacao || ''),
           cpf: fresh.cpf || existing.cpf || '',
@@ -698,7 +688,6 @@ async function importarInadimplentes() {
       }
     });
 
-    // Adiciona clientes novos que ainda não estavam na lista
     let idx = 0;
     novosMap.forEach((c) => {
       clientesMantidos.push({
@@ -707,7 +696,8 @@ async function importarInadimplentes() {
         telefone: formatPhone(c.telefone),
         mes: c.mes,
         valor: c.valor,
-        link: c.link || '',
+        link:   c.link   || '',
+        linkMP: c.linkMP || '',
         classificacao: c.classificacao || '',
         pontuacao: c.pontuacao !== undefined ? c.pontuacao : '',
         cpf: c.cpf || '',
@@ -720,29 +710,23 @@ async function importarInadimplentes() {
       });
     });
 
-    // ── Aplicar campo retirada da aba RETORNOS ────────────────────────────
-    // Clientes marcados como CANC ou SIM são movidos automaticamente
     const listaNormal = [];
     clientesMantidos.forEach(c => {
       const r = (c.retirada || '').toUpperCase();
       if (r === 'CANC') {
-        // Vai para cancelados se ainda não estiver lá
         const jaCanc = clientsCancelados.some(x => clientKey(x.nome, x.telefone) === clientKey(c.nome, c.telefone));
         if (!jaCanc) clientsCancelados.push({ ...c, canceladoEm: c.canceladoEm || '' });
       } else if (r === 'SIM') {
-        // Vai para retirada se ainda não estiver lá
         const jaRet = clientsRetirada.some(x => clientKey(x.nome, x.telefone) === clientKey(c.nome, c.telefone));
         if (!jaRet) clientsRetirada.push({ ...c, retiradaEm: c.retiradaEm || '' });
       } else {
         listaNormal.push(c);
       }
     });
-    // ─────────────────────────────────────────────────────────────────────
 
     if (importMode === 'AT') clientsAT = listaNormal;
     else                     clientsIN = listaNormal;
 
-    // Sincroniza o grupo visível com o que acabou de ser importado
     activeGroup = importMode;
     saveToStorage();
     updateGroupCounts();
@@ -761,7 +745,6 @@ async function importarInadimplentes() {
   }
 }
 
-// ── TABS ─────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -774,10 +757,7 @@ function switchTab(tab) {
   if (tab === 'agenda')   renderAgenda();
 }
 
-// ── PARSE MANUAL ─────────────────────────────────────────
 function parseField(text) { return text.split('\n').map(l => l.trim()).filter(l => l.length > 0); }
-
-// validateFields e generateClients removidos (seção de colar dados removida)
 
 function formatPhone(raw) {
   let p = raw.replace(/\D/g,'');
@@ -795,7 +775,6 @@ function formatarData(str) {
   return dia+'/'+mes+'/'+ano;
 }
 
-// ── MENSAGEM ─────────────────────────────────────────────
 function getTemplate() {
   return document.getElementById('msgTemplate').value ||
     'Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087';
@@ -808,7 +787,8 @@ function buildMsg(c) {
     .replace(/{telefone}/g, c.telefone)
     .replace(/{mes}/g, formatarData(c.mes))
     .replace(/{valor}/g, c.valor)
-    .replace(/{link}/g, c.link || '');
+    .replace(/{link}/g,    c.link   || '')
+    .replace(/{link_in}/g, c.linkMP || '');
 }
 function insertVar(v) {
   const ta = document.getElementById('msgTemplate');
@@ -827,7 +807,6 @@ function updatePreviews() {
   } else { pc.style.display='none'; }
 }
 
-// ── FILTROS ───────────────────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
   ['All','Pending','Sent','Just'].forEach(x => {
@@ -866,7 +845,6 @@ function renderDateFilterOptions() {
   sel.value = currentDateFilter;
   clearBtn.style.display = currentDateFilter !== 'all' ? 'block' : 'none';
 
-  // Filtro de classificação
   const cfWrap   = document.getElementById('classifFilterWrap');
   if (cfWrap) {
     cfWrap.style.display = 'flex';
@@ -922,20 +900,16 @@ function updateClassifStats() {
 
 function setClassifFilter(v) {
   currentClassifFilter = v;
-  // Atualiza label do botão
   const labels = { all:'Todas', ouro:'🥇 Ouro', prata:'🥈 Prata', latao:'🥉 Latão', sem:'Sem classificação' };
   const lbl = document.getElementById('classifDropdownLabel');
   if (lbl) lbl.textContent = labels[v] || 'Todas';
-  // Fecha dropdown
   const list = document.getElementById('classifDropdownList');
   if (list) list.style.display = 'none';
-  // Mostra/esconde botão limpar
   const cfClear = document.getElementById('classifFilterClear');
   if (cfClear) cfClear.style.display = v !== 'all' ? 'block' : 'none';
   renderClients();
 }
 
-// Fecha dropdown ao clicar fora
 document.addEventListener('click', function(e) {
   const dd = document.getElementById('classifDropdown');
   if (dd && !dd.contains(e.target)) {
@@ -960,7 +934,6 @@ function clearSearch() {
   renderClients();
 }
 
-// ── RENDER ────────────────────────────────────────────────
 function renderClients() {
   const clients = currentClients();
   let pool = [...clients];
@@ -1151,10 +1124,7 @@ function buildCardHTML(c, i) {
   </div>`;
 }
 
-// ── JUSTIFICATIVA ─────────────────────────────────────────
 function onJustInput(id, el) {
-  // Só salva no objeto quando o usuário clicar em Salvar
-  // Aqui apenas auto-resize
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
 }
@@ -1166,8 +1136,6 @@ function saveJust(id) {
   c.justificativa = txt;
   c.justData = txt ? new Date().toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric', hour:'2-digit', minute:'2-digit'}) : null;
   saveToStorage();
-
-  // Envia retorno para a planilha via GAS
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({
@@ -1178,12 +1146,10 @@ function saveJust(id) {
       retorno: txt,
       dataRetorno: c.justData || ''
     })
-  }).catch(() => {}); // silencioso — não bloqueia o app se falhar
-  // Atualiza chip e borda sem re-render completo
+  }).catch(() => {});
   const card = document.getElementById('card-' + id);
   if (card) {
     card.classList.toggle('has-just', !!txt);
-    // Atualiza chip no info
     const info = card.querySelector('.client-info');
     if (info) {
       let chip = info.querySelector('.just-chip');
@@ -1196,12 +1162,10 @@ function saveJust(id) {
         chip.remove();
       }
     }
-    // Atualiza label da data na seção
     const label = card.querySelector('.just-section-label');
     if (label) {
       label.innerHTML = '💬 Retorno do cliente ' + (txt && c.justData ? '<span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:auto">' + c.justData + '</span>' : '');
     }
-    // Atualiza botão apagar
     const saveRow = card.querySelector('.just-save-row');
     if (saveRow) {
       let clearBtn = saveRow.querySelector('.btn-just-clear');
@@ -1229,7 +1193,6 @@ function clearJust(id) {
   c.justData       = null;
   c.dataCompromisso = '';
   saveToStorage();
-  // Atualiza visual do card sem re-render completo
   const card = document.getElementById('card-' + id);
   if (card) {
     card.classList.remove('has-just');
@@ -1240,7 +1203,6 @@ function clearJust(id) {
     const saveRow = card.querySelector('.just-save-row');
     if (saveRow) { const cb = saveRow.querySelector('.btn-just-clear'); if (cb) cb.remove(); }
   }
-  // Apaga tudo na planilha
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({ secret: API_SECRET, action: 'salvarRetorno', nome: c.nome, telefone: c.telefone, retorno: '', dataRetorno: '', dataCompromisso: '', retirada: c.retiradaEm ? 'SIM' : '' })
@@ -1252,7 +1214,6 @@ function saveCompromisso(id, valor) {
   const c = currentClients().find(x => x.id === id); if (!c) return;
   c.dataCompromisso = valor || '';
   saveToStorage();
-  // Envia para planilha
   fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify({
@@ -1282,7 +1243,6 @@ function normalizarDataRetorno(str) {
 
 function copiarTexto(texto, msg) {
   navigator.clipboard.writeText(texto).then(() => showToast('📋 ' + (msg || 'Copiado!'))).catch(() => {
-    // Fallback para iOS/Safari
     const el = document.createElement('textarea');
     el.value = texto; el.style.position='fixed'; el.style.opacity='0';
     document.body.appendChild(el); el.select(); document.execCommand('copy');
@@ -1293,7 +1253,6 @@ function copiarTexto(texto, msg) {
 function formatarTelExibicao(tel) {
   let t = (tel || '').replace(/\D/g, '');
   if (t.startsWith('55') && t.length >= 12) t = t.substring(2);
-  // Formata: (21) 99999-9999
   if (t.length === 11) return '(' + t.substring(0,2) + ') ' + t.substring(2,7) + '-' + t.substring(7);
   if (t.length === 10) return '(' + t.substring(0,2) + ') ' + t.substring(2,6) + '-' + t.substring(6);
   return tel;
@@ -1312,7 +1271,6 @@ function formatarDataBR(iso) {
   return (d||'')+'/'+(m||'')+'/'+(y||'');
 }
 
-// ── AGENDA / CALENDÁRIO ───────────────────────────────────
 let agendaAno  = new Date().getFullYear();
 let agendaMes  = new Date().getMonth();
 let agendaDiaSel = null;
@@ -1321,7 +1279,6 @@ function renderAgenda() {
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   document.getElementById('agendaMesLabel').textContent = meses[agendaMes] + ' ' + agendaAno;
 
-  // Coleta todas as datas de compromisso de todas as listas
   const todasListas = [...clientsAT, ...clientsIN, ...clientsCancelados];
   const diasComComp = new Set();
   todasListas.forEach(c => { if (c.dataCompromisso) diasComComp.add(c.dataCompromisso); });
@@ -1402,12 +1359,10 @@ function renderAgendaClientes() {
     }).join('');
 }
 
-// ── MODAL MENSAGEM DA AGENDA ──────────────────────────────
 let agModalCliente = null;
 
 function agOpenModal(telefone, nome, valor, dataComp, link) {
   agModalCliente = { telefone, nome, valor, dataComp, link };
-  // Restaura último template usado na agenda
   try {
     const saved = localStorage.getItem('rg_agenda_template');
     if (saved && !document.getElementById('agModalText').value) {
@@ -1435,7 +1390,8 @@ function agBuildMsg(template, c) {
     .replace(/\{nome\}/g, c.nome.split(' ')[0])
     .replace(/\{valor\}/g, 'R$ ' + c.valor)
     .replace(/\{data\}/g, formatarDataBR(c.dataComp))
-    .replace(/\{link\}/g, c.link || '');
+    .replace(/\{link\}/g,    c.link   || '')
+    .replace(/\{link_in\}/g, c.linkMP || '');
 }
 
 function agSend() {
@@ -1456,7 +1412,6 @@ function agSkip() {
   agCloseModal();
 }
 
-// ── AÇÕES DOS CARDS ───────────────────────────────────────
 function toggleCard(id) {
   const c = currentClients().find(x => x.id===id); if(!c) return;
   c.expanded = !c.expanded;
@@ -1486,7 +1441,6 @@ function toggleSent(id) {
   document.getElementById('progressFill').style.width = p+'%';
   document.getElementById('progressPct').textContent = p+'% concluído';
   showToast(c.sent?'✅ Marcado como enviado!':'↩️ Marcação removida');
-  // Sincroniza com planilha
   fetch(API_URL, { method:'POST', body: JSON.stringify({
     secret: API_SECRET, action: 'salvarRetorno',
     nome: c.nome, telefone: c.telefone,
@@ -1524,7 +1478,6 @@ function confirmLimparRetornos() {
       afetados.forEach(c => { c.justificativa = ''; c.justData = null; c.dataCompromisso = ''; });
       saveToStorage();
       renderClients();
-      // Apaga na planilha
       afetados.forEach(c => {
         fetch(API_URL, {
           method: 'POST',
@@ -1544,7 +1497,6 @@ function confirmResetSent() {
     const afetados = currentClients().filter(c=>c.sent);
     afetados.forEach(c=>{ c.sent=false; c.expanded=false; });
     saveToStorage(); renderClients(); showToast('🔄 Marcações limpas!');
-    // Limpa enviado na planilha
     afetados.forEach(c => {
       fetch(API_URL, { method:'POST', body: JSON.stringify({
         secret: API_SECRET, action: 'salvarRetorno',
@@ -1563,12 +1515,10 @@ function openWhatsAppBlank(id) {
 }
 
 function cancelarChip(id) {
-  // Na aba BOTH os clientes vêm de clientsAT — busca lá diretamente
   const lista = (activeGroup === 'BOTH') ? clientsAT : currentClients();
   const c = lista.find(x=>x.id===id); if(!c) return;
   openModal('Cancelar chip?', '"'+c.nome+'" será movido para Cancelados.', () => {
     clientsCancelados.push({ ...c, canceladoEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
-    // Remove das listas originais
     clientsAT = clientsAT.filter(x=>x.id!==id);
     clientsIN = clientsIN.filter(x=>clientKey(x.nome,x.telefone)!==clientKey(c.nome,c.telefone));
     saveToStorage(); updateGroupCounts(); renderClients();
@@ -1588,12 +1538,10 @@ function reativarCliente(id) {
 }
 
 function marcarRetirada(id) {
-  // Na aba BOTH os clientes vêm de clientsAT — busca lá diretamente
   const lista = (activeGroup === 'BOTH') ? clientsAT : currentClients();
   const c = lista.find(x=>x.id===id); if(!c) return;
   openModal('Marcar retirada?', '"'+c.nome+'" será movido para a aba Retirada.', () => {
     clientsRetirada.push({ ...c, retiradaEm: new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) });
-    // Remove das listas originais
     clientsAT = clientsAT.filter(x=>x.id!==id);
     clientsIN = clientsIN.filter(x=>clientKey(x.nome,x.telefone)!==clientKey(c.nome,c.telefone));
     saveToStorage(); updateGroupCounts(); renderClients();
@@ -1613,7 +1561,7 @@ function reverterRetirada(id) {
 }
 
 let pendingConfirmId = null;
-let pendingConfirmGroup = 'AT'; // grupo no momento do clique
+let pendingConfirmGroup = 'AT';
 function sendWhatsApp(id) {
   const c = currentClients().find(x=>x.id===id); if(!c) return;
   pendingConfirmGroup = activeGroup;
@@ -1636,7 +1584,6 @@ function showConfirmBanner(c, grp) {
 }
 function confirmSent() {
   if(pendingConfirmId===null) return;
-  // Garante que o activeGroup está alinhado com o grupo do clique
   activeGroup = pendingConfirmGroup;
   toggleSent(pendingConfirmId);
   dismissBanner();
@@ -1663,7 +1610,6 @@ function confirmClear() {
   });
 }
 
-// ── MODAL ─────────────────────────────────────────────────
 function openModal(title,text,cb) {
   document.getElementById('modalTitle').textContent=title;
   document.getElementById('modalText').textContent=text;
@@ -1687,14 +1633,12 @@ function closeModal() {
 document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('agModalOverlay').addEventListener('click',function(e){if(e.target===this)agCloseModal();});
 
-// ── TOAST ─────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ── STORAGE ───────────────────────────────────────────────
 function saveToStorage() {
   try {
     localStorage.setItem('rg_clientsAT',   JSON.stringify(clientsAT));
@@ -1712,14 +1656,14 @@ function fixClients(arr) {
     if (c.classificacao === undefined) c.classificacao = '';
     if (c.pontuacao === undefined) c.pontuacao = '';
     if (c.dataCompromisso === undefined) c.dataCompromisso = '';
-    if (c.cpf === undefined) c.cpf = '';
+    if (c.cpf    === undefined) c.cpf    = '';
+    if (c.linkMP === undefined) c.linkMP = '';
   });
   return arr;
 }
 
 function loadFromStorage() {
   try {
-    // Suporte legado: se existir rg_clients (versão antiga), migra para AT
     const legacy = localStorage.getItem('rg_clients');
     if (legacy) {
       clientsAT = fixClients(JSON.parse(legacy));
@@ -1735,8 +1679,6 @@ function loadFromStorage() {
       if (clCANC) clientsCancelados  = fixClients(JSON.parse(clCANC));
       if (clRET)  clientsRetirada    = fixClients(JSON.parse(clRET));
     }
-    const fl = localStorage.getItem('rg_fields');
-    if (fl) { /* campos de texto removidos — ignorar */ }
     const tpl = localStorage.getItem('rg_template');
     if (tpl) document.getElementById('msgTemplate').value = tpl;
     const total = clientsAT.length + clientsIN.length;
