@@ -4745,7 +4745,7 @@ async function adminVerTecnico(tech) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' em ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -4940,7 +4940,7 @@ function _renderAdminListaPorIds(ids) {
 
         // ── Linha 4: log mensagem
         (o.msgLog
-          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' às ' + esc(o.msgLog.hora) + '</div>'
+          ? '<div style="font-size:10px;color:#1d4ed8;margin-bottom:4px;">✅ Msg enviada por ' + esc(o.msgLog.tecnico) + ' em ' + esc(o.msgLog.data) + ' às ' + esc(o.msgLog.hora) + '</div>'
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
@@ -5022,7 +5022,8 @@ function cardConcluir(btn) {
   const tech   = btn.getAttribute('data-tech');
   if (!id || !tech) return;
   // Busca OS para mostrar nome/veiculo no modal
-  const o = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
+  let o = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
+  if (!o && Array.isArray(window._adminOrdersCache)) o = window._adminOrdersCache.find(x => x.id === id);
   pendingConcluir = { id, tech };
   document.getElementById('concluir-nome').textContent    = o ? o.nome    : '';
   document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
@@ -5045,8 +5046,15 @@ async function confirmarConcluir() {
   if (result.ok) {
     showToast('Serviço concluído! ✅', 'success');
     marcarMapaDesatualizado();
+    if (Array.isArray(window._adminOrdersCache)) {
+      const _oAdm = window._adminOrdersCache.find(x => x.id === id);
+      if (_oAdm) _oAdm.status = 'concluido';
+    }
+    if (typeof map !== 'undefined' && map && map.closePopup) { try { map.closePopup(); } catch(e) {} }
     await loadTechOrders();
     renderDoneList();
+    if (typeof renderAdminOSList === 'function') { try { renderAdminOSList(); } catch(e) {} }
+    if (typeof renderAdminDoneList === 'function') { try { renderAdminDoneList(); } catch(e) {} }
   } else {
     showToast('Erro ao concluir.', 'error');
     setSyncStatus('ok');
@@ -6399,6 +6407,9 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
         '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
+          '<button onclick="adminConcluirOS(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
+            'style="width:100%;padding:8px;background:#10b981;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:5px;">' +
+            '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído</button>' +
           '<button onclick="abrirModalEdit(\'' + esc(o.id) + '\',\'' + esc(o._tech || '') + '\')" ' +
             'style="width:100%;padding:7px;background:#eff6ff;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;">✏️ Editar OS</button>' +
         '</div>'
