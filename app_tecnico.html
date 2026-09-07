@@ -3594,21 +3594,24 @@ function confirmarEnvioTecnico(modo) {
   if (!_envioTecCtx) return;
   const ctx = _envioTecCtx;
   fecharModalEnvioTecnico();
-  if (modo === 'resumo') enviarResumoDiaTecnico(ctx.tech);
+  if (modo === 'resumo') enviarResumoDiaTecnico(ctx.tech, ctx.id);
   else enviarOSParaTecnico(ctx.id, ctx.tech);
 }
 
-function enviarResumoDiaTecnico(tech) {
+function enviarResumoDiaTecnico(tech, refId) {
   const tel = TECH_TEL[tech];
   if (!tel) { showToast('Telefone do técnico não cadastrado', 'error'); return; }
-  const _hoje = new Date();
+  // Dia-alvo = data da OS do card clicado (o dia que o card representa)
+  const _ref = (_adminOrdersCache || []).find(function(o) { return o.id === refId; });
+  let alvo = (_ref && _ref.data && _ref.data.trim() && _ref.data !== 'undefined') ? parseDate(_ref.data) : null;
+  if (!alvo) alvo = new Date();
   const doDia = (_adminOrdersCache || []).filter(function(o) {
     if (o.status === 'concluido') return false;
     if (!o.data || o.data.trim() === '' || o.data === 'undefined') return false;
     const d = parseDate(o.data);
-    return d && d.getDate() === _hoje.getDate() && d.getMonth() === _hoje.getMonth() && d.getFullYear() === _hoje.getFullYear();
+    return d && d.getDate() === alvo.getDate() && d.getMonth() === alvo.getMonth() && d.getFullYear() === alvo.getFullYear();
   });
-  if (doDia.length === 0) { showToast('Nenhuma OS de hoje para ' + tech, 'error'); return; }
+  if (doDia.length === 0) { showToast('Nenhuma OS nesse dia para ' + tech, 'error'); return; }
   doDia.sort(function(a, b) {
     const ao = a.ordemDia || 0, bo = b.ordemDia || 0;
     if (ao > 0 && bo > 0) return ao - bo;
@@ -3617,7 +3620,7 @@ function enviarResumoDiaTecnico(tech) {
     return 0;
   });
   const primeiroNome = tech.split(' ')[0];
-  const dataStr = String(_hoje.getDate()).padStart(2,'0') + '/' + String(_hoje.getMonth()+1).padStart(2,'0') + '/' + _hoje.getFullYear();
+  const dataStr = String(alvo.getDate()).padStart(2,'0') + '/' + String(alvo.getMonth()+1).padStart(2,'0') + '/' + alvo.getFullYear();
   const linhas = doDia.map(function(o, i) {
     const t = (o.tipo || '').toLowerCase();
     let emoji = '📍', label = 'Instalação';
@@ -3636,7 +3639,7 @@ function enviarResumoDiaTecnico(tech) {
   }).join('\n\n');
   const msg =
     '📋 *OSs do dia — ' + dataStr + '*\n\n' +
-    'Fala, *' + primeiroNome + '*! Segue o resumo de hoje (' + doDia.length + '):\n\n' +
+    'Fala, *' + primeiroNome + '*! Segue o resumo do dia (' + doDia.length + '):\n\n' +
     linhas + '\n\n' +
     '👇 Detalhes no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
