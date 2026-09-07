@@ -1604,14 +1604,14 @@ async function loadTechOrders() {
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
   if (result.ok) {
-    allOrders[currentUser] = result.data || [];
+    allOrders[currentUser] = normalizarOrdens(result.data || []);
     renderTechCalendar();
     renderCalDayCards(null);
   }
   // Busca ordens concluídas separadamente
   const resultDone = await gasRequest({ action: 'getDoneOrders', tech: currentUser });
   if (resultDone.ok) {
-    doneOrders[currentUser] = resultDone.data || [];
+    doneOrders[currentUser] = normalizarOrdens(resultDone.data || []);
     renderDoneList();
   }
   setSyncStatus('ok');
@@ -1622,7 +1622,7 @@ async function loadAllOrders() {
   // Carrega TODAS as ordens (sem filtro de mês — o filtro é feito no frontend)
   const result = await gasRequest({ action: 'getAllOrders' });
   if (result.ok) {
-    allOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
+    allOrders = normalizarOrdens(result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []])));
   }
   setAdminSyncStatus('ok');
   if (!adminTechSelecionado) renderResumoGeral();
@@ -1990,7 +1990,7 @@ function renderCardInline(o) {
       '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;">' +
         '<div style="font-size:10px;font-weight:700;color:' + (hasDate ? '#1d4ed8' : '#b45309') + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
         '<div style="font-size:16px;font-weight:800;color:' + (hasDate ? 'var(--primary)' : 'var(--accent2)') + ';">' + dataExib + '</div>' +
-        (getHoraOS(o.data) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o.data) + '</div>' : '') +
+        (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
       '</div>' +
     '</div>' +
     // Endereço + Maps
@@ -2197,7 +2197,7 @@ function renderTechOSList() {
           '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;flex:1;">' +
             '<div style="font-size:10px;font-weight:700;color:' + diaColor + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
             '<div style="font-size:16px;font-weight:800;color:' + dataColor + ';">' + dataExib + '</div>' +
-            (getHoraOS(o.data) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o.data) + '</div>' : '') +
+            (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
           '</div>' +
         '</div>' +
 
@@ -2409,8 +2409,7 @@ async function cardSaveDateAndRefreshCal(btn) {
   const id   = input.getAttribute('data-id');
   const tech = input.getAttribute('data-tech');
   if (!id || !tech) return;
-  const _oExistCR = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
-  const val = combinarDataHora(input.value, _oExistCR ? getHoraOS(_oExistCR.data) : '');
+  const val = input.value;
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
   if (result.ok) {
@@ -2425,8 +2424,7 @@ async function cardSaveDateAndRefreshCal(btn) {
 async function saveDate(id, tech) {
   // Busca o input pelo data-id (novo card usa data-attributes)
   const input = document.querySelector('.card-date-input[data-id="' + id + '"]');
-  const _oExistSD = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
-  const val   = combinarDataHora(input ? input.value : '', _oExistSD ? getHoraOS(_oExistSD.data) : '');
+  const val   = input ? input.value : '';
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateDate', id, tech, data: val });
   if (result.ok) {
@@ -2589,7 +2587,7 @@ async function submitOS() {
   const tecnico = document.getElementById('f-tecnico').value;
   const _fDataVal = document.getElementById('f-data').value;
   const _fHoraVal = (document.getElementById('f-hora')||{}).value || '';
-  const data    = combinarDataHora(_fDataVal, _fHoraVal);
+  const data    = _fDataVal;
   // Buscar veículos SOMENTE dentro do form manual (não pega inputs da importação)
   const fvWrap = document.getElementById('f-veiculos-wrap');
   const veiculoInputs = fvWrap ? fvWrap.querySelectorAll('.f-veiculo-item') : [];
@@ -2611,7 +2609,7 @@ async function submitOS() {
 
   const novaId = genId();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs, id: novaId });
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs: embutirHora(obs, _fHoraVal), id: novaId });
   if (result.ok) {
     // Salvar valor separadamente se preenchido
     if (valorInst) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: valorInst });
@@ -2810,7 +2808,7 @@ function renderCardConfirmacao() {
   atualizarPreviewMsg();
 }
 
-function _rotuloDataCliente(dataRaw) {
+function _rotuloDataCliente(dataRaw, hora) {
   const dp = parseDate(dataRaw);
   if (!dp) return '';
   const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -2819,7 +2817,6 @@ function _rotuloDataCliente(dataRaw) {
   const eHoje   = dp.getDate() === hoje.getDate()   && dp.getMonth() === hoje.getMonth()   && dp.getFullYear() === hoje.getFullYear();
   const eAmanha = dp.getDate() === amanha.getDate() && dp.getMonth() === amanha.getMonth() && dp.getFullYear() === amanha.getFullYear();
   const rotulo  = eHoje ? 'Hoje' : eAmanha ? 'Amanhã' : formatDateBR(dataRaw);
-  const hora    = getHoraOS(dataRaw);
   return rotulo + ' (' + DIAS[dp.getDay()] + ')' + (hora ? ' às ' + hora : '');
 }
 
@@ -2842,7 +2839,7 @@ function atualizarPreviewMsg() {
     ? d.veiculos.map((v, i) => '    ' + (d.veiculos.length > 1 ? '🚗 *Veículo ' + (i+1) + ':* ' : '🚗 ') + v.modelo + (v.obs ? '\n       ↳ ' + v.obs : '')).join('\n')
     : '    🚗 ____';
 
-  const dataStr = d.dataISO ? '📅 *Data agendada:* ' + _rotuloDataCliente(d.dataISO) + '\n\n' : '';
+  const dataStr = d.dataISO ? '📅 *Data agendada:* ' + _rotuloDataCliente(d.dataISO, '') + '\n\n' : '';
 
   const msg =
     'Olá, *' + primeiroNome + '*! 😊\n\n' +
@@ -2882,7 +2879,7 @@ async function submitImportOS() {
   const obs     = document.getElementById('if-obs').value.trim();
   const _ifDataVal = document.getElementById('if-data').value;
   const _ifHoraVal = (document.getElementById('if-hora')||{}).value || '';
-  const data    = combinarDataHora(_ifDataVal, _ifHoraVal);
+  const data    = _ifDataVal;
   const valorInst = document.getElementById('if-valor')?.value?.trim() || '';
   const tecnico = document.getElementById('if-tecnico').value;
 
@@ -2926,7 +2923,7 @@ async function submitImportOS() {
   }
 
   const _ifId    = genId();
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs, id: _ifId });
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs: embutirHora(obs, _ifHoraVal), id: _ifId });
   if (result.ok) {
     if (_ifValor) await gasRequest({ action: 'salvarValorInstalacao', id: _ifId, tech: tecnico, valor: _ifValor });
     showToast('OS enviada para ' + tecnico + '!', 'success');
@@ -3001,18 +2998,36 @@ function toInputDate(str) {
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
-// Horário opcional: guardado junto da data no formato "AAAA-MM-DD|HH:MM"
-function getHoraOS(dataRaw) {
-  if (!dataRaw) return '';
-  const p = String(dataRaw).split('|');
-  return (p.length > 1 && p[1]) ? p[1].trim() : '';
+// Horário opcional: guardado dentro de Observações com marcador [H:HH:MM]
+function extrairHora(obs) {
+  const m = String(obs || '').match(/\[H:(\d{1,2}:\d{2})\]/);
+  return m ? m[1] : '';
 }
-function combinarDataHora(dataVal, horaVal) {
-  if (!dataVal) return '';
-  return horaVal ? dataVal + '|' + horaVal : dataVal;
+function limparObs(obs) {
+  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
 }
-function _horaPill(dataRaw) {
-  const h = getHoraOS(dataRaw);
+function embutirHora(obs, hora) {
+  const base = limparObs(obs);
+  if (!hora) return base;
+  return base ? base + ' [H:' + hora + ']' : '[H:' + hora + ']';
+}
+function normalizarHoraOS(o) {
+  if (!o) return o;
+  const h = extrairHora(o.obs);
+  if (h) { o.hora = h; o.obs = limparObs(o.obs); }
+  else if (!('hora' in o)) { o.hora = ''; }
+  return o;
+}
+function normalizarOrdens(x) {
+  if (Array.isArray(x)) { x.forEach(normalizarHoraOS); }
+  else if (x && typeof x === 'object') { Object.keys(x).forEach(function(k){ if (Array.isArray(x[k])) x[k].forEach(normalizarHoraOS); }); }
+  return x;
+}
+function getHoraOS(o) {
+  return (o && o.hora) ? o.hora : '';
+}
+function _horaPill(o) {
+  const h = getHoraOS(o);
   return h ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">⏰ ' + h + '</span>' : '';
 }
 
@@ -3150,7 +3165,7 @@ async function loadAdminDoneOrders() {
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'getAllDoneOrders' });
   if (result.ok) {
-    allDoneOrders = result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []]));
+    allDoneOrders = normalizarOrdens(result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []])));
     gerarFiltroMesDone();
     renderAdminDoneList();
     const total = TECH_NAMES.reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
@@ -3372,7 +3387,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data) + '\n\n'
+    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os)) + '\n\n'
     : '';
 
   // Confirmação varia por tipo
@@ -3402,7 +3417,7 @@ async function adminReatribuirDireto(id, techOld, techNew) {
   if (!os) {
     // Tentar buscar direto do GAS
     const fetch = await gasRequest({ action: 'getOrders', tech: techOld });
-    if (fetch.ok) os = (fetch.data || []).find(o => o.id === id);
+    if (fetch.ok) { os = (fetch.data || []).find(o => o.id === id); normalizarHoraOS(os); }
   }
   if (!os) { showToast('OS não encontrada. Tente atualizar.', 'error'); setAdminSyncStatus('ok'); return; }
 
@@ -3529,7 +3544,7 @@ function enviarOSParaTecnico(id, tech) {
   } else {
     dataDestaque = '📅 *Data:* a combinar';
   }
-  const _horaTec = getHoraOS(os.data);
+  const _horaTec = getHoraOS(os);
   if (_horaTec) dataDestaque += ' ⏰ *' + _horaTec + '*';
   let servicoLabel, servicoEmoji;
   if (tipo.includes('manut')) { servicoLabel = 'MANUTENÇÃO'; servicoEmoji = '🔧'; }
@@ -3917,7 +3932,7 @@ function atualizarPreviewModalCliente() {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data) + '\n\n'
+    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os)) + '\n\n'
     : '';
 
   const msg =
@@ -4247,7 +4262,7 @@ async function adminVerTodos() {
         '<div style="flex:1;font-size:14px;font-weight:700;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
         '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
         '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + dataLabel + '</span>' +
-        _horaPill(o.data) +
+        _horaPill(o) +
       '</div>' +
       renderVeiculosAdmin(o.veiculo) +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
@@ -4497,7 +4512,7 @@ async function enviarResumoDia(tech) {
   if (done.length === 0 && !_doneAdminCache[tech]) {
     showToast('Carregando concluídos...', '');
     const r = await gasRequest({ action: 'getDoneOrders', tech });
-    if (r.ok) { _doneAdminCache[tech] = r.data || []; }
+    if (r.ok) { _doneAdminCache[tech] = normalizarOrdens(r.data || []); }
   }
   const doneAtualizado = _doneAdminCache[tech] || [];
 
@@ -4586,8 +4601,8 @@ async function adminVerTecnico(tech) {
   if (gridEl)    gridEl.style.display = '';
   setAdminSyncStatus('ok');
 
-  const orders    = result.ok     ? (result.data     || []) : [];
-  const doneAdmin = resultDone.ok ? (resultDone.data || []) : [];
+  const orders    = normalizarOrdens(result.ok     ? (result.data     || []) : []);
+  const doneAdmin = normalizarOrdens(resultDone.ok ? (resultDone.data || []) : []);
   _adminOrdersCache = orders; // salva para uso no clique do calendário
   _doneAdminCache[tech] = doneAdmin; // salva no cache
 
@@ -4756,7 +4771,7 @@ async function adminVerTecnico(tech) {
             '</a>' : '') +
 
             '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
-            _horaPill(o.data) +
+            _horaPill(o) +
           '</div>';
         })() +
 
@@ -4952,7 +4967,7 @@ function _renderAdminListaPorIds(ids) {
             '</a>' : '') +
 
             '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
-            _horaPill(o.data) +
+            _horaPill(o) +
           '</div>';
         })() +
 
@@ -5290,7 +5305,7 @@ async function abrirModalEdit(id, tech) {
   if (!o) {
     // Fallback: buscar direto do GAS
     const r = await gasRequest({ action: 'getOrders', tech });
-    if (r.ok) o = (r.data || []).find(x => x.id === id);
+    if (r.ok) { o = (r.data || []).find(x => x.id === id); normalizarHoraOS(o); }
   }
   if (!o) { showToast('OS não encontrada', 'error'); return; }
 
@@ -5301,7 +5316,7 @@ async function abrirModalEdit(id, tech) {
   document.getElementById('edit-end').value      = o.endereco|| '';
   document.getElementById('edit-tipo').value     = o.tipo    || 'Instalação';
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
-  document.getElementById('edit-hora').value     = getHoraOS(o.data);
+  document.getElementById('edit-hora').value     = getHoraOS(o);
   document.getElementById('edit-obs').value      = o.obs     || '';
   document.getElementById('edit-valor').value    = o.valorInstalacao || '';
 
@@ -5333,7 +5348,7 @@ async function confirmarEdit() {
   const tipo    = document.getElementById('edit-tipo').value;
   const _edDataVal = document.getElementById('edit-data').value;
   const _edHoraVal = (document.getElementById('edit-hora')||{}).value || '';
-  const data    = combinarDataHora(_edDataVal, _edHoraVal);
+  const data    = _edDataVal;
   const obs     = document.getElementById('edit-obs').value.trim();
   const valor   = document.getElementById('edit-valor').value.trim();
 
@@ -5341,7 +5356,7 @@ async function confirmarEdit() {
 
   fecharModalEdit();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs });
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal) });
   // Salvar valor separadamente se preenchido
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id, tech, valor });
   if (result.ok) {
@@ -5550,7 +5565,7 @@ async function confirmarAgendamentoAba(rowIndex) {
   const tecnico = document.getElementById('ag-tec-' + rowIndex)?.value || '';
   const _agDataVal = document.getElementById('ag-data-' + rowIndex)?.value || '';
   const _agHoraVal = document.getElementById('ag-hora-' + rowIndex)?.value || '';
-  const data    = combinarDataHora(_agDataVal, _agHoraVal);
+  const data    = _agDataVal;
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
 
   // Ativa loading no card
@@ -5595,7 +5610,7 @@ async function confirmarAgendamentoAba(rowIndex) {
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
     endereco: ag.endereco || '', tipo: (document.getElementById('ag-tipo-' + rowIndex)||{}).value||'Instalação', data: data,
-    veiculo: veiculoStr, obs: ag.pontoReferencia || ''
+    veiculo: veiculoStr, obs: embutirHora(ag.pontoReferencia || '', _agHoraVal)
   });
 
   if (resultSave.ok) {
@@ -5694,7 +5709,7 @@ async function confirmarNovaOS() {
   const tecnico = document.getElementById('nova-os-tecnico')?.value || '';
   const _noDataVal = document.getElementById('nova-os-data')?.value    || '';
   const _noHoraVal = document.getElementById('nova-os-hora')?.value    || '';
-  const data    = combinarDataHora(_noDataVal, _noHoraVal);
+  const data    = _noDataVal;
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
   const veiculos = _novaOSAtual.veiculos || [];
   let veiculoStr = '';
@@ -5715,7 +5730,7 @@ async function confirmarNovaOS() {
     action: 'saveOrder', tech: tecnico, id: novaId,
     nome: _novaOSAtual.nome || '', telefone: _novaOSAtual.telefone || '',
     endereco: _novaOSAtual.endereco || '', tipo: 'Instalação', data: data,
-    veiculo: veiculoStr, obs: _novaOSAtual.pontoReferencia || ''
+    veiculo: veiculoStr, obs: embutirHora(_novaOSAtual.pontoReferencia || '', _noHoraVal)
   });
   if (result.ok) {
     if (_agValor) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: _agValor });
@@ -5801,16 +5816,13 @@ async function reagendarSelecionadas() {
 
   // Disparar todas as requisições em paralelo
   const resultados = await Promise.all(itens.map(function(item) {
-    const _oExistRe = (allOrders[item.tech] || []).find(function(x){ return x.id === item.id; });
-    const _horaRe   = _oExistRe ? getHoraOS(_oExistRe.data) : '';
-    const _dataItem = combinarDataHora(dataVal, _horaRe);
-    return gasRequest({ action: 'updateDate', id: item.id, tech: item.tech, data: _dataItem })
+    return gasRequest({ action: 'updateDate', id: item.id, tech: item.tech, data: dataVal })
       .then(function(r) {
         if (r.ok) {
           const o = (allOrders[item.tech] || []).find(function(x) { return x.id === item.id; });
           if (o) {
             const _p = dataVal.split('-');
-            o.data = _p[2] + '/' + _p[1] + '/' + _p[0] + (_horaRe ? '|' + _horaRe : '');
+            o.data = _p[2] + '/' + _p[1] + '/' + _p[0];
           }
           return true;
         }
@@ -6401,7 +6413,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       dataHtml =
         '<div style="background:' + _dataBg + ';border-radius:8px;padding:6px 10px;margin-bottom:8px;">' +
           '<div style="font-size:10px;font-weight:700;color:' + _dataFg + ';letter-spacing:.5px;margin-bottom:1px;">' + _dataLabel + '</div>' +
-          '<div style="font-size:13px;font-weight:700;color:' + _dataFg + ';">' + formatDateBR(o.data) + (getHoraOS(o.data) ? ' · ⏰ ' + getHoraOS(o.data) : '') + '</div>' +
+          '<div style="font-size:13px;font-weight:700;color:' + _dataFg + ';">' + formatDateBR(o.data) + (getHoraOS(o) ? ' · ⏰ ' + getHoraOS(o) : '') + '</div>' +
         '</div>';
     } else {
       dataHtml = '<div style="background:#fef3c7;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:12px;font-weight:700;color:#b45309;">⏳ Sem data agendada</div>';
