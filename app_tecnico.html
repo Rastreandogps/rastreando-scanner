@@ -3623,25 +3623,25 @@ function enviarResumoDiaTecnico(tech, refId) {
   const dataStr = String(alvo.getDate()).padStart(2,'0') + '/' + String(alvo.getMonth()+1).padStart(2,'0') + '/' + alvo.getFullYear();
   const linhas = doDia.map(function(o, i) {
     const t = (o.tipo || '').toLowerCase();
-    let emoji = '📍', label = 'Instalação';
-    if (t.includes('manut')) { emoji = '🔧'; label = 'Manutenção'; }
-    else if (t.includes('retir') || t.includes('remo')) { emoji = '🔩'; label = 'Retirada'; }
+    let label = 'Instalação';
+    if (t.includes('manut')) label = 'Manutenção';
+    else if (t.includes('retir') || t.includes('remo')) label = 'Retirada';
     let modelos = '';
     if (o.veiculo) {
       const lista = o.veiculo.includes(' || ') ? o.veiculo.split(' || ') : [o.veiculo];
       modelos = lista.map(function(v) { return v.split(' | ')[0].trim(); }).filter(Boolean).join(', ');
     }
     const _h = getHoraOS(o);
-    return '*' + (i + 1) + '.* ' + emoji + ' *' + label + '*' + (_h ? ' ⏰ ' + _h : '') + '\n' +
-      '👤 ' + (o.nome || '') + '\n' +
-      '📍 ' + _endParaExibir(o.endereco || '') + '\n' +
-      '🚗 ' + (modelos || '—');
+    return '*' + (i + 1) + '. ' + label + '*' + (_h ? ' às ' + _h : '') + '\n' +
+      (o.nome || '') + '\n' +
+      _endParaExibir(o.endereco || '') +
+      (modelos ? '\n' + modelos : '');
   }).join('\n\n');
   const msg =
-    '📋 *OSs do dia — ' + dataStr + '*\n\n' +
-    'Fala, *' + primeiroNome + '*! Segue o resumo do dia (' + doDia.length + '):\n\n' +
+    '📋 *OSs do dia — ' + dataStr + '* (' + doDia.length + ')\n\n' +
+    'Fala, *' + primeiroNome + '*! Segue o resumo do dia:\n\n' +
     linhas + '\n\n' +
-    '👇 Detalhes no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
+    'Detalhes no app:\nhttps://rastreandogps.github.io/rastreando-scanner/app_tecnico.html';
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
