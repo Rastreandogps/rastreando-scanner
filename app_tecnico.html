@@ -4841,8 +4841,8 @@ async function adminVerTecnico(tech) {
         (function() {
           const tel     = (o.telefone || '').replace(/\D/g,'');
           const wppLink = tel ? 'https://wa.me/55' + tel : '';
-          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
-            '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+          return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
+            '<div style="flex:1 1 100%;min-width:0;font-size:14px;font-weight:700;color:var(--primary);word-break:break-word;padding-right:34px;">' + esc(o.nome) + '</div>' +
             '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
             '<button onclick="event.stopPropagation();copiarSemEspaco(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome sem espaço" style="flex-shrink:0;padding:3px 7px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;font-size:11px;cursor:pointer;">📋_</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
@@ -5037,8 +5037,8 @@ function _renderAdminListaPorIds(ids) {
         (function() {
           const tel     = (o.telefone || '').replace(/\D/g,'');
           const wppLink = tel ? 'https://wa.me/55' + tel : '';
-          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
-            '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;color:var(--primary);">' + esc(o.nome) + '</div>' +
+          return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
+            '<div style="flex:1 1 100%;min-width:0;font-size:14px;font-weight:700;color:var(--primary);word-break:break-word;padding-right:34px;">' + esc(o.nome) + '</div>' +
             '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome" style="flex-shrink:0;padding:3px 7px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;">📋</button>' +
             '<button onclick="event.stopPropagation();copiarSemEspaco(this.dataset.v,this)" data-v="' + esc(o.nome||'') + '" title="Copiar nome sem espaço" style="flex-shrink:0;padding:3px 7px;background:#e0f2fe;border:1px solid #bae6fd;border-radius:6px;font-size:11px;cursor:pointer;">📋_</button>' +
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
