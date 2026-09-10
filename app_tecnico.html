@@ -823,8 +823,9 @@
         <div class="form-field" style="grid-column:1/-1;">
           <label>Veículo / Placa</label>
           <div id="f-veiculos-wrap" style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">
+            <div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">
+              <select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select>
             </div>
           </div>
           <button type="button" onclick="adicionarVeiculoManual()" style="margin-top:8px;padding:7px 14px;background:#eff6ff;color:var(--accent);border:2px dashed var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -2603,8 +2604,15 @@ async function submitOS() {
   const data    = _fDataVal;
   // Buscar veículos SOMENTE dentro do form manual (não pega inputs da importação)
   const fvWrap = document.getElementById('f-veiculos-wrap');
-  const veiculoInputs = fvWrap ? fvWrap.querySelectorAll('.f-veiculo-item') : [];
-  const veiculosParts = Array.from(veiculoInputs).map(el => el.value.trim()).filter(Boolean);
+  const veiculoRows = fvWrap ? fvWrap.querySelectorAll('.f-veiculo-row') : [];
+  const veiculosParts = Array.from(veiculoRows).map(function(row) {
+    const inp = row.querySelector('.f-veiculo-item');
+    const sel = row.querySelector('.f-veiculo-bloqueio');
+    const txt = inp ? inp.value.trim() : '';
+    if (!txt) return '';
+    const bloq = (sel && sel.value) ? ' | Rastreio: ' + (sel.value === 'com' ? 'Com bloqueio' : 'Sem bloqueio') : '';
+    return txt + bloq;
+  }).filter(Boolean);
   const veiculo = veiculosParts.join(' || ');
   const obs     = document.getElementById('f-obs').value.trim();
   if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
@@ -2638,9 +2646,11 @@ function adicionarVeiculoManual() {
   const wrap = document.getElementById('f-veiculos-wrap');
   if (!wrap) return;
   const div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  div.className = 'f-veiculo-row';
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
   div.innerHTML =
-    '<input type="text" class="f-veiculo-item" placeholder="Ex: HRV / DEF-5678" style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">' +
+    '<input type="text" class="f-veiculo-item" placeholder="Ex: HRV / DEF-5678" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">' +
+    '<select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select>' +
     '<button type="button" onclick="this.parentElement.remove()" style="padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
     '</button>';
@@ -2659,7 +2669,7 @@ function clearForm() {
   document.getElementById('f-tecnico').value = '';
   // Resetar veículos para um campo só
   const fvw = document.getElementById('f-veiculos-wrap');
-  if (fvw) fvw.innerHTML = '<div style="display:flex;gap:8px;align-items:center;"><input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;"></div>';
+  if (fvw) fvw.innerHTML = '<div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;"><select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select></div>';
 }
 
 // ════════════════════════════════
