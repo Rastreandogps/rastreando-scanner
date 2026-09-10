@@ -3594,11 +3594,20 @@ function enviarOSParaTecnico(id, tech) {
   else if (tipo.includes('retir') || tipo.includes('remo')) { servicoLabel = 'RETIRADA'; servicoEmoji = '🔩'; }
   else { servicoLabel = 'INSTALAÇÃO'; servicoEmoji = '📍'; }
 
+  // Destaque de bloqueio (com/sem) na mensagem do técnico
+  const _vLower = (os.veiculo || '').toLowerCase();
+  const _temCom = _vLower.includes('com bloqueio');
+  const _temSem = _vLower.includes('sem bloqueio');
+  let bloqDestaque = '';
+  if (_temCom && _temSem) bloqDestaque = '🔒 *COM* / 📡 *SEM BLOQUEIO* (ver veículos)';
+  else if (_temCom) bloqDestaque = '🔒 *COM BLOQUEIO*';
+  else if (_temSem) bloqDestaque = '📡 *SEM BLOQUEIO*';
+
   const msg =
     'Fala, *' + primeiroNome + '*! 👋\n\n' +
     'Tem uma OS pra você 👇\n\n' +
     dataDestaque + '\n' +
-    servicoEmoji + ' *Serviço: ' + servicoLabel + '*\n\n' +
+    servicoEmoji + ' *Serviço: ' + servicoLabel + '*' + (bloqDestaque ? '\n' + bloqDestaque : '') + '\n\n' +
     '👤 *Cliente:* ' + (os.nome || '') + '\n\n' +
     '📍 *Endereço:* ' + (os.endereco || '') + '\n\n' +
     (os.obs ? '📌 *Obs.:* ' + os.obs + '\n\n' : '') +
