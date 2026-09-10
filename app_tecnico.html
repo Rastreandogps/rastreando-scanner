@@ -825,7 +825,7 @@
           <div id="f-veiculos-wrap" style="display:flex;flex-direction:column;gap:8px;">
             <div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">
-              <select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select>
+              <div class="f-veiculo-bloq-toggle" style="display:flex;gap:5px;"><button type="button" data-b="com" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🔒 Com</button><button type="button" data-b="sem" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📡 Sem</button></div>
             </div>
           </div>
           <button type="button" onclick="adicionarVeiculoManual()" style="margin-top:8px;padding:7px 14px;background:#eff6ff;color:var(--accent);border:2px dashed var(--accent);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -2607,10 +2607,11 @@ async function submitOS() {
   const veiculoRows = fvWrap ? fvWrap.querySelectorAll('.f-veiculo-row') : [];
   const veiculosParts = Array.from(veiculoRows).map(function(row) {
     const inp = row.querySelector('.f-veiculo-item');
-    const sel = row.querySelector('.f-veiculo-bloqueio');
+    const ativo = row.querySelector('.f-veiculo-bloq-toggle button[data-active="1"]');
     const txt = inp ? inp.value.trim() : '';
     if (!txt) return '';
-    const bloq = (sel && sel.value) ? ' | Rastreio: ' + (sel.value === 'com' ? 'Com bloqueio' : 'Sem bloqueio') : '';
+    const bloqVal = ativo ? ativo.getAttribute('data-b') : '';
+    const bloq = bloqVal ? ' | Rastreio: ' + (bloqVal === 'com' ? 'Com bloqueio' : 'Sem bloqueio') : '';
     return txt + bloq;
   }).filter(Boolean);
   const veiculo = veiculosParts.join(' || ');
@@ -2642,6 +2643,25 @@ async function submitOS() {
   else { showToast('Erro ao enviar OS.', 'error'); setAdminSyncStatus('ok'); }
 }
 
+function toggleBloqManual(btn) {
+  const wrap = btn.closest('.f-veiculo-bloq-toggle');
+  if (!wrap) return;
+  const jaAtivo = btn.getAttribute('data-active') === '1';
+  wrap.querySelectorAll('button').forEach(function(b) {
+    b.setAttribute('data-active', '0');
+    b.style.background = 'white';
+    b.style.color = 'var(--muted)';
+    b.style.borderColor = 'var(--border)';
+  });
+  if (!jaAtivo) {
+    btn.setAttribute('data-active', '1');
+    const com = btn.getAttribute('data-b') === 'com';
+    btn.style.background = com ? '#dbeafe' : '#d1fae5';
+    btn.style.color = com ? '#1d4ed8' : '#065f46';
+    btn.style.borderColor = com ? '#3b82f6' : '#10b981';
+  }
+}
+
 function adicionarVeiculoManual() {
   const wrap = document.getElementById('f-veiculos-wrap');
   if (!wrap) return;
@@ -2650,7 +2670,7 @@ function adicionarVeiculoManual() {
   div.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
   div.innerHTML =
     '<input type="text" class="f-veiculo-item" placeholder="Ex: HRV / DEF-5678" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">' +
-    '<select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select>' +
+    '<div class="f-veiculo-bloq-toggle" style="display:flex;gap:5px;"><button type="button" data-b="com" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🔒 Com</button><button type="button" data-b="sem" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📡 Sem</button></div>' +
     '<button type="button" onclick="this.parentElement.remove()" style="padding:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;cursor:pointer;flex-shrink:0;">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
     '</button>';
@@ -2669,7 +2689,7 @@ function clearForm() {
   document.getElementById('f-tecnico').value = '';
   // Resetar veículos para um campo só
   const fvw = document.getElementById('f-veiculos-wrap');
-  if (fvw) fvw.innerHTML = '<div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;"><select class="f-veiculo-bloqueio" style="padding:10px;border:2px solid var(--border);border-radius:10px;font-size:13px;outline:none;background:white;"><option value="">🔎 Rastreio</option><option value="com">🔒 Com bloqueio</option><option value="sem">📡 Sem bloqueio</option></select></div>';
+  if (fvw) fvw.innerHTML = '<div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;"><div class="f-veiculo-bloq-toggle" style="display:flex;gap:5px;"><button type="button" data-b="com" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🔒 Com</button><button type="button" data-b="sem" data-active="0" onclick="toggleBloqManual(this)" style="padding:8px 10px;border:2px solid var(--border);background:white;color:var(--muted);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">📡 Sem</button></div></div>';
 }
 
 // ════════════════════════════════
