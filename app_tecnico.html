@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v6-firestore-realtime-tecnico';
+const BUILD_VERSION = '2026-09-15-v8-firestore-realtime-agendamentos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1272,6 +1272,10 @@ let adminFilter   = 'all';
 let adminMesFiltro = ''; // 'YYYY-MM' ou '' para todos
 let pollInterval = null;
 let _unsubOSTecnico = null; // liga/desliga o "ao vivo" do Firestore pro técnico logado
+let _unsubOSAdmin = null;   // liga/desliga o "ao vivo" do Firestore pro admin
+let _debounceAdminRefresh = null;
+let _unsubAgendamentos = null; // liga/desliga o "ao vivo" dos agendamentos novos do formulário do cliente
+let _debounceAgendamentosRefresh = null;
 
 // ════════════════════════════════
 // MODAL ADMIN LOGIN
@@ -1430,6 +1434,8 @@ function doLogout() {
   currentUser = null; currentRole = null;
   if (pollInterval) clearInterval(pollInterval);
   pararListenerOSTecnico();
+  pararListenerOSAdmin();
+  pararListenerAgendamentos();
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -1515,6 +1521,8 @@ function showAdminScreen() {
   showAdminTab((_favAba && _ABAS_ADMIN.includes(_favAba)) ? _favAba : 'new-os');
   _atualizarEstrelasAba();
   loadAllOrders();
+  iniciarListenerOSAdmin();
+  iniciarListenerAgendamentos();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
   setTimeout(checkNovasOSFormulario, 2000);
@@ -1856,6 +1864,82 @@ function iniciarListenerOSTecnico(nomeTecnico) {
     }, function(err) {
       console.warn('[Firestore] Tempo real das OS caiu, seguindo só com a atualização a cada 30s:', err);
     });
+}
+
+// ════════════════════════════════════════
+// 🔥 FIRESTORE — atualização em tempo real da tela do Admin
+// (reaproveita as mesmas funções de atualização que o app já usa
+// depois de qualquer ação — só dispara mais rápido, sem esperar 30s)
+// ════════════════════════════════════════
+function pararListenerOSAdmin() {
+  if (_unsubOSAdmin) {
+    try { _unsubOSAdmin(); } catch(e) {}
+    _unsubOSAdmin = null;
+  }
+  if (_debounceAdminRefresh) { clearTimeout(_debounceAdminRefresh); _debounceAdminRefresh = null; }
+}
+
+function agendarAtualizacaoAdmin() {
+  // Agrupa várias mudanças que cheguem juntas numa só atualização de tela
+  if (_debounceAdminRefresh) clearTimeout(_debounceAdminRefresh);
+  _debounceAdminRefresh = setTimeout(function() {
+    if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
+    if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
+    else loadAllOrders();
+  }, 800);
+}
+
+function iniciarListenerOSAdmin() {
+  pararListenerOSAdmin();
+  const db = getFirestoreDb();
+  if (!db) return; // Firebase indisponível — segue só com a atualização normal (a cada 30s)
+
+  _unsubOSAdmin = db.collection('ordens_servico').onSnapshot(function(snapshot) {
+    // Ignora o "eco" da própria escrita feita nesta mesma tela — ela já se
+    // atualiza sozinha pelo caminho de sempre; isso é só pra pegar mudanças
+    // feitas por outro técnico/admin em outro aparelho.
+    if (snapshot.metadata.hasPendingWrites) return;
+    agendarAtualizacaoAdmin();
+  }, function(err) {
+    console.warn('[Firestore] Tempo real do admin caiu, seguindo só com a atualização a cada 30s:', err);
+  });
+}
+
+// ════════════════════════════════════════
+// 🔥 FIRESTORE — avisa o admin na hora quando chega um agendamento novo
+// vindo do formulário do cliente (site público). O formulário só grava
+// um "aviso" no Firestore; os dados de verdade continuam vindo da Planilha
+// (reaproveita carregarAgendamentos/checkNovasOSFormulario, que já existem).
+// ════════════════════════════════════════
+function pararListenerAgendamentos() {
+  if (_unsubAgendamentos) {
+    try { _unsubAgendamentos(); } catch(e) {}
+    _unsubAgendamentos = null;
+  }
+  if (_debounceAgendamentosRefresh) { clearTimeout(_debounceAgendamentosRefresh); _debounceAgendamentosRefresh = null; }
+}
+
+function agendarAtualizacaoAgendamentos() {
+  if (_debounceAgendamentosRefresh) clearTimeout(_debounceAgendamentosRefresh);
+  _debounceAgendamentosRefresh = setTimeout(function() {
+    if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
+    checkNovasOSFormulario();
+    // Só recarrega a listinha se a aba "Agendamentos" estiver aberta na tela
+    const abaAberta = document.getElementById('admin-tab-agendamentos');
+    if (abaAberta && abaAberta.classList.contains('active')) carregarAgendamentos();
+  }, 800);
+}
+
+function iniciarListenerAgendamentos() {
+  pararListenerAgendamentos();
+  const db = getFirestoreDb();
+  if (!db) return; // Firebase indisponível — segue só com a atualização normal (a cada 30s)
+
+  _unsubAgendamentos = db.collection('agendamentos_pendentes').onSnapshot(function(snapshot) {
+    agendarAtualizacaoAgendamentos();
+  }, function(err) {
+    console.warn('[Firestore] Tempo real dos agendamentos caiu, seguindo só com a atualização a cada 30s:', err);
+  });
 }
 
 async function loadTechOrders() {
