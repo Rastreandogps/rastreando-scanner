@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v8-firestore-realtime-agendamentos';
+const BUILD_VERSION = '2026-09-15-v9-fix-refresh-admin-editar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -5815,6 +5815,9 @@ async function confirmarEdit() {
     }
     showToast('OS atualizada!', 'success');
     await loadAllOrders();
+    // Se o admin está com a agenda desse técnico aberta na tela, atualiza ela também
+    // (sem isso, só aparecia depois de um F5)
+    if (adminTechSelecionado === tech) await adminVerTecnico(tech);
   } else {
     showToast('Erro ao salvar.', 'error');
     setAdminSyncStatus('ok');
