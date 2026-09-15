@@ -1200,14 +1200,42 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- FIREBASE (usado só para o login, por enquanto) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+
 <script>
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-07-11-v3';
+const BUILD_VERSION = '2026-09-15-v4b-firebase-login-safe';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
-const ADMIN_PASS = '271659';
+const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
+const ADMIN_EMAIL = 'admin@rastreandogpsbr.com.br';
+
+// ════════════════════════════════════════
+// 🔥 FIREBASE — inicialização (só login por enquanto)
+// ════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCnWCqWOBgk5D4d3KmDM-XiIxEoMojRyd8",
+  authDomain: "rastreando-gps.firebaseapp.com",
+  projectId: "rastreando-gps",
+  storageBucket: "rastreando-gps.firebasestorage.app",
+  messagingSenderId: "481162335739",
+  appId: "1:481162335739:web:fe3d91aaa33749a9f3e75e"
+};
+let auth = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+  } else {
+    console.warn('[APP Técnico] Firebase não carregou (SDK bloqueado ou sem internet) — login vai usar a senha local como reserva.');
+  }
+} catch (e) {
+  console.warn('[APP Técnico] Erro ao iniciar o Firebase — login vai usar a senha local como reserva.', e);
+}
 
 // ════════════════════════════════════════
 // ✏️ CONFIGURAÇÃO DE TÉCNICOS
@@ -1216,14 +1244,16 @@ const ADMIN_PASS = '271659';
 // Lembre-se de criar/renomear a aba na planilha também!
 // ════════════════════════════════════════
 const TECNICOS = [
-  { nome: 'Glauber', senha: '123456', tel: '22999229134' },
-  { nome: 'Eberson', senha: '123456', tel: '21970622555' },
-  { nome: 'Jonas',   senha: '123456', tel: '21983799329' },
-  { nome: 'Mateus',  senha: '271659', tel: '' },
+  { nome: 'Glauber', senha: '123456', tel: '22999229134', email: 'glauber@rastreandogpsbr.com.br' },
+  { nome: 'Eberson', senha: '123456', tel: '21970622555', email: 'eberson@rastreandogpsbr.com.br' },
+  { nome: 'Jonas',   senha: '123456', tel: '21983799329', email: 'jonas@rastreandogpsbr.com.br' },
+  { nome: 'Mateus',  senha: '271659', tel: '',            email: 'mateus@rastreandogpsbr.com.br' },
 ];
 
 // Mapa nome → telefone do técnico
 const TECH_TEL = Object.fromEntries(TECNICOS.map(t => [t.nome, t.tel || '']));
+// Mapa nome → e-mail do técnico no Firebase Authentication
+const TECH_EMAIL = Object.fromEntries(TECNICOS.map(t => [t.nome, t.email]));
 
 // Gerado automaticamente a partir de TECNICOS — não edite abaixo
 const TECH_CREDENTIALS = Object.fromEntries(TECNICOS.map(t => [t.nome, t.senha]));
@@ -1256,18 +1286,39 @@ function fecharModalAdmin() {
   unlockScroll();
 }
 
-function confirmarLoginAdmin() {
+async function confirmarLoginAdmin() {
   const pass = document.getElementById('admin-senha-input').value;
-  if (pass === ADMIN_PASS) {
+
+  function entrarComoAdmin() {
     fecharModalAdmin();
     currentUser = 'Admin';
     currentRole = 'admin';
     salvarSessao('Admin', 'admin');
     showAdminScreen();
-  } else {
+  }
+
+  function negarAcesso() {
     document.getElementById('admin-senha-erro').style.display = 'block';
     document.getElementById('admin-senha-input').value = '';
     document.getElementById('admin-senha-input').focus();
+  }
+
+  // Firebase não carregou/indisponível — usa a senha local, como sempre funcionou
+  if (!auth) {
+    if (pass === ADMIN_PASS) { entrarComoAdmin(); return; }
+    negarAcesso();
+    return;
+  }
+
+  try {
+    await auth.signInWithEmailAndPassword(ADMIN_EMAIL, pass);
+    entrarComoAdmin();
+  } catch (e) {
+    // Se o Firebase estiver fora do ar (sem internet, instabilidade), usa a senha antiga como reserva
+    if (e && (e.code === 'auth/network-request-failed' || e.code === 'auth/too-many-requests')) {
+      if (pass === ADMIN_PASS) { entrarComoAdmin(); return; }
+    }
+    negarAcesso();
   }
 }
 
@@ -1334,7 +1385,7 @@ async function confirmarExclusao() {
 // ════════════════════════════════
 // AUTENTICAÇÃO
 // ════════════════════════════════
-function doLogin() {
+async function doLogin() {
   const raw  = document.getElementById('login-user').value.trim();
   const user = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
   const pass = document.getElementById('login-pass').value;
@@ -1342,11 +1393,34 @@ function doLogin() {
   err.style.display = 'none';
   if (!raw)  { showToast('Digite seu nome', 'error'); return; }
   if (!pass) { showToast('Digite sua senha', 'error'); return; }
-  if (TECH_CREDENTIALS[user] !== pass) { err.style.display = 'block'; return; }
-  currentUser = user;
-  currentRole = 'tech';
-  salvarSessao(user, 'tech');
-  showTechScreen();
+
+  const email = TECH_EMAIL[user];
+  if (!email) { err.style.display = 'block'; return; }
+
+  function entrarComoTecnico() {
+    currentUser = user;
+    currentRole = 'tech';
+    salvarSessao(user, 'tech');
+    showTechScreen();
+  }
+
+  // Firebase não carregou/indisponível — usa a senha local, como sempre funcionou
+  if (!auth) {
+    if (TECH_CREDENTIALS[user] === pass) { entrarComoTecnico(); return; }
+    err.style.display = 'block';
+    return;
+  }
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    entrarComoTecnico();
+  } catch (e) {
+    // Se o Firebase estiver fora do ar (sem internet, instabilidade), usa a senha antiga como reserva
+    if (e && (e.code === 'auth/network-request-failed' || e.code === 'auth/too-many-requests')) {
+      if (TECH_CREDENTIALS[user] === pass) { entrarComoTecnico(); return; }
+    }
+    err.style.display = 'block';
+  }
 }
 
 function doLogout() {
