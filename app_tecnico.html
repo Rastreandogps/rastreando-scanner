@@ -126,7 +126,7 @@
   .cal-day {
     aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; font-size: 12px; gap: 2px;
-    overflow: hidden; position: relative;
+    overflow: hidden; position: relative; z-index: 51;
   }
   .cal-day.today { background: #eff6ff; font-weight: 700; color: var(--accent); }
   .cal-day.cal-day-selected { background: #dbeafe !important; border-radius: 8px; outline: 2px solid var(--accent); }
@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v13-troca-tecnico-instantanea';
+const BUILD_VERSION = '2026-09-15-v14-fix-duplo-clique-calendario';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
