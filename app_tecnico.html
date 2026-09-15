@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v11-limpa-agendamento-firestore';
+const BUILD_VERSION = '2026-09-15-v13-troca-tecnico-instantanea';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1276,6 +1276,7 @@ let _unsubOSAdmin = null;   // liga/desliga o "ao vivo" do Firestore pro admin
 let _debounceAdminRefresh = null;
 let _unsubAgendamentos = null; // liga/desliga o "ao vivo" dos agendamentos novos do formulário do cliente
 let _debounceAgendamentosRefresh = null;
+let _firestoreTodasOrdens = null; // cópia sempre atualizada de TODAS as ordens (todos os técnicos), alimentada pelo tempo real do Firestore
 
 // ════════════════════════════════
 // MODAL ADMIN LOGIN
@@ -1523,6 +1524,7 @@ function showAdminScreen() {
   loadAllOrders();
   iniciarListenerOSAdmin();
   iniciarListenerAgendamentos();
+  sincronizarTudoParaFirestore(); // roda em segundo plano, não trava a tela
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
   setTimeout(checkNovasOSFormulario, 2000);
@@ -1702,6 +1704,14 @@ async function espelharNoFirestore(payload) {
       }
       break;
 
+    case 'logMensagem':
+      if (!ref) return;
+      await ref.set({
+        msgLog: { tecnico: payload.tecnico || payload.tech || '', data: payload.data || '', hora: payload.hora || '' },
+        atualizadoEm: agora
+      }, { merge: true });
+      break;
+
     case 'marcarAgendamentoLido':
       // Quando o admin confirma (cria OS) ou ignora um agendamento do
       // formulário, apaga o aviso correspondente no Firestore — senão
@@ -1833,6 +1843,7 @@ function docFirestoreParaOrdem(doc) {
   const d = doc.data() || {};
   return {
     id:              doc.id,
+    tecnico:         d.tecnico || '',
     nome:            d.nome || '',
     telefone:        d.telefone || '',
     endereco:        d.endereco || '',
@@ -1841,7 +1852,7 @@ function docFirestoreParaOrdem(doc) {
     veiculo:         d.veiculo || '',
     obs:             d.obs || '',
     status:          d.status || 'ativo',
-    msgLog:          null,
+    msgLog:          d.msgLog || null,
     valorInstalacao: d.valorInstalacao || '',
     ordemDia:        d.ordemDia || 0,
     notaTecnico:     d.notaTecnico || ''
@@ -1885,6 +1896,7 @@ function pararListenerOSAdmin() {
     _unsubOSAdmin = null;
   }
   if (_debounceAdminRefresh) { clearTimeout(_debounceAdminRefresh); _debounceAdminRefresh = null; }
+  _firestoreTodasOrdens = null; // volta a buscar da Planilha até o tempo real ligar de novo
 }
 
 function agendarAtualizacaoAdmin() {
@@ -1903,6 +1915,9 @@ function iniciarListenerOSAdmin() {
   if (!db) return; // Firebase indisponível — segue só com a atualização normal (a cada 30s)
 
   _unsubOSAdmin = db.collection('ordens_servico').onSnapshot(function(snapshot) {
+    // Mantém sempre uma cópia fresca de todas as ordens — é o que permite
+    // trocar de técnico na hora, sem esperar a Planilha responder.
+    _firestoreTodasOrdens = snapshot.docs.map(docFirestoreParaOrdem);
     // Ignora o "eco" da própria escrita feita nesta mesma tela — ela já se
     // atualiza sozinha pelo caminho de sempre; isso é só pra pegar mudanças
     // feitas por outro técnico/admin em outro aparelho.
@@ -1911,6 +1926,72 @@ function iniciarListenerOSAdmin() {
   }, function(err) {
     console.warn('[Firestore] Tempo real do admin caiu, seguindo só com a atualização a cada 30s:', err);
   });
+}
+
+// ════════════════════════════════════════
+// 🔥 FIRESTORE — sincronização inicial das ordens antigas
+// (ordens criadas antes do Firebase existir nunca foram copiadas pra lá;
+// sem isso, elas "sumiriam" da tela de tempo real até serem editadas de
+// novo. Roda em segundo plano, uma vez por login do Admin, e só grava —
+// nunca apaga nada. Se falhar, sem problema: segue tudo pela Planilha.)
+// ════════════════════════════════════════
+async function sincronizarTudoParaFirestore() {
+  const db = getFirestoreDb();
+  if (!db) return;
+  try {
+    const [resAtivas, resConcluidas] = await Promise.all([
+      gasRequest({ action: 'getAllOrders' }),
+      gasRequest({ action: 'getAllDoneOrders' })
+    ]);
+    const listar = function(resultado) {
+      const porTecnico = (resultado && resultado.ok && resultado.data) ? resultado.data : {};
+      const lista = [];
+      Object.keys(porTecnico).forEach(function(tech) {
+        (porTecnico[tech] || []).forEach(function(o) {
+          if (o && o.id !== undefined && o.id !== null && String(o.id) !== '') {
+            lista.push({ o: o, tech: tech });
+          }
+        });
+      });
+      return lista;
+    };
+    const todas = listar(resAtivas).concat(listar(resConcluidas));
+    if (todas.length === 0) return;
+
+    let lote = db.batch();
+    let pendentesNoLote = 0;
+    let total = 0;
+    for (let i = 0; i < todas.length; i++) {
+      const o = todas[i].o;
+      const ref = db.collection('ordens_servico').doc(String(o.id));
+      lote.set(ref, {
+        tecnico:         todas[i].tech,
+        nome:            o.nome || '',
+        telefone:        o.telefone || '',
+        endereco:        o.endereco || '',
+        tipo:            o.tipo || '',
+        data:            o.data || '',
+        veiculo:         o.veiculo || '',
+        obs:             o.obs || '',
+        status:          o.status || 'ativo',
+        msgLog:          o.msgLog || null,
+        valorInstalacao: o.valorInstalacao || '',
+        ordemDia:        o.ordemDia || 0,
+        notaTecnico:     o.notaTecnico || ''
+      }, { merge: true });
+      pendentesNoLote++;
+      total++;
+      if (pendentesNoLote === 450) {
+        await lote.commit();
+        lote = db.batch();
+        pendentesNoLote = 0;
+      }
+    }
+    if (pendentesNoLote > 0) await lote.commit();
+    console.log('[Firestore] Sincronização inicial: ' + total + ' ordens conferidas/copiadas.');
+  } catch (e) {
+    console.warn('[Firestore] Sincronização inicial falhou (sem problema, segue tudo pela Planilha):', e);
+  }
 }
 
 // ════════════════════════════════════════
@@ -5041,25 +5122,38 @@ async function adminVerTecnico(tech) {
 
   // Buscar ordens do técnico
   setAdminSyncStatus('syncing');
-  // Mostrar área e carrinho animado
+  // Mostrar área
   const wrap      = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
   const loadingEl = document.getElementById('admin-cal-loading');
   const gridEl    = document.getElementById('admin-cal-grid');
   const listaEl   = document.getElementById('admin-tech-os-list');
-  if (loadingEl) loadingEl.classList.add('show');
-  if (gridEl)    gridEl.style.display = 'none';
-  if (listaEl)   listaEl.innerHTML = '';
-  const now    = new Date();
-  const result     = await gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() });
-  const resultDone = await gasRequest({ action: 'getDoneOrders', tech });
-  // Esconder carrinho
-  if (loadingEl) loadingEl.classList.remove('show');
-  if (gridEl)    gridEl.style.display = '';
+  const now       = new Date();
+
+  let orders, doneAdmin;
+  if (_firestoreTodasOrdens) {
+    // O Firebase já mantém uma cópia atualizada de tudo em tempo real —
+    // troca de técnico fica instantânea, sem esperar resposta da Planilha.
+    const doTech = _firestoreTodasOrdens.filter(o => o.tecnico === tech);
+    orders    = normalizarOrdens(doTech.filter(o => o.status !== 'concluido'));
+    doneAdmin = normalizarOrdens(doTech.filter(o => o.status === 'concluido'));
+  } else {
+    // Firebase indisponível — segue buscando da Planilha como sempre
+    if (loadingEl) loadingEl.classList.add('show');
+    if (gridEl)    gridEl.style.display = 'none';
+    if (listaEl)   listaEl.innerHTML = '';
+    // Os 2 pedidos saem juntos ao mesmo tempo (em vez de um esperar o outro)
+    const [result, resultDone] = await Promise.all([
+      gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() }),
+      gasRequest({ action: 'getDoneOrders', tech })
+    ]);
+    if (loadingEl) loadingEl.classList.remove('show');
+    if (gridEl)    gridEl.style.display = '';
+    orders    = normalizarOrdens(result.ok     ? (result.data     || []) : []);
+    doneAdmin = normalizarOrdens(resultDone.ok ? (resultDone.data || []) : []);
+  }
   setAdminSyncStatus('ok');
 
-  const orders    = normalizarOrdens(result.ok     ? (result.data     || []) : []);
-  const doneAdmin = normalizarOrdens(resultDone.ok ? (resultDone.data || []) : []);
   _adminOrdersCache = orders; // salva para uso no clique do calendário
   _doneAdminCache[tech] = doneAdmin; // salva no cache
 
