@@ -1203,12 +1203,13 @@
 <!-- FIREBASE (usado só para o login, por enquanto) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
 <script>
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v4b-firebase-login-safe';
+const BUILD_VERSION = '2026-09-15-v5-firestore-mirror';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1575,14 +1576,125 @@ function showAdminTab(tab) {
 // GAS – COMUNICAÇÃO
 // ════════════════════════════════
 async function gasRequest(payload) {
+  let result;
   try {
     const url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
     const res  = await fetch(url, { method: 'GET', redirect: 'follow' });
     const text = await res.text();
-    try { return JSON.parse(text); }
-    catch(_) { return { ok: false, error: 'Resposta inválida' }; }
+    try { result = JSON.parse(text); }
+    catch(_) { result = { ok: false, error: 'Resposta inválida' }; }
   } catch(e) {
-    return { ok: false, error: e.message };
+    result = { ok: false, error: e.message };
+  }
+
+  // A Planilha continua sendo quem manda. Isso aqui só copia a mesma
+  // informação pro Firestore, em segundo plano, sem afetar o app se falhar.
+  if (result && result.ok) {
+    espelharNoFirestore(payload).catch(function(e) {
+      console.warn('[Firestore] Não conseguiu espelhar a ação "' + payload.action + '":', e);
+    });
+  }
+
+  return result;
+}
+
+// ════════════════════════════════════════
+// 🔥 FIRESTORE — espelho das ordens de serviço (em paralelo à Planilha)
+// ════════════════════════════════════════
+function getFirestoreDb() {
+  if (!auth) return null; // Firebase não iniciou — segue só com a Planilha
+  try { return firebase.firestore(); } catch(e) { return null; }
+}
+
+async function espelharNoFirestore(payload) {
+  const db = getFirestoreDb();
+  if (!db) return;
+
+  const temId = payload.id !== undefined && payload.id !== null && String(payload.id) !== '';
+  const ref = temId ? db.collection('ordens_servico').doc(String(payload.id)) : null;
+  const agora = firebase.firestore.FieldValue.serverTimestamp();
+
+  switch (payload.action) {
+    case 'saveOrder':
+      if (!ref) return;
+      await ref.set({
+        tecnico:  payload.tech || '',
+        nome:     payload.nome || '',
+        telefone: payload.telefone || '',
+        endereco: payload.endereco || '',
+        tipo:     payload.tipo || '',
+        data:     payload.data || '',
+        veiculo:  payload.veiculo || '',
+        obs:      payload.obs || '',
+        status:   'ativo',
+        atualizadoEm: agora
+      }, { merge: true });
+      break;
+
+    case 'editOrder':
+      if (!ref) return;
+      await ref.set({
+        nome:     payload.nome || '',
+        telefone: payload.telefone || '',
+        endereco: payload.endereco || '',
+        tipo:     payload.tipo || '',
+        data:     payload.data || '',
+        veiculo:  payload.veiculo || '',
+        obs:      payload.obs || '',
+        atualizadoEm: agora
+      }, { merge: true });
+      break;
+
+    case 'updateStatus':
+      if (!ref) return;
+      await ref.set({ status: payload.status || 'ativo', atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'updateDate':
+      if (!ref) return;
+      await ref.set({ data: payload.data || '', atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'salvarNotaTecnico':
+      if (!ref) return;
+      await ref.set({
+        notaTecnico: payload.nota ? { texto: payload.nota, tecnico: payload.tech || '' } : '',
+        atualizadoEm: agora
+      }, { merge: true });
+      break;
+
+    case 'salvarOrdemDia':
+      if (!ref) return;
+      await ref.set({ ordemDia: payload.ordem ? Number(payload.ordem) : 0, atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'limparObs':
+      if (!ref) return;
+      await ref.set({ obs: '', atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'salvarValorInstalacao':
+      if (!ref) return;
+      await ref.set({ valorInstalacao: payload.valor || '', atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'deleteOrder':
+      if (!ref) return;
+      {
+        // Só apaga se o Firestore ainda acha que a OS é desse técnico.
+        // (Evita apagar por engano quando "mover técnico" salva no novo
+        // e, logo em seguida, apaga do antigo — mesmo id nos dois passos.)
+        const snap = await ref.get();
+        if (snap.exists && (!payload.tech || snap.data().tecnico === payload.tech)) {
+          await ref.delete();
+        }
+      }
+      break;
+
+    default:
+      // Outras ações (agendamentos, coordenadas, logins, etc.) ainda não
+      // são espelhadas — só as ligadas a uma ordem de serviço específica.
+      break;
   }
 }
 
