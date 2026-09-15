@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v9-fix-refresh-admin-editar';
+const BUILD_VERSION = '2026-09-15-v11-limpa-agendamento-firestore';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1702,6 +1702,14 @@ async function espelharNoFirestore(payload) {
       }
       break;
 
+    case 'marcarAgendamentoLido':
+      // Quando o admin confirma (cria OS) ou ignora um agendamento do
+      // formulário, apaga o aviso correspondente no Firestore — senão
+      // ele fica lá parado pra sempre, mesmo já resolvido na Planilha.
+      if (!payload.idPedido) return;
+      await db.collection('agendamentos_pendentes').doc(String(payload.idPedido)).delete().catch(function(){});
+      break;
+
     default:
       // Outras ações (agendamentos, coordenadas, logins, etc.) ainda não
       // são espelhadas — só as ligadas a uma ordem de serviço específica.
@@ -1923,6 +1931,7 @@ function agendarAtualizacaoAgendamentos() {
   if (_debounceAgendamentosRefresh) clearTimeout(_debounceAgendamentosRefresh);
   _debounceAgendamentosRefresh = setTimeout(function() {
     if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
+    console.log('[Firebase] 🔥 Agendamento novo detectado em tempo real às ' + new Date().toLocaleTimeString('pt-BR') + ' — atualizando painel...');
     checkNovasOSFormulario();
     // Só recarrega a listinha se a aba "Agendamentos" estiver aberta na tela
     const abaAberta = document.getElementById('admin-tab-agendamentos');
@@ -6001,7 +6010,7 @@ async function carregarAgendamentos() {
       // Botões
       '<div style="display:flex;gap:8px;">' +
         '<button onclick="confirmarAgendamentoAba(' + ag.rowIndex + ')" style="flex:1;padding:10px;background:var(--admin);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS</button>' +
-        '<button onclick="ignorarAgendamentoAba(' + ag.rowIndex + ')" style="padding:10px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
+        '<button onclick="ignorarAgendamentoAba(' + ag.rowIndex + ',\'' + esc(ag.id||'') + '\')" style="padding:10px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
       '</div>' +
 
     '</div>';
@@ -6066,7 +6075,7 @@ async function confirmarAgendamentoAba(rowIndex) {
 
   if (resultSave.ok) {
     if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
-    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true' });
+    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true', idPedido: ag.id });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
     marcarMapaDesatualizado();
     await loadAllOrders();
@@ -6082,10 +6091,10 @@ async function confirmarAgendamentoAba(rowIndex) {
   }
 }
 
-async function ignorarAgendamentoAba(rowIndex) {
+async function ignorarAgendamentoAba(rowIndex, idPedido) {
   const confirmar = confirm('Tem certeza que deseja ignorar este agendamento? Ele não aparecerá mais na lista.');
   if (!confirmar) return;
-  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'ignorado' });
+  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'ignorado', idPedido: idPedido });
   showToast('Agendamento ignorado.', '');
   carregarAgendamentos();
 }
@@ -6185,7 +6194,7 @@ async function confirmarNovaOS() {
   });
   if (result.ok) {
     if (_agValor) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: _agValor });
-    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'true' });
+    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'true', idPedido: _novaOSAtual.id });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
     marcarMapaDesatualizado();
     fecharModalNovaOS();
@@ -6200,7 +6209,7 @@ async function confirmarNovaOS() {
 
 async function ignorarNovaOS() {
   if (!_novaOSAtual) return;
-  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'ignorado' });
+  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'ignorado', idPedido: _novaOSAtual.id });
   fecharModalNovaOS();
   _pendingAgendamentos.shift();
   if (_pendingAgendamentos.length > 0) setTimeout(mostrarProximaNovaOS, 600);
