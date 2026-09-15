@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v14-fix-duplo-clique-calendario';
+const BUILD_VERSION = '2026-09-15-v15-escrita-firebase-primeiro';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1495,6 +1495,7 @@ function gerarElementosDinamicos() {
 }
 
 function showTechScreen() {
+  tentarSincronizarFilaPlanilha();
   // Garantir que o overlay do admin não bloqueia o técnico
   const ov = document.getElementById('destaque-overlay');
   if (ov) ov.style.display = 'none';
@@ -1513,6 +1514,7 @@ function showTechScreen() {
 }
 
 function showAdminScreen() {
+  tentarSincronizarFilaPlanilha();
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'block';
@@ -1588,7 +1590,75 @@ function showAdminTab(tab) {
 // ════════════════════════════════
 // GAS – COMUNICAÇÃO
 // ════════════════════════════════
+// Ações de ordem de serviço (têm uma "gaveta" própria no Firestore): para
+// essas, grava-se primeiro no Firebase — rápido, na hora — e a Planilha
+// recebe a cópia por trás, sem a tela esperar. As demais ações (agendamentos,
+// login, coordenadas etc.) continuam indo direto na Planilha, como sempre.
+const ORDEM_ACOES_RAPIDAS = new Set([
+  'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
+  'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem'
+]);
+
+const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
+
+function _lerFilaPlanilha() {
+  try { return JSON.parse(localStorage.getItem(FILA_PLANILHA_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function _salvarFilaPlanilha(fila) {
+  try { localStorage.setItem(FILA_PLANILHA_KEY, JSON.stringify(fila)); } catch(e) {}
+}
+
+// Manda uma ação pra Planilha em segundo plano, sem travar a tela. Se
+// falhar, tenta mais algumas vezes; se ainda assim não conseguir, guarda
+// no aparelho pra tentar de novo mais tarde (não perde a informação).
+function enviarParaPlanilha(payload, tentativa) {
+  tentativa = tentativa || 1;
+  const url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+  fetch(url, { method: 'GET', redirect: 'follow' })
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      let j = null;
+      try { j = JSON.parse(text); } catch(e) {}
+      if (!j || !j.ok) throw new Error('Resposta inválida da Planilha');
+    })
+    .catch(function(e) {
+      if (tentativa < 4) {
+        setTimeout(function() { enviarParaPlanilha(payload, tentativa + 1); }, 3000 * tentativa);
+      } else {
+        console.warn('[Planilha] Não conseguiu sincronizar essa ação agora, vai tentar de novo mais tarde:', payload.action, e);
+        const fila = _lerFilaPlanilha();
+        fila.push(payload);
+        _salvarFilaPlanilha(fila);
+      }
+    });
+}
+
+// Tenta de novo, em segundo plano, qualquer ação que tenha ficado
+// pendente de sincronizar com a Planilha (ex: caiu a internet bem na
+// hora de salvar). Chamado periodicamente e a cada login.
+function tentarSincronizarFilaPlanilha() {
+  const fila = _lerFilaPlanilha();
+  if (fila.length === 0) return;
+  _salvarFilaPlanilha([]); // cada item se recoloca sozinho na fila se falhar de novo
+  fila.forEach(function(payload) { enviarParaPlanilha(payload, 1); });
+}
+
 async function gasRequest(payload) {
+  const db = getFirestoreDb();
+
+  if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
+    try {
+      await espelharNoFirestore(payload); // grava de verdade, na hora
+      enviarParaPlanilha(payload);         // Planilha recebe a cópia por trás
+      return { ok: true };
+    } catch (e) {
+      console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
+      // Cai pro caminho de sempre, abaixo — nada se perde.
+    }
+  }
+
+  // Caminho de sempre: direto na Planilha, esperando a resposta dela.
   let result;
   try {
     const url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
@@ -1600,8 +1670,8 @@ async function gasRequest(payload) {
     result = { ok: false, error: e.message };
   }
 
-  // A Planilha continua sendo quem manda. Isso aqui só copia a mesma
-  // informação pro Firestore, em segundo plano, sem afetar o app se falhar.
+  // Ainda copia pro Firestore em segundo plano (cobre ações sem Firebase
+  // disponível no momento, ou uma tentativa que caiu nesse caminho por erro).
   if (result && result.ok) {
     espelharNoFirestore(payload).catch(function(e) {
       console.warn('[Firestore] Não conseguiu espelhar a ação "' + payload.action + '":', e);
@@ -2053,10 +2123,22 @@ async function loadTechOrders() {
 
 async function loadAllOrders() {
   setAdminSyncStatus('syncing');
-  // Carrega TODAS as ordens (sem filtro de mês — o filtro é feito no frontend)
-  const result = await gasRequest({ action: 'getAllOrders' });
-  if (result.ok) {
-    allOrders = normalizarOrdens(result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []])));
+  if (_firestoreTodasOrdens) {
+    // Firebase já tem a cópia atualizada — não precisa esperar a Planilha
+    const porTecnico = Object.fromEntries(TECH_NAMES.map(n => [n, []]));
+    _firestoreTodasOrdens.forEach(function(o) {
+      if (o.status === 'concluido') return;
+      if (!porTecnico[o.tecnico]) porTecnico[o.tecnico] = [];
+      porTecnico[o.tecnico].push(o);
+    });
+    allOrders = normalizarOrdens(porTecnico);
+  } else {
+    // Firebase indisponível — segue buscando da Planilha como sempre
+    // (sem filtro de mês — o filtro é feito no frontend)
+    const result = await gasRequest({ action: 'getAllOrders' });
+    if (result.ok) {
+      allOrders = normalizarOrdens(result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []])));
+    }
   }
   setAdminSyncStatus('ok');
   if (!adminTechSelecionado) renderResumoGeral();
@@ -6199,6 +6281,7 @@ var _pendingAgendamentos = [];
 var _novaOSAtual = null;
 
 async function pollCompleto() {
+  tentarSincronizarFilaPlanilha(); // reforço: tenta reenviar o que ainda estiver pendente
   if (currentRole === 'tech')  await loadTechOrders();
   if (currentRole === 'admin') { await loadAllOrders(); await checkNovasOSFormulario(); }
 }
