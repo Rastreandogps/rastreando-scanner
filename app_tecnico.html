@@ -1209,7 +1209,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v5-firestore-mirror';
+const BUILD_VERSION = '2026-09-15-v6-firestore-realtime-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1271,6 +1271,7 @@ let pendingDelete = null;
 let adminFilter   = 'all';
 let adminMesFiltro = ''; // 'YYYY-MM' ou '' para todos
 let pollInterval = null;
+let _unsubOSTecnico = null; // liga/desliga o "ao vivo" do Firestore pro técnico logado
 
 // ════════════════════════════════
 // MODAL ADMIN LOGIN
@@ -1428,6 +1429,7 @@ function doLogout() {
   localStorage.removeItem('app_tecnico_session');
   currentUser = null; currentRole = null;
   if (pollInterval) clearInterval(pollInterval);
+  pararListenerOSTecnico();
   document.getElementById('screen-tech').style.display  = 'none';
   document.getElementById('screen-admin').style.display = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -1498,6 +1500,7 @@ function showTechScreen() {
   document.getElementById('tech-header-name').textContent = currentUser;
   showTechTab('calendar');
   loadTechOrders();
+  iniciarListenerOSTecnico(currentUser);
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(pollCompleto, 30000);
 }
@@ -1797,6 +1800,63 @@ function getDinoHTML(id, label) {
   );
 }
 
+
+// ════════════════════════════════════════
+// 🔥 FIRESTORE — atualização em tempo real das OS do técnico logado
+// (roda JUNTO com a busca normal na Planilha acima; se o Firebase
+// falhar por qualquer motivo, o app segue 100% como sempre funcionou)
+// ════════════════════════════════════════
+function pararListenerOSTecnico() {
+  if (_unsubOSTecnico) {
+    try { _unsubOSTecnico(); } catch(e) {}
+    _unsubOSTecnico = null;
+  }
+}
+
+function docFirestoreParaOrdem(doc) {
+  const d = doc.data() || {};
+  return {
+    id:              doc.id,
+    nome:            d.nome || '',
+    telefone:        d.telefone || '',
+    endereco:        d.endereco || '',
+    tipo:            d.tipo || '',
+    data:            d.data || '',
+    veiculo:         d.veiculo || '',
+    obs:             d.obs || '',
+    status:          d.status || 'ativo',
+    msgLog:          null,
+    valorInstalacao: d.valorInstalacao || '',
+    ordemDia:        d.ordemDia || 0,
+    notaTecnico:     d.notaTecnico || ''
+  };
+}
+
+function iniciarListenerOSTecnico(nomeTecnico) {
+  pararListenerOSTecnico();
+  const db = getFirestoreDb();
+  if (!db) return; // Firebase indisponível — segue só com a atualização normal (a cada 30s)
+
+  _unsubOSTecnico = db.collection('ordens_servico')
+    .where('tecnico', '==', nomeTecnico)
+    .onSnapshot(function(snapshot) {
+      // Só aplica se ainda for esse o técnico logado (evita cruzar dados numa troca rápida de sessão)
+      if (currentUser !== nomeTecnico) return;
+      const ativos = [];
+      const concluidos = [];
+      snapshot.forEach(function(doc) {
+        const o = docFirestoreParaOrdem(doc);
+        (o.status === 'concluido' ? concluidos : ativos).push(o);
+      });
+      allOrders[nomeTecnico]  = normalizarOrdens(ativos);
+      doneOrders[nomeTecnico] = normalizarOrdens(concluidos);
+      renderTechCalendar();
+      renderCalDayCards(null);
+      renderDoneList();
+    }, function(err) {
+      console.warn('[Firestore] Tempo real das OS caiu, seguindo só com a atualização a cada 30s:', err);
+    });
+}
 
 async function loadTechOrders() {
   _calDayAtivo = null; // Limpar dia ativo ao recarregar
