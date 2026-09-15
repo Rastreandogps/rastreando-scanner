@@ -807,6 +807,10 @@ input.invalid {
   </div>
 </div>
 
+<!-- FIREBASE (usado só para avisar o painel do técnico em tempo real quando chega um agendamento novo) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
 <script>
 (function(){
 
@@ -814,6 +818,48 @@ input.invalid {
     SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzw43sC7DH-VHCB-PB7CGrj602N6m_PElflDdRQdRVF2L2JZDrcn_HtXs4M-4-73F_VzA/exec",
     WHATSAPP_NUMERO: "5521980886087"
   };
+
+  // Firestore é só um "aviso" extra pro painel atualizar na hora.
+  // Se falhar por qualquer motivo, o formulário continua funcionando normalmente
+  // do jeito que sempre funcionou (planilha + WhatsApp).
+  var firebaseConfig = {
+    apiKey: "AIzaSyCnWCqWOBgk5D4d3KmDM-XiIxEoMojRyd8",
+    authDomain: "rastreando-gps.firebaseapp.com",
+    projectId: "rastreando-gps",
+    storageBucket: "rastreando-gps.firebasestorage.app",
+    messagingSenderId: "481162335739",
+    appId: "1:481162335739:web:fe3d91aaa33749a9f3e75e"
+  };
+  var dbFirestore = null;
+  try {
+    if (typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+      dbFirestore = firebase.firestore();
+    }
+  } catch (e) {
+    console.warn('[Rastreando GPS] Firebase não iniciou (segue tudo normal pela planilha).', e);
+  }
+
+  function avisarPainelNovoAgendamento(payload){
+    try {
+      if (!dbFirestore) return;
+      dbFirestore.collection('agendamentos_pendentes').doc(payload.idPedido).set({
+        idPedido: payload.idPedido,
+        enviadoEm: payload.enviadoEm,
+        nomeCompleto: payload.nomeCompleto,
+        telefone: payload.telefone,
+        cep: payload.cep,
+        endereco: payload.endereco,
+        pontoReferencia: payload.pontoReferencia,
+        quantidadeVeiculos: payload.quantidadeVeiculos,
+        veiculos: payload.veiculos,
+        lido: false,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(e){ console.warn('[Rastreando GPS] Não deu pra avisar o painel em tempo real (sem problema, a planilha já foi salva).', e); });
+    } catch (e) {
+      console.warn('[Rastreando GPS] Não deu pra avisar o painel em tempo real (sem problema, a planilha já foi salva).', e);
+    }
+  }
 
   var nomeInput       = document.getElementById('nomeCompleto');
   var telefoneInput   = document.getElementById('telefone');
@@ -1252,6 +1298,8 @@ input.invalid {
     var mensagem = buildWhatsAppMessage(payload);
     var waLink   = 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
     var waWindow = window.open(waLink, '_blank');
+
+    avisarPainelNovoAgendamento(payload);
 
     setSending(true);
 
