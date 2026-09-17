@@ -348,26 +348,10 @@
       <div class="num">4</div>
       <div class="label">Pendentes</div>
     </div>
-    <div class="card">
-      <div class="num">R$ 8.700</div>
-      <div class="label">Valor pago</div>
-    </div>
     <div class="card pendente">
       <div class="num">R$ 1.200</div>
       <div class="label">Valor pendente</div>
     </div>
-    <div class="card">
-      <div class="num">R$ 9.900</div>
-      <div class="label">Valor total (33 linhas)</div>
-    </div>
-  </div>
-
-  <div class="progress-wrap">
-    <div class="top-row">
-      <span>Situação de pagamento</span>
-      <span>29 de 33 linhas pagas (87,9%)</span>
-    </div>
-    <div class="progress-bar"><div class="progress-fill"></div></div>
   </div>
 
   <div class="table-wrap">
@@ -538,13 +522,7 @@ const fmt = v => 'R$ ' + v.toLocaleString('pt-BR');
 document.querySelectorAll('.card .num')[0].textContent = totalLinhas;
 document.querySelectorAll('.card .num')[1].textContent = qtdPaga;
 document.querySelectorAll('.card .num')[2].textContent = qtdPendente;
-document.querySelectorAll('.card .num')[3].textContent = fmt(totalPago);
-document.querySelectorAll('.card .num')[4].textContent = fmt(totalPendente);
-document.querySelectorAll('.card .num')[5].textContent = fmt(totalPago + totalPendente) + ` (${totalLinhas} linhas)`;
-
-document.querySelector('.progress-wrap .top-row span:last-child').textContent =
-  `${qtdPaga} de ${totalLinhas} linhas pagas (${pctPago.toFixed(1)}%)`;
-document.querySelector('.progress-fill').style.width = pctPago + '%';
+document.querySelectorAll('.card .num')[3].textContent = fmt(totalPendente);
 
 // Botão de enviar linhas perdidas pelo WhatsApp — abre modal de confirmação antes
 const NUMERO_WHATSAPP = '5521980886087'; // 21 98088-6087
