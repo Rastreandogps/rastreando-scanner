@@ -250,6 +250,47 @@
     margin: 12px 0 20px;
   }
   .modal-valor strong { color: #c0392b; font-size: 18px; }
+
+  .modal-qtd-pedido {
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .modal-qtd-pedido label {
+    display: block;
+    font-size: 12.5px;
+    color: #555;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .qtd-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .qtd-controls button {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 10px;
+    background: #1b4332;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .qtd-controls button:hover { background: #2f5d3a; }
+  .qtd-controls input {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    color: #1b4332;
+  }
+  .qtd-controls input:focus { outline: none; border-color: #2f5d3a; }
   .modal-botoes {
     display: flex;
     gap: 10px;
@@ -357,19 +398,24 @@
 
     <div class="lista-nomes" id="modal-lista-nomes"></div>
 
-    <div class="modal-aparelhos">
-      <div class="qtd" id="modal-qtd-aparelhos">0</div>
-      <div class="texto">aparelho(s) novo(s) você vai precisar enviar</div>
+    <div class="modal-qtd-pedido">
+      <label for="input-qtd-pedido" id="label-qtd-pedido">Felipe, você vai cancelar 0 linhas, mas vai precisar de quantos aparelhos?</label>
+      <div class="qtd-controls">
+        <button type="button" id="btn-qtd-menos">−</button>
+        <input type="number" id="input-qtd-pedido" min="0" value="0">
+        <button type="button" id="btn-qtd-mais">+</button>
+      </div>
     </div>
 
     <div class="modal-valor">
-      Valor pendente: <strong id="modal-valor-total">R$ 0</strong>
-      <div style="font-size:12px; color:#888; margin-top:2px;">R$ 300,00 por linha</div>
+      <span id="modal-texto-valor">Felipe, 0 novos aparelhos custarão:</span>
+      <br><strong id="modal-valor-total">R$ 0</strong>
+      <div style="font-size:12px; color:#888; margin-top:2px;">R$ 300,00 por aparelho</div>
     </div>
 
     <div class="modal-botoes">
       <button class="btn-cancelar" id="btn-modal-cancelar">Cancelar</button>
-      <button class="btn-confirmar" id="btn-modal-confirmar">Confirmar e enviar</button>
+      <button class="btn-confirmar" id="btn-modal-confirmar">Enviar para o Mateus</button>
     </div>
   </div>
 </div>
@@ -497,6 +543,21 @@ document.querySelector('.progress-fill').style.width = pctPago + '%';
 // Botão de enviar linhas perdidas pelo WhatsApp — abre modal de confirmação antes
 const NUMERO_WHATSAPP = '5521980886087'; // 21 98088-6087
 const modalOverlay = document.getElementById('modal-overlay');
+const inputQtdPedido = document.getElementById('input-qtd-pedido');
+
+function atualizarValorModal() {
+  let qtd = parseInt(inputQtdPedido.value, 10);
+  if (isNaN(qtd) || qtd < 0) qtd = 0;
+  inputQtdPedido.value = qtd;
+
+  const valorTotal = qtd * VALOR_POR_LINHA;
+  document.getElementById('modal-texto-valor').textContent =
+    qtd === 1
+      ? `Felipe, ${qtd} novo aparelho custará:`
+      : `Felipe, ${qtd} novos aparelhos custarão:`;
+  document.getElementById('modal-valor-total').textContent =
+    'R$ ' + valorTotal.toLocaleString('pt-BR');
+}
 
 document.getElementById('btn-whatsapp').addEventListener('click', () => {
   const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
@@ -508,17 +569,29 @@ document.getElementById('btn-whatsapp').addEventListener('click', () => {
   }
 
   const qtd = marcados.length;
-  const valorTotal = qtd * VALOR_POR_LINHA;
-
   document.getElementById('modal-qtd-linhas').textContent = qtd;
-  document.getElementById('modal-qtd-aparelhos').textContent = qtd;
-  document.getElementById('modal-valor-total').textContent =
-    'R$ ' + valorTotal.toLocaleString('pt-BR');
+  document.getElementById('label-qtd-pedido').textContent =
+    qtd === 1
+      ? `Felipe, você vai cancelar 1 linha, mas vai precisar de quantos aparelhos?`
+      : `Felipe, você vai cancelar ${qtd} linhas, mas vai precisar de quantos aparelhos?`;
   document.getElementById('modal-lista-nomes').innerHTML =
     marcados.map(n => `<div>• ${n}</div>`).join('');
 
+  inputQtdPedido.value = qtd; // por padrão, sugere pedir a mesma quantidade das linhas perdidas
+  atualizarValorModal();
+
   modalOverlay.classList.add('aberto');
   modalOverlay.dataset.marcados = JSON.stringify(marcados);
+});
+
+inputQtdPedido.addEventListener('input', atualizarValorModal);
+document.getElementById('btn-qtd-menos').addEventListener('click', () => {
+  inputQtdPedido.value = (parseInt(inputQtdPedido.value, 10) || 0) - 1;
+  atualizarValorModal();
+});
+document.getElementById('btn-qtd-mais').addEventListener('click', () => {
+  inputQtdPedido.value = (parseInt(inputQtdPedido.value, 10) || 0) + 1;
+  atualizarValorModal();
 });
 
 document.getElementById('btn-modal-cancelar').addEventListener('click', () => {
@@ -530,8 +603,9 @@ modalOverlay.addEventListener('click', (e) => {
 
 document.getElementById('btn-modal-confirmar').addEventListener('click', () => {
   const marcados = JSON.parse(modalOverlay.dataset.marcados || '[]');
+  const qtdPedido = parseInt(inputQtdPedido.value, 10) || 0;
   const lista = marcados.join('\n');
-  const mensagem = `Perdi as seguintes linhas:\n${lista}\n\nPreciso de ${marcados.length} aparelho(s) novo(s).`;
+  const mensagem = `Perdi as seguintes linhas:\n${lista}\n\nPreciso de ${qtdPedido} aparelho(s) novo(s).`;
   const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
   window.open(url, '_blank');
   modalOverlay.classList.remove('aberto');
