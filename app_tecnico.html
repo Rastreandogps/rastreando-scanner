@@ -206,6 +206,9 @@
     border-radius: 10px; font-size: 14px; outline: none; font-family: inherit; resize: vertical;
   }
   .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--admin); }
+  .form-field input.campo-erro, .form-field select.campo-erro, .form-field textarea.campo-erro {
+    border-color: var(--danger) !important; background: rgba(239,68,68,.06);
+  }
   .btn-primary {
     padding: 12px 20px; background: var(--admin); color: white; border: none;
     border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
@@ -1209,7 +1212,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-15-v15-escrita-firebase-primeiro';
+const BUILD_VERSION = '2026-09-17-v16-destaque-campo-obrigatorio';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -3118,7 +3121,33 @@ async function submitOS() {
   }).filter(Boolean);
   const veiculo = veiculosParts.join(' || ');
   const obs     = document.getElementById('f-obs').value.trim();
-  if (!nome || !tel || !end || !tecnico) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
+
+  const camposObrigatorios = [
+    { id: 'f-nome', valor: nome },
+    { id: 'f-tel', valor: tel },
+    { id: 'f-end', valor: end },
+    { id: 'f-tecnico', valor: tecnico }
+  ];
+  let primeiroInvalido = null;
+  camposObrigatorios.forEach(function(c) {
+    const el = document.getElementById(c.id);
+    if (!el) return;
+    if (!c.valor) {
+      el.classList.add('campo-erro');
+      if (!primeiroInvalido) primeiroInvalido = el;
+      ['input', 'change'].forEach(function(evt) {
+        el.addEventListener(evt, function _limparCampoErro() { el.classList.remove('campo-erro'); }, { once: true });
+      });
+    } else {
+      el.classList.remove('campo-erro');
+    }
+  });
+  if (primeiroInvalido) {
+    showToast('Preencha os campos obrigatórios (*)', 'error');
+    primeiroInvalido.focus();
+    primeiroInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const valorInst = document.getElementById('f-valor')?.value?.trim() || '';
 
   // Verificar telefone duplicado
@@ -3183,8 +3212,9 @@ function adicionarVeiculoManual() {
 function clearForm() {
   ['f-nome','f-tel','f-end','f-obs','f-valor'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = '';
+    if (el) { el.value = ''; el.classList.remove('campo-erro'); }
   });
+  { const _ft = document.getElementById('f-tecnico'); if (_ft) _ft.classList.remove('campo-erro'); }
   document.getElementById('f-data').value = '';
   { const _fh = document.getElementById('f-hora'); if (_fh) _fh.value = ''; }
   document.getElementById('f-tipo').value = 'Instalação';
