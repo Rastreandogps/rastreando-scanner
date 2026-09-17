@@ -291,6 +291,23 @@ const dados = [
 const VALOR_POR_LINHA = 300;
 const pendentes = ["FELIPE 36","FELIPE 37","FELIPE 38","FELIPE 39"];
 const corpo = document.getElementById('tabela-corpo');
+const STORAGE_KEY = 'gps_linhas_perdidas';
+
+function carregarPerdidos() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+function salvarPerdidos(lista) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  } catch (e) {
+    // se o navegador bloquear localStorage, a seleção simplesmente não persiste
+  }
+}
+const perdidosSalvos = carregarPerdidos();
 
 function parseDataBR(str) {
   const [d, m, a] = str.split('/').map(Number);
@@ -326,6 +343,15 @@ dados.forEach(linha => {
     <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
   `;
   corpo.appendChild(tr);
+  tr.querySelector('.chk-perdido').checked = perdidosSalvos.includes(nome);
+});
+
+// salva no aparelho a cada clique, para não perder a marcação ao recarregar a página
+corpo.addEventListener('change', (e) => {
+  if (!e.target.classList.contains('chk-perdido')) return;
+  const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
+    .map(chk => chk.dataset.nome);
+  salvarPerdidos(marcados);
 });
 
 // atualiza os cards e a barra de progresso com os valores calculados
