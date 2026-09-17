@@ -134,6 +134,14 @@
   .badge-pago { background: #dcf3e0; color: #1b6b2c; }
   .badge-pendente { background: #ffe0b3; color: #a35a00; }
 
+  .link-sms {
+    color: #1b6b2c;
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px dashed #1b6b2c;
+  }
+  .link-sms:hover { color: #0f4a1e; }
+
   .footer-note {
     text-align: center;
     color: rgba(255,255,255,0.75);
@@ -360,9 +368,9 @@
         <tr>
           <th>Perdido?</th>
           <th>Nome</th>
+          <th>Dias restantes</th>
           <th>IMEI</th>
           <th>Número</th>
-          <th>Dias restantes</th>
           <th>Expira em</th>
           <th>Status</th>
         </tr>
@@ -496,9 +504,9 @@ dados.forEach(linha => {
   tr.innerHTML = `
     <td style="text-align:center;"><input type="checkbox" class="chk-perdido" data-nome="${nome}"></td>
     <td><strong>${nome}</strong></td>
-    <td>${imei}</td>
-    <td>${numero}</td>
     <td>${dias} dias</td>
+    <td>${imei}</td>
+    <td><a href="sms:55${numero}?&body=${encodeURIComponent('Reset#')}" class="link-sms">${numero}</a></td>
     <td>${expira}</td>
     <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
   `;
