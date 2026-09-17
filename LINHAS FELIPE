@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Relatório de Linhas - Rastreando GPS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f2b1d 0%, #1b4332 45%, #2f5d3a 100%);
+    min-height: 100vh;
+    padding: 32px 16px;
+    color: #1a1a1a;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-size: 28px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .header p {
+    margin-top: 6px;
+    font-size: 14px;
+    opacity: 0.85;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    border-top: 4px solid #2f5d3a;
+  }
+  .card.pendente { border-top-color: #d9822b; }
+  .card .num {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1b4332;
+  }
+  .card.pendente .num { color: #d9822b; }
+  .card .label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .progress-wrap {
+    background: rgba(255,255,255,0.97);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  }
+  .progress-wrap .top-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #444;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 16px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2f5d3a, #4c8c5a);
+    width: 87.9%;
+  }
+
+  .table-wrap {
+    background: rgba(255,255,255,0.97);
+    border-radius: 14px;
+    overflow-x: auto;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    -webkit-overflow-scrolling: touch;
+  }
+  table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    background: #1b4332;
+    color: #fff;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+  }
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #eee;
+  }
+  tbody tr:nth-child(even) { background: #f7faf7; }
+  tbody tr.pendente-row { background: #fff3e6 !important; }
+  tbody tr.pendente-row:hover { background: #ffe6c8 !important; }
+  tbody tr:hover { background: #e7f3ea; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .badge-pago { background: #dcf3e0; color: #1b6b2c; }
+  .badge-pendente { background: #ffe0b3; color: #a35a00; }
+
+  .footer-note {
+    text-align: center;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    margin-top: 22px;
+  }
+
+  .chk-perdido {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #c0392b;
+  }
+
+  .whats-wrap {
+    text-align: center;
+    margin-top: 18px;
+  }
+  .btn-whatsapp {
+    background: #25D366;
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 40px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .btn-whatsapp:hover { background: #1ebe5a; transform: translateY(-2px); }
+  .btn-whatsapp:active { transform: translateY(0); }
+  .btn-whatsapp:disabled {
+    background: #9dbfa8;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+  .whats-hint {
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    body { padding: 18px 10px; }
+    .header h1 { font-size: 22px; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .card .num { font-size: 21px; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 7px 6px; }
+    .chk-perdido { width: 22px; height: 22px; }
+    .btn-whatsapp { width: 100%; padding: 15px 0; font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>📡 Relatório de Linhas Ativas</h1>
+    <p id="data-posicao">Rastreando GPS</p>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="num">33</div>
+      <div class="label">Linhas ativas</div>
+    </div>
+    <div class="card">
+      <div class="num">29</div>
+      <div class="label">Pagas</div>
+    </div>
+    <div class="card pendente">
+      <div class="num">4</div>
+      <div class="label">Pendentes</div>
+    </div>
+    <div class="card">
+      <div class="num">R$ 8.700</div>
+      <div class="label">Valor pago</div>
+    </div>
+    <div class="card pendente">
+      <div class="num">R$ 1.200</div>
+      <div class="label">Valor pendente</div>
+    </div>
+    <div class="card">
+      <div class="num">R$ 9.900</div>
+      <div class="label">Valor total (33 linhas)</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="top-row">
+      <span>Situação de pagamento</span>
+      <span>29 de 33 linhas pagas (87,9%)</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Perdido?</th>
+          <th>Nome</th>
+          <th>IMEI</th>
+          <th>Número</th>
+          <th>Dias restantes</th>
+          <th>Expira em</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-corpo"></tbody>
+    </table>
+  </div>
+
+  <div class="whats-wrap">
+    <button id="btn-whatsapp" class="btn-whatsapp">📱 Enviar linhas perdidas pelo WhatsApp</button>
+    <p class="whats-hint">Marque a caixinha "Perdido?" de cada linha e clique no botão para avisar direto no WhatsApp.</p>
+  </div>
+
+  <p class="footer-note">Documento gerado automaticamente • Rastreando GPS</p>
+</div>
+
+<script>
+// apenas a data de expiração; os dias restantes são calculados na hora, sempre que o arquivo é aberto
+const dados = [
+  ["FELIPE 01","864421067045180","11930260404","29/07/2027"],
+  ["FELIPE 02","864421067045792","11973469318","29/07/2027"],
+  ["FELIPE 03","864421067045727","11963965030","29/07/2027"],
+  ["FELIPE 04","864421067045693","11996486341","29/07/2027"],
+  ["FELIPE 05","864421067045099","11999703173","29/07/2027"],
+  ["FELIPE 06","864421067045719","11941051320","29/07/2027"],
+  ["FELIPE 07","864421067045644","11955831307","29/07/2027"],
+  ["FELIPE 08","868022036395437","11974902299","29/07/2027"],
+  ["FELIPE 09","864421067045834","11999852441","29/07/2027"],
+  ["FELIPE 10","864421067045628","11910237496","29/07/2027"],
+  ["FELIPE 11","864421067045206","11963895632","29/07/2027"],
+  ["FELIPE 13","869731057399099","11974908999","29/07/2027"],
+  ["FELIPE 14","868022036176399","11975536021","29/07/2027"],
+  ["FELIPE 16","869731057401218","11974321676","29/07/2027"],
+  ["FELIPE 20","868022036666506","11974976538","29/07/2027"],
+  ["FELIPE 22","864421067302284","11972688500","29/07/2027"],
+  ["FELIPE 23","864421067301765","11921464673","08/09/2027"],
+  ["FELIPE 24","864421067302417","11921464782","08/09/2027"],
+  ["FELIPE 25","864421067302052","11921464766","08/09/2027"],
+  ["FELIPE 26","864421067301864","11916848069","08/09/2027"],
+  ["FELIPE 27","864421067302474","11921468362","08/09/2027"],
+  ["FELIPE 28","864421067302540","11912806538","08/09/2027"],
+  ["FELIPE 29","864421067301872","11912793640","08/09/2027"],
+  ["FELIPE 30","864421067301781","11974477636","08/09/2027"],
+  ["FELIPE 31","864421067302078","11921294448","08/09/2027"],
+  ["FELIPE 32","864421067302169","11921280904","08/09/2027"],
+  ["FELIPE 33","864421067302227","11910268202","08/09/2027"],
+  ["FELIPE 34","864421067302573","11921446499","08/09/2027"],
+  ["FELIPE 35","864421067302318","11921553581","08/09/2027"],
+  ["FELIPE 36","864421067301773","11921231064","14/09/2027"],
+  ["FELIPE 37","864421067302151","11921235803","14/09/2027"],
+  ["FELIPE 38","864421067302011","11911973891","14/09/2027"],
+  ["FELIPE 39","864421067302268","11915994989","14/09/2027"]
+];
+
+const VALOR_POR_LINHA = 300;
+const pendentes = ["FELIPE 36","FELIPE 37","FELIPE 38","FELIPE 39"];
+const corpo = document.getElementById('tabela-corpo');
+
+function parseDataBR(str) {
+  const [d, m, a] = str.split('/').map(Number);
+  return new Date(a, m - 1, d);
+}
+
+const hoje = new Date();
+hoje.setHours(0, 0, 0, 0);
+
+document.getElementById('data-posicao').textContent =
+  'Rastreando GPS  •  Posição em ' + hoje.toLocaleDateString('pt-BR');
+
+let totalPago = 0, totalPendente = 0, qtdPaga = 0, qtdPendente = 0;
+
+dados.forEach(linha => {
+  const [nome, imei, numero, expira] = linha;
+  const isPendente = pendentes.includes(nome);
+  const dataExpira = parseDataBR(expira);
+  const dias = Math.ceil((dataExpira - hoje) / 86400000);
+
+  if (isPendente) { totalPendente += VALOR_POR_LINHA; qtdPendente++; }
+  else { totalPago += VALOR_POR_LINHA; qtdPaga++; }
+
+  const tr = document.createElement('tr');
+  if (isPendente) tr.classList.add('pendente-row');
+  tr.innerHTML = `
+    <td style="text-align:center;"><input type="checkbox" class="chk-perdido" data-nome="${nome}"></td>
+    <td><strong>${nome}</strong></td>
+    <td>${imei}</td>
+    <td>${numero}</td>
+    <td>${dias} dias</td>
+    <td>${expira}</td>
+    <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
+  `;
+  corpo.appendChild(tr);
+});
+
+// atualiza os cards e a barra de progresso com os valores calculados
+const totalLinhas = qtdPaga + qtdPendente;
+const pctPago = (qtdPaga / totalLinhas) * 100;
+const fmt = v => 'R$ ' + v.toLocaleString('pt-BR');
+
+document.querySelectorAll('.card .num')[0].textContent = totalLinhas;
+document.querySelectorAll('.card .num')[1].textContent = qtdPaga;
+document.querySelectorAll('.card .num')[2].textContent = qtdPendente;
+document.querySelectorAll('.card .num')[3].textContent = fmt(totalPago);
+document.querySelectorAll('.card .num')[4].textContent = fmt(totalPendente);
+document.querySelectorAll('.card .num')[5].textContent = fmt(totalPago + totalPendente) + ` (${totalLinhas} linhas)`;
+
+document.querySelector('.progress-wrap .top-row span:last-child').textContent =
+  `${qtdPaga} de ${totalLinhas} linhas pagas (${pctPago.toFixed(1)}%)`;
+document.querySelector('.progress-fill').style.width = pctPago + '%';
+
+// Botão de enviar linhas perdidas pelo WhatsApp
+const NUMERO_WHATSAPP = '5521980886087'; // 21 98088-6087
+document.getElementById('btn-whatsapp').addEventListener('click', () => {
+  const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
+    .map(chk => chk.dataset.nome);
+
+  if (marcados.length === 0) {
+    alert('Marque pelo menos uma linha como "Perdido?" antes de enviar.');
+    return;
+  }
+
+  const lista = marcados.join(', ');
+  const mensagem = `Perdi as seguintes linhas: ${lista}`;
+  const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
+});
+</script>
+</body>
+</html>
