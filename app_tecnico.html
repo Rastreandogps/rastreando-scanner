@@ -209,6 +209,7 @@
   .form-field input.campo-erro, .form-field select.campo-erro, .form-field textarea.campo-erro {
     border-color: var(--danger) !important; background: rgba(239,68,68,.06);
   }
+  .f-veiculo-bloq-toggle.bloq-erro button { border-color: var(--danger) !important; }
   .btn-primary {
     padding: 12px 20px; background: var(--admin); color: white; border: none;
     border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
@@ -824,7 +825,7 @@
       </div>
       <div class="form-row">
         <div class="form-field" style="grid-column:1/-1;">
-          <label>Veículo / Placa</label>
+          <label>Veículo / Placa *</label>
           <div id="f-veiculos-wrap" style="display:flex;flex-direction:column;gap:8px;">
             <div class="f-veiculo-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="text" class="f-veiculo-item" placeholder="Ex: Gol / ABC-1234" style="flex:1;min-width:150px;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;">
@@ -1212,7 +1213,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-17-v16-destaque-campo-obrigatorio';
+const BUILD_VERSION = '2026-09-17-v17-veiculo-bloqueio-obrigatorio';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -3142,6 +3143,40 @@ async function submitOS() {
       el.classList.remove('campo-erro');
     }
   });
+
+  // Veículo: pelo menos o primeiro é obrigatório, e quem tiver texto precisa ter Com/Sem bloqueio escolhido
+  let veiculoInvalido = null;
+  Array.from(veiculoRows).forEach(function(row, idx) {
+    const inp = row.querySelector('.f-veiculo-item');
+    const toggleWrap = row.querySelector('.f-veiculo-bloq-toggle');
+    const ativo = toggleWrap ? toggleWrap.querySelector('button[data-active="1"]') : null;
+    const txt = inp ? inp.value.trim() : '';
+    const veiculoFaltando = !txt && idx === 0;
+    if (veiculoFaltando) {
+      if (inp) {
+        inp.classList.add('campo-erro');
+        if (!veiculoInvalido) veiculoInvalido = inp;
+        ['input', 'change'].forEach(function(evt) {
+          inp.addEventListener(evt, function _limparVeiculoErro() { inp.classList.remove('campo-erro'); }, { once: true });
+        });
+      }
+    } else if (inp) {
+      inp.classList.remove('campo-erro');
+    }
+    if (txt && !ativo) {
+      if (toggleWrap) {
+        toggleWrap.classList.add('bloq-erro');
+        if (!veiculoInvalido) veiculoInvalido = toggleWrap;
+        toggleWrap.querySelectorAll('button').forEach(function(btn) {
+          btn.addEventListener('click', function _limparBloqErro() { toggleWrap.classList.remove('bloq-erro'); }, { once: true });
+        });
+      }
+    } else if (toggleWrap) {
+      toggleWrap.classList.remove('bloq-erro');
+    }
+  });
+  if (!primeiroInvalido) primeiroInvalido = veiculoInvalido;
+
   if (primeiroInvalido) {
     showToast('Preencha os campos obrigatórios (*)', 'error');
     primeiroInvalido.focus();
