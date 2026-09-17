@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Relatório de Linhas - Rastreando GPS</title>
+<title>Escritório do Felipe, Localizador</title>
+
+<!-- Pré-visualização ao compartilhar o link (WhatsApp, etc.) -->
+<meta property="og:title" content="Escritório do Felipe, Localizador">
+<meta property="og:description" content="Painel de linhas GPS - Rastreando GPS">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Escritório do Felipe, Localizador">
+<meta name="twitter:description" content="Painel de linhas GPS - Rastreando GPS">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -170,6 +178,96 @@
     margin-top: 10px;
   }
 
+  /* Modal de confirmação */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.aberto { display: flex; }
+  .modal-box {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    padding: 26px 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    text-align: center;
+  }
+  .modal-box h2 {
+    font-size: 19px;
+    color: #1b4332;
+    margin-bottom: 14px;
+  }
+  .modal-linhas {
+    font-size: 40px;
+    font-weight: 800;
+    color: #c0392b;
+    line-height: 1;
+  }
+  .modal-linhas-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 0.4px;
+    margin-bottom: 18px;
+  }
+  .modal-box .lista-nomes {
+    background: #f7f7f7;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #444;
+    margin-bottom: 16px;
+    max-height: 110px;
+    overflow-y: auto;
+    text-align: left;
+  }
+  .modal-aparelhos {
+    background: #fff3e6;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .modal-aparelhos .qtd {
+    font-size: 22px;
+    font-weight: 800;
+    color: #a35a00;
+  }
+  .modal-aparelhos .texto {
+    font-size: 13px;
+    color: #a35a00;
+    margin-top: 2px;
+  }
+  .modal-valor {
+    font-size: 15px;
+    color: #333;
+    margin: 12px 0 20px;
+  }
+  .modal-valor strong { color: #c0392b; font-size: 18px; }
+  .modal-botoes {
+    display: flex;
+    gap: 10px;
+  }
+  .modal-botoes button {
+    flex: 1;
+    padding: 13px 0;
+    border-radius: 30px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-cancelar { background: #eee; color: #555; }
+  .btn-cancelar:hover { background: #e0e0e0; }
+  .btn-confirmar { background: #25D366; color: #fff; }
+  .btn-confirmar:hover { background: #1ebe5a; }
+
   @media (max-width: 700px) {
     body { padding: 18px 10px; }
     .header h1 { font-size: 22px; }
@@ -248,6 +346,32 @@
   </div>
 
   <p class="footer-note">Documento gerado automaticamente • Rastreando GPS</p>
+</div>
+
+<!-- Modal de confirmação -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h2>Confirmar envio</h2>
+    <div class="modal-linhas" id="modal-qtd-linhas">0</div>
+    <div class="modal-linhas-label">linha(s) selecionada(s)</div>
+
+    <div class="lista-nomes" id="modal-lista-nomes"></div>
+
+    <div class="modal-aparelhos">
+      <div class="qtd" id="modal-qtd-aparelhos">0</div>
+      <div class="texto">aparelho(s) novo(s) você vai precisar enviar</div>
+    </div>
+
+    <div class="modal-valor">
+      Valor pendente: <strong id="modal-valor-total">R$ 0</strong>
+      <div style="font-size:12px; color:#888; margin-top:2px;">R$ 300,00 por linha</div>
+    </div>
+
+    <div class="modal-botoes">
+      <button class="btn-cancelar" id="btn-modal-cancelar">Cancelar</button>
+      <button class="btn-confirmar" id="btn-modal-confirmar">Confirmar e enviar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -370,8 +494,10 @@ document.querySelector('.progress-wrap .top-row span:last-child').textContent =
   `${qtdPaga} de ${totalLinhas} linhas pagas (${pctPago.toFixed(1)}%)`;
 document.querySelector('.progress-fill').style.width = pctPago + '%';
 
-// Botão de enviar linhas perdidas pelo WhatsApp
+// Botão de enviar linhas perdidas pelo WhatsApp — abre modal de confirmação antes
 const NUMERO_WHATSAPP = '5521980886087'; // 21 98088-6087
+const modalOverlay = document.getElementById('modal-overlay');
+
 document.getElementById('btn-whatsapp').addEventListener('click', () => {
   const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
     .map(chk => chk.dataset.nome);
@@ -381,10 +507,34 @@ document.getElementById('btn-whatsapp').addEventListener('click', () => {
     return;
   }
 
+  const qtd = marcados.length;
+  const valorTotal = qtd * VALOR_POR_LINHA;
+
+  document.getElementById('modal-qtd-linhas').textContent = qtd;
+  document.getElementById('modal-qtd-aparelhos').textContent = qtd;
+  document.getElementById('modal-valor-total').textContent =
+    'R$ ' + valorTotal.toLocaleString('pt-BR');
+  document.getElementById('modal-lista-nomes').innerHTML =
+    marcados.map(n => `<div>• ${n}</div>`).join('');
+
+  modalOverlay.classList.add('aberto');
+  modalOverlay.dataset.marcados = JSON.stringify(marcados);
+});
+
+document.getElementById('btn-modal-cancelar').addEventListener('click', () => {
+  modalOverlay.classList.remove('aberto');
+});
+modalOverlay.addEventListener('click', (e) => {
+  if (e.target === modalOverlay) modalOverlay.classList.remove('aberto');
+});
+
+document.getElementById('btn-modal-confirmar').addEventListener('click', () => {
+  const marcados = JSON.parse(modalOverlay.dataset.marcados || '[]');
   const lista = marcados.join('\n');
-  const mensagem = `Perdi as seguintes linhas:\n${lista}`;
+  const mensagem = `Perdi as seguintes linhas:\n${lista}\n\nPreciso de ${marcados.length} aparelho(s) novo(s).`;
   const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
   window.open(url, '_blank');
+  modalOverlay.classList.remove('aberto');
 });
 </script>
 </body>
