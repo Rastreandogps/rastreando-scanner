@@ -355,8 +355,8 @@ document.getElementById('btn-whatsapp').addEventListener('click', () => {
     return;
   }
 
-  const lista = marcados.join(', ');
-  const mensagem = `Perdi as seguintes linhas: ${lista}`;
+  const lista = marcados.join('\n');
+  const mensagem = `Perdi as seguintes linhas:\n${lista}`;
   const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
   window.open(url, '_blank');
 });
