@@ -129,9 +129,10 @@ const dados = [
 const corpo = document.getElementById('tabela-corpo');
 dados.forEach(([nome, imei, numero]) => {
   const tr = document.createElement('tr');
+  const smsHref = `sms:55${numero}?&body=${encodeURIComponent('Reset#')}`;
   tr.innerHTML = `
-    <td><strong>${nome}</strong></td>
-    <td><a href="sms:55${numero}?&body=${encodeURIComponent('Reset#')}" class="link-sms">${numero}</a></td>
+    <td><a href="${smsHref}" class="link-sms"><strong>${nome}</strong></a></td>
+    <td><a href="${smsHref}" class="link-sms">${numero}</a></td>
     <td>${imei}</td>
   `;
   corpo.appendChild(tr);
