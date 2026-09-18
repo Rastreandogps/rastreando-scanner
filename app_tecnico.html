@@ -951,21 +951,21 @@
         </div>
         <div class="cal-grid" id="admin-cal-grid" style="margin-bottom:16px;"></div>
         <!-- Busca de OS -->
-        <div style="position:relative;margin-bottom:14px;">
+        <div style="position:relative;z-index:51;margin-bottom:14px;">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" id="admin-cal-busca" placeholder="Buscar OS por nome, endereço ou veículo..." oninput="buscarOSAdmin(this.value)"
             style="width:100%;padding:10px 12px 10px 36px;border:2px solid var(--border);border-radius:10px;font-size:14px;outline:none;font-family:inherit;">
         </div>
         <div id="admin-cal-busca-resultados" style="display:none;margin-bottom:14px;"></div>
         <div style="margin-bottom:10px;">
-          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;position:relative;z-index:51;">
             <button onclick="navAdminCal(-1)" style="width:30px;height:30px;border:none;background:#e2e8f0;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
             <div id="admin-cal-month" style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;min-width:160px;text-align:center;"></div>
             <button onclick="navAdminCal(1)" style="width:30px;height:30px;border:none;background:#e2e8f0;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
             <button onclick="navAdminCal(0)" style="padding:4px 10px;border:none;background:#dbeafe;color:#1d4ed8;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
           </div>
 
-        <div id="admin-modo-visualizacao-bar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px;">
+        <div id="admin-modo-visualizacao-bar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px;position:relative;z-index:51;">
           <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:2px;">Ver como:</span>
           <button id="admin-modo-lista-btn" onclick="definirModoVisualizacaoOS('lista')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">☰ Lista</button>
           <button id="admin-modo-grade-btn" onclick="definirModoVisualizacaoOS('grade')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">▦ Grade</button>
@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v27-corrige-reagendar-nao-atualiza-tela';
+const BUILD_VERSION = '2026-09-18-v28-corrige-botoes-atras-do-overlay-do-dia';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
