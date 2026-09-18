@@ -1050,6 +1050,14 @@
   </div>
 </div>
 
+<!-- MODAL: VER OS (aberto ao tocar num card da Grade) -->
+<div class="modal-overlay" id="modal-ver-os">
+  <div class="modal-box" style="max-width:420px;max-height:90vh;overflow-y:auto;">
+    <div id="modal-ver-os-conteudo"></div>
+    <button type="button" class="btn-cancel" onclick="fecharModalVerOS()" style="width:100%;margin-top:10px;">Fechar</button>
+  </div>
+</div>
+
 <!-- MODAL: CONFIRMAR CONCLUSÃO -->
 <!-- MODAL: ESCOLHA ENVIO PRO TÉCNICO -->
 <div class="modal-overlay" id="modal-envio-tecnico">
@@ -1218,7 +1226,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v19-modo-grade-ver-tecnico';
+const BUILD_VERSION = '2026-09-18-v20-grade-abre-card-nao-edicao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -5303,7 +5311,7 @@ function _renderCardOSCompacto(o) {
   if (tipoAdmin.includes('manut')) cor = '#f59e0b';
   else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) cor = '#ef4444';
   else cor = '#3b82f6';
-  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalEdit(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;align-items:center;justify-content:center;text-align:center;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
+  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;align-items:center;justify-content:center;text-align:center;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
@@ -5947,6 +5955,21 @@ async function abrirModalEdit(id, tech) {
 
 function fecharModalEdit() {
   document.getElementById('modal-edit-os').classList.remove('open');
+  unlockScroll();
+}
+
+// Abre um popup mostrando o card completo da OS (usado ao tocar num card da Grade)
+function abrirModalVerOS(id, tech) {
+  let o = _adminOrdersCache.find(x => x.id === id) || (allOrders[tech] || []).find(x => x.id === id);
+  if (!o) { showToast('OS não encontrada', 'error'); return; }
+  const conteudo = document.getElementById('modal-ver-os-conteudo');
+  if (conteudo) conteudo.innerHTML = _renderCardOSDetalhado(o);
+  document.getElementById('modal-ver-os').classList.add('open');
+  lockScroll();
+}
+
+function fecharModalVerOS() {
+  document.getElementById('modal-ver-os').classList.remove('open');
   unlockScroll();
 }
 
