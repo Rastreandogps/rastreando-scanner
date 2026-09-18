@@ -568,6 +568,11 @@
       <div class="cal-grid" id="cal-grid"></div>
     </div>
     <!-- Cards do dia selecionado -->
+    <div style="padding:0 20px;max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;gap:6px;">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:2px;">Ver como:</span>
+      <button id="tech-modo-lista-btn" onclick="definirModoVisualizacaoOS('lista')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">☰ Lista</button>
+      <button id="tech-modo-grade-btn" onclick="definirModoVisualizacaoOS('grade')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">▦ Grade</button>
+    </div>
     <div id="cal-day-cards" style="padding:0 20px 20px;max-width:680px;margin:0 auto;"></div>
   </div>
 
@@ -962,8 +967,8 @@
 
         <div id="admin-modo-visualizacao-bar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px;">
           <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:2px;">Ver como:</span>
-          <button id="admin-modo-lista-btn" onclick="definirModoVisualizacaoAdmin('lista')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">☰ Lista</button>
-          <button id="admin-modo-grade-btn" onclick="definirModoVisualizacaoAdmin('grade')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">▦ Grade</button>
+          <button id="admin-modo-lista-btn" onclick="definirModoVisualizacaoOS('lista')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">☰ Lista</button>
+          <button id="admin-modo-grade-btn" onclick="definirModoVisualizacaoOS('grade')" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">▦ Grade</button>
         </div>
         <div id="admin-tech-os-list"></div>
       </div>
@@ -1226,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v22-grade-endereco-e-veiculo';
+const BUILD_VERSION = '2026-09-18-v23-grade-tambem-no-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -2354,6 +2359,7 @@ function destacarCardsOrdens(ids) {
 function renderCalDayCards(ids) {
   const wrap = document.getElementById('cal-day-cards');
   if (!wrap) return;
+  _atualizarBotoesModoVisualizacao();
 
   const orders = allOrders[currentUser] || [];
   const hoje   = new Date();
@@ -2409,11 +2415,44 @@ function renderCalDayCards(ids) {
   }
 
   const titulo = ids ? 'Ordens do dia selecionado' : 'Hoje · ' + hojeStr;
-  wrap.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>' +
-    selecionadas.map(o => renderCardInline(o)).join('');
+  const cabecalho = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>';
+  if (_adminModoVisualizacao === 'grade') {
+    wrap.innerHTML = cabecalho + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
+      _ordenarParaGrade(selecionadas).map(o => _renderCardTecnicoCompacto(o)).join('') +
+    '</div>';
+  } else {
+    wrap.innerHTML = cabecalho + selecionadas.map(o => renderCardInline(o)).join('');
+  }
 
   // Scroll suave até os cards
   wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Card compacto do técnico: nome, horário (se houver), endereço e modelo do veículo
+function _renderCardTecnicoCompacto(o) {
+  const tipo = (o.tipo || '').toLowerCase();
+  let cor;
+  if (tipo.includes('manut')) cor = '#f59e0b';
+  else if (tipo.includes('retir') || tipo.includes('remo')) cor = '#ef4444';
+  else cor = '#3b82f6';
+  const hora   = getHoraOS(o);
+  const modelo = _modeloPrincipalVeiculo(o.veiculo);
+  return '<div onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
+    (hora ? '<div style="font-size:10px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:1px 7px;border-radius:20px;">⏰ ' + esc(hora) + '</div>' : '') +
+    '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
+    (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
+    (modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
+  '</div>';
+}
+
+// Abre o popup com o card completo do técnico (usado ao tocar num card da Grade)
+function abrirModalVerOSTecnico(id) {
+  const o = (allOrders[currentUser] || []).find(x => x.id === id);
+  if (!o) { showToast('OS não encontrada', 'error'); return; }
+  const conteudo = document.getElementById('modal-ver-os-conteudo');
+  if (conteudo) conteudo.innerHTML = renderCardInline(o);
+  document.getElementById('modal-ver-os').classList.add('open');
+  lockScroll();
 }
 
 function renderCardInline(o) {
@@ -5272,24 +5311,32 @@ let _adminModoVisualizacao = (function() {
   try { return localStorage.getItem('app_tecnico_modo_visualizacao_os') || 'lista'; } catch(_) { return 'lista'; }
 })();
 
-function definirModoVisualizacaoAdmin(modo) {
+function definirModoVisualizacaoOS(modo) {
   if (_adminModoVisualizacao === modo) return;
   _adminModoVisualizacao = modo;
   try { localStorage.setItem('app_tecnico_modo_visualizacao_os', modo); } catch(_) {}
-  _atualizarBotoesModoVisualizacaoAdmin();
-  // Re-renderiza a lista já carregada, sem precisar buscar de novo
+  _atualizarBotoesModoVisualizacao();
+  // Re-renderiza a lista do admin já carregada, sem precisar buscar de novo
   if (adminTechSelecionado) {
     const ids = _calDayAtivo ? _calDayAtivo.split(',') : null;
     _renderAdminListaPorIds(ids);
   }
+  // Re-renderiza o calendário do técnico, se estiver com cards na tela
+  if (document.getElementById('cal-day-cards')) {
+    renderCalDayCards(_calDayAtivo ? _calDayAtivo.split(',') : null);
+  }
 }
 
-function _atualizarBotoesModoVisualizacaoAdmin() {
-  const bLista = document.getElementById('admin-modo-lista-btn');
-  const bGrade = document.getElementById('admin-modo-grade-btn');
+function _atualizarBotoesModoVisualizacao() {
   const ativoBg = '#1a2744', ativoCor = 'white', inativoBg = '#e2e8f0', inativoCor = '#64748b';
-  if (bLista) { bLista.style.background = _adminModoVisualizacao === 'lista' ? ativoBg : inativoBg; bLista.style.color = _adminModoVisualizacao === 'lista' ? ativoCor : inativoCor; }
-  if (bGrade) { bGrade.style.background = _adminModoVisualizacao === 'grade' ? ativoBg : inativoBg; bGrade.style.color = _adminModoVisualizacao === 'grade' ? ativoCor : inativoCor; }
+  ['admin-modo-lista-btn', 'tech-modo-lista-btn'].forEach(function(id) {
+    const b = document.getElementById(id);
+    if (b) { b.style.background = _adminModoVisualizacao === 'lista' ? ativoBg : inativoBg; b.style.color = _adminModoVisualizacao === 'lista' ? ativoCor : inativoCor; }
+  });
+  ['admin-modo-grade-btn', 'tech-modo-grade-btn'].forEach(function(id) {
+    const b = document.getElementById(id);
+    if (b) { b.style.background = _adminModoVisualizacao === 'grade' ? ativoBg : inativoBg; b.style.color = _adminModoVisualizacao === 'grade' ? ativoCor : inativoCor; }
+  });
 }
 
 // Decide entre lista detalhada e grade compacta e desenha a lista de OS
@@ -5525,7 +5572,7 @@ async function adminVerTecnico(tech) {
   wrap.style.display = 'block';
   const modoBar = document.getElementById('admin-modo-visualizacao-bar');
   if (modoBar) modoBar.style.display = 'flex';
-  _atualizarBotoesModoVisualizacaoAdmin();
+  _atualizarBotoesModoVisualizacao();
   const loadingEl = document.getElementById('admin-cal-loading');
   const gridEl    = document.getElementById('admin-cal-grid');
   const listaEl   = document.getElementById('admin-tech-os-list');
