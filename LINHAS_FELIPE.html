@@ -402,6 +402,7 @@
   </div>
 
   <p class="footer-note">Documento gerado automaticamente • Rastreando GPS</p>
+  <p class="footer-note" id="info-aparelho" style="font-size:11px; opacity:0.6;"></p>
 </div>
 
 <!-- Modal de confirmação -->
@@ -653,6 +654,9 @@ corpo.addEventListener('change', (e) => {
 
   enviarPerdido(chk.dataset.nome, chk.checked);
 });
+
+document.getElementById('info-aparelho').textContent =
+  'Este aparelho: ' + nomeAparelho() + ' • ' + idAparelho();
 
 if (apiAtiva) {
   baixarPerdidos(false, true); // primeira carga: registra o acesso na planilha (G2)
