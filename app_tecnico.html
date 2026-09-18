@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v23-grade-tambem-no-tecnico';
+const BUILD_VERSION = '2026-09-18-v25-corrige-card-apagado-calendario-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1996,7 +1996,15 @@ function agendarAtualizacaoAdmin() {
   if (_debounceAdminRefresh) clearTimeout(_debounceAdminRefresh);
   _debounceAdminRefresh = setTimeout(function() {
     if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
-    if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
+    if (adminTechSelecionado) {
+      const diaSelecionadoAntes = _calDayAtivo; // guarda o dia selecionado, se houver
+      adminVerTecnico(adminTechSelecionado).then(function() {
+        // adminVerTecnico() sempre recarrega mostrando "Hoje" — se o admin estava
+        // vendo um dia específico (ex: uma data futura), reaplica esse filtro
+        // assim que os dados novos chegarem, pra não perder a seleção
+        if (diaSelecionadoAntes) _destacarDiaAdmin(diaSelecionadoAntes.split(','));
+      });
+    }
     else loadAllOrders();
   }, 800);
 }
@@ -2273,9 +2281,9 @@ function calDayClick(ids) {
     });
   }
 
-  // Destacar cards abaixo do calendário (cal-day-cards)
+  // Destacar cards abaixo do calendário (cal-day-cards) - funciona tanto no modo Lista quanto na Grade
   setTimeout(() => {
-    const calCards = document.querySelectorAll('#cal-day-cards .os-card');
+    const calCards = document.querySelectorAll('#cal-day-cards [data-os-id], #cal-day-cards .os-card');
     let primeiro = null;
     calCards.forEach(card => {
       if (!primeiro) primeiro = card;
@@ -2289,7 +2297,51 @@ function calDayClick(ids) {
   }, 80);
 }
 
+// Filtra a lista do admin para as OS de um dia específico e realça o card e a
+// célula do calendário correspondentes. Usada tanto no clique direto num dia do
+// calendário quanto para RESTAURAR essa mesma seleção depois que uma atualização
+// em tempo real (Firestore) recarrega a tela por baixo dos panos — sem isso, uma
+// mudança em qualquer OS de qualquer técnico fazia a tela do admin voltar sozinha
+// para "Hoje" e perder o dia que estava selecionado, deixando o card visível mas
+// sem destaque (parecendo "apagado").
+function _destacarDiaAdmin(ids) {
+  _calDayAtivo = ids.join(',');
+  document.querySelectorAll('.cal-clickable-admin').forEach(function(d) {
+    const cellIds = (d.getAttribute('data-admin-ids') || '').split('|').filter(Boolean);
+    const ehEsteDia = cellIds.length > 0 && cellIds.length === ids.length && cellIds.every(function(v) { return ids.includes(v); });
+    if (ehEsteDia) {
+      d.style.background = '#dbeafe';
+      d.style.borderRadius = '8px';
+      d.style.outline = '2px solid var(--accent)';
+      d.classList.add('cal-day-selected');
+    } else {
+      d.style.background = ''; d.style.borderRadius = ''; d.style.outline = '';
+      d.classList.remove('cal-day-selected');
+    }
+  });
+  // Recarregar lista com as OS do dia selecionado
+  _renderAdminListaPorIds(ids);
+  // Destacar cards na lista (funciona tanto no modo Lista quanto na Grade)
+  const cards = document.querySelectorAll('#admin-tech-os-list [data-os-id]');
+  let primeiro = null;
+  cards.forEach(function(card) {
+    const id = card.getAttribute('data-os-id') ||
+               card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
+               card.querySelector('.admin-del-tech-btn')?.getAttribute('data-id');
+    const match = id && ids.includes(id);
+    card.style.opacity       = match ? '1'    : '0.25';
+    card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
+    card.style.pointerEvents = match ? 'auto' : 'none';
+    card.style.userSelect    = match ? 'auto' : 'none';
+    card.style.position      = match ? 'relative' : '';
+    card.style.zIndex        = match ? '51' : '';
+    if (match && !primeiro) primeiro = card;
+  });
+  return primeiro;
+}
+
 function limparDestaqueCalendario() {
+  _calDayAtivo = null;
   // Esconder overlay
   const ov = document.getElementById('destaque-overlay');
   if (ov) ov.style.display = 'none';
@@ -2303,13 +2355,13 @@ function limparDestaqueCalendario() {
   });
   // Remove destaque dos cards técnico (aba Ordens)
   destacarCardsOrdens(null);
-  // Remove destaque dos cards do calendário
-  document.querySelectorAll('#cal-day-cards .os-card').forEach(c => {
+  // Remove destaque dos cards do calendário (funciona tanto no modo Lista quanto na Grade)
+  document.querySelectorAll('#cal-day-cards [data-os-id], #cal-day-cards .os-card').forEach(c => {
     c.style.boxShadow = '';
     c.style.transform = 'scale(1)';
   });
   // Remove destaque cards admin e volta a mostrar só hoje
-  document.querySelectorAll('#admin-tech-os-list > div').forEach(c => {
+  document.querySelectorAll('#admin-tech-os-list [data-os-id]').forEach(c => {
     c.style.opacity       = '1';
     c.style.transform     = 'scale(1)';
     c.style.pointerEvents = 'auto';
@@ -2437,7 +2489,7 @@ function _renderCardTecnicoCompacto(o) {
   else cor = '#3b82f6';
   const hora   = getHoraOS(o);
   const modelo = _modeloPrincipalVeiculo(o.veiculo);
-  return '<div onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
+  return '<div data-os-id="' + esc(o.id) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
     (hora ? '<div style="font-size:10px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:1px 7px;border-radius:20px;">⏰ ' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
@@ -2862,46 +2914,19 @@ document.addEventListener('click', function(e) {
     const raw = calDayAdmin.getAttribute('data-admin-ids');
     if (!raw) return;
     const ids = raw.split('|').filter(Boolean);
-    // Toggle usando _calDayAtivo como referência (mais confiável)
     const idsKey = ids.join(',');
-    document.querySelectorAll('.cal-clickable-admin').forEach(d => {
-      d.style.background = ''; d.style.borderRadius = ''; d.style.outline = '';
-      d.classList.remove('cal-day-selected');
-    });
     if (_calDayAtivo === idsKey) {
       _calDayAtivo = null;
       limparDestaqueCalendario();
       return;
     }
-    _calDayAtivo = idsKey;
-    calDayAdmin.style.background = '#dbeafe';
-    calDayAdmin.style.borderRadius = '8px';
-    calDayAdmin.style.outline = '2px solid var(--accent)';
-    calDayAdmin.classList.add('cal-day-selected');
     // Mostrar overlay para toque fora
     const ov = document.getElementById('destaque-overlay');
     if (ov) ov.style.display = 'block';
     // Mostrar overlay e X no admin
     const xBtn = document.getElementById('destaque-fechar');
     if (xBtn) xBtn.style.display = 'flex';
-    // Recarregar lista com as OS do dia clicado
-    _renderAdminListaPorIds(ids);
-    // Destacar cards na lista
-    const cards = document.querySelectorAll('#admin-tech-os-list > div');
-    let primeiro = null;
-    cards.forEach(card => {
-      const id = card.getAttribute('data-os-id') ||
-                 card.querySelector('.admin-concluir-btn')?.getAttribute('data-id') ||
-                 card.querySelector('.admin-del-tech-btn')?.getAttribute('data-id');
-      const match = id && ids.includes(id);
-      card.style.opacity       = match ? '1'    : '0.25';
-      card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
-      card.style.pointerEvents = match ? 'auto' : 'none';
-      card.style.userSelect    = match ? 'auto' : 'none';
-      card.style.position      = match ? 'relative' : '';
-      card.style.zIndex        = match ? '51' : '';
-      if (match && !primeiro) primeiro = card;
-    });
+    const primeiro = _destacarDiaAdmin(ids);
     if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   }
   // Listener para botão concluir admin na aba Técnico
@@ -4939,7 +4964,7 @@ async function adminVerTodos() {
   const total = new Date(year, month+1, 0).getDate();
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
   for (let d = 1; d <= total; d++) {
-    const isToday  = d === now.getDate();
+    const isToday  = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
     const entrada  = dateMap[d];
     const temPend  = isToday && pendentes.length > 0;
     let dots = '';
@@ -5662,7 +5687,7 @@ async function adminVerTecnico(tech) {
   const total = new Date(year, month+1, 0).getDate();
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
   for (let d = 1; d <= total; d++) {
-    const isToday = d === now.getDate();
+    const isToday = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
     const count   = dateMap[d] || 0;
     const temPend = isToday && pendentes.length > 0;
     let dots = '';
@@ -6563,16 +6588,20 @@ function buscarOSAdmin(termo) {
   const cards = lista.querySelectorAll('[data-os-id]');
   let visiveis = 0;
 
+  // No modo Grade os cards usam "display:flex" para o layout compacto —
+  // ao reexibir um card não pode voltar para o padrão (bloco), senão desalinha.
+  const displayVisivel = _adminModoVisualizacao === 'grade' ? 'flex' : '';
+
   cards.forEach(function(card) {
     if (termo.length < 2) {
       // Sem busca: mostrar todos
-      card.style.display = '';
+      card.style.display = displayVisivel;
       visiveis++;
       return;
     }
     const texto = (card.textContent || '').toLowerCase();
     const match = texto.includes(termo);
-    card.style.display = match ? '' : 'none';
+    card.style.display = match ? displayVisivel : 'none';
     if (match) visiveis++;
   });
 
