@@ -478,6 +478,44 @@ const pendentes = ["FELIPE 36","FELIPE 37","FELIPE 38","FELIPE 39"];
 const corpo = document.getElementById('tabela-corpo');
 const STORAGE_KEY = 'gps_linhas_perdidas';
 
+// Identificação do aparelho (cada celular/navegador tem o seu, e ele não muda)
+const ID_KEY = 'gps_id_aparelho';
+function idAparelho() {
+  try {
+    var id = localStorage.getItem(ID_KEY);
+    if (!id) {
+      id = 'AP-' + Date.now().toString(36).toUpperCase() +
+           '-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      localStorage.setItem(ID_KEY, id);
+    }
+    return id;
+  } catch (e) {
+    return 'AP-TEMP-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+  }
+}
+function nomeAparelho() {
+  const ua = navigator.userAgent;
+  var sistema = 'Outro';
+  if (/iPhone/i.test(ua)) sistema = 'iPhone';
+  else if (/iPad/i.test(ua)) sistema = 'iPad';
+  else if (/Android/i.test(ua)) {
+    const m = ua.match(/Android[^;]*;\s*([^;)]+)/);
+    sistema = 'Android' + (m ? ' (' + m[1].trim() + ')' : '');
+  }
+  else if (/Windows/i.test(ua)) sistema = 'Windows';
+  else if (/Mac OS X/i.test(ua)) sistema = 'Mac';
+  else if (/Linux/i.test(ua)) sistema = 'Linux';
+
+  var navegador = 'Navegador';
+  if (/Edg\//i.test(ua)) navegador = 'Edge';
+  else if (/OPR\//i.test(ua)) navegador = 'Opera';
+  else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) navegador = 'Chrome';
+  else if (/Firefox\//i.test(ua)) navegador = 'Firefox';
+  else if (/Safari\//i.test(ua)) navegador = 'Safari';
+
+  return sistema + ' • ' + navegador;
+}
+
 // URL do App da Web do Apps Script da planilha LINHAS FELIPE (termina em /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbxNRf6aee9_2gG-nIBg1Q8EB4BtAazn9X-vQpCeAlY2Drs_F1TKMAjimAQDj9buKuuX/exec';
 
@@ -571,7 +609,11 @@ async function chamarApi(params) {
 async function baixarPerdidos(silencioso, registrarAcesso) {
   if (!apiAtiva) return;
   try {
-    const j = await chamarApi({ acao: registrarAcesso ? 'acesso' : 'ler' });
+    const j = await chamarApi(
+      registrarAcesso
+        ? { acao: 'acesso', id: idAparelho(), disp: nomeAparelho() }
+        : { acao: 'ler' }
+    );
     if (j && j.ok) {
       aplicarPerdidos(j.perdidos || []);
       mostrarStatus(true, '🟢 Sincronizado com a planilha');
