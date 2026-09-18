@@ -1226,7 +1226,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v21-grade-horario-e-ordenacao';
+const BUILD_VERSION = '2026-09-18-v22-grade-endereco-e-veiculo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -5319,7 +5319,14 @@ function _ordenarParaGrade(itens) {
   });
 }
 
-// Card compacto: só o quadrado com o nome e o horário, se houver (toque abre os detalhes/edição)
+// Extrai só o modelo do primeiro veículo (ignora GNV/Rastreio e veículos extras)
+function _modeloPrincipalVeiculo(veiculo) {
+  if (!veiculo) return '';
+  const primeiro = veiculo.split(' || ')[0] || '';
+  return primeiro.split(' | ')[0].trim();
+}
+
+// Card compacto: nome, horário (se houver), endereço e modelo do veículo (toque abre os detalhes/edição)
 function _renderCardOSCompacto(o) {
   const tech = adminTechSelecionado;
   const tipoAdmin = (o.tipo || '').toLowerCase();
@@ -5327,13 +5334,16 @@ function _renderCardOSCompacto(o) {
   if (tipoAdmin.includes('manut')) cor = '#f59e0b';
   else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) cor = '#ef4444';
   else cor = '#3b82f6';
-  const hora = getHoraOS(o);
-  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
+  const hora   = getHoraOS(o);
+  const modelo = _modeloPrincipalVeiculo(o.veiculo);
+  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
     (hora ? '<div style="font-size:10px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:1px 7px;border-radius:20px;">⏰ ' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
+    (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
+    (modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
   '</div>';
 }
 
