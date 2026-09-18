@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v28-corrige-botoes-atras-do-overlay-do-dia';
+const BUILD_VERSION = '2026-09-18-v29-preserva-dia-selecionado-tela-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1970,7 +1970,10 @@ function iniciarListenerOSTecnico(nomeTecnico) {
       allOrders[nomeTecnico]  = normalizarOrdens(ativos);
       doneOrders[nomeTecnico] = normalizarOrdens(concluidos);
       renderTechCalendar();
-      renderCalDayCards(null);
+      // Reaplica o dia que estava selecionado, se houver (sem isso, qualquer
+      // atualização em tempo real fazia a tela voltar sozinha pro dia de hoje
+      // e perder o dia que o técnico tinha escolhido)
+      _destacarDiaTecnico(_calDayAtivo ? _calDayAtivo.split(',') : null, false);
       renderDoneList();
     }, function(err) {
       console.warn('[Firestore] Tempo real das OS caiu, seguindo só com a atualização a cada 30s:', err);
@@ -2133,14 +2136,16 @@ function iniciarListenerAgendamentos() {
 }
 
 async function loadTechOrders() {
-  _calDayAtivo = null; // Limpar dia ativo ao recarregar
+  const diaSelecionadoAntes = _calDayAtivo; // preserva o dia selecionado, se houver
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
   if (result.ok) {
     allOrders[currentUser] = normalizarOrdens(result.data || []);
     renderTechCalendar();
-    renderCalDayCards(null);
+    // Reaplica o dia que estava selecionado, se houver (sem isso, essa
+    // atualização em segundo plano fazia a tela voltar sozinha pro dia de hoje)
+    _destacarDiaTecnico(diaSelecionadoAntes ? diaSelecionadoAntes.split(',') : null, false);
   }
   // Busca ordens concluídas separadamente
   const resultDone = await gasRequest({ action: 'getDoneOrders', tech: currentUser });
@@ -2265,7 +2270,19 @@ function calDayClick(ids) {
     limparDestaqueCalendario();
     return;
   }
-  _calDayAtivo = idsKey;
+  _destacarDiaTecnico(ids, true);
+}
+
+// Filtra os cards do calendário do técnico para um dia específico e realça a
+// célula correspondente. Usada tanto no clique direto num dia quanto para
+// RESTAURAR essa mesma seleção depois de uma atualização em segundo plano (o
+// polling de 30s ou o tempo real do Firebase) — sem isso, qualquer atualização
+// fazia a tela voltar sozinha pro dia de hoje e perder o dia selecionado (o
+// mesmo problema já corrigido do lado do Admin). "comAnimacao" liga/desliga o
+// brilho e o scroll automático, que só fazem sentido num clique de verdade —
+// numa atualização silenciosa em segundo plano eles ficariam incômodos.
+function _destacarDiaTecnico(ids, comAnimacao) {
+  _calDayAtivo = ids ? ids.join(',') : null;
 
   // Mostrar cards abaixo do calendário
   renderCalDayCards(ids);
@@ -2280,6 +2297,8 @@ function calDayClick(ids) {
       }
     });
   }
+
+  if (!comAnimacao) return;
 
   // Destacar cards abaixo do calendário (cal-day-cards) - funciona tanto no modo Lista quanto na Grade
   setTimeout(() => {
@@ -6702,7 +6721,7 @@ async function salvarNotaCard(btn) {
     const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
     if (o) o.notaTecnico = nota;
     showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
-    renderCalDayCards(null);
+    renderCalDayCards(_calDayAtivo ? _calDayAtivo.split(',') : null);
   } else {
     showToast('Erro ao salvar nota.', 'error');
   }
