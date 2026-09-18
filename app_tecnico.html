@@ -1213,7 +1213,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-17-v17-veiculo-bloqueio-obrigatorio';
+const BUILD_VERSION = '2026-09-18-v18-fix-coordenada-ponto-decimal';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6854,19 +6854,33 @@ function _mapsLinkPara(endereco) {
 }
 
 // ── Detecta se o texto é uma coordenada lat,lng
-// Aceita: "-22.786958, -43.307302" | "-22.786958°, -43.307302°" | sem espaço
+// Aceita: "-22.786958, -43.307302" (ponto decimal, padrão Google Maps internacional)
+//     ou: "-22,786958, -43,307302" (vírgula decimal, padrão brasileiro do Google Maps)
+//     com ou sem espaço, com ou sem °
 function _detectarCoordenada(texto) {
   if (!texto) return null;
-  // Normaliza vírgula decimal (padrão brasileiro do Google Maps) para ponto
-  // Ex: "-22,786958, -43,307302" → "-22.786958, -43.307302"
-  // Cuidado: só substitui vírgula entre dígitos (decimal), não o separador de lat/lng
-  const normalizado = String(texto).trim().replace(/(-?\d+),(-?\d+)/g, '$1.$2');
-  const m = normalizado.match(/^\s*(-?\d{1,3}\.\d+)\s*°?\s*,\s*(-?\d{1,3}\.\d+)\s*°?\s*$/);
-  if (!m) return null;
-  const lat = parseFloat(m[1]);
-  const lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat: lat, lng: lng };
+  const t = String(texto).trim();
+
+  // 1. Formato com ponto decimal — testado primeiro para não confundir o separador
+  //    lat/lng com uma vírgula decimal (bug antigo: corrompia "-22.800672,-43.290085")
+  let m = t.match(/^(-?\d{1,3}\.\d+)\s*°?\s*,\s*(-?\d{1,3}\.\d+)\s*°?\s*$/);
+  if (m) {
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return { lat: lat, lng: lng };
+  }
+
+  // 2. Formato com vírgula decimal (cada número tem sua própria vírgula, mais a vírgula separadora)
+  m = t.match(/^(-?\d{1,3}),(\d+)\s*,\s*(-?\d{1,3}),(\d+)\s*°?\s*$/);
+  if (m) {
+    const lat = parseFloat(m[1] + '.' + m[2]);
+    const lng = parseFloat(m[3] + '.' + m[4]);
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return { lat: lat, lng: lng };
+  }
+
+  return null;
 }
 
 // ── Geocodificação reversa: coordenada → endereço por escrito
