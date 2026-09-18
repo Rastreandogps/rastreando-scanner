@@ -1226,7 +1226,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v20-grade-abre-card-nao-edicao';
+const BUILD_VERSION = '2026-09-18-v21-grade-horario-e-ordenacao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -5295,15 +5295,31 @@ function _atualizarBotoesModoVisualizacaoAdmin() {
 // Decide entre lista detalhada e grade compacta e desenha a lista de OS
 function _renderListaOSAdmin(lista, ativas) {
   if (_adminModoVisualizacao === 'grade') {
+    const ordenadas = _ordenarParaGrade(ativas);
     lista.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
-      ativas.map(o => _renderCardOSCompacto(o)).join('') +
+      ordenadas.map(o => _renderCardOSCompacto(o)).join('') +
     '</div>';
   } else {
     lista.innerHTML = ativas.map(o => _renderCardOSDetalhado(o)).join('');
   }
 }
 
-// Card compacto: só o quadrado com o nome (toque abre os detalhes/edição)
+// Na Grade: quem tem horário vem primeiro, em ordem crescente; quem não tem mantém a ordem de antes
+function _horaParaMinutos(h) {
+  const m = String(h || '').match(/^(\d{1,2}):(\d{2})/);
+  return m ? (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) : 0;
+}
+function _ordenarParaGrade(itens) {
+  return itens.slice().sort(function(a, b) {
+    const ha = getHoraOS(a), hb = getHoraOS(b);
+    if (ha && hb) return _horaParaMinutos(ha) - _horaParaMinutos(hb);
+    if (ha && !hb) return -1;
+    if (!ha && hb) return 1;
+    return 0;
+  });
+}
+
+// Card compacto: só o quadrado com o nome e o horário, se houver (toque abre os detalhes/edição)
 function _renderCardOSCompacto(o) {
   const tech = adminTechSelecionado;
   const tipoAdmin = (o.tipo || '').toLowerCase();
@@ -5311,10 +5327,12 @@ function _renderCardOSCompacto(o) {
   if (tipoAdmin.includes('manut')) cor = '#f59e0b';
   else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) cor = '#ef4444';
   else cor = '#3b82f6';
-  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;align-items:center;justify-content:center;text-align:center;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
+  const hora = getHoraOS(o);
+  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;background:white;box-shadow:0 0 0 2px ' + cor + '55,0 2px 6px rgba(0,0,0,.08);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
+    (hora ? '<div style="font-size:10px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:1px 7px;border-radius:20px;">⏰ ' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
   '</div>';
 }
