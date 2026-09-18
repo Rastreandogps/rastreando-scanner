@@ -568,10 +568,10 @@ async function chamarApi(params) {
   return await resp.json();
 }
 
-async function baixarPerdidos(silencioso) {
+async function baixarPerdidos(silencioso, registrarAcesso) {
   if (!apiAtiva) return;
   try {
-    const j = await chamarApi({ acao: 'ler' });
+    const j = await chamarApi({ acao: registrarAcesso ? 'acesso' : 'ler' });
     if (j && j.ok) {
       aplicarPerdidos(j.perdidos || []);
       mostrarStatus(true, '🟢 Sincronizado com a planilha');
@@ -613,7 +613,7 @@ corpo.addEventListener('change', (e) => {
 });
 
 if (apiAtiva) {
-  baixarPerdidos();
+  baixarPerdidos(false, true); // primeira carga: registra o acesso na planilha (G2)
   setInterval(() => baixarPerdidos(true), 10000); // atualiza a cada 10s
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) baixarPerdidos(true);
