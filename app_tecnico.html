@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v25-corrige-card-apagado-calendario-admin';
+const BUILD_VERSION = '2026-09-18-v26-corrige-editar-atras-do-popup-ver-os';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6049,6 +6049,12 @@ async function abrirModalEdit(id, tech) {
   const veiculos = (o.veiculo || '').split(' || ').map(v => v.trim()).filter(Boolean);
   if (veiculos.length === 0) veiculos.push('');
   veiculos.forEach(v => editAdicionarVeiculo(v));
+
+  // Se a edição foi aberta de dentro do popup "ver OS" (ex: card da Grade),
+  // fecha esse popup primeiro — senão os dois ficam abertos ao mesmo tempo
+  // e o de edição pode ficar escondido atrás do outro
+  const modalVerOS = document.getElementById('modal-ver-os');
+  if (modalVerOS && modalVerOS.classList.contains('open')) modalVerOS.classList.remove('open');
 
   document.getElementById('modal-edit-os').classList.add('open'); lockScroll();
 }
