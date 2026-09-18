@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-18-v26-corrige-editar-atras-do-popup-ver-os';
+const BUILD_VERSION = '2026-09-18-v27-corrige-reagendar-nao-atualiza-tela';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6144,11 +6144,13 @@ async function adminReatribuir(btn) {
   const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
   if (r2.ok) {
     showToast('OS movida para ' + techNew + '!', 'success');
-    await loadAllOrders();
   } else {
     showToast('Movida mas erro ao remover original.', 'error');
-    await loadAllOrders();
   }
+  await loadAllOrders();
+  // Se o admin está com a agenda de um técnico aberta na tela, atualiza ela também
+  // (sem isso, a OS movida continuava aparecendo na tela do técnico antigo até dar F5)
+  if (adminTechSelecionado) await adminVerTecnico(adminTechSelecionado);
 }
 
 // Deletar do card admin (usa data-attributes para evitar aspas quebradas)
@@ -6582,6 +6584,9 @@ async function reagendarSelecionadas() {
   limparSelecao();
   marcarMapaDesatualizado();
   await loadAllOrders();
+  // Se o admin está com a agenda de um técnico aberta na tela, atualiza ela também
+  // (sem isso, a OS reagendada continuava aparecendo na data antiga até dar F5)
+  if (adminTechSelecionado) await adminVerTecnico(adminTechSelecionado);
   setTimeout(_atualizarBarra, 100);
 }
 
