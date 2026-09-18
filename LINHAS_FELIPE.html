@@ -155,6 +155,22 @@
     cursor: pointer;
     accent-color: #c0392b;
   }
+  tbody tr.perdido-row { background: #fdecea !important; }
+  tbody tr.perdido-row:hover { background: #fbdbd7 !important; }
+  tbody tr.perdido-row td:nth-child(2) strong { color: #c0392b; }
+
+  .sync-status {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+  .sync-status.ok { background: rgba(37,211,102,0.2); }
+  .sync-status.erro { background: rgba(192,57,43,0.25); }
 
   .whats-wrap {
     text-align: center;
@@ -382,6 +398,7 @@
   <div class="whats-wrap">
     <button id="btn-whatsapp" class="btn-whatsapp">📱 Enviar linhas perdidas pelo WhatsApp</button>
     <p class="whats-hint">Marque a caixinha "Perdido?" de cada linha e clique no botão para avisar direto no WhatsApp.</p>
+    <div id="sync-status" class="sync-status">Conectando à planilha...</div>
   </div>
 
   <p class="footer-note">Documento gerado automaticamente • Rastreando GPS</p>
@@ -461,6 +478,9 @@ const pendentes = ["FELIPE 36","FELIPE 37","FELIPE 38","FELIPE 39"];
 const corpo = document.getElementById('tabela-corpo');
 const STORAGE_KEY = 'gps_linhas_perdidas';
 
+// URL do App da Web do Apps Script da planilha LINHAS FELIPE (termina em /exec)
+const API_URL = 'https://script.google.com/macros/s/AKfycbxNRf6aee9_2gG-nIBg1Q8EB4BtAazn9X-vQpCeAlY2Drs_F1TKMAjimAQDj9buKuuX/exec';
+
 function carregarPerdidos() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -511,16 +531,97 @@ dados.forEach(linha => {
     <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
   `;
   corpo.appendChild(tr);
-  tr.querySelector('.chk-perdido').checked = perdidosSalvos.includes(nome);
+  const chkInicial = tr.querySelector('.chk-perdido');
+  chkInicial.checked = perdidosSalvos.includes(nome);
+  tr.classList.toggle('perdido-row', chkInicial.checked);
 });
 
-// salva no aparelho a cada clique, para não perder a marcação ao recarregar a página
+/* ===== Sincronização com a planilha (coluna F) =====
+   Quem marcar uma linha como perdida marca para todo mundo:
+   a marcação vai para a planilha e volta para todos os aparelhos. */
+
+const statusEl = document.getElementById('sync-status');
+const enviando = new Set();   // linhas com envio em andamento (não sobrescrever)
+let apiAtiva = API_URL.indexOf('http') === 0;
+
+function mostrarStatus(ok, texto) {
+  statusEl.className = 'sync-status ' + (ok ? 'ok' : 'erro');
+  statusEl.textContent = texto;
+}
+
+function aplicarPerdidos(lista) {
+  const setPerdidos = new Set(lista);
+  document.querySelectorAll('.chk-perdido').forEach(chk => {
+    const nome = chk.dataset.nome;
+    if (enviando.has(nome)) return; // respeita o clique que ainda está subindo
+    chk.checked = setPerdidos.has(nome);
+    chk.closest('tr').classList.toggle('perdido-row', chk.checked);
+  });
+  salvarPerdidos(Array.from(setPerdidos));
+}
+
+async function chamarApi(params) {
+  const url = API_URL + '?' + new URLSearchParams(
+    Object.assign({ t: Date.now() }, params)
+  ).toString();
+  const resp = await fetch(url, { method: 'GET' });
+  return await resp.json();
+}
+
+async function baixarPerdidos(silencioso) {
+  if (!apiAtiva) return;
+  try {
+    const j = await chamarApi({ acao: 'ler' });
+    if (j && j.ok) {
+      aplicarPerdidos(j.perdidos || []);
+      mostrarStatus(true, '🟢 Sincronizado com a planilha');
+    }
+  } catch (e) {
+    if (!silencioso) mostrarStatus(false, '🔴 Sem conexão — marcações salvas só neste aparelho');
+  }
+}
+
+async function enviarPerdido(nome, perdido) {
+  if (!apiAtiva) return;
+  enviando.add(nome);
+  mostrarStatus(true, '⏳ Salvando na planilha...');
+  try {
+    const j = await chamarApi({ acao: 'marcar', nome: nome, perdido: perdido ? '1' : '0' });
+    enviando.delete(nome);
+    if (j && j.ok) {
+      aplicarPerdidos(j.perdidos || []);
+      mostrarStatus(true, '🟢 Salvo — todos já estão vendo');
+    } else {
+      mostrarStatus(false, '🔴 Não consegui salvar na planilha');
+    }
+  } catch (e) {
+    enviando.delete(nome);
+    mostrarStatus(false, '🔴 Sem conexão — marcação salva só neste aparelho');
+  }
+}
+
 corpo.addEventListener('change', (e) => {
   if (!e.target.classList.contains('chk-perdido')) return;
+  const chk = e.target;
+  chk.closest('tr').classList.toggle('perdido-row', chk.checked);
+
   const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
-    .map(chk => chk.dataset.nome);
+    .map(c => c.dataset.nome);
   salvarPerdidos(marcados);
+
+  enviarPerdido(chk.dataset.nome, chk.checked);
 });
+
+if (apiAtiva) {
+  baixarPerdidos();
+  setInterval(() => baixarPerdidos(true), 10000); // atualiza a cada 10s
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) baixarPerdidos(true);
+  });
+  window.addEventListener('focus', () => baixarPerdidos(true));
+} else {
+  mostrarStatus(false, '⚠️ Cole a URL do App da Web em API_URL para sincronizar');
+}
 
 // atualiza os cards e a barra de progresso com os valores calculados
 const totalLinhas = qtdPaga + qtdPendente;
