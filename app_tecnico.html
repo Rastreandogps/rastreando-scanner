@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-19-v31-data-hora-via-firestore';
+const BUILD_VERSION = '2026-09-19-v32-backfill-horarios-ocupados';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -2081,24 +2081,31 @@ async function sincronizarTudoParaFirestore() {
       gasRequest({ action: 'getAllOrders' }),
       gasRequest({ action: 'getAllDoneOrders' })
     ]);
-    const listar = function(resultado) {
+    const listar = function(resultado, ativa) {
       const porTecnico = (resultado && resultado.ok && resultado.data) ? resultado.data : {};
       const lista = [];
       Object.keys(porTecnico).forEach(function(tech) {
         (porTecnico[tech] || []).forEach(function(o) {
           if (o && o.id !== undefined && o.id !== null && String(o.id) !== '') {
-            lista.push({ o: o, tech: tech });
+            lista.push({ o: o, tech: tech, ativa: ativa });
           }
         });
       });
       return lista;
     };
-    const todas = listar(resAtivas).concat(listar(resConcluidas));
+    const todas = listar(resAtivas, true).concat(listar(resConcluidas, false));
     if (todas.length === 0) return;
 
     let lote = db.batch();
     let pendentesNoLote = 0;
     let total = 0;
+    const _commitSeNecessario = async function() {
+      if (pendentesNoLote >= 450) {
+        await lote.commit();
+        lote = db.batch();
+        pendentesNoLote = 0;
+      }
+    };
     for (let i = 0; i < todas.length; i++) {
       const o = todas[i].o;
       const ref = db.collection('ordens_servico').doc(String(o.id));
@@ -2119,10 +2126,16 @@ async function sincronizarTudoParaFirestore() {
       }, { merge: true });
       pendentesNoLote++;
       total++;
-      if (pendentesNoLote === 450) {
-        await lote.commit();
-        lote = db.batch();
-        pendentesNoLote = 0;
+      await _commitSeNecessario();
+
+      // Mantém a "listinha" de horários ocupados (só data + hora, sem dado
+      // de cliente) em dia também — só pras ordens ativas, que são as que
+      // realmente contam pra checagem de conflito no formulário do cliente.
+      if (todas[i].ativa && o.data) {
+        const hoRef = db.collection('horarios_ocupados').doc(String(o.id));
+        lote.set(hoRef, { data: o.data, hora: extrairHora(o.obs) || '' }, { merge: true });
+        pendentesNoLote++;
+        await _commitSeNecessario();
       }
     }
     if (pendentesNoLote > 0) await lote.commit();
