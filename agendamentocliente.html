@@ -204,7 +204,9 @@ body {
 
 input[type="text"],
 input[type="number"],
-input[type="tel"] {
+input[type="tel"],
+input[type="date"],
+input[type="time"] {
   width: 100%;
   padding: 11px 14px;
   font-family: var(--font-body);
@@ -641,6 +643,73 @@ input.invalid {
     transition-duration: .001ms !important;
   }
 }
+
+/* ── MODAL: HORÁRIO OCUPADO ── */
+.modal-overlay-ag {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s;
+}
+.modal-overlay-ag.open { opacity: 1; pointer-events: auto; }
+.modal-box-ag {
+  background: var(--surface);
+  border-radius: var(--radius);
+  max-width: 420px;
+  width: 100%;
+  padding: 24px 22px;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(8px);
+  transition: transform .18s;
+}
+.modal-overlay-ag.open .modal-box-ag { transform: translateY(0); }
+.modal-box-ag h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.modal-box-ag p {
+  font-size: .88rem;
+  color: var(--text-2);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.modal-ag-opcoes { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.modal-ag-btn {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-focus);
+  background: var(--green-dim);
+  color: var(--navy);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.modal-ag-btn:hover { background: var(--navy-light); color: #fff; }
+.modal-ag-fechar {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--bg);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .85rem;
+  cursor: pointer;
+  margin-top: 4px;
+}
 </style>
 </head>
 <body>
@@ -734,6 +803,31 @@ input.invalid {
       </div>
     </div>
 
+    <!-- DATA E HORÁRIO -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <span class="card-header-label">Data e horário desejados</span>
+      </div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label for="dataAgendamento">Data <span class="req">*</span></label>
+            <input type="date" id="dataAgendamento" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="horaAgendamento">Horário <span class="req">*</span></label>
+            <input type="time" id="horaAgendamento" min="08:00" max="18:00" autocomplete="off">
+          </div>
+        </div>
+        <p class="cep-hint" id="horarioStatus">Escolha o dia e o horário que preferir (entre 8h e 18h). Vamos confirmar a disponibilidade na hora.</p>
+      </div>
+    </div>
+
     <!-- VEÍCULOS -->
     <div class="card">
       <div class="card-header">
@@ -807,7 +901,18 @@ input.invalid {
   </div>
 </div>
 
-<!-- FIREBASE (usado só para avisar o painel do técnico em tempo real quando chega um agendamento novo) -->
+<!-- MODAL: horário indisponível -->
+<div class="modal-overlay-ag" id="modalHorarioOcupado">
+  <div class="modal-box-ag">
+    <h3>Esse horário não está disponível</h3>
+    <p id="modalHorarioMsg">Já temos um atendimento marcado perto desse horário. Você pode escolher:</p>
+    <div class="modal-ag-opcoes" id="modalHorarioOpcoes"></div>
+    <button type="button" class="modal-ag-fechar" id="modalHorarioFechar">Escolher outro horário</button>
+  </div>
+</div>
+
+<!-- FIREBASE (usado pra avisar o painel do técnico em tempo real quando chega um agendamento novo, -->
+<!-- e agora também pra conferir se o horário escolhido pelo cliente já está ocupado) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
@@ -853,6 +958,8 @@ input.invalid {
         pontoReferencia: payload.pontoReferencia,
         quantidadeVeiculos: payload.quantidadeVeiculos,
         veiculos: payload.veiculos,
+        dataDesejada: payload.dataDesejada || '',
+        horaDesejada: payload.horaDesejada || '',
         lido: false,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(function(e){ console.warn('[Rastreando GPS] Não deu pra avisar o painel em tempo real (sem problema, a planilha já foi salva).', e); });
@@ -880,6 +987,152 @@ input.invalid {
   var submitLabel     = document.getElementById('submitLabel');
   var stageForm       = document.getElementById('stageForm');
   var stageSuccess    = document.getElementById('stageSuccess');
+
+  // ── DATA E HORÁRIO: escolha do cliente + checagem de conflito ──
+  var dataInput          = document.getElementById('dataAgendamento');
+  var horaInput           = document.getElementById('horaAgendamento');
+  var horarioStatusEl     = document.getElementById('horarioStatus');
+  var modalHorario        = document.getElementById('modalHorarioOcupado');
+  var modalHorarioMsg     = document.getElementById('modalHorarioMsg');
+  var modalHorarioOpcoes  = document.getElementById('modalHorarioOpcoes');
+  var modalHorarioFechar  = document.getElementById('modalHorarioFechar');
+
+  var HORARIO_MIN    = '08:00';
+  var HORARIO_MAX    = '18:00';
+  var BUFFER_MINUTOS = 100; // 60min de instalação + 40min de deslocamento
+
+  // Data mínima selecionável: hoje.
+  (function(){
+    var hoje = new Date();
+    var iso = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+    if (dataInput) dataInput.setAttribute('min', iso);
+  })();
+
+  function horaParaMinutos(hhmm){
+    var p = String(hhmm || '').split(':');
+    if (p.length !== 2) return null;
+    var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
+  }
+  function minutosParaHora(min){
+    min = Math.max(0, Math.min(23*60+59, min));
+    var h = Math.floor(min/60), m = min % 60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+
+  // Procura o horário livre mais próximo do alvo, empurrando na direção
+  // pedida (+1 = mais tarde, -1 = mais cedo) até escapar de todo mundo
+  // que já está ocupado naquele dia.
+  function proximoHorarioLivre(alvoMin, ocupadosMin, direcao, limiteMin, limiteMax){
+    var candidato = alvoMin;
+    for (var tentativas = 0; tentativas < 30; tentativas++){
+      var bateu = null;
+      for (var i = 0; i < ocupadosMin.length; i++){
+        if (Math.abs(candidato - ocupadosMin[i]) < BUFFER_MINUTOS) { bateu = ocupadosMin[i]; break; }
+      }
+      if (bateu === null) break;
+      candidato = bateu + (direcao * BUFFER_MINUTOS);
+    }
+    if (candidato < limiteMin || candidato > limiteMax) return null;
+    var livre = ocupadosMin.every(function(o){ return Math.abs(candidato - o) >= BUFFER_MINUTOS; });
+    return livre ? candidato : null;
+  }
+
+  // Confere no Firestore (coleção "horarios_ocupados" — só data e hora,
+  // sem nenhum dado de cliente) se o horário escolhido está livre.
+  function checarDisponibilidade(dataISO, horaStr){
+    if (!dbFirestore) return Promise.resolve({ livre: true }); // sem Firebase, não trava o cliente
+    var alvo = horaParaMinutos(horaStr);
+    if (alvo === null) return Promise.resolve({ livre: true });
+    return dbFirestore.collection('horarios_ocupados').where('data', '==', dataISO).get()
+      .then(function(snap){
+        var ocupados = [];
+        snap.forEach(function(doc){
+          var h = horaParaMinutos((doc.data() || {}).hora);
+          if (h !== null) ocupados.push(h);
+        });
+        var temConflito = ocupados.some(function(h){ return Math.abs(h - alvo) < BUFFER_MINUTOS; });
+        if (!temConflito) return { livre: true };
+
+        var limiteMin = horaParaMinutos(HORARIO_MIN);
+        var limiteMax = horaParaMinutos(HORARIO_MAX);
+        var depois = proximoHorarioLivre(alvo, ocupados, +1, limiteMin, limiteMax);
+        var antes  = proximoHorarioLivre(alvo, ocupados, -1, limiteMin, limiteMax);
+        return {
+          livre: false,
+          sugestaoDepois: depois !== null ? minutosParaHora(depois) : null,
+          sugestaoAntes:  antes  !== null ? minutosParaHora(antes)  : null
+        };
+      })
+      .catch(function(e){
+        console.warn('[Rastreando GPS] Não deu pra checar disponibilidade agora (seguindo sem travar o cliente).', e);
+        return { livre: true };
+      });
+  }
+
+  function setHorarioStatus(msg, tipo){
+    if (!horarioStatusEl) return;
+    horarioStatusEl.textContent = msg;
+    horarioStatusEl.classList.remove('success', 'error');
+    if (tipo) horarioStatusEl.classList.add(tipo);
+  }
+
+  function abrirModalHorario(resultado){
+    var opcoesHtml = '';
+    if (resultado.sugestaoDepois){
+      opcoesHtml += '<button type="button" class="modal-ag-btn" data-hora="' + resultado.sugestaoDepois + '">A partir das ' + resultado.sugestaoDepois + '</button>';
+    }
+    if (resultado.sugestaoAntes){
+      opcoesHtml += '<button type="button" class="modal-ag-btn" data-hora="' + resultado.sugestaoAntes + '">Antes das ' + resultado.sugestaoAntes + '</button>';
+    }
+    if (!opcoesHtml){
+      modalHorarioMsg.textContent = 'Infelizmente não sobrou horário livre nesse dia. Tente escolher outra data, ou fale com a gente pelo WhatsApp.';
+    } else {
+      modalHorarioMsg.textContent = 'Já temos um atendimento marcado perto desse horário. Você pode escolher:';
+    }
+    modalHorarioOpcoes.innerHTML = opcoesHtml;
+    modalHorario.classList.add('open');
+  }
+  function fecharModalHorario(){ modalHorario.classList.remove('open'); }
+  if (modalHorarioFechar) modalHorarioFechar.addEventListener('click', fecharModalHorario);
+  if (modalHorarioOpcoes) modalHorarioOpcoes.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-hora]');
+    if (!btn) return;
+    horaInput.value = btn.getAttribute('data-hora');
+    fecharModalHorario();
+    validarHorarioEscolhido();
+  });
+
+  var _horarioOk = false;
+  function validarHorarioEscolhido(){
+    _horarioOk = false;
+    var d = dataInput.value, h = horaInput.value;
+    if (!d || !h){
+      setHorarioStatus('Escolha o dia e o horário que preferir (entre 8h e 18h). Vamos confirmar a disponibilidade na hora.', null);
+      return Promise.resolve(false);
+    }
+    var hMin = horaParaMinutos(h);
+    var limiteMin = horaParaMinutos(HORARIO_MIN), limiteMax = horaParaMinutos(HORARIO_MAX);
+    if (hMin === null || hMin < limiteMin || hMin > limiteMax){
+      setHorarioStatus('Escolha um horário entre ' + HORARIO_MIN + ' e ' + HORARIO_MAX + '.', 'error');
+      return Promise.resolve(false);
+    }
+    setHorarioStatus('Verificando disponibilidade...', null);
+    return checarDisponibilidade(d, h).then(function(res){
+      if (res.livre){
+        _horarioOk = true;
+        setHorarioStatus('✓ Horário disponível', 'success');
+        return true;
+      } else {
+        setHorarioStatus('Esse horário não está disponível — escolha outro.', 'error');
+        abrirModalHorario(res);
+        return false;
+      }
+    });
+  }
+  if (dataInput) dataInput.addEventListener('change', function(){ this.classList.remove('invalid'); validarHorarioEscolhido(); });
+  if (horaInput) horaInput.addEventListener('change', function(){ this.classList.remove('invalid'); validarHorarioEscolhido(); });
 
   var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
 
@@ -1155,12 +1408,21 @@ input.invalid {
     submitLabel.textContent = isSending ? 'Enviando...' : 'Confirmar solicitação';
   }
 
+  function formatarDataBR(iso){
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return iso || '';
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
   function buildWhatsAppMessage(payload){
     var linhas = [];
     linhas.push('Olá! Segue minha solicitação de serviço preenchida pelo formulário.');
     linhas.push('');
     linhas.push('Nome: ' + payload.nomeCompleto);
     linhas.push('Telefone: ' + payload.telefone);
+    if(payload.dataDesejada){
+      linhas.push('Data e horário desejados: ' + formatarDataBR(payload.dataDesejada) + (payload.horaDesejada ? ' às ' + payload.horaDesejada : ''));
+    }
     linhas.push('Endereço: ' + payload.endereco);
     if(payload.pontoReferencia){
       linhas.push('Ponto de referência: ' + payload.pontoReferencia);
@@ -1260,6 +1522,11 @@ input.invalid {
     if(!bairro)                    { markInvalid(bairroInput);   firstInvalid = firstInvalid || bairroInput; }
     if(!cidade)                    { markInvalid(cidadeInput);   firstInvalid = firstInvalid || cidadeInput; }
 
+    var dataVal = dataInput.value;
+    var horaVal = horaInput.value;
+    if(!dataVal) { markInvalid(dataInput); firstInvalid = firstInvalid || dataInput; }
+    if(!horaVal) { markInvalid(horaInput); firstInvalid = firstInvalid || horaInput; }
+
     vehicles.forEach(function(v, i){
       var modeloEl = document.getElementById('modelo-' + i);
       var anoEl    = document.getElementById('ano-' + i);
@@ -1281,6 +1548,13 @@ input.invalid {
       return;
     }
 
+    if(!_horarioOk){
+      showError('Confirme um horário disponível antes de enviar.');
+      validarHorarioEscolhido();
+      horaInput.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+
     var payload = {
       enviadoEm: new Date().toISOString(),
       idPedido: 'PED-' + Date.now(),
@@ -1289,6 +1563,8 @@ input.invalid {
       cep: cepInput.value.trim(),
       endereco: rua + ', ' + numero + ' - ' + bairro + ' - ' + cidade,
       pontoReferencia: referenciaInput.value.trim(),
+      dataDesejada: dataVal,
+      horaDesejada: horaVal,
       quantidadeVeiculos: vehicles.length,
       veiculos: vehicles.map(function(v){
         return { placa: (v.placa||'').trim(), modelo: v.modelo.trim(), ano: Number(v.ano), gnv: v.gnv, tipoRastreio: v.rastreio };
