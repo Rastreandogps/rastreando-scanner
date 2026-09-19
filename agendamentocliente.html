@@ -1083,13 +1083,25 @@ select.invalid {
     return null;
   }
 
+  // O app do técnico guarda a data da ordem como "DD/MM/AAAA" (não
+  // "AAAA-MM-DD" como o campo de data deste formulário) — então, antes
+  // de perguntar ao Firestore, convertemos pro mesmo formato que está
+  // gravado lá. Sem isso, a busca nunca encontra nada e todo horário
+  // aparece como livre, mesmo já tendo ordem marcada.
+  function isoParaDataBR(dataISO){
+    var p = String(dataISO || '').split('-');
+    if (p.length !== 3) return dataISO;
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
   // Confere no Firestore (coleção "horarios_ocupados" — só data e hora,
   // sem nenhum dado de cliente) se o horário escolhido está livre.
   function checarDisponibilidade(dataISO, horaStr){
     if (!dbFirestore) return Promise.resolve({ livre: true }); // sem Firebase, não trava o cliente
     var alvo = horaParaMinutos(horaStr);
     if (alvo === null) return Promise.resolve({ livre: true });
-    return dbFirestore.collection('horarios_ocupados').where('data', '==', dataISO).get()
+    var dataBR = isoParaDataBR(dataISO);
+    return dbFirestore.collection('horarios_ocupados').where('data', '==', dataBR).get()
       .then(function(snap){
         var ocupados = [];
         snap.forEach(function(doc){
