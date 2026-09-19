@@ -904,7 +904,7 @@ input.invalid {
 <!-- MODAL: horário indisponível -->
 <div class="modal-overlay-ag" id="modalHorarioOcupado">
   <div class="modal-box-ag">
-    <h3>Esse horário não está disponível</h3>
+    <h3 id="modalHorarioTitulo">Esse horário não está disponível</h3>
     <p id="modalHorarioMsg">Já temos um atendimento marcado perto desse horário. Você pode escolher:</p>
     <div class="modal-ag-opcoes" id="modalHorarioOpcoes"></div>
     <button type="button" class="modal-ag-fechar" id="modalHorarioFechar">Escolher outro horário</button>
@@ -993,6 +993,7 @@ input.invalid {
   var horaInput           = document.getElementById('horaAgendamento');
   var horarioStatusEl     = document.getElementById('horarioStatus');
   var modalHorario        = document.getElementById('modalHorarioOcupado');
+  var modalHorarioTitulo  = document.getElementById('modalHorarioTitulo');
   var modalHorarioMsg     = document.getElementById('modalHorarioMsg');
   var modalHorarioOpcoes  = document.getElementById('modalHorarioOpcoes');
   var modalHorarioFechar  = document.getElementById('modalHorarioFechar');
@@ -1088,7 +1089,19 @@ input.invalid {
     if (tipo) horarioStatusEl.classList.add(tipo);
   }
 
+  // Modal simples de aviso, sem opções de horário pra clicar (usado
+  // para o caso de domingo, por exemplo — só um "entendi" e pronto).
+  function abrirModalAviso(titulo, mensagem, textoBotao){
+    if (modalHorarioTitulo) modalHorarioTitulo.textContent = titulo;
+    modalHorarioMsg.textContent = mensagem;
+    modalHorarioOpcoes.innerHTML = '';
+    modalHorarioFechar.textContent = textoBotao || 'Entendi';
+    modalHorario.classList.add('open');
+  }
+
   function abrirModalHorario(resultado){
+    if (modalHorarioTitulo) modalHorarioTitulo.textContent = 'Esse horário não está disponível';
+    modalHorarioFechar.textContent = 'Escolher outro horário';
     var opcoesHtml = '';
     if (resultado.sugestaoDepois){
       opcoesHtml += '<button type="button" class="modal-ag-btn" data-hora="' + resultado.sugestaoDepois + '">A partir das ' + resultado.sugestaoDepois + '</button>';
@@ -1124,6 +1137,7 @@ input.invalid {
     }
     if (ehDomingo(d)){
       setHorarioStatus('Não atendemos aos domingos — escolha outro dia.', 'error');
+      abrirModalAviso('Não atendemos aos domingos', 'Escolha outro dia da semana para agendarmos sua visita.', 'Entendi');
       return Promise.resolve(false);
     }
     var hMin = horaParaMinutos(h);
