@@ -206,7 +206,8 @@ input[type="text"],
 input[type="number"],
 input[type="tel"],
 input[type="date"],
-input[type="time"] {
+input[type="time"],
+select {
   width: 100%;
   padding: 11px 14px;
   font-family: var(--font-body);
@@ -218,15 +219,28 @@ input[type="time"] {
   outline: none;
   transition: border-color .18s, box-shadow .18s;
 }
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 38px;
+  cursor: pointer;
+}
 input::placeholder { color: var(--text-3); }
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(36,81,160,.10);
 }
-input:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
-input.invalid {
+input:focus-visible,
+select:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+input.invalid,
+select.invalid {
   border-color: var(--danger);
-  background: var(--danger-dim);
+  background-color: var(--danger-dim);
   animation: shake .3s ease;
 }
 @keyframes shake {
@@ -821,7 +835,9 @@ input.invalid {
           </div>
           <div class="field">
             <label for="horaAgendamento">Horário <span class="req">*</span></label>
-            <input type="time" id="horaAgendamento" min="08:00" max="18:00" autocomplete="off">
+            <select id="horaAgendamento">
+              <option value="" disabled selected>Selecione um horário</option>
+            </select>
           </div>
         </div>
         <p class="cep-hint" id="horarioStatus">Escolha o dia e o horário que preferir (entre 8h e 18h, exceto domingos). Vamos confirmar a disponibilidade na hora.</p>
@@ -1032,22 +1048,39 @@ input.invalid {
     return d.getDay() === 0;
   }
 
-  // Procura o horário livre mais próximo do alvo, empurrando na direção
-  // pedida (+1 = mais tarde, -1 = mais cedo) até escapar de todo mundo
-  // que já está ocupado naquele dia.
-  function proximoHorarioLivre(alvoMin, ocupadosMin, direcao, limiteMin, limiteMax){
-    var candidato = alvoMin;
-    for (var tentativas = 0; tentativas < 30; tentativas++){
-      var bateu = null;
-      for (var i = 0; i < ocupadosMin.length; i++){
-        if (Math.abs(candidato - ocupadosMin[i]) < BUFFER_MINUTOS) { bateu = ocupadosMin[i]; break; }
-      }
-      if (bateu === null) break;
-      candidato = bateu + (direcao * BUFFER_MINUTOS);
+  // Lista fixa de horários do seletor (de 30 em 30 min, dentro do
+  // expediente). É a mesma lista usada pra sugerir horário livre —
+  // assim nunca sugerimos um horário que nem aparece no seletor.
+  var SLOT_MINUTOS = 30;
+  var HORA_SLOTS = (function(){
+    var lista = [];
+    var min = horaParaMinutos(HORARIO_MIN), max = horaParaMinutos(HORARIO_MAX);
+    for (var m = min; m <= max; m += SLOT_MINUTOS) lista.push(m);
+    return lista;
+  })();
+  (function preencherSeletorDeHorario(){
+    if (!horaInput) return;
+    HORA_SLOTS.forEach(function(m){
+      var opt = document.createElement('option');
+      opt.value = minutosParaHora(m);
+      opt.textContent = minutosParaHora(m);
+      horaInput.appendChild(opt);
+    });
+  })();
+
+  // Procura o horário livre mais próximo do alvo, na lista fixa de
+  // horários do seletor, andando na direção pedida (+1 = mais tarde,
+  // -1 = mais cedo) até achar um que não bata com nenhum ocupado.
+  function proximoHorarioLivre(alvoMin, ocupadosMin, direcao){
+    var candidatos = direcao > 0
+      ? HORA_SLOTS.filter(function(s){ return s >= alvoMin; })
+      : HORA_SLOTS.filter(function(s){ return s <= alvoMin; }).slice().reverse();
+    for (var i = 0; i < candidatos.length; i++){
+      var slot = candidatos[i];
+      var livre = ocupadosMin.every(function(o){ return Math.abs(slot - o) >= BUFFER_MINUTOS; });
+      if (livre) return slot;
     }
-    if (candidato < limiteMin || candidato > limiteMax) return null;
-    var livre = ocupadosMin.every(function(o){ return Math.abs(candidato - o) >= BUFFER_MINUTOS; });
-    return livre ? candidato : null;
+    return null;
   }
 
   // Confere no Firestore (coleção "horarios_ocupados" — só data e hora,
@@ -1066,10 +1099,8 @@ input.invalid {
         var temConflito = ocupados.some(function(h){ return Math.abs(h - alvo) < BUFFER_MINUTOS; });
         if (!temConflito) return { livre: true };
 
-        var limiteMin = horaParaMinutos(HORARIO_MIN);
-        var limiteMax = horaParaMinutos(HORARIO_MAX);
-        var depois = proximoHorarioLivre(alvo, ocupados, +1, limiteMin, limiteMax);
-        var antes  = proximoHorarioLivre(alvo, ocupados, -1, limiteMin, limiteMax);
+        var depois = proximoHorarioLivre(alvo, ocupados, +1);
+        var antes  = proximoHorarioLivre(alvo, ocupados, -1);
         return {
           livre: false,
           sugestaoDepois: depois !== null ? minutosParaHora(depois) : null,
