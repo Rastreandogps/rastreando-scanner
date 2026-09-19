@@ -824,7 +824,7 @@ input.invalid {
             <input type="time" id="horaAgendamento" min="08:00" max="18:00" autocomplete="off">
           </div>
         </div>
-        <p class="cep-hint" id="horarioStatus">Escolha o dia e o horário que preferir (entre 8h e 18h). Vamos confirmar a disponibilidade na hora.</p>
+        <p class="cep-hint" id="horarioStatus">Escolha o dia e o horário que preferir (entre 8h e 18h, exceto domingos). Vamos confirmar a disponibilidade na hora.</p>
       </div>
     </div>
 
@@ -1021,6 +1021,16 @@ input.invalid {
     return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
   }
 
+  // Não atendemos aos domingos. Monta a data em horário local (evita o
+  // bug de fuso-horário de "new Date('AAAA-MM-DD')", que pode voltar
+  // um dia quando o Brasil está atrás do UTC).
+  function ehDomingo(dataISO){
+    var p = String(dataISO || '').split('-');
+    if (p.length !== 3) return false;
+    var d = new Date(parseInt(p[0],10), parseInt(p[1],10) - 1, parseInt(p[2],10));
+    return d.getDay() === 0;
+  }
+
   // Procura o horário livre mais próximo do alvo, empurrando na direção
   // pedida (+1 = mais tarde, -1 = mais cedo) até escapar de todo mundo
   // que já está ocupado naquele dia.
@@ -1109,7 +1119,11 @@ input.invalid {
     _horarioOk = false;
     var d = dataInput.value, h = horaInput.value;
     if (!d || !h){
-      setHorarioStatus('Escolha o dia e o horário que preferir (entre 8h e 18h). Vamos confirmar a disponibilidade na hora.', null);
+      setHorarioStatus('Escolha o dia e o horário que preferir (entre 8h e 18h, exceto domingos). Vamos confirmar a disponibilidade na hora.', null);
+      return Promise.resolve(false);
+    }
+    if (ehDomingo(d)){
+      setHorarioStatus('Não atendemos aos domingos — escolha outro dia.', 'error');
       return Promise.resolve(false);
     }
     var hMin = horaParaMinutos(h);
