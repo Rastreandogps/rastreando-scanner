@@ -1231,7 +1231,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-19-v30-agenda-horarios-ocupados';
+const BUILD_VERSION = '2026-09-19-v31-data-hora-via-firestore';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6261,6 +6261,28 @@ document.getElementById('login-user').addEventListener('keydown', e => {
 // ════════════════════════════════
 // ABA AGENDAMENTOS DO FORMULÁRIO
 // ════════════════════════════════
+// Reforço: a data/hora que o cliente escolheu no formulário público já
+// chega direto no Firebase na hora (sem depender da Planilha). Se por
+// qualquer motivo a Planilha não tiver recebido essa informação, a gente
+// busca aqui também, pra nunca perder o que o cliente escolheu.
+async function _completarDataHoraViaFirestore(pendentes) {
+  const db = getFirestoreDb();
+  if (!db || !pendentes || !pendentes.length) return;
+  await Promise.all(pendentes.map(async function(ag) {
+    if (ag.dataDesejada && ag.horaDesejada) return; // já veio completo da Planilha
+    try {
+      const snap = await db.collection('agendamentos_pendentes').doc(String(ag.id)).get();
+      if (snap.exists) {
+        const d = snap.data() || {};
+        ag.dataDesejada = ag.dataDesejada || d.dataDesejada || '';
+        ag.horaDesejada = ag.horaDesejada || d.horaDesejada || '';
+      }
+    } catch (e) {
+      console.warn('[Firestore] Não conseguiu completar data/hora do agendamento:', ag.id, e);
+    }
+  }));
+}
+
 async function carregarAgendamentos() {
   const list = document.getElementById('agendamentos-list');
   if (!list) return;
@@ -6273,6 +6295,7 @@ async function carregarAgendamentos() {
   }
 
   const pendentes = result.data;
+  await _completarDataHoraViaFirestore(pendentes);
 
   // Atualiza badge
   const badge = document.getElementById('badge-agendamentos');
