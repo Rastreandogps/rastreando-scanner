@@ -835,7 +835,7 @@ select.invalid {
           </div>
           <div class="field">
             <label for="horaAgendamento">Horário <span class="req">*</span></label>
-            <select id="horaAgendamento">
+            <select id="horaAgendamento" disabled>
               <option value="" disabled selected>Selecione um horário</option>
             </select>
           </div>
@@ -1058,15 +1058,43 @@ select.invalid {
     for (var m = min; m <= max; m += SLOT_MINUTOS) lista.push(m);
     return lista;
   })();
-  (function preencherSeletorDeHorario(){
+
+  // Deixa o seletor só com "Selecione um horário" (antes de escolher a
+  // data, ou quando a data é domingo — aí não tem horário nenhum pra
+  // oferecer).
+  function limparOpcoesHorario(){
     if (!horaInput) return;
+    horaInput.innerHTML = '';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    placeholder.textContent = 'Selecione um horário';
+    horaInput.appendChild(placeholder);
+  }
+  limparOpcoesHorario();
+
+  // Preenche o seletor só com os horários que sobraram livres — os que
+  // já estão ocupados naquele dia nem aparecem mais na lista. Devolve
+  // false quando não sobrou nenhum horário livre.
+  function preencherOpcoesHorario(ocupadosMin){
+    if (!horaInput) return false;
+    var valorAnterior = horaInput.value;
+    limparOpcoesHorario();
+    var algumLivre = false;
     HORA_SLOTS.forEach(function(m){
+      var ocupado = ocupadosMin.some(function(o){ return Math.abs(m - o) < BUFFER_MINUTOS; });
+      if (ocupado) return;
+      algumLivre = true;
       var opt = document.createElement('option');
       opt.value = minutosParaHora(m);
       opt.textContent = minutosParaHora(m);
       horaInput.appendChild(opt);
     });
-  })();
+    var aindaLivre = Array.prototype.some.call(horaInput.options, function(o){ return o.value === valorAnterior; });
+    if (valorAnterior && aindaLivre) horaInput.value = valorAnterior;
+    return algumLivre;
+  }
 
   // Procura o horário livre mais próximo do alvo, na lista fixa de
   // horários do seletor, andando na direção pedida (+1 = mais tarde,
@@ -1094,12 +1122,12 @@ select.invalid {
     return p[2] + '/' + p[1] + '/' + p[0];
   }
 
-  // Confere no Firestore (coleção "horarios_ocupados" — só data e hora,
-  // sem nenhum dado de cliente) se o horário escolhido está livre.
-  function checarDisponibilidade(dataISO, horaStr){
-    if (!dbFirestore) return Promise.resolve({ livre: true }); // sem Firebase, não trava o cliente
-    var alvo = horaParaMinutos(horaStr);
-    if (alvo === null) return Promise.resolve({ livre: true });
+  // Busca no Firestore (coleção "horarios_ocupados" — só data e hora,
+  // sem nenhum dado de cliente) quais horários já estão ocupados numa
+  // data. Se não conseguir consultar, assume que não tem ocupado
+  // nenhum (não trava o cliente por causa de um problema técnico).
+  function slotsOcupadosMinutos(dataISO){
+    if (!dbFirestore) return Promise.resolve([]);
     var dataBR = isoParaDataBR(dataISO);
     return dbFirestore.collection('horarios_ocupados').where('data', '==', dataBR).get()
       .then(function(snap){
@@ -1108,21 +1136,32 @@ select.invalid {
           var h = horaParaMinutos((doc.data() || {}).hora);
           if (h !== null) ocupados.push(h);
         });
-        var temConflito = ocupados.some(function(h){ return Math.abs(h - alvo) < BUFFER_MINUTOS; });
-        if (!temConflito) return { livre: true };
-
-        var depois = proximoHorarioLivre(alvo, ocupados, +1);
-        var antes  = proximoHorarioLivre(alvo, ocupados, -1);
-        return {
-          livre: false,
-          sugestaoDepois: depois !== null ? minutosParaHora(depois) : null,
-          sugestaoAntes:  antes  !== null ? minutosParaHora(antes)  : null
-        };
+        return ocupados;
       })
       .catch(function(e){
-        console.warn('[Rastreando GPS] Não deu pra checar disponibilidade agora (seguindo sem travar o cliente).', e);
-        return { livre: true };
+        console.warn('[Rastreando GPS] Não deu pra carregar horários ocupados (seguindo sem travar o cliente).', e);
+        return [];
       });
+  }
+
+  // Conferência final de um horário específico (usada quando o
+  // cliente escolhe o horário no seletor) — pega o caso raro de dois
+  // clientes preenchendo o formulário ao mesmo tempo.
+  function checarDisponibilidade(dataISO, horaStr){
+    var alvo = horaParaMinutos(horaStr);
+    if (alvo === null) return Promise.resolve({ livre: true });
+    return slotsOcupadosMinutos(dataISO).then(function(ocupados){
+      var temConflito = ocupados.some(function(h){ return Math.abs(h - alvo) < BUFFER_MINUTOS; });
+      if (!temConflito) return { livre: true };
+
+      var depois = proximoHorarioLivre(alvo, ocupados, +1);
+      var antes  = proximoHorarioLivre(alvo, ocupados, -1);
+      return {
+        livre: false,
+        sugestaoDepois: depois !== null ? minutosParaHora(depois) : null,
+        sugestaoAntes:  antes  !== null ? minutosParaHora(antes)  : null
+      };
+    });
   }
 
   function setHorarioStatus(msg, tipo){
@@ -1202,7 +1241,39 @@ select.invalid {
       }
     });
   }
-  if (dataInput) dataInput.addEventListener('change', function(){ this.classList.remove('invalid'); validarHorarioEscolhido(); });
+  // Quando a data muda, já tira da lista os horários ocupados naquele
+  // dia — o cliente nem consegue escolher um horário que bate com
+  // outra ordem.
+  function atualizarHorariosDisponiveis(){
+    _horarioOk = false;
+    var d = dataInput.value;
+    if (!d){
+      limparOpcoesHorario();
+      horaInput.disabled = true;
+      setHorarioStatus('Escolha o dia e o horário que preferir (entre 8h e 18h, exceto domingos). Vamos confirmar a disponibilidade na hora.', null);
+      return;
+    }
+    if (ehDomingo(d)){
+      limparOpcoesHorario();
+      horaInput.disabled = true;
+      setHorarioStatus('Não atendemos aos domingos — escolha outro dia.', 'error');
+      abrirModalAviso('Não atendemos aos domingos', 'Escolha outro dia da semana para agendarmos sua visita.', 'Entendi');
+      return;
+    }
+    horaInput.disabled = true;
+    setHorarioStatus('Carregando horários disponíveis...', null);
+    slotsOcupadosMinutos(d).then(function(ocupados){
+      horaInput.disabled = false;
+      var temLivre = preencherOpcoesHorario(ocupados);
+      if (!temLivre){
+        setHorarioStatus('Não sobrou horário livre nesse dia. Escolha outra data, ou fale com a gente pelo WhatsApp.', 'error');
+      } else {
+        setHorarioStatus('Escolha o horário que preferir.', null);
+      }
+    });
+  }
+
+  if (dataInput) dataInput.addEventListener('change', function(){ this.classList.remove('invalid'); atualizarHorariosDisponiveis(); });
   if (horaInput) horaInput.addEventListener('change', function(){ this.classList.remove('invalid'); validarHorarioEscolhido(); });
 
   var vehicles = [{ placa:'', modelo:'', ano:'', gnv:null, rastreio:null }];
