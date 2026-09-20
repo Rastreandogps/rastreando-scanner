@@ -1144,6 +1144,23 @@ select.invalid {
       });
   }
 
+  // O admin tem um botão pra bloquear agendamentos "de hoje" quando,
+  // por algum motivo, não vai dar pra atender ninguém no dia. Confere
+  // se a data escolhida é justamente o dia que está bloqueado.
+  function verificarDiaBloqueado(dataISO){
+    if (!dbFirestore) return Promise.resolve(false);
+    return dbFirestore.collection('configuracoes').doc('bloqueioAgendamento').get()
+      .then(function(snap){
+        if (!snap.exists) return false;
+        var d = snap.data() || {};
+        return !!d.ativo && d.data === isoParaDataBR(dataISO);
+      })
+      .catch(function(e){
+        console.warn('[Rastreando GPS] Não deu pra checar bloqueio do dia (seguindo sem travar o cliente).', e);
+        return false;
+      });
+  }
+
   // Conferência final de um horário específico (usada quando o
   // cliente escolhe o horário no seletor) — pega o caso raro de dois
   // clientes preenchendo o formulário ao mesmo tempo.
@@ -1229,16 +1246,23 @@ select.invalid {
       return Promise.resolve(false);
     }
     setHorarioStatus('Verificando disponibilidade...', null);
-    return checarDisponibilidade(d, h).then(function(res){
-      if (res.livre){
-        _horarioOk = true;
-        setHorarioStatus('✓ Horário disponível', 'success');
-        return true;
-      } else {
-        setHorarioStatus('Esse horário não está disponível — escolha outro.', 'error');
-        abrirModalHorario(res);
+    return verificarDiaBloqueado(d).then(function(bloqueado){
+      if (bloqueado){
+        setHorarioStatus('Não estamos atendendo agendamentos para hoje.', 'error');
+        abrirModalAviso('Sem atendimento hoje', 'Hoje não estamos atendendo novos agendamentos. Escolha outro dia, ou fale com a gente pelo WhatsApp.', 'Entendi');
         return false;
       }
+      return checarDisponibilidade(d, h).then(function(res){
+        if (res.livre){
+          _horarioOk = true;
+          setHorarioStatus('✓ Horário disponível', 'success');
+          return true;
+        } else {
+          setHorarioStatus('Esse horário não está disponível — escolha outro.', 'error');
+          abrirModalHorario(res);
+          return false;
+        }
+      });
     });
   }
   // Quando a data muda, já tira da lista os horários ocupados naquele
@@ -1262,7 +1286,16 @@ select.invalid {
     }
     horaInput.disabled = true;
     setHorarioStatus('Carregando horários disponíveis...', null);
-    slotsOcupadosMinutos(d).then(function(ocupados){
+    Promise.all([verificarDiaBloqueado(d), slotsOcupadosMinutos(d)]).then(function(resultados){
+      var bloqueado = resultados[0];
+      var ocupados  = resultados[1];
+      if (bloqueado){
+        limparOpcoesHorario();
+        horaInput.disabled = true;
+        setHorarioStatus('Não estamos atendendo agendamentos para hoje.', 'error');
+        abrirModalAviso('Sem atendimento hoje', 'Hoje não estamos atendendo novos agendamentos. Escolha outro dia, ou fale com a gente pelo WhatsApp.', 'Entendi');
+        return;
+      }
       horaInput.disabled = false;
       var temLivre = preencherOpcoesHorario(ocupados);
       if (!temLivre){
