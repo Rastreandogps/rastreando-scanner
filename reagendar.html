@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rastreando GPS — Remarcar Agendamento</title>
+<meta name="theme-color" content="#1B3A6B">
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --navy:      #1B3A6B;
+  --navy-light:#2451A0;
+  --green:     #00B37E;
+  --green-dim: rgba(0,179,126,.12);
+  --danger:    #E03131;
+  --danger-dim:rgba(224,49,49,.08);
+  --amber:     #E07B00;
+  --amber-dim: rgba(224,123,0,.12);
+
+  --bg:        #F5F7FA;
+  --surface:   #FFFFFF;
+  --border:    #E2E8F0;
+  --border-focus: #2451A0;
+
+  --text:      #1A2035;
+  --text-2:    #4A5568;
+  --text-3:    #8A96AA;
+
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+
+  --font-display: 'Sora', sans-serif;
+  --font-body:    'Inter', sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0 0 40px;
+}
+.header {
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  color: #fff;
+  padding: 28px 20px 24px;
+  text-align: center;
+}
+.header h1 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+.header p { margin: 0; font-size: 13px; opacity: .85; }
+.wrap { max-width: 480px; margin: -16px auto 0; padding: 0 16px; }
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+  margin-bottom: 16px;
+}
+.card h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.info-atual {
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text-2);
+  margin-bottom: 18px;
+}
+.info-atual b { color: var(--text); }
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+input[type="date"], select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--text);
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234A5568' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+  padding-right: 38px;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+select:disabled, input:disabled { opacity: .5; }
+.status-msg {
+  font-size: 13px;
+  margin-top: 8px;
+  min-height: 16px;
+}
+.status-msg.error   { color: var(--danger); }
+.status-msg.success { color: var(--green); }
+.btn {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  background: var(--navy);
+  color: #fff;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.msg-box {
+  text-align: center;
+  padding: 20px 8px;
+}
+.msg-box .icon { font-size: 40px; margin-bottom: 10px; }
+.msg-box h2 { font-family: var(--font-display); font-size: 17px; margin: 0 0 8px; }
+.msg-box p { color: var(--text-2); font-size: 14px; margin: 0 0 4px; line-height: 1.5; }
+.whats-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+}
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  margin: 30px auto;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📅 Remarcar Agendamento</h1>
+  <p>Rastreando GPS</p>
+</div>
+
+<div class="wrap">
+  <div class="card" id="cardCarregando">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+(function(){
+
+  var CONFIG = {
+    WEBAPP_URL: "https://script.google.com/macros/s/AKfycbytrExs-RnhJh7evbS4qM3L5nE3Vcmjd4moXRh8JGGonSG8ATADkMG-_DxLjslIYp943g/exec",
+    WHATSAPP_NUMERO: "5521980886087"
+  };
+
+  var firebaseConfig = {
+    apiKey: "AIzaSyCnWCqWOBgk5D4d3KmDM-XiIxEoMojRyd8",
+    authDomain: "rastreando-gps.firebaseapp.com",
+    projectId: "rastreando-gps",
+    storageBucket: "rastreando-gps.firebasestorage.app",
+    messagingSenderId: "481162335739",
+    appId: "1:481162335739:web:fe3d91aaa33749a9f3e75e"
+  };
+  var dbFirestore = null;
+  try {
+    firebase.initializeApp(firebaseConfig);
+    dbFirestore = firebase.firestore();
+  } catch (e) {
+    console.warn('[Rastreando GPS] Firebase não iniciou.', e);
+  }
+
+  var wrap = document.querySelector('.wrap');
+
+  function getOsId() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get('os') || '';
+  }
+
+  function linkWhatsapp(texto) {
+    return 'https://wa.me/' + CONFIG.WHATSAPP_NUMERO + '?text=' + encodeURIComponent(texto);
+  }
+
+  function renderMensagem(icone, titulo, texto, comLinkWhats) {
+    var html =
+      '<div class="card"><div class="msg-box">' +
+      '<div class="icon">' + icone + '</div>' +
+      '<h2>' + titulo + '</h2>' +
+      '<p>' + texto + '</p>';
+    if (comLinkWhats) {
+      html += '<a class="whats-link" href="' + linkWhatsapp('Olá! Preciso remarcar meu agendamento.') + '" target="_blank">Falar no WhatsApp</a>';
+    }
+    html += '</div></div>';
+    wrap.innerHTML = html;
+  }
+
+  // ── Utilitários de data/horário (mesma lógica do formulário de agendamento) ──
+  var HORARIO_MIN = '08:00', HORARIO_MAX = '18:00', BUFFER_MINUTOS = 100, SLOT_MINUTOS = 30;
+
+  function horaParaMinutos(hhmm){
+    var p = String(hhmm || '').split(':');
+    if (p.length !== 2) return null;
+    var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
+  }
+  function minutosParaHora(min){
+    min = Math.max(0, Math.min(23*60+59, min));
+    var h = Math.floor(min/60), m = min % 60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+  function ehDomingo(dataISO){
+    var p = String(dataISO || '').split('-');
+    if (p.length !== 3) return false;
+    var d = new Date(parseInt(p[0],10), parseInt(p[1],10) - 1, parseInt(p[2],10));
+    return d.getDay() === 0;
+  }
+  var HORA_SLOTS = (function(){
+    var lista = [];
+    var min = horaParaMinutos(HORARIO_MIN), max = horaParaMinutos(HORARIO_MAX);
+    for (var m = min; m <= max; m += SLOT_MINUTOS) lista.push(m);
+    return lista;
+  })();
+  function isoParaDataBR(dataISO){
+    var p = String(dataISO || '').split('-');
+    if (p.length !== 3) return dataISO;
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+  function slotsOcupadosMinutos(dataISO){
+    if (!dbFirestore) return Promise.resolve([]);
+    var dataBR = isoParaDataBR(dataISO);
+    return dbFirestore.collection('horarios_ocupados').where('data', '==', dataBR).get()
+      .then(function(snap){
+        var ocupados = [];
+        snap.forEach(function(doc){
+          var h = horaParaMinutos((doc.data() || {}).hora);
+          if (h !== null) ocupados.push(h);
+        });
+        return ocupados;
+      })
+      .catch(function(){ return []; });
+  }
+  function verificarDiaBloqueado(dataISO){
+    if (!dbFirestore) return Promise.resolve(false);
+    return dbFirestore.collection('configuracoes').doc('bloqueioAgendamento').get()
+      .then(function(snap){
+        if (!snap.exists) return false;
+        var d = snap.data() || {};
+        return !!d.ativo && d.data === isoParaDataBR(dataISO);
+      })
+      .catch(function(){ return false; });
+  }
+
+  // ── Busca os dados da OS no Apps Script ──
+  function buscarOS(osId) {
+    return fetch(CONFIG.WEBAPP_URL + '?action=buscarOS&id=' + encodeURIComponent(osId))
+      .then(function(r){ return r.json(); });
+  }
+
+  function remarcar(osId, dataISO, hora) {
+    return fetch(CONFIG.WEBAPP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'remarcar', id: osId, novaDataISO: dataISO, novaHora: hora })
+    }).then(function(r){ return r.json(); });
+  }
+
+  // ── Monta a tela do formulário de remarcação ──
+  function montarFormulario(osId, os) {
+    var html =
+      '<div class="card">' +
+        '<h2>Escolha o novo horário</h2>' +
+        '<div class="info-atual">Agendamento atual: <b>' + (os.dataAtual || '-') + '</b> às <b>' + (os.horaAtual || '-') + '</b> (' + (os.tipo || 'instalação') + ')</div>' +
+        '<div class="field">' +
+          '<label for="novaData">Nova data</label>' +
+          '<input type="date" id="novaData">' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="novaHora">Novo horário</label>' +
+          '<select id="novaHora" disabled><option value="">Selecione a data primeiro</option></select>' +
+        '</div>' +
+        '<div class="status-msg" id="statusMsg"></div>' +
+        '<button class="btn" id="btnConfirmar" disabled>Confirmar novo horário</button>' +
+      '</div>';
+    wrap.innerHTML = html;
+
+    var dataInput = document.getElementById('novaData');
+    var horaInput = document.getElementById('novaHora');
+    var statusMsg = document.getElementById('statusMsg');
+    var btnConfirmar = document.getElementById('btnConfirmar');
+
+    var hoje = new Date();
+    var isoHoje = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+    dataInput.setAttribute('min', isoHoje);
+
+    function setStatus(msg, tipo) {
+      statusMsg.textContent = msg;
+      statusMsg.className = 'status-msg' + (tipo ? ' ' + tipo : '');
+    }
+
+    function limparHoras(msg) {
+      horaInput.innerHTML = '<option value="">' + (msg || 'Selecione a data primeiro') + '</option>';
+      horaInput.disabled = true;
+      btnConfirmar.disabled = true;
+    }
+
+    dataInput.addEventListener('change', function(){
+      var dataISO = dataInput.value;
+      setStatus('');
+      if (!dataISO) { limparHoras(); return; }
+
+      if (ehDomingo(dataISO)) {
+        limparHoras('Não atendemos aos domingos');
+        setStatus('Escolha outro dia — não atendemos aos domingos.', 'error');
+        return;
+      }
+
+      limparHoras('Carregando horários...');
+      Promise.all([verificarDiaBloqueado(dataISO), slotsOcupadosMinutos(dataISO)]).then(function(res){
+        var bloqueado = res[0], ocupados = res[1];
+        if (bloqueado) {
+          limparHoras('Data indisponível');
+          setStatus('Não estamos atendendo nessa data. Escolha outro dia.', 'error');
+          return;
+        }
+        var opcoes = '<option value="">Selecione um horário</option>';
+        var algumLivre = false;
+        HORA_SLOTS.forEach(function(m){
+          var ocupado = ocupados.some(function(o){ return Math.abs(m - o) < BUFFER_MINUTOS; });
+          if (ocupado) return;
+          algumLivre = true;
+          var h = minutosParaHora(m);
+          opcoes += '<option value="' + h + '">' + h + '</option>';
+        });
+        horaInput.innerHTML = opcoes;
+        horaInput.disabled = !algumLivre;
+        if (!algumLivre) setStatus('Não há horários livres nesse dia. Escolha outra data.', 'error');
+      });
+    });
+
+    horaInput.addEventListener('change', function(){
+      btnConfirmar.disabled = !horaInput.value;
+      setStatus('');
+    });
+
+    btnConfirmar.addEventListener('click', function(){
+      var dataISO = dataInput.value, hora = horaInput.value;
+      if (!dataISO || !hora) return;
+      btnConfirmar.disabled = true;
+      btnConfirmar.textContent = 'Confirmando...';
+      setStatus('');
+
+      remarcar(osId, dataISO, hora).then(function(res){
+        if (res && res.ok) {
+          renderMensagem('✅', 'Agendamento remarcado!',
+            'Seu novo horário é <b>' + res.novaData + '</b> às <b>' + res.novaHora + '</b>. Te esperamos!');
+        } else {
+          setStatus((res && res.motivo) || 'Não foi possível remarcar. Tente novamente.', 'error');
+          btnConfirmar.disabled = false;
+          btnConfirmar.textContent = 'Confirmar novo horário';
+        }
+      }).catch(function(){
+        setStatus('Erro de conexão. Verifique sua internet e tente de novo.', 'error');
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = 'Confirmar novo horário';
+      });
+    });
+  }
+
+  // ── Início ──
+  var osId = getOsId();
+  if (!osId) {
+    renderMensagem('⚠️', 'Link inválido', 'Não conseguimos identificar seu agendamento. Fale com a gente pelo WhatsApp.', true);
+    return;
+  }
+
+  buscarOS(osId).then(function(os){
+    if (!os || !os.ok) {
+      renderMensagem('⚠️', 'Agendamento não encontrado', (os && os.motivo) || 'Não encontramos esse agendamento. Fale com a gente pelo WhatsApp.', true);
+      return;
+    }
+    if (os.limiteAtingido) {
+      renderMensagem('📞', 'Limite de remarcações atingido',
+        'Esse agendamento já foi remarcado o máximo de vezes permitido por aqui. Fale com a gente pelo WhatsApp para ajustar o horário.', true);
+      return;
+    }
+    montarFormulario(osId, os);
+  }).catch(function(){
+    renderMensagem('⚠️', 'Erro ao carregar', 'Não conseguimos carregar seu agendamento agora. Tente de novo em instantes ou fale com a gente pelo WhatsApp.', true);
+  });
+
+})();
+</script>
+
+</body>
+</html>
