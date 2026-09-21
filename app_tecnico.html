@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-21-v39-lembrete-hoje-manual';
+const BUILD_VERSION = '2026-09-21-v40-lembrete-hoje-selo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -1628,7 +1628,8 @@ function showAdminTab(tab) {
 // login, coordenadas etc.) continuam indo direto na Planilha, como sempre.
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
-  'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem'
+  'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
+  'logLembreteHoje'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -1849,6 +1850,14 @@ async function espelharNoFirestore(payload) {
       }, { merge: true });
       break;
 
+    case 'logLembreteHoje':
+      if (!ref) return;
+      await ref.set({
+        lembreteHojeEnviado: { tecnico: payload.tecnico || payload.tech || '', data: payload.data || '', hora: payload.hora || '' },
+        atualizadoEm: agora
+      }, { merge: true });
+      break;
+
     case 'marcarAgendamentoLido':
       // Quando o admin confirma (cria OS) ou ignora um agendamento do
       // formulário, apaga o aviso correspondente no Firestore — senão
@@ -1990,6 +1999,7 @@ function docFirestoreParaOrdem(doc) {
     obs:             d.obs || '',
     status:          d.status || 'ativo',
     msgLog:          d.msgLog || null,
+    lembreteHojeEnviado: d.lembreteHojeEnviado || null,
     valorInstalacao: d.valorInstalacao || '',
     ordemDia:        d.ordemDia || 0,
     notaTecnico:     d.notaTecnico || ''
@@ -2130,6 +2140,7 @@ async function sincronizarTudoParaFirestore() {
         obs:             o.obs || '',
         status:          o.status || 'ativo',
         msgLog:          o.msgLog || null,
+        lembreteHojeEnviado: o.lembreteHojeEnviado || null,
         valorInstalacao: o.valorInstalacao || '',
         ordemDia:        o.ordemDia || 0,
         notaTecnico:     o.notaTecnico || ''
@@ -4267,6 +4278,16 @@ function enviarLembreteHoje(id, tech) {
     '_(21) 9 8088-6087_';
 
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  registrarLembreteHoje(id, tech);
+}
+
+// Registra no Firestore/Planilha a data e hora em que o lembrete de hoje
+// foi enviado ao cliente, pra mostrar o selo "✅ Enviado" no card.
+async function registrarLembreteHoje(osId, tech) {
+  const agora = new Date();
+  const hora  = String(agora.getHours()).padStart(2,'0') + ':' + String(agora.getMinutes()).padStart(2,'0');
+  const data  = String(agora.getDate()).padStart(2,'0') + '/' + String(agora.getMonth()+1).padStart(2,'0') + '/' + agora.getFullYear();
+  await gasRequest({ action: 'logLembreteHoje', id: osId, tech, hora, data, tecnico: tech });
 }
 
 // Reatribuir OS direto na aba Técnico
@@ -5711,10 +5732,16 @@ function _renderCardOSDetalhado(o) {
           '</button>';
         })() : '') +
 
-        // ── Botão lembrete de hoje ao cliente
-        (o.telefone ? '<button class="admin-lembrete-hoje-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-            '⏰ Lembrete de hoje ao cliente' +
-          '</button>' : '') +
+        // ── Botão lembrete de hoje ao cliente + selo de envio
+        (o.telefone ? '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
+          '<button class="admin-lembrete-hoje-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:8px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '⏰ Lembrete hoje' +
+          '</button>' +
+          (o.lembreteHojeEnviado
+            ? '<div style="flex:1;padding:4px 6px;background:#ecfdf5;border:1.5px solid #10b981;color:#065f46;border-radius:8px;font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.35;text-align:center;">✅ Enviado<span style="font-weight:600;">' + esc(o.lembreteHojeEnviado.data || '') + ' ' + esc(o.lembreteHojeEnviado.hora || '') + '</span></div>'
+            : '<div style="flex:1;padding:4px 6px;background:#f8fafc;border:1.5px dashed #cbd5e1;color:#94a3b8;border-radius:8px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;">Não enviado</div>'
+          ) +
+        '</div>' : '') +
 
         // ── Botões: Editar + Concluir + Excluir
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
