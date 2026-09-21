@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-21-v37-mensalidade-so-instalacao';
+const BUILD_VERSION = '2026-09-21-v38-mensalidade-sem-duplicar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -3991,22 +3991,28 @@ function filterDone(tech) {
 // mensalidade nova (recorrente, todo mês) para o negócio. Só conta Instalação:
 // Manutenção e Retirada/Remoção não são cliente novo, então ficam de fora.
 function _calcularMensalidadeNova(items) {
-  let qtdCom = 0, qtdSem = 0;
+  let qtdCom = 0, qtdSem = 0, qtdSemInfo = 0;
+  let osTotal = (items || []).length, osExcluidas = 0;
   (items || []).forEach(function(o) {
     const tipo = (o.tipo || '').toLowerCase();
-    if (tipo.includes('manut') || tipo.includes('retir') || tipo.includes('remo')) return;
+    if (tipo.includes('manut') || tipo.includes('retir') || tipo.includes('remo')) { osExcluidas++; return; }
     const veic = o.veiculo || '';
     if (!veic) return;
     const lista = veic.includes(' || ') ? veic.split(' || ') : [veic];
     lista.forEach(function(v) {
-      const vLower = v.toLowerCase();
+      const vLower = v.toLowerCase().trim();
       if (vLower.includes('com bloqueio')) qtdCom++;
       else if (vLower.includes('sem bloqueio')) qtdSem++;
+      else qtdSemInfo++;
     });
   });
   const totalCom = qtdCom * 59.90;
   const totalSem = qtdSem * 39.90;
-  return { qtdCom: qtdCom, qtdSem: qtdSem, totalCom: totalCom, totalSem: totalSem, total: totalCom + totalSem };
+  return {
+    qtdCom: qtdCom, qtdSem: qtdSem, qtdSemInfo: qtdSemInfo,
+    osTotal: osTotal, osExcluidas: osExcluidas, osInstalacao: osTotal - osExcluidas,
+    totalCom: totalCom, totalSem: totalSem, total: totalCom + totalSem
+  };
 }
 
 function _atualizarCardMensalidade(m) {
@@ -4019,6 +4025,11 @@ function _atualizarCardMensalidade(m) {
     '<div style="font-size:12.5px;color:rgba(255,255,255,.8);margin-top:8px;line-height:1.5;">' +
       m.qtdCom + ' veículo' + (m.qtdCom !== 1 ? 's' : '') + ' com bloqueio (R$59,90) = ' + fmt(m.totalCom) + '<br>' +
       m.qtdSem + ' veículo' + (m.qtdSem !== 1 ? 's' : '') + ' sem bloqueio (R$39,90) = ' + fmt(m.totalSem) +
+    '</div>' +
+    '<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.2);line-height:1.5;">' +
+      m.osTotal + ' serviço' + (m.osTotal !== 1 ? 's' : '') + ' concluído' + (m.osTotal !== 1 ? 's' : '') + ' neste filtro' +
+      (m.osExcluidas > 0 ? ' · ' + m.osExcluidas + ' de manutenção/retirada (fora da conta)' : '') +
+      (m.qtdSemInfo > 0 ? ' · ⚠️ ' + m.qtdSemInfo + ' veículo' + (m.qtdSemInfo !== 1 ? 's' : '') + ' sem "com/sem bloqueio" preenchido' : '') +
     '</div>';
 }
 
@@ -4027,7 +4038,17 @@ function renderAdminDoneList() {
   if (!list) return;
   const techs = adminDoneFilter === 'all' ? TECH_NAMES : [adminDoneFilter];
   let items   = [];
-  techs.forEach(t => (allDoneOrders[t] || []).forEach(o => items.push({...o, _tech: t})));
+  const idsVistos = new Set();
+  techs.forEach(t => (allDoneOrders[t] || []).forEach(o => {
+    // Se a mesma OS aparecer em mais de um técnico (ex: foi reatribuída em
+    // algum momento e ficou registrada nos dois), conta só uma vez — senão
+    // duplica tanto na lista quanto na mensalidade.
+    if (o.id !== undefined && o.id !== null) {
+      if (idsVistos.has(o.id)) return;
+      idsVistos.add(o.id);
+    }
+    items.push({...o, _tech: t});
+  }));
 
   // Filtro por mês
   if (adminDoneMesFiltro) {
