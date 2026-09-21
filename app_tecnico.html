@@ -883,6 +883,8 @@
         <h3 style="margin:0;">✅ Serviços Concluídos</h3>
         <div class="sync-indicator" id="admin-done-count" style="font-size:13px;font-weight:600;color:var(--success);"></div>
       </div>
+      <!-- Card de mensalidade nova (recorrente), calculado com com/sem bloqueio -->
+      <div id="admin-mensalidade-card" style="margin-bottom:16px;background:linear-gradient(135deg,#4c1d95,#7c3aed);border-radius:16px;padding:18px 20px;box-shadow:0 4px 16px rgba(124,58,237,.3);color:white;"></div>
       <!-- Campo de busca -->
       <div style="position:relative;margin-bottom:12px;">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1239,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-20-v35-balao-horario-moderno';
+const BUILD_VERSION = '2026-09-21-v36-relatorio-mensalidade-nova';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -3983,6 +3985,40 @@ function filterDone(tech) {
   renderAdminDoneList();
 }
 
+// Conta, por VEÍCULO (uma OS pode ter mais de um), quantos são "Com bloqueio"
+// (R$59,90/mês) e quantos são "Sem bloqueio" (R$39,90/mês), a partir do mesmo
+// texto que já aparece em cada serviço concluído — e soma quanto isso vira de
+// mensalidade nova (recorrente, todo mês) para o negócio.
+function _calcularMensalidadeNova(items) {
+  let qtdCom = 0, qtdSem = 0;
+  (items || []).forEach(function(o) {
+    const veic = o.veiculo || '';
+    if (!veic) return;
+    const lista = veic.includes(' || ') ? veic.split(' || ') : [veic];
+    lista.forEach(function(v) {
+      const vLower = v.toLowerCase();
+      if (vLower.includes('com bloqueio')) qtdCom++;
+      else if (vLower.includes('sem bloqueio')) qtdSem++;
+    });
+  });
+  const totalCom = qtdCom * 59.90;
+  const totalSem = qtdSem * 39.90;
+  return { qtdCom: qtdCom, qtdSem: qtdSem, totalCom: totalCom, totalSem: totalSem, total: totalCom + totalSem };
+}
+
+function _atualizarCardMensalidade(m) {
+  const cardEl = document.getElementById('admin-mensalidade-card');
+  if (!cardEl) return;
+  const fmt = function(n) { return 'R$ ' + n.toFixed(2).replace('.', ','); };
+  cardEl.innerHTML =
+    '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">💰 Mensalidade nova (recorrente)</div>' +
+    '<div style="font-size:30px;font-weight:800;color:white;letter-spacing:-1px;">' + fmt(m.total) + '<span style="font-size:14px;font-weight:600;opacity:.75;"> /mês</span></div>' +
+    '<div style="font-size:12.5px;color:rgba(255,255,255,.8);margin-top:8px;line-height:1.5;">' +
+      m.qtdCom + ' veículo' + (m.qtdCom !== 1 ? 's' : '') + ' com bloqueio (R$59,90) = ' + fmt(m.totalCom) + '<br>' +
+      m.qtdSem + ' veículo' + (m.qtdSem !== 1 ? 's' : '') + ' sem bloqueio (R$39,90) = ' + fmt(m.totalSem) +
+    '</div>';
+}
+
 function renderAdminDoneList() {
   const list  = document.getElementById('admin-done-list');
   if (!list) return;
@@ -4015,6 +4051,11 @@ function renderAdminDoneList() {
   const elAll = document.getElementById('afd-all');
   const tot   = TECH_NAMES.reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
   if (elAll) elAll.textContent = 'Todos' + (tot > 0 ? ' (' + tot + ')' : '');
+
+  // Mensalidade nova (recorrente) do período/técnico/busca filtrados — soma por
+  // veículo (não por OS), usando o mesmo texto "Com bloqueio"/"Sem bloqueio"
+  // que já aparece em cada serviço concluído.
+  _atualizarCardMensalidade(_calcularMensalidadeNova(items));
 
   if (items.length === 0) {
     list.innerHTML = '<div class="empty-state" style="padding:32px 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin-bottom:10px;"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p>Nenhum serviço concluído ainda.</p></div>';
