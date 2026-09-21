@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-21-v38-mensalidade-sem-duplicar';
+const BUILD_VERSION = '2026-09-21-v39-lembrete-hoje-manual';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -3027,6 +3027,13 @@ document.addEventListener('click', function(e) {
     const tech = confirmarAgBtn.getAttribute('data-tech');
     if (id && tech) enviarConfirmacaoAgendamento(id, tech);
   }
+  // Listener para botão lembrete de hoje ao cliente
+  const lembreteHojeBtn = e.target.closest('.admin-lembrete-hoje-btn');
+  if (lembreteHojeBtn) {
+    const id   = lembreteHojeBtn.getAttribute('data-id');
+    const tech = lembreteHojeBtn.getAttribute('data-tech');
+    if (id && tech) enviarLembreteHoje(id, tech);
+  }
   // Listener para botão editar na aba Técnico
   const editViewBtn = e.target.closest('.admin-view-edit-btn');
   if (editViewBtn) {
@@ -4229,6 +4236,33 @@ function enviarConfirmacaoAgendamento(id, tech) {
     '*Veículo(s):*\n' + veiculosTxt + '\n\n' +
     blocoValores +
     'Em breve nosso técnico entrará em contato para confirmar o horário! 🙌\n\n' +
+    '*Rastreando GPS* 📍\n' +
+    '_(21) 9 8088-6087_';
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// Lembrete manual (o admin confere e aperta enviar) de um serviço agendado
+// pra hoje. O tipo do serviço (instalação/manutenção/retirada) muda sozinho
+// de acordo com a OS.
+function enviarLembreteHoje(id, tech) {
+  const os = (allOrders[tech] || []).find(o => o.id === id);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+
+  const tel = (os.telefone || '').replace(/\D/g, '');
+  if (!tel) { showToast('Telefone não encontrado', 'error'); return; }
+
+  const primeiroNome = (os.nome || '').split(' ')[0];
+  const tipo = (os.tipo || 'Instalação').toLowerCase();
+  const tipoLabel = tipo.includes('manut') ? 'manutenção' : tipo.includes('retir') || tipo.includes('remo') ? 'retirada' : 'instalação';
+
+  const dataStr = _rotuloDataCliente(os.data, getHoraOS(os));
+
+  const msg =
+    'Olá, *' + primeiroNome + '*! 👋\n\n' +
+    '⏰ Passando pra lembrar que você tem uma *' + tipoLabel + '* agendada' +
+    (dataStr ? ' para *' + dataStr + '*' : ' conosco') + '.\n\n' +
+    'Podemos confirmar?\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
 
@@ -5676,6 +5710,11 @@ function _renderCardOSDetalhado(o) {
             '📲 Confirmar agendamento ao cliente' +
           '</button>';
         })() : '') +
+
+        // ── Botão lembrete de hoje ao cliente
+        (o.telefone ? '<button class="admin-lembrete-hoje-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+            '⏰ Lembrete de hoje ao cliente' +
+          '</button>' : '') +
 
         // ── Botões: Editar + Concluir + Excluir
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
