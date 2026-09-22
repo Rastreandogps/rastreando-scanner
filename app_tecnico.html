@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v47-link-remarcar-rapido';
+const BUILD_VERSION = '2026-09-22-v48-fix-calendario-todos-tecnicos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
@@ -2103,7 +2103,20 @@ function agendarAtualizacaoAdmin() {
         if (diaSelecionadoAntesData) _destacarDiaAdmin(_idsDoDiaAdmin(diaSelecionadoAntesData));
       });
     }
-    else loadAllOrders();
+    else {
+      loadAllOrders().then(function() {
+        // Se a tela "Todos os Técnicos" estiver aberta, ela tem seu próprio
+        // calendário (junta todos os técnicos) e não era atualizada sozinha —
+        // por isso uma OS remarcada pelo cliente ficava "grudada" no dia
+        // antigo ali, mesmo já certa na tela de um técnico específico.
+        if (_adminVendoTodos) {
+          const diaSelecionadoAntesTodos = _calDayAtivoDataTodos;
+          adminVerTodos().then(function() {
+            if (diaSelecionadoAntesTodos) _destacarDiaTodos(_idsDoDiaTodos(diaSelecionadoAntesTodos));
+          });
+        }
+      });
+    }
   }, 800);
 }
 
@@ -2390,7 +2403,10 @@ let _calDayAtivo = null; // IDs do dia atualmente selecionado
 // "congelada" no momento do clique e a OS continuava aparecendo no dia
 // antigo mesmo depois de mudar de data de verdade no Firebase.
 let _calDayAtivoDataTech  = null; // {day, month, year} — calendário do Técnico
-let _calDayAtivoDataAdmin = null; // {day, month, year} — calendário do Admin
+let _calDayAtivoDataAdmin = null; // {day, month, year} — calendário do Admin (um técnico específico)
+let _calDayAtivoDataTodos = null; // {day, month, year} — calendário "Todos os Técnicos" do Admin
+let _adminVendoTodos = false; // true enquanto a tela "Todos os Técnicos" estiver aberta
+let _todosOrdersCache = []; // cache das OS de TODOS os técnicos (tela "Todos"), já com o técnico/cor de cada uma
 
 // Recalcula, com os dados mais atuais, quais OS pertencem a um dia
 // específico do calendário do Técnico.
@@ -2414,6 +2430,23 @@ function _idsDoDiaTecnico(dia) {
 function _idsDoDiaAdmin(dia) {
   if (!dia) return null;
   const orders = _adminOrdersCache || [];
+  const doDia = orders.filter(o => {
+    if (!o.data || o.status === 'concluido') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
+  }).map(o => o.id);
+  const hoje = new Date();
+  const ehHoje = dia.day === hoje.getDate() && dia.month === hoje.getMonth() && dia.year === hoje.getFullYear();
+  if (!ehHoje) return doDia;
+  const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined')).map(o => o.id);
+  return [...pendentes, ...doDia];
+}
+
+// Mesma ideia, pro calendário "Todos os Técnicos" — usa o cache com as OS de
+// todos os técnicos juntas (_todosOrdersCache), não só de um específico.
+function _idsDoDiaTodos(dia) {
+  if (!dia) return null;
+  const orders = _todosOrdersCache || [];
   const doDia = orders.filter(o => {
     if (!o.data || o.status === 'concluido') return false;
     const d = parseDate(o.data);
@@ -2527,16 +2560,113 @@ function _destacarDiaAdmin(ids) {
   return primeiro;
 }
 
+// Card resumido de uma OS na lista "Todos os Técnicos" (mostra a cor/nome do
+// técnico dono, já que aqui aparecem vários técnicos misturados).
+function _renderCardOSTodos(o) {
+  const dataOk    = o.data && o.data.trim() && o.data !== 'undefined';
+  const dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
+  const dataBg    = dataOk ? '#dbeafe' : '#fef3c7';
+  const dataFg    = dataOk ? '#1d4ed8' : '#b45309';
+  const mapsLink  = _mapsLinkPara(o.endereco);
+  const tech      = o._tech;
+  const cor       = o._cor;
+
+  return '<div data-os-id="' + o.id + '" style="border-radius:14px;padding:14px;margin-bottom:12px;background:white;border-left:4px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.07);">' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+      '<div style="flex:1;font-size:14px;font-weight:700;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
+      '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
+      '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + dataLabel + '</span>' +
+      _horaPill(o) +
+    '</div>' +
+    renderVeiculosAdmin(o.veiculo) +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+      '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
+          (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
+      (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
+    '</div>' +
+    (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:8px;">' +
+        '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
+        '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
+        '</div>' : '');
+}
+
+// Re-renderiza a lista "Todos os Técnicos" filtrada pelas OS de um dia
+// específico (ou todas, se ids for null) — usa o cache com as OS de todos os
+// técnicos, nunca o cache de um técnico específico.
+function _renderAdminListaPorIdsTodos(ids) {
+  const lista = document.getElementById('admin-tech-os-list');
+  if (!lista) return;
+  let ativas = (ids && ids.length > 0)
+    ? _todosOrdersCache.filter(o => ids.includes(o.id))
+    : _todosOrdersCache;
+  if (ativas.length === 0) {
+    lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem para este dia.</p></div>';
+    return;
+  }
+  ativas = ativas.slice().sort((a, b) => {
+    const aOrdem = a.ordemDia || 0;
+    const bOrdem = b.ordemDia || 0;
+    if (aOrdem > 0 && bOrdem > 0) return aOrdem - bOrdem;
+    if (aOrdem > 0) return -1;
+    if (bOrdem > 0) return 1;
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1; if (!b.data) return -1;
+    return parseDate(a.data) - parseDate(b.data);
+  });
+  lista.innerHTML = ativas.map(_renderCardOSTodos).join('');
+}
+
+// Mesma ideia de _destacarDiaAdmin, só que pro calendário "Todos os
+// Técnicos" — tem sua própria classe/atributos (cal-clickable-todos) porque
+// junta OS de vários técnicos, então não pode usar o cache de um só técnico.
+function _destacarDiaTodos(ids) {
+  _calDayAtivo = ids.join(',');
+  document.querySelectorAll('.cal-clickable-todos').forEach(function(d) {
+    const cellIds = (d.getAttribute('data-todos-ids') || '').split('|').filter(Boolean);
+    const ehEsteDia = cellIds.length > 0 && cellIds.length === ids.length && cellIds.every(function(v) { return ids.includes(v); });
+    if (ehEsteDia) {
+      d.style.background = '#dbeafe';
+      d.style.borderRadius = '8px';
+      d.style.outline = '2px solid var(--accent)';
+      d.classList.add('cal-day-selected');
+    } else {
+      d.style.background = ''; d.style.borderRadius = ''; d.style.outline = '';
+      d.classList.remove('cal-day-selected');
+    }
+  });
+  _renderAdminListaPorIdsTodos(ids);
+  const cards = document.querySelectorAll('#admin-tech-os-list [data-os-id]');
+  let primeiro = null;
+  cards.forEach(function(card) {
+    const id = card.getAttribute('data-os-id');
+    const match = id && ids.includes(id);
+    card.style.opacity       = match ? '1'    : '0.25';
+    card.style.transform     = match ? 'scale(1.01)' : 'scale(1)';
+    card.style.pointerEvents = match ? 'auto' : 'none';
+    card.style.userSelect    = match ? 'auto' : 'none';
+    if (match && !primeiro) primeiro = card;
+  });
+  return primeiro;
+}
+
 function limparDestaqueCalendario() {
   _calDayAtivo = null;
   _calDayAtivoDataTech = null;
   _calDayAtivoDataAdmin = null;
+  _calDayAtivoDataTodos = null;
   // Esconder overlay
   const ov = document.getElementById('destaque-overlay');
   if (ov) ov.style.display = 'none';
   // Remove destaque dos dias
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
   document.querySelectorAll('.cal-clickable-admin').forEach(d => {
+    d.style.background = '';
+    d.style.borderRadius = '';
+    d.style.outline = '';
+    d.classList.remove('cal-day-selected');
+  });
+  document.querySelectorAll('.cal-clickable-todos').forEach(d => {
     d.style.background = '';
     d.style.borderRadius = '';
     d.style.outline = '';
@@ -2558,6 +2688,7 @@ function limparDestaqueCalendario() {
   });
   // Recarregar lista com OS de hoje
   if (adminTechSelecionado) _renderAdminListaPorIds(null);
+  if (_adminVendoTodos) _renderAdminListaPorIdsTodos(null);
 }
 
 
@@ -3127,6 +3258,34 @@ document.addEventListener('click', function(e) {
     const xBtn = document.getElementById('destaque-fechar');
     if (xBtn) xBtn.style.display = 'flex';
     const primeiro = _destacarDiaAdmin(ids);
+    if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+  }
+  // Listener para dias do calendário "Todos os Técnicos"
+  const calDayTodos = e.target.closest('.cal-clickable-todos');
+  if (calDayTodos) {
+    const raw = calDayTodos.getAttribute('data-todos-ids');
+    if (!raw) return;
+    const ids = raw.split('|').filter(Boolean);
+    const idsKey = ids.join(',');
+    if (_calDayAtivo === idsKey) {
+      _calDayAtivo = null;
+      _calDayAtivoDataTodos = null;
+      limparDestaqueCalendario();
+      return;
+    }
+    const diaAttr = calDayTodos.getAttribute('data-todos-day');
+    _calDayAtivoDataTodos = (diaAttr !== null && diaAttr !== '')
+      ? {
+          day:   parseInt(diaAttr, 10),
+          month: parseInt(calDayTodos.getAttribute('data-todos-month'), 10),
+          year:  parseInt(calDayTodos.getAttribute('data-todos-year'), 10)
+        }
+      : null;
+    const ov = document.getElementById('destaque-overlay');
+    if (ov) ov.style.display = 'block';
+    const xBtn = document.getElementById('destaque-fechar');
+    if (xBtn) xBtn.style.display = 'flex';
+    const primeiro = _destacarDiaTodos(ids);
     if (primeiro) setTimeout(() => primeiro.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
   }
   // Listener para botão concluir admin na aba Técnico
@@ -5199,6 +5358,7 @@ function salvarBlocoNotas() {} // mantido para compatibilidade
 
 async function adminVerTodos() {
   adminTechSelecionado = '';
+  _adminVendoTodos = true;
   // Destacar botão Todos
   document.querySelectorAll('.admin-tech-btn').forEach(b => {
     const isTodos = b.getAttribute('data-tech') === 'todos';
@@ -5220,6 +5380,7 @@ async function adminVerTodos() {
 
   const year  = _adminCalAno;
   const month = _adminCalMes;
+  const now   = new Date();
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[month] + ' de ' + year;
 
   // Cores por técnico
@@ -5270,8 +5431,8 @@ async function adminVerTodos() {
     const allIds = temPend ? [...ids, ...pendentes.map(o => o.id)] : ids;
     const clicavel = allIds.length > 0;
 
-    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavel ? ' cal-clickable-admin' : '') + '"' +
-      (clicavel ? ' data-admin-ids="' + allIds.join('|') + '" style="cursor:pointer;"' : '') + '>' +
+    grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavel ? ' cal-clickable-todos' : '') + '"' +
+      (clicavel ? ' data-todos-ids="' + allIds.join('|') + '" data-todos-day="' + d + '" data-todos-month="' + month + '" data-todos-year="' + year + '" style="cursor:pointer;"' : '') + '>' +
       '<span>' + d + '</span>' + (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') + '</div>';
   }
 
@@ -5284,6 +5445,11 @@ async function adminVerTodos() {
       todasAtivas.push({ ...o, _tech: tech, _cor: cor });
     });
   });
+
+  // Guarda pra recalcular certinho quem pertence a cada dia depois de
+  // qualquer atualização (ex: uma remarcação feita pelo cliente) — sem
+  // isso, essa tela "Todos os Técnicos" nunca se atualizava sozinha.
+  _todosOrdersCache = todasAtivas;
 
   if (todasAtivas.length === 0) {
     lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Nenhuma ordem em aberto.</p></div>';
@@ -5301,36 +5467,7 @@ async function adminVerTodos() {
     return parseDate(a.data) - parseDate(b.data);
   });
 
-  lista.innerHTML = todasAtivas.map(o => {
-    const dataOk   = o.data && o.data.trim() && o.data !== 'undefined';
-    const dataLabel = dataOk ? formatDateBR(o.data) : 'Sem data';
-    const dataBg   = dataOk ? '#dbeafe' : '#fef3c7';
-    const dataFg   = dataOk ? '#1d4ed8' : '#b45309';
-    const mapsLink = _mapsLinkPara(o.endereco);
-    const tech     = o._tech;
-    const cor      = o._cor;
-
-    return '<div data-os-id="' + o.id + '" style="border-radius:14px;padding:14px;margin-bottom:12px;background:white;border-left:4px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.07);">' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
-        '<div style="flex:1;font-size:14px;font-weight:700;color:var(--primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(o.nome) + '</div>' +
-        '<span style="background:' + cor + '22;color:' + cor + ';border:1.5px solid ' + cor + '55;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + tech + '</span>' +
-        '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">' + dataLabel + '</span>' +
-        _horaPill(o) +
-      '</div>' +
-      renderVeiculosAdmin(o.veiculo) +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-        '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
-
-            (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
-        (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;">Maps</a>' : '') +
-      '</div>' +
-      (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:8px;">' +
-          '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
-          '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
-          '</div>' : '') +
-    '</div>';
-  }).join('');
+  lista.innerHTML = todasAtivas.map(_renderCardOSTodos).join('');
 }
 
 function renderVeiculosAdmin(veiculo) {
@@ -5880,6 +6017,7 @@ function _renderCardOSDetalhado(o) {
 
 async function adminVerTecnico(tech) {
   adminTechSelecionado = tech;
+  _adminVendoTodos = false;
   limparSelecao();
   // Limpar busca ao trocar de técnico
   const buscaInput = document.getElementById('admin-cal-busca');
