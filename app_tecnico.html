@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v54-selo-avisa-se-nao-salvar';
+const BUILD_VERSION = '2026-09-22-v55-nome-cliente-msg-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5166,8 +5166,13 @@ function montarMsgPrePronta(o, wppLink) {
   else if (tipo.includes('retir') || tipo.includes('remo')) servicoLabel = 'retirada do rastreador';
   else servicoLabel = 'instalação de equipamento rastreador';
 
+  // Nome completo do cliente na saudação. Além de ficar mais pessoal, isso
+  // faz o nome aparecer na própria conversa do WhatsApp — assim o técnico
+  // identifica de quem é o contato sem precisar abrir o app.
+  const nomeCliente = (o.nome || '').trim();
+
   const msg =
-    saudacao + ', eu me chamo ' + tecnico + '. Técnico da Rastreando GPS.\n' +
+    saudacao + (nomeCliente ? ', ' + nomeCliente : '') + '! Eu me chamo ' + tecnico + '. Técnico da Rastreando GPS.\n' +
     'Estou com uma ordem de serviço para realizar um serviço de ' + servicoLabel + ' no seu veículo. Você pode me confirmar?\n\n' +
     veiculoBloco +
     (endereco ? '\n' + endereco : '');
