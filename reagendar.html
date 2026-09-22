@@ -348,6 +348,35 @@ select:disabled, input:disabled { opacity: .5; }
     };
   }
 
+  // Confere DIRETO no Firebase se a remarcação realmente entrou.
+  // Serve de rede de segurança: a gravação pode dar certo e mesmo assim a
+  // resposta não chegar de volta no celular do cliente (aba trocada, sinal
+  // oscilando, demora do servidor). Sem essa conferência, o cliente via
+  // "erro de conexão" numa remarcação que na verdade funcionou — e tentava
+  // de novo, gastando à toa uma das 2 remarcações que ele tem direito.
+  // Tenta algumas vezes, com pausa, porque a gravação pode estar
+  // terminando bem nesse instante.
+  function conferirSeRemarcou(osId, dataISO, hora, tentativasRestantes) {
+    if (!dbFirestore) return Promise.resolve(null);
+    var dataBR = isoParaDataBR(dataISO);
+    return dbFirestore.collection('os_publicas').doc(osId).get()
+      .then(function(snap){
+        var d = snap.exists ? (snap.data() || {}) : {};
+        if (String(d.data || '') === dataBR && String(d.hora || '') === hora) {
+          return { novaData: dataBR, novaHora: hora, novoEndereco: d.endereco || '' };
+        }
+        if (tentativasRestantes > 0) {
+          return new Promise(function(resolve){
+            setTimeout(function(){
+              resolve(conferirSeRemarcou(osId, dataISO, hora, tentativasRestantes - 1));
+            }, 2500);
+          });
+        }
+        return null;
+      })
+      .catch(function(){ return null; });
+  }
+
   function remarcar(osId, dataISO, hora, novoEndereco) {
     return fetch(CONFIG.WEBAPP_URL, {
       method: 'POST',
@@ -460,21 +489,37 @@ select:disabled, input:disabled { opacity: .5; }
       btnConfirmar.textContent = 'Confirmando...';
       setStatus('');
 
-      remarcar(osId, dataISO, hora, novoEndereco).then(function(res){
-        if (res && res.ok) {
-          renderMensagem('✅', 'Agendamento remarcado!',
-            'Seu novo horário é <b>' + res.novaData + '</b> às <b>' + res.novaHora + '</b>' +
-            (res.novoEndereco ? ', em <b>' + escapeHtml(res.novoEndereco) + '</b>' : '') +
-            '. Te esperamos!');
-        } else {
-          setStatus((res && res.motivo) || 'Não foi possível remarcar. Tente novamente.', 'error');
-          btnConfirmar.disabled = false;
-          btnConfirmar.textContent = 'Confirmar novo horário';
-        }
-      }).catch(function(){
-        setStatus('Erro de conexão. Verifique sua internet e tente de novo.', 'error');
+      function mostrarSucesso(res) {
+        renderMensagem('✅', 'Agendamento remarcado!',
+          'Seu novo horário é <b>' + res.novaData + '</b> às <b>' + res.novaHora + '</b>' +
+          (res.novoEndereco ? ', em <b>' + escapeHtml(res.novoEndereco) + '</b>' : '') +
+          '. Te esperamos!');
+      }
+      function liberarBotao(msg) {
+        setStatus(msg, 'error');
         btnConfirmar.disabled = false;
         btnConfirmar.textContent = 'Confirmar novo horário';
+      }
+
+      remarcar(osId, dataISO, hora, novoEndereco).then(function(res){
+        if (res && res.ok) {
+          mostrarSucesso(res);
+        } else if (res && res.motivo) {
+          // O servidor respondeu e disse por que não deu (ex: horário
+          // ocupado, limite de remarcações) — é um "não" de verdade.
+          liberarBotao(res.motivo);
+        } else {
+          liberarBotao('Não foi possível remarcar. Tente novamente.');
+        }
+      }).catch(function(){
+        // A resposta não chegou — mas pode ter salvado assim mesmo.
+        // Confere no Firebase antes de mostrar qualquer erro.
+        btnConfirmar.textContent = 'Confirmando...';
+        setStatus('Conferindo se o horário foi salvo...');
+        conferirSeRemarcou(osId, dataISO, hora, 3).then(function(confirmado){
+          if (confirmado) mostrarSucesso(confirmado);
+          else liberarBotao('Não conseguimos confirmar agora. Tente de novo em instantes ou fale com a gente pelo WhatsApp.');
+        });
       });
     });
   }
