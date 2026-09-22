@@ -1211,7 +1211,7 @@
 <!-- MODAL: ENVIAR ACESSO AO CLIENTE -->
 <div class="modal-overlay" id="modal-acesso-cliente">
   <div class="modal-box" style="max-width:380px;">
-    <div class="modal-title">🔐 Enviar acesso ao cliente</div>
+    <div class="modal-title">📲 Enviar acesso ao cliente</div>
     <div class="modal-sub">Preencha o login do cliente na plataforma</div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
       <div class="form-field">
@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v49-fix-calendario-tecnico-especifico';
+const BUILD_VERSION = '2026-09-22-v50-ajustes-botoes';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5966,8 +5966,7 @@ function _renderCardOSDetalhado(o) {
         (o.telefone ? (function() {
           const tel = (o.telefone || '').replace(/\D/g,'');
           return '<button class="admin-confirmar-ag-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-            '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.1 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>' +
-            '📲 Confirmar agendamento ao cliente' +
+            '🗓️ Confirmar agendamento ao cliente' +
           '</button>';
         })() : '') +
 
@@ -5984,7 +5983,7 @@ function _renderCardOSDetalhado(o) {
 
         // ── Botão link para o cliente remarcar sozinho
         (o.telefone ? '<button class="admin-remarcar-link-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#0d9488;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-            '🔁 Link para remarcar' +
+            '🔄 Reagendamento cliente' +
           '</button>' : '') +
 
         // ── Botões: Editar + Concluir + Excluir
@@ -5998,7 +5997,7 @@ function _renderCardOSDetalhado(o) {
         // ── Botão enviar acesso ao cliente
         (o.telefone ? '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
           '<button onclick="abrirModalAcesso(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="width:100%;padding:8px;background:#0ea5e9;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-            '🔐 Enviar acesso ao cliente' +
+            '📲 Enviar acesso ao cliente' +
           '</button>' +
         '</div>' : '') +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
