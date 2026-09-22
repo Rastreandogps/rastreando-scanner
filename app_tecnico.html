@@ -171,6 +171,39 @@
       0 0 28px rgba(245,158,11,.55),
       0 0 55px rgba(245,158,11,.2);
   }
+  /* Cor do card por tipo de serviço, igual ao painel do Admin:
+     azul = instalação (padrão), amarelo = manutenção, vermelho = retirada.
+     Precisa vir depois das regras acima pra ter a última palavra. */
+  .os-card.tipo-manut {
+    border-left-color: #f59e0b;
+    box-shadow:
+      0 4px 8px rgba(0,0,0,.08),
+      0 0 0 1px rgba(245,158,11,.25),
+      0 0 20px rgba(245,158,11,.4),
+      0 0 40px rgba(245,158,11,.15);
+  }
+  .os-card.tipo-manut:hover {
+    box-shadow:
+      0 4px 8px rgba(0,0,0,.1),
+      0 0 0 1px rgba(245,158,11,.35),
+      0 0 28px rgba(245,158,11,.55),
+      0 0 55px rgba(245,158,11,.2);
+  }
+  .os-card.tipo-remocao {
+    border-left-color: #ef4444;
+    box-shadow:
+      0 4px 8px rgba(0,0,0,.08),
+      0 0 0 1px rgba(239,68,68,.25),
+      0 0 20px rgba(239,68,68,.4),
+      0 0 40px rgba(239,68,68,.15);
+  }
+  .os-card.tipo-remocao:hover {
+    box-shadow:
+      0 4px 8px rgba(0,0,0,.1),
+      0 0 0 1px rgba(239,68,68,.35),
+      0 0 28px rgba(239,68,68,.55),
+      0 0 55px rgba(239,68,68,.2);
+  }
   .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
   .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
   .os-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
@@ -1242,7 +1275,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v56-selo-salva-antes-do-whats';
+const BUILD_VERSION = '2026-09-22-v57-cores-por-tipo-no-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2813,6 +2846,16 @@ function renderCalDayCards(ids) {
   wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Devolve a classe de cor do card conforme o tipo de serviço, pra a tela do
+// técnico ficar igual à do Admin: azul = instalação (padrão, sem classe),
+// amarelo = manutenção, vermelho = retirada/remoção.
+function _classeTipoOS(o) {
+  const t = (o && o.tipo ? o.tipo : '').toLowerCase();
+  if (t.includes('manut')) return ' tipo-manut';
+  if (t.includes('retir') || t.includes('remo')) return ' tipo-remocao';
+  return '';
+}
+
 // Card compacto do técnico: nome, horário (se houver), endereço e modelo do veículo
 function _renderCardTecnicoCompacto(o) {
   const tipo = (o.tipo || '').toLowerCase();
@@ -2842,7 +2885,7 @@ function abrirModalVerOSTecnico(id) {
 
 function renderCardInline(o) {
   const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
-  const cardCls  = hasDate ? '' : ' pending';
+  const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o);
   const dateVal  = hasDate ? toInputDate(o.data) : '';
   const telLimpo = (o.telefone || '').replace(/\D/g,'');
   const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
@@ -3033,7 +3076,7 @@ function renderTechOSList() {
 
   list.innerHTML = monthly.map(o => {
     const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
-    const cardCls  = hasDate ? '' : ' pending';
+    const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o);
     const dateVal  = hasDate ? toInputDate(o.data) : '';
     const telLimpo = (o.telefone || '').replace(/\D/g,'');
     const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
