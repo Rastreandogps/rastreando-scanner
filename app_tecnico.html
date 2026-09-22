@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-21-v43-msg-tecnico-final';
+const BUILD_VERSION = '2026-09-22-v44-fix-valor-some-editar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6181,8 +6181,15 @@ function editRemoverVeiculo(id) {
 }
 
 async function abrirModalEdit(id, tech) {
-  // Buscar OS no allOrders
-  let o = (allOrders[tech] || []).find(x => x.id === id);
+  // Buscar OS primeiro no cache do Admin (dados mais atuais, vindos do
+  // Firestore em tempo real) — antes só olhava allOrders[tech], que fica
+  // vazio na tela do Admin (só é preenchido na sessão do próprio técnico).
+  // Sem isso, caía direto na busca pela Planilha, que pode não trazer de
+  // volta campos mais novos como o valor da instalação, e o campo some
+  // ao abrir o Editar mesmo a OS já tendo um valor salvo.
+  let o = _adminOrdersCache.find(x => x.id === id) ||
+          (_doneAdminCache[tech] || []).find(x => x.id === id) ||
+          (allOrders[tech] || []).find(x => x.id === id);
   if (!o) {
     // Fallback: buscar direto do GAS
     const r = await gasRequest({ action: 'getOrders', tech });
