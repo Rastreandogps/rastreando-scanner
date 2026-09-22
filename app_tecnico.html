@@ -204,6 +204,12 @@
       0 0 28px rgba(239,68,68,.55),
       0 0 55px rgba(239,68,68,.2);
   }
+  /* Card pequeno da Grade do técnico — mesma lógica de cor por tipo.
+     Fica no estilo (e não direto no card) pra que, ao tirar o destaque
+     de um dia do calendário, a cor do tipo volte sozinha. */
+  .os-mini { box-shadow: 0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,.12); }
+  .os-mini.tipo-manut { box-shadow: 0 0 0 3px #f59e0b, 0 2px 6px rgba(0,0,0,.12); }
+  .os-mini.tipo-remocao { box-shadow: 0 0 0 3px #ef4444, 0 2px 6px rgba(0,0,0,.12); }
   .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
   .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
   .os-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
@@ -1275,7 +1281,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v57-cores-por-tipo-no-tecnico';
+const BUILD_VERSION = '2026-09-22-v58-cores-tipo-tambem-na-grade';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2553,9 +2559,13 @@ function _destacarDiaTecnico(ids, comAnimacao) {
     let primeiro = null;
     calCards.forEach(card => {
       if (!primeiro) primeiro = card;
-      // Todos os cards mostrados são do dia clicado — todos destacados
+      // Todos os cards mostrados são do dia clicado — todos destacados.
+      // O brilho usa a COR DO TIPO de cada card (azul instalação, amarelo
+      // manutenção, vermelho retirada). Antes era sempre azul, e isso
+      // apagava a cor do tipo sempre que um dia era selecionado.
+      const rgb = card.getAttribute('data-glow') || '59,130,246';
       card.style.transition = 'box-shadow .3s, transform .3s';
-      card.style.boxShadow  = '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
+      card.style.boxShadow  = '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(' + rgb + ',.45),0 0 28px rgba(' + rgb + ',.6),0 0 55px rgba(' + rgb + ',.22)';
       card.style.transform  = 'scale(1.01)';
     });
     // Scroll até o primeiro card
@@ -2763,8 +2773,9 @@ function destacarCardsOrdens(ids) {
     // Cards destacados ficam acima do overlay
     card.style.position      = match ? 'relative' : '';
     card.style.zIndex        = match ? '51' : '';
+    const rgbCard = card.getAttribute('data-glow') || '59,130,246';
     card.style.boxShadow     = match
-      ? '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)'
+      ? '0 4px 8px rgba(0,0,0,.08),0 0 0 2px rgba(' + rgbCard + ',.45),0 0 28px rgba(' + rgbCard + ',.6),0 0 55px rgba(' + rgbCard + ',.22)'
       : '';
     if (match && !primeiro) primeiro = card;
   });
@@ -2856,16 +2867,20 @@ function _classeTipoOS(o) {
   return '';
 }
 
+// A mesma cor, em números (usada quando o destaque do dia precisa repintar
+// o brilho do card sem perder a cor do tipo).
+function _corTipoRGB(o) {
+  const t = (o && o.tipo ? o.tipo : '').toLowerCase();
+  if (t.includes('manut')) return '245,158,11';
+  if (t.includes('retir') || t.includes('remo')) return '239,68,68';
+  return '59,130,246';
+}
+
 // Card compacto do técnico: nome, horário (se houver), endereço e modelo do veículo
 function _renderCardTecnicoCompacto(o) {
-  const tipo = (o.tipo || '').toLowerCase();
-  let cor;
-  if (tipo.includes('manut')) cor = '#f59e0b';
-  else if (tipo.includes('retir') || tipo.includes('remo')) cor = '#ef4444';
-  else cor = '#3b82f6';
   const hora   = getHoraOS(o);
   const modelo = _modeloPrincipalVeiculo(o.veiculo);
-  return '<div data-os-id="' + esc(o.id) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 3px ' + cor + ',0 2px 6px rgba(0,0,0,.12);">' +
+  return '<div data-os-id="' + esc(o.id) + '" data-glow="' + _corTipoRGB(o) + '" class="os-mini' + _classeTipoOS(o) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;">' +
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
@@ -2968,7 +2983,7 @@ function renderCardInline(o) {
     }
   }
 
-  return '<div class="os-card' + cardCls + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + cardBg + ';margin-bottom:14px;">' +
+  return '<div class="os-card' + cardCls + '" data-glow="' + _corTipoRGB(o) + '" style="border-left:4px solid ' + borderColor + ';padding:16px 18px;background:' + cardBg + ';margin-bottom:14px;">' +
     // Ordem do dia + Nome + WPP
     '<div style="margin-bottom:12px;">' +
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
@@ -3122,7 +3137,7 @@ function renderTechOSList() {
     '</div>';
 
     return (
-      '<div class="os-card' + cardCls + '" id="os-card-' + o.id + '" data-os-date="' + (o.data||'') + '" style="border-left:4px solid ' + borderColor + ';transition:opacity .3s,box-shadow .3s;padding:16px 18px;background:' + cardBg + ';">' +
+      '<div class="os-card' + cardCls + '" id="os-card-' + o.id + '" data-os-date="' + (o.data||'') + '" data-glow="' + _corTipoRGB(o) + '" style="border-left:4px solid ' + borderColor + ';transition:opacity .3s,box-shadow .3s;padding:16px 18px;background:' + cardBg + ';">' +
 
         // ── CABEÇALHO: nome + whatsapp juntos + badges
         '<div style="margin-bottom:12px;">' +
