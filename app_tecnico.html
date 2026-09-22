@@ -516,6 +516,7 @@
     <p class="login-error" id="login-error">Usuário ou senha incorretos.</p>
     <button type="button" class="btn-admin" onclick="abrirModalAdmin()">🔐 Área do Administrador</button>
   </div>
+  <div id="login-build-version" style="text-align:center;margin-top:12px;font-size:10px;color:#94a3b8;"></div>
 </div>
 
 <!-- TELA DO TÉCNICO -->
@@ -1241,8 +1242,15 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v48-fix-calendario-todos-tecnicos';
+const BUILD_VERSION = '2026-09-22-v49-fix-calendario-tecnico-especifico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
+// Mostra a versão na tela de login (rodapé discreto) — assim dá pra
+// conferir se a última atualização já está no ar, sem precisar abrir
+// nenhuma ferramenta técnica.
+document.addEventListener('DOMContentLoaded', function() {
+  const v = document.getElementById('login-build-version');
+  if (v) v.textContent = BUILD_VERSION;
+});
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
 const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
@@ -6939,7 +6947,16 @@ var _novaOSAtual = null;
 async function pollCompleto() {
   tentarSincronizarFilaPlanilha(); // reforço: tenta reenviar o que ainda estiver pendente
   if (currentRole === 'tech')  await loadTechOrders();
-  if (currentRole === 'admin') { await loadAllOrders(); await checkNovasOSFormulario(); }
+  if (currentRole === 'admin') {
+    await loadAllOrders();
+    // Se o tempo real do Firebase cair por algum motivo, esse polling de
+    // 30s passa a ser o único jeito de a tela atualizar sozinha — por isso
+    // também atualiza a tela de um técnico específico (ou "Todos"), se
+    // alguma delas estiver aberta. Sem isso, uma remarcação feita pelo
+    // cliente só aparecia se o Admin saísse da tela e voltasse.
+    agendarAtualizacaoAdmin();
+    await checkNovasOSFormulario();
+  }
 }
 
 async function checkNovasOSFormulario() {
