@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v50-ajustes-botoes';
+const BUILD_VERSION = '2026-09-22-v51-lembrete-link-e-selo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4554,17 +4554,25 @@ function enviarLembreteHoje(id, tech) {
   const tipoLabel = tipo.includes('manut') ? 'manutenção' : tipo.includes('retir') || tipo.includes('remo') ? 'retirada' : 'instalação';
 
   const dataStr = _rotuloDataCliente(os.data, getHoraOS(os));
+  const linkRemarcar = URL_REAGENDAR + '?os=' + encodeURIComponent(os.id);
 
   const msg =
     'Olá, *' + primeiroNome + '*! 👋\n\n' +
     '⏰ Passando pra lembrar que você tem uma *' + tipoLabel + '* agendada' +
     (dataStr ? ' para *' + dataStr + '*' : ' conosco') + '.\n\n' +
-    'Podemos confirmar?\n\n' +
+    'Podemos confirmar?\n\n\n' +
+    '*Se esse horário não der, você pode escolher outro aqui:*\n' +
+    linkRemarcar + '\n\n' +
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
 
-  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  // Registra ANTES de abrir o WhatsApp. No celular, abrir o WhatsApp tira o
+  // app da frente e congela a página — o registro que era feito depois
+  // acabava cortado no meio do caminho, e por isso o selo "Enviado" não
+  // aparecia. Agora ele já sai na frente e o selo aparece na hora.
   registrarLembreteHoje(id, tech);
+
+  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 // Registra no Firestore/Planilha a data e hora em que o lembrete de hoje
@@ -4573,7 +4581,34 @@ async function registrarLembreteHoje(osId, tech) {
   const agora = new Date();
   const hora  = String(agora.getHours()).padStart(2,'0') + ':' + String(agora.getMinutes()).padStart(2,'0');
   const data  = String(agora.getDate()).padStart(2,'0') + '/' + String(agora.getMonth()+1).padStart(2,'0') + '/' + agora.getFullYear();
+
+  // Mostra o selo "✅ Enviado" na hora, sem esperar a resposta do servidor.
+  _marcarLembreteHojeNaTela(osId, { tecnico: tech, data: data, hora: hora });
+
   await gasRequest({ action: 'logLembreteHoje', id: osId, tech, hora, data, tecnico: tech });
+}
+
+// Marca a OS como "lembrete enviado" nas listas que já estão carregadas na
+// memória e redesenha o card, pra o selo aparecer imediatamente ao apertar
+// o botão (antes ele só apareceria na próxima atualização automática — que
+// no celular muitas vezes nem chegava a acontecer, porque o WhatsApp abria
+// por cima e a página parava).
+function _marcarLembreteHojeNaTela(osId, selo) {
+  try {
+    const listas = [];
+    if (Array.isArray(_adminOrdersCache))    listas.push(_adminOrdersCache);
+    if (Array.isArray(_todosOrdersCache))    listas.push(_todosOrdersCache);
+    if (Array.isArray(_firestoreTodasOrdens)) listas.push(_firestoreTodasOrdens);
+    TECH_NAMES.forEach(function(n) { if (Array.isArray(allOrders[n])) listas.push(allOrders[n]); });
+    listas.forEach(function(lista) {
+      lista.forEach(function(o) { if (o && o.id === osId) o.lembreteHojeEnviado = selo; });
+    });
+    if (adminTechSelecionado) {
+      _renderAdminListaPorIds(_calDayAtivoDataAdmin ? _idsDoDiaAdmin(_calDayAtivoDataAdmin) : null, true);
+    }
+  } catch (e) {
+    console.warn('[Lembrete hoje] Não conseguiu atualizar o selo na tela:', e);
+  }
 }
 
 // Manda pro cliente, pelo WhatsApp, o link da página onde ele mesmo escolhe
@@ -6193,7 +6228,9 @@ async function adminVerTecnico(tech) {
 
 // Renderiza a lista de OS do admin filtrando por IDs (clique no calendário)
 // ou por data de hoje (padrão)
-function _renderAdminListaPorIds(ids) {
+// semScroll = true quando é só um redesenho rápido (ex: marcar o selo de
+// lembrete enviado) — nesse caso a tela não deve pular de posição.
+function _renderAdminListaPorIds(ids, semScroll) {
   const lista = fixed_lista = document.getElementById('admin-tech-os-list');
   if (!lista) return;
 
@@ -6235,7 +6272,7 @@ function _renderAdminListaPorIds(ids) {
 
   _renderListaOSAdmin(lista, ativas);
 
-  lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!semScroll) lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Variável para guardar OS pendente de conclusão
