@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v51-lembrete-link-e-selo';
+const BUILD_VERSION = '2026-09-22-v52-selo-lembrete-na-janelinha';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4605,6 +4605,31 @@ function _marcarLembreteHojeNaTela(osId, selo) {
     });
     if (adminTechSelecionado) {
       _renderAdminListaPorIds(_calDayAtivoDataAdmin ? _idsDoDiaAdmin(_calDayAtivoDataAdmin) : null, true);
+    }
+
+    // Se essa mesma OS estiver aberta na janelinha de detalhes, redesenha
+    // ela também. Sem isso, o selo mudava só na lista que fica ATRÁS da
+    // janelinha — e o card da frente, que é o que você está olhando,
+    // continuava mostrando "Não enviado".
+    const modal    = document.getElementById('modal-ver-os');
+    const conteudo = document.getElementById('modal-ver-os-conteudo');
+    if (modal && conteudo && modal.classList.contains('open')) {
+      let aberta = false;
+      conteudo.querySelectorAll('[data-os-id]').forEach(function(el) {
+        if (el.getAttribute('data-os-id') === String(osId)) aberta = true;
+      });
+      if (aberta) {
+        let oAtual = null;
+        [_adminOrdersCache, _todosOrdersCache, _firestoreTodasOrdens].forEach(function(lista) {
+          if (!oAtual && Array.isArray(lista)) oAtual = lista.find(function(x) { return x && x.id === osId; }) || null;
+        });
+        if (!oAtual) {
+          TECH_NAMES.forEach(function(n) {
+            if (!oAtual && Array.isArray(allOrders[n])) oAtual = allOrders[n].find(function(x) { return x && x.id === osId; }) || null;
+          });
+        }
+        if (oAtual) conteudo.innerHTML = _renderCardOSDetalhado(oAtual);
+      }
     }
   } catch (e) {
     console.warn('[Lembrete hoje] Não conseguiu atualizar o selo na tela:', e);
