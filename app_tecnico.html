@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v46-fix-calendario-data-remarcada';
+const BUILD_VERSION = '2026-09-22-v47-link-remarcar-rapido';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
@@ -1754,6 +1754,39 @@ async function _syncHorarioOcupado(id) {
   }
 }
 
+// ── CÓPIA PÚBLICA DA OS (usada pela página de remarcação do cliente) ──
+// Guarda só um resuminho sem dado sensível (nome, veículo, tipo, endereço,
+// data, hora e quantas vezes já remarcou) numa coleção de leitura pública,
+// pra reagendar.html não precisar mais chamar o Apps Script (que é lento
+// pra "esquentar") só pra mostrar a tela inicial. Sempre relê a OS de
+// verdade antes de gravar, pra nunca copiar um dado desatualizado.
+async function _syncOSPublica(id) {
+  if (!id) return;
+  const db = getFirestoreDb();
+  if (!db) return;
+  try {
+    const ref    = db.collection('ordens_servico').doc(String(id));
+    const pubRef = db.collection('os_publicas').doc(String(id));
+    const snap   = await ref.get();
+    if (snap.exists) {
+      const d = snap.data() || {};
+      await pubRef.set({
+        nome:        d.nome || '',
+        veiculo:     d.veiculo || '',
+        tipo:        d.tipo || '',
+        endereco:    d.endereco || '',
+        data:        d.data || '',
+        hora:        extrairHora(d.obs) || '',
+        remarcacoes: Number(d.remarcacoes || 0)
+      });
+    } else {
+      await pubRef.delete().catch(function(){});
+    }
+  } catch (e) {
+    console.warn('[Firestore] Não conseguiu sincronizar a cópia pública da OS:', id, e);
+  }
+}
+
 async function espelharNoFirestore(payload) {
   const db = getFirestoreDb();
   if (!db) return;
@@ -1778,6 +1811,7 @@ async function espelharNoFirestore(payload) {
         atualizadoEm: agora
       }, { merge: true });
       await _syncHorarioOcupado(payload.id);
+      await _syncOSPublica(payload.id);
       break;
 
     case 'editOrder':
@@ -1793,6 +1827,7 @@ async function espelharNoFirestore(payload) {
         atualizadoEm: agora
       }, { merge: true });
       await _syncHorarioOcupado(payload.id);
+      await _syncOSPublica(payload.id);
       break;
 
     case 'updateStatus':
@@ -1804,6 +1839,7 @@ async function espelharNoFirestore(payload) {
       if (!ref) return;
       await ref.set({ data: payload.data || '', atualizadoEm: agora }, { merge: true });
       await _syncHorarioOcupado(payload.id);
+      await _syncOSPublica(payload.id);
       break;
 
     case 'salvarNotaTecnico':
@@ -1841,6 +1877,7 @@ async function espelharNoFirestore(payload) {
         }
       }
       await _syncHorarioOcupado(payload.id);
+      await _syncOSPublica(payload.id);
       break;
 
     case 'logMensagem':
@@ -2158,6 +2195,18 @@ async function sincronizarTudoParaFirestore() {
       if (todas[i].ativa && o.data) {
         const hoRef = db.collection('horarios_ocupados').doc(String(o.id));
         lote.set(hoRef, { data: o.data, hora: extrairHora(o.obs) || '' }, { merge: true });
+        pendentesNoLote++;
+        await _commitSeNecessario();
+
+        // Cópia pública (pra página de remarcação do cliente abrir rápido).
+        // Usa merge e NÃO mexe em "remarcacoes" aqui — esse número só existe
+        // de verdade no Firestore (a Planilha não tem essa coluna), então
+        // sobrescrever com base na Planilha ia zerar remarcações já feitas.
+        const pubRef = db.collection('os_publicas').doc(String(o.id));
+        lote.set(pubRef, {
+          nome: o.nome || '', veiculo: o.veiculo || '', tipo: o.tipo || '',
+          endereco: o.endereco || '', data: o.data || '', hora: extrairHora(o.obs) || ''
+        }, { merge: true });
         pendentesNoLote++;
         await _commitSeNecessario();
       }
