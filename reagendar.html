@@ -288,10 +288,64 @@ select:disabled, input:disabled { opacity: .5; }
       .catch(function(){ return false; });
   }
 
-  // ── Busca os dados da OS no Apps Script ──
+  // ── Busca os dados da OS ──
+  // Caminho RÁPIDO: lê direto do Firestore (coleção pública "os_publicas",
+  // sem dado sensível — só nome, veículo, tipo, endereço, data/hora e
+  // quantas vezes já remarcou). Não depende do Apps Script "esquentar",
+  // por isso abre bem mais rápido.
+  function buscarOSRapido(osId) {
+    if (!dbFirestore) return Promise.resolve(null);
+    return dbFirestore.collection('os_publicas').doc(osId).get()
+      .then(function(snap){
+        if (!snap.exists) return null; // ainda não tem cópia pública — usa o plano B
+        var d = snap.data() || {};
+        return {
+          ok: true,
+          nome: d.nome || '',
+          tipo: d.tipo || '',
+          veiculo: d.veiculo || '',
+          endereco: d.endereco || '',
+          dataAtual: d.data || '',
+          horaAtual: d.hora || '',
+          remarcacoes: d.remarcacoes || 0
+        };
+      })
+      .catch(function(){ return null; });
+  }
+
+  // Plano B (mais lento): pede pro Apps Script buscar na OS de verdade.
+  // Só é usado se a cópia pública ainda não existir pra essa OS — e, nesse
+  // caso, o próprio Apps Script já aproveita e cria essa cópia, então da
+  // próxima vez esse mesmo link já vai pelo caminho rápido.
   function buscarOS(osId) {
     return fetch(CONFIG.WEBAPP_URL + '?action=buscarOS&id=' + encodeURIComponent(osId))
       .then(function(r){ return r.json(); });
+  }
+
+  // Deixa os dados prontos pra tela, do mesmo jeito não importa se vieram
+  // do caminho rápido ou do plano B (nome só o primeiro nome, veículo só
+  // o modelo do primeiro, etc).
+  function primeiroNome(nome) {
+    var n = String(nome || '').trim().split(/\s+/)[0] || 'Cliente';
+    return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+  }
+  function primeiroVeiculoModelo(veiculo) {
+    if (!veiculo) return '';
+    var primeiro = String(veiculo).split(' || ')[0] || '';
+    return primeiro.split(' | ')[0].trim();
+  }
+  function finalizarOS(os) {
+    var remarcacoes = Number(os.remarcacoes || 0);
+    return {
+      nome: primeiroNome(os.nome),
+      tipo: os.tipo || 'instalação',
+      veiculo: primeiroVeiculoModelo(os.veiculo),
+      endereco: os.endereco || '',
+      dataAtual: os.dataAtual || '',
+      horaAtual: os.horaAtual || '',
+      remarcacoes: remarcacoes,
+      limiteAtingido: remarcacoes >= 2
+    };
   }
 
   function remarcar(osId, dataISO, hora, novoEndereco) {
@@ -432,17 +486,21 @@ select:disabled, input:disabled { opacity: .5; }
     return;
   }
 
-  buscarOS(osId).then(function(os){
+  buscarOSRapido(osId).then(function(osRapido){
+    if (osRapido) return osRapido;
+    return buscarOS(osId); // cópia pública ainda não existe pra essa OS — usa o plano B
+  }).then(function(os){
     if (!os || !os.ok) {
       renderMensagem('⚠️', 'Agendamento não encontrado', (os && os.motivo) || 'Não encontramos esse agendamento. Fale com a gente pelo WhatsApp.', true);
       return;
     }
-    if (os.limiteAtingido) {
+    var osFinal = finalizarOS(os);
+    if (osFinal.limiteAtingido) {
       renderMensagem('📞', 'Limite de remarcações atingido',
         'Esse agendamento já foi remarcado o máximo de vezes permitido por aqui. Fale com a gente pelo WhatsApp para ajustar o horário.', true);
       return;
     }
-    montarFormulario(osId, os);
+    montarFormulario(osId, osFinal);
   }).catch(function(){
     renderMensagem('⚠️', 'Erro ao carregar', 'Não conseguimos carregar seu agendamento agora. Tente de novo em instantes ou fale com a gente pelo WhatsApp.', true);
   });
