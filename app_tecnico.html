@@ -1241,7 +1241,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v45-botao-link-remarcar';
+const BUILD_VERSION = '2026-09-22-v46-fix-calendario-data-remarcada';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
@@ -2029,7 +2029,7 @@ function iniciarListenerOSTecnico(nomeTecnico) {
       // Reaplica o dia que estava selecionado, se houver (sem isso, qualquer
       // atualização em tempo real fazia a tela voltar sozinha pro dia de hoje
       // e perder o dia que o técnico tinha escolhido)
-      _destacarDiaTecnico(_calDayAtivo ? _calDayAtivo.split(',') : null, false);
+      _destacarDiaTecnico(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, false);
       renderDoneList();
     }, function(err) {
       console.warn('[Firestore] Tempo real das OS caiu, seguindo só com a atualização a cada 30s:', err);
@@ -2056,12 +2056,14 @@ function agendarAtualizacaoAdmin() {
   _debounceAdminRefresh = setTimeout(function() {
     if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
     if (adminTechSelecionado) {
-      const diaSelecionadoAntes = _calDayAtivo; // guarda o dia selecionado, se houver
+      const diaSelecionadoAntesData = _calDayAtivoDataAdmin; // guarda o dia selecionado, se houver
       adminVerTecnico(adminTechSelecionado).then(function() {
         // adminVerTecnico() sempre recarrega mostrando "Hoje" — se o admin estava
         // vendo um dia específico (ex: uma data futura), reaplica esse filtro
-        // assim que os dados novos chegarem, pra não perder a seleção
-        if (diaSelecionadoAntes) _destacarDiaAdmin(diaSelecionadoAntes.split(','));
+        // assim que os dados novos chegarem, recalculando quem pertence a esse
+        // dia com os dados atualizados (sem isso, uma OS remarcada pelo cliente
+        // continuava aparecendo "grudada" no dia antigo até recarregar a página)
+        if (diaSelecionadoAntesData) _destacarDiaAdmin(_idsDoDiaAdmin(diaSelecionadoAntesData));
       });
     }
     else loadAllOrders();
@@ -2206,16 +2208,18 @@ function iniciarListenerAgendamentos() {
 }
 
 async function loadTechOrders() {
-  const diaSelecionadoAntes = _calDayAtivo; // preserva o dia selecionado, se houver
+  const diaSelecionadoAntesData = _calDayAtivoDataTech; // preserva o dia selecionado, se houver
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
   if (result.ok) {
     allOrders[currentUser] = normalizarOrdens(result.data || []);
     renderTechCalendar();
-    // Reaplica o dia que estava selecionado, se houver (sem isso, essa
-    // atualização em segundo plano fazia a tela voltar sozinha pro dia de hoje)
-    _destacarDiaTecnico(diaSelecionadoAntes ? diaSelecionadoAntes.split(',') : null, false);
+    // Reaplica o dia que estava selecionado, se houver — recalculando quem
+    // pertence a ele com os dados já atualizados (sem isso, essa atualização
+    // em segundo plano tanto fazia a tela voltar sozinha pro dia de hoje
+    // quanto deixava uma OS "grudada" no dia antigo depois de remarcada)
+    _destacarDiaTecnico(diaSelecionadoAntesData ? _idsDoDiaTecnico(diaSelecionadoAntesData) : null, false);
   }
   // Busca ordens concluídas separadamente
   const resultDone = await gasRequest({ action: 'getDoneOrders', tech: currentUser });
@@ -2317,11 +2321,11 @@ function renderTechCalendar() {
     // Clicável se tem OS agendadas OU se é hoje com pendentes
     const clicavel  = ids.length > 0 || temPend;
     const allIds    = temPend ? [...ids, ...pendentes.map(o => o.id)] : ids;
-    const dataIds   = clicavel ? ' data-ids="' + allIds.join('|') + '"' : '';
+    const dataIds   = clicavel ? ' data-ids="' + allIds.join('|') + '" data-day="' + d + '" data-month="' + month + '" data-year="' + year + '"' : '';
     const calCursor = clicavel ? ' style="cursor:pointer;"' : '';
     const calClass  = clicavel ? ' cal-clickable' : '';
 
-    const onclickStr = clicavel ? ' onclick="if(this.dataset.ids){calDayClick(this.dataset.ids.split(String.fromCharCode(124)))}"' : '';
+    const onclickStr = clicavel ? ' onclick="if(this.dataset.ids){calDayClick(this.dataset.ids.split(String.fromCharCode(124)),this.dataset.day,this.dataset.month,this.dataset.year)}"' : '';
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + calClass + '"' + dataIds + calCursor + onclickStr + '>' +
       '<span>' + d + '</span>' +
       (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') +
@@ -2331,15 +2335,60 @@ function renderTechCalendar() {
 
 // Clique num dia do calendário → vai para aba Ordens e abre o(s) card(s)
 let _calDayAtivo = null; // IDs do dia atualmente selecionado
+// Guarda também QUAL DIA (não só a lista de IDs) está selecionado, pra dar
+// pra recalcular quem pertence a ele depois de qualquer atualização (ex: um
+// cliente remarcou uma OS pra outra data). Sem isso, a lista de IDs ficava
+// "congelada" no momento do clique e a OS continuava aparecendo no dia
+// antigo mesmo depois de mudar de data de verdade no Firebase.
+let _calDayAtivoDataTech  = null; // {day, month, year} — calendário do Técnico
+let _calDayAtivoDataAdmin = null; // {day, month, year} — calendário do Admin
 
-function calDayClick(ids) {
+// Recalcula, com os dados mais atuais, quais OS pertencem a um dia
+// específico do calendário do Técnico.
+function _idsDoDiaTecnico(dia) {
+  if (!dia) return null;
+  const orders = allOrders[currentUser] || [];
+  const doDia = orders.filter(o => {
+    if (!o.data || o.status === 'concluido') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
+  }).map(o => o.id);
+  const hoje = new Date();
+  const ehHoje = dia.day === hoje.getDate() && dia.month === hoje.getMonth() && dia.year === hoje.getFullYear();
+  if (!ehHoje) return doDia;
+  const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined')).map(o => o.id);
+  return [...doDia, ...pendentes];
+}
+
+// Mesma ideia, só que pro calendário do Admin (usa o cache de OS do técnico
+// que o Admin está vendo no momento).
+function _idsDoDiaAdmin(dia) {
+  if (!dia) return null;
+  const orders = _adminOrdersCache || [];
+  const doDia = orders.filter(o => {
+    if (!o.data || o.status === 'concluido') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
+  }).map(o => o.id);
+  const hoje = new Date();
+  const ehHoje = dia.day === hoje.getDate() && dia.month === hoje.getMonth() && dia.year === hoje.getFullYear();
+  if (!ehHoje) return doDia;
+  const pendentes = orders.filter(o => o.status !== 'concluido' && (!o.data || o.data.trim() === '' || o.data === 'undefined')).map(o => o.id);
+  return [...pendentes, ...doDia];
+}
+
+function calDayClick(ids, day, month, year) {
   // Se clicar no mesmo dia, remove destaque
   const idsKey = ids ? ids.join(',') : '';
   if (_calDayAtivo === idsKey) {
     _calDayAtivo = null;
+    _calDayAtivoDataTech = null;
     limparDestaqueCalendario();
     return;
   }
+  _calDayAtivoDataTech = (day !== undefined && day !== null && day !== '')
+    ? { day: parseInt(day, 10), month: parseInt(month, 10), year: parseInt(year, 10) }
+    : null;
   _destacarDiaTecnico(ids, true);
 }
 
@@ -2431,6 +2480,8 @@ function _destacarDiaAdmin(ids) {
 
 function limparDestaqueCalendario() {
   _calDayAtivo = null;
+  _calDayAtivoDataTech = null;
+  _calDayAtivoDataAdmin = null;
   // Esconder overlay
   const ov = document.getElementById('destaque-overlay');
   if (ov) ov.style.display = 'none';
@@ -2995,7 +3046,7 @@ document.addEventListener('click', function(e) {
   const calDay = e.target.closest('.cal-clickable');
   if (calDay) {
     const raw = calDay.getAttribute('data-ids');
-    if (raw) calDayClick(raw.split('|'));
+    if (raw) calDayClick(raw.split('|'), calDay.getAttribute('data-day'), calDay.getAttribute('data-month'), calDay.getAttribute('data-year'));
   }
   // Listener para dias do calendário do admin
   const calDayAdmin = e.target.closest('.cal-clickable-admin');
@@ -3006,9 +3057,20 @@ document.addEventListener('click', function(e) {
     const idsKey = ids.join(',');
     if (_calDayAtivo === idsKey) {
       _calDayAtivo = null;
+      _calDayAtivoDataAdmin = null;
       limparDestaqueCalendario();
       return;
     }
+    // Guarda QUAL DIA foi clicado (não só os IDs), pra dar pra recalcular
+    // certinho se a lista mudar depois (ex: remarcação do cliente)
+    const diaAttr = calDayAdmin.getAttribute('data-admin-day');
+    _calDayAtivoDataAdmin = (diaAttr !== null && diaAttr !== '')
+      ? {
+          day:   parseInt(diaAttr, 10),
+          month: parseInt(calDayAdmin.getAttribute('data-admin-month'), 10),
+          year:  parseInt(calDayAdmin.getAttribute('data-admin-year'), 10)
+        }
+      : null;
     // Mostrar overlay para toque fora
     const ov = document.getElementById('destaque-overlay');
     if (ov) ov.style.display = 'block';
@@ -5521,12 +5583,12 @@ function definirModoVisualizacaoOS(modo) {
   _atualizarBotoesModoVisualizacao();
   // Re-renderiza a lista do admin já carregada, sem precisar buscar de novo
   if (adminTechSelecionado) {
-    const ids = _calDayAtivo ? _calDayAtivo.split(',') : null;
+    const ids = _calDayAtivoDataAdmin ? _idsDoDiaAdmin(_calDayAtivoDataAdmin) : null;
     _renderAdminListaPorIds(ids);
   }
   // Re-renderiza o calendário do técnico, se estiver com cards na tela
   if (document.getElementById('cal-day-cards')) {
-    renderCalDayCards(_calDayAtivo ? _calDayAtivo.split(',') : null);
+    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null);
   }
 }
 
@@ -5904,7 +5966,7 @@ async function adminVerTecnico(tech) {
       ? [...pendentes.map(o => o.id), ...(idsStr ? idsStr.split('|') : [])].join('|')
       : idsStr;
     grid.innerHTML += '<div class="cal-day' + (isToday ? ' today' : '') + (clicavelAdmin ? ' cal-clickable-admin' : '') + '"' +
-      (clicavelAdmin ? ' data-admin-ids="' + allIdsAdmin + '" style="cursor:pointer;"' : '') + '>' +
+      (clicavelAdmin ? ' data-admin-ids="' + allIdsAdmin + '" data-admin-day="' + d + '" data-admin-month="' + month + '" data-admin-year="' + year + '" style="cursor:pointer;"' : '') + '>' +
       '<span>' + d + '</span>' + (dots ? '<div class="dots" style="pointer-events:none;">' + dots + '</div>' : '') + '</div>';
   }
 
@@ -6997,7 +7059,7 @@ async function salvarNotaCard(btn) {
     const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
     if (o) o.notaTecnico = nota;
     showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
-    renderCalDayCards(_calDayAtivo ? _calDayAtivo.split(',') : null);
+    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null);
   } else {
     showToast('Erro ao salvar nota.', 'error');
   }
