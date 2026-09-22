@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v55-nome-cliente-msg-tecnico';
+const BUILD_VERSION = '2026-09-22-v56-selo-salva-antes-do-whats';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4571,13 +4571,29 @@ function enviarLembreteHoje(id, tech) {
     '*Rastreando GPS* 📍\n' +
     '_(21) 9 8088-6087_';
 
-  // Registra ANTES de abrir o WhatsApp. No celular, abrir o WhatsApp tira o
-  // app da frente e congela a página — o registro que era feito depois
-  // acabava cortado no meio do caminho, e por isso o selo "Enviado" não
-  // aparecia. Agora ele já sai na frente e o selo aparece na hora.
-  registrarLembreteHoje(id, tech);
+  const linkWhats = 'https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg);
 
-  window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+  // Abre a aba JÁ, ainda no toque do botão (senão o navegador bloqueia por
+  // achar que é pop-up), mas deixa ela em branco. Só manda ela pro WhatsApp
+  // depois que a gravação terminar.
+  let aba = null;
+  try { aba = window.open('', '_blank'); } catch (e) { aba = null; }
+
+  const irProWhats = function() {
+    if (aba && !aba.closed) { try { aba.location.href = linkWhats; return; } catch (e) {} }
+    window.location.href = linkWhats;
+  };
+
+  // ESPERA a gravação terminar antes de sair pro WhatsApp. No celular, o
+  // WhatsApp abre por cima e congela a página — qualquer gravação que ainda
+  // estivesse a caminho morria no meio. Era por isso que o selo aparecia e
+  // sumia ao recarregar. Agora só saímos daqui depois que salvou.
+  registrarLembreteHoje(id, tech).then(function(salvou) {
+    if (salvou) { irProWhats(); return; }
+    // Não salvou: mostra o motivo e dá tempo de ler antes de abrir o WhatsApp
+    // (a mensagem pro cliente é mais importante que o selo, então não travamos).
+    setTimeout(irProWhats, 3000);
+  });
 }
 
 // Registra no Firestore/Planilha a data e hora em que o lembrete de hoje
@@ -4590,30 +4606,46 @@ async function registrarLembreteHoje(osId, tech) {
   // Mostra o selo "✅ Enviado" na hora, sem esperar a resposta do servidor.
   _marcarLembreteHojeNaTela(osId, { tecnico: tech, data: data, hora: hora });
 
-  await gasRequest({ action: 'logLembreteHoje', id: osId, tech, hora, data, tecnico: tech });
+  // Grava DIRETO no Firebase e espera confirmar. Esse selo é a única
+  // informação do app que existe só no Firebase (a Planilha não tem coluna
+  // pra ela), então não dá pra contar com a cópia da Planilha como rede de
+  // segurança — tem que dar certo aqui. Devolve true só se salvou mesmo.
+  const db = getFirestoreDb();
+  if (!db) {
+    showToast('Selo não salvo: Firebase indisponível nesta sessão.', 'error');
+    return false;
+  }
 
-  // CONFERÊNCIA: lê de volta no servidor pra ver se gravou mesmo.
-  // Esse selo é a única informação que existe SÓ no Firebase (a Planilha
-  // não tem coluna pra ela). Se a gravação falhar, antes ela falhava calada
-  // e o selo simplesmente sumia no próximo carregamento, sem ninguém saber
-  // por quê. Agora, se não gravar, aparece um aviso dizendo o motivo.
   try {
-    const db = getFirestoreDb();
-    if (!db) {
-      showToast('Selo não salvo: Firebase indisponível nesta sessão.', 'error');
-      return;
-    }
+    await db.collection('ordens_servico').doc(String(osId)).set({
+      lembreteHojeEnviado: { tecnico: tech, data: data, hora: hora },
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (e) {
+    const motivo = (e && (e.code || e.message)) ? (e.code || e.message) : 'erro desconhecido';
+    console.error('[Lembrete hoje] Falha ao gravar no Firebase:', e);
+    showToast('Selo não salvo (' + motivo + ')', 'error');
+    return false;
+  }
+
+  // Confere lendo de volta do servidor (não do cache do aparelho), pra ter
+  // certeza de que ficou gravado de verdade e não só localmente.
+  try {
     const snap = await db.collection('ordens_servico').doc(String(osId)).get({ source: 'server' });
     const salvo = snap.exists && snap.data() && snap.data().lembreteHojeEnviado;
     if (!salvo) {
       console.error('[Lembrete hoje] Gravou sem erro, mas o campo não está no servidor. OS:', osId);
       showToast('Atenção: o selo não ficou salvo no servidor.', 'error');
+      return false;
     }
   } catch (e) {
-    const motivo = e && (e.code || e.message) ? (e.code || e.message) : 'erro desconhecido';
-    console.error('[Lembrete hoje] Falha ao gravar/conferir no Firebase:', e);
-    showToast('Selo não salvo (' + motivo + ')', 'error');
+    const motivo = (e && (e.code || e.message)) ? (e.code || e.message) : 'erro desconhecido';
+    console.error('[Lembrete hoje] Não conseguiu conferir no servidor:', e);
+    showToast('Selo pode não ter salvo (' + motivo + ')', 'error');
+    return false;
   }
+
+  return true;
 }
 
 // Marca a OS como "lembrete enviado" nas listas que já estão carregadas na
