@@ -159,6 +159,10 @@
     cursor: pointer;
     accent-color: #c0392b;
   }
+  tbody tr.trocado-row { background: #eef1ff; }
+  tbody tr.trocado-row:hover { background: #e2e7ff; }
+  tbody tr.trocado-row td:first-child { box-shadow: inset 3px 0 0 #3730a3; }
+
   tbody tr.perdido-row { background: #fdecea !important; }
   tbody tr.perdido-row:hover { background: #fbdbd7 !important; }
   tbody tr.perdido-row td:nth-child(2) strong { color: #c0392b; }
@@ -580,6 +584,7 @@ dados.forEach(linha => {
 
   const tr = document.createElement('tr');
   if (isPendente) tr.classList.add('pendente-row');
+  if (substituicoes[nome]) tr.classList.add('trocado-row');
   tr.innerHTML = `
     <td style="text-align:center;"><input type="checkbox" class="chk-perdido" data-nome="${nome}"></td>
     <td><strong>${nome}</strong></td>
