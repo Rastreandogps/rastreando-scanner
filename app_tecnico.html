@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v53-selo-lembrete-nao-apaga';
+const BUILD_VERSION = '2026-09-22-v54-selo-avisa-se-nao-salvar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4591,6 +4591,29 @@ async function registrarLembreteHoje(osId, tech) {
   _marcarLembreteHojeNaTela(osId, { tecnico: tech, data: data, hora: hora });
 
   await gasRequest({ action: 'logLembreteHoje', id: osId, tech, hora, data, tecnico: tech });
+
+  // CONFERÊNCIA: lê de volta no servidor pra ver se gravou mesmo.
+  // Esse selo é a única informação que existe SÓ no Firebase (a Planilha
+  // não tem coluna pra ela). Se a gravação falhar, antes ela falhava calada
+  // e o selo simplesmente sumia no próximo carregamento, sem ninguém saber
+  // por quê. Agora, se não gravar, aparece um aviso dizendo o motivo.
+  try {
+    const db = getFirestoreDb();
+    if (!db) {
+      showToast('Selo não salvo: Firebase indisponível nesta sessão.', 'error');
+      return;
+    }
+    const snap = await db.collection('ordens_servico').doc(String(osId)).get({ source: 'server' });
+    const salvo = snap.exists && snap.data() && snap.data().lembreteHojeEnviado;
+    if (!salvo) {
+      console.error('[Lembrete hoje] Gravou sem erro, mas o campo não está no servidor. OS:', osId);
+      showToast('Atenção: o selo não ficou salvo no servidor.', 'error');
+    }
+  } catch (e) {
+    const motivo = e && (e.code || e.message) ? (e.code || e.message) : 'erro desconhecido';
+    console.error('[Lembrete hoje] Falha ao gravar/conferir no Firebase:', e);
+    showToast('Selo não salvo (' + motivo + ')', 'error');
+  }
 }
 
 // Marca a OS como "lembrete enviado" nas listas que já estão carregadas na
