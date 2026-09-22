@@ -1242,7 +1242,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v52-selo-lembrete-na-janelinha';
+const BUILD_VERSION = '2026-09-22-v53-selo-lembrete-nao-apaga';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2201,7 +2201,12 @@ async function sincronizarTudoParaFirestore() {
         obs:             o.obs || '',
         status:          o.status || 'ativo',
         msgLog:          o.msgLog || null,
-        lembreteHojeEnviado: o.lembreteHojeEnviado || null,
+        // ⚠️ NÃO gravar "lembreteHojeEnviado" aqui. Esta sincronização lê os
+        // dados da PLANILHA, e a Planilha não tem essa informação (ela só
+        // existe no Firebase). Como antes a gente mandava sempre "vazio",
+        // toda vez que o Admin entrava no app essa sincronização apagava o
+        // selo "✅ Enviado" de todas as ordens. Deixando o campo de fora,
+        // o valor que já está no Firebase é preservado.
         valorInstalacao: o.valorInstalacao || '',
         ordemDia:        o.ordemDia || 0,
         notaTecnico:     o.notaTecnico || ''
