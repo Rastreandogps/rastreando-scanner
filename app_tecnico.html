@@ -1281,7 +1281,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v59-endereco-linha-inteira';
+const BUILD_VERSION = '2026-09-23-v60-endereco-negrito';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -6113,7 +6113,7 @@ function _renderCardOSDetalhado(o) {
         (function() {
           const mapsLink = _mapsLinkPara(o.endereco);
           const linhaEndereco = (o.endereco || o.tipo)
-            ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>'
+            ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px;word-break:break-word;">📍 <span style="font-weight:700;color:var(--primary);">' + esc(_endParaExibir(o.endereco||'')) + '</span>' + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>'
             : '';
           const linhaContato = (o.telefone || mapsLink)
             ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
