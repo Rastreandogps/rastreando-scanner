@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v69-led-instalacao-verde';
+const BUILD_VERSION = '2026-09-23-v70-fix-dia-futuro-e-tela-pulando';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2587,8 +2587,8 @@ function calDayClick(ids, day, month, year) {
 function _destacarDiaTecnico(ids, comAnimacao) {
   _calDayAtivo = ids ? ids.join(',') : null;
 
-  // Mostrar cards abaixo do calendário
-  renderCalDayCards(ids);
+  // Mostrar cards abaixo do calendário (só rola a tela se foi clique de verdade)
+  renderCalDayCards(ids, !comAnimacao);
 
   // Destacar dia no calendário
   document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('cal-day-selected'));
@@ -2835,7 +2835,7 @@ function destacarCardsOrdens(ids) {
   }
 }
 
-function renderCalDayCards(ids) {
+function renderCalDayCards(ids, semScroll) {
   const wrap = document.getElementById('cal-day-cards');
   if (!wrap) return;
   _atualizarBotoesModoVisualizacao();
@@ -2903,8 +2903,11 @@ function renderCalDayCards(ids) {
     wrap.innerHTML = cabecalho + selecionadas.map(o => renderCardInline(o)).join('');
   }
 
-  // Scroll suave até os cards
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Só rola a tela quando foi o usuário que clicou num dia. Nas
+  // atualizações automáticas (a cada 30s e no tempo real do Firebase) não
+  // rola nada — era isso que fazia a tela "pular" sozinha pra cima
+  // enquanto o técnico estava lendo um card mais abaixo.
+  if (!semScroll) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Devolve a classe de cor do card conforme o tipo de serviço, pra a tela do
@@ -3353,12 +3356,11 @@ document.addEventListener('click', function(e) {
     e.stopPropagation();
     toggleCard(div.getAttribute('data-cid'));
   }
-  // Listener para dias do calendário do técnico
-  const calDay = e.target.closest('.cal-clickable');
-  if (calDay) {
-    const raw = calDay.getAttribute('data-ids');
-    if (raw) calDayClick(raw.split('|'), calDay.getAttribute('data-day'), calDay.getAttribute('data-month'), calDay.getAttribute('data-year'));
-  }
+  // (O clique num dia do calendário do técnico é tratado pelo onclick do
+  //  próprio dia, em renderTechCalendar. Antes existia também um listener
+  //  aqui, e o clique acabava contado DUAS vezes: a primeira selecionava o
+  //  dia e a segunda desfazia a seleção na hora — por isso, ao escolher uma
+  //  data futura, a tela "voltava" sozinha pro dia de hoje.)
   // Listener para dias do calendário do admin
   const calDayAdmin = e.target.closest('.cal-clickable-admin');
   if (calDayAdmin) {
@@ -6025,7 +6027,7 @@ function definirModoVisualizacaoOS(modo) {
   }
   // Re-renderiza o calendário do técnico, se estiver com cards na tela
   if (document.getElementById('cal-day-cards')) {
-    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null);
+    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, true);
   }
 }
 
@@ -7517,7 +7519,7 @@ async function salvarNotaCard(btn) {
     const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
     if (o) o.notaTecnico = nota;
     showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
-    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null);
+    renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, true);
   } else {
     showToast('Erro ao salvar nota.', 'error');
   }
