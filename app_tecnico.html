@@ -903,7 +903,7 @@
         <div class="form-field"><label>Telefone *</label><input type="tel" id="f-tel" placeholder="(21) 9 0000-0000"></div>
       </div>
       <div class="form-row single">
-        <div class="form-field"><label>Endereço *</label><input type="text" id="f-end" placeholder="Rua, número, bairro, cidade — ou cole um link de localização"><div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Em manutenção ou retirada, você pode colar aqui o link de localização do veículo no lugar do endereço. O card mostra o link como botão "Ao vivo".</div></div>
+        <div class="form-field"><label>Endereço *</label><input type="text" id="f-end" placeholder="Rua, número, bairro, cidade — ou cole um link de localização"><div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Em manutenção ou retirada, você pode colar aqui o link de localização do veículo no lugar do endereço. O card mostra um botão "Rastrear veículo" no lugar do Maps.</div></div>
       </div>
       <div class="form-row">
         <div class="form-field">
@@ -1119,7 +1119,7 @@
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
       <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="edit-nome"></div>
       <div class="form-field"><label>Telefone *</label><input type="tel" id="edit-tel"></div>
-      <div class="form-field"><label>Endereço *</label><input type="text" id="edit-end" placeholder="Rua, número, bairro, cidade — ou cole um link de localização"><div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Pode colar aqui o link de localização do veículo no lugar do endereço. O card passa a mostrar o botão "Ao vivo".</div></div>
+      <div class="form-field"><label>Endereço *</label><input type="text" id="edit-end" placeholder="Rua, número, bairro, cidade — ou cole um link de localização"><div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Pode colar aqui o link de localização do veículo no lugar do endereço. O card passa a mostrar um botão "Rastrear veículo" no lugar do Maps.</div></div>
       <div class="form-field">
         <label>Veículo(s)</label>
         <div id="edit-veiculos-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v65-aviso-link-tambem-na-edicao';
+const BUILD_VERSION = '2026-09-23-v66-botao-rastrear-veiculo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7733,9 +7733,9 @@ function _mapsLinkPara(endereco) {
   return 'https://www.google.com/maps/search/' + encodeURIComponent(endereco);
 }
 
-// ── Texto do botão: "Maps" pro endereço normal, "Ao vivo" pro link
+// ── Texto do botão: "Maps" pro endereço normal, "Rastrear veículo" pro link
 function _rotuloMapa(endereco) {
-  return _ehLinkLocalizacao(endereco) ? 'Ao vivo' : 'Maps';
+  return _ehLinkLocalizacao(endereco) ? 'Rastrear veículo' : 'Maps';
 }
 
 // ── Detecta se o texto é uma coordenada lat,lng
