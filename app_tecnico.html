@@ -218,12 +218,12 @@
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px;
     font-size: 11px; font-weight: 800; letter-spacing: .2px;
-    background: #eff6ff; color: #1d4ed8; border: 1px solid rgba(59,130,246,.35);
-    animation: tipo-led-halo-azul 1.6s ease-in-out infinite;
+    background: #ecfdf5; color: #047857; border: 1px solid rgba(16,185,129,.4);
+    animation: tipo-led-halo-verde 1.6s ease-in-out infinite;
   }
   .tipo-led .led {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-    background: #3b82f6;
+    background: #10b981;
     animation: tipo-led-pisca 1.6s ease-in-out infinite;
   }
   .tipo-led.tipo-manut {
@@ -241,9 +241,9 @@
     0%, 100% { opacity: 1;   transform: scale(1); }
     50%      { opacity: .2;  transform: scale(.8); }
   }
-  @keyframes tipo-led-halo-azul {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
-    50%      { box-shadow: 0 0 9px 1px rgba(59,130,246,.55); }
+  @keyframes tipo-led-halo-verde {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    50%      { box-shadow: 0 0 9px 1px rgba(16,185,129,.6); }
   }
   @keyframes tipo-led-halo-amarelo {
     0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v67-link-descrito-no-tecnico';
+const BUILD_VERSION = '2026-09-23-v69-led-instalacao-verde';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3075,19 +3075,20 @@ function renderCardInline(o) {
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
           '<span style="word-break:break-word;">' + esc(_endParaExibir(o.endereco)) + '</span>' +
         '</div>' +
-        (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:8px;">' +
-          '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
-          '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
-          '</div>' : '') +
       '</div>' +
       (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
         '<svg viewBox="0 0 24 24" width="13" height="13" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' + _rotuloMapa(o.endereco) + '</a>' : '') +
     '</div>' : '') +
+    // Observação — linha inteira, fora da coluna estreita do endereço
+    (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;">' +
+      '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+      '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;word-break:break-word;">' + esc(o.obs) + '</div></div>' +
+      '</div>' : '') +
     // Campo alterar data
     '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);margin-bottom:8px;">' +
       '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
-      '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
+      '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;min-width:0;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
       '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDateAndRefreshCal(this)">Salvar</button>' +
     '</div>' +
     // Nota do técnico — exibição
@@ -3097,9 +3098,9 @@ function renderCardInline(o) {
       '<input type="text" class="card-nota-input" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" ' +
         'placeholder="📝 Adicionar nota..." value="' + esc(_notaInfo(o.notaTecnico).texto) + '" ' +
         'onclick="event.stopPropagation()" ' +
-        'style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
-      '<button onclick="event.stopPropagation();salvarNotaCard(this)" style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
-      '<button onclick="event.stopPropagation();apagarNotaCard(this)" style="padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
+        'style="flex:1;min-width:0;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
+      '<button onclick="event.stopPropagation();salvarNotaCard(this)" style="flex-shrink:0;padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
+      '<button onclick="event.stopPropagation();apagarNotaCard(this)" style="flex-shrink:0;padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
     '</div>' +
     // Marcar como Concluído
     '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:4px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
@@ -3285,13 +3286,6 @@ function renderTechOSList() {
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;margin-top:1px;"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>' +
                     '<span style="word-break:break-word;">' + esc(_endParaExibir(o.endereco)) + '</span>' +
                   '</div>' +
-                  (o.obs
-                    ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:8px;">' +
-          '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
-          '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
-          '</div>'
-                    : '') +
                 '</div>' +
                 (mapsLink
                   ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:#4285F4;color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
@@ -3301,10 +3295,16 @@ function renderTechOSList() {
               '</div>' +
             '</div>'
           : '') +
+        // Observação — linha inteira, fora da coluna estreita do endereço
+        (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;">' +
+          '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
+          '<div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+          '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;word-break:break-word;">' + esc(o.obs) + '</div></div>' +
+          '</div>' : '') +
         // ── CAMPO ALTERAR DATA
         '<div onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:10px;padding:8px 10px;border:1px solid var(--border);">' +
           '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 ' + (hasDate ? 'Alterar:' : 'Definir data:') + '</span>' +
-          '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
+          '<input type="date" class="os-date-input card-date-input" value="' + dateVal + '" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="flex:1;min-width:0;border:none;background:transparent;font-size:13px;outline:none;padding:0;">' +
           '<button class="btn-save-date" onclick="event.stopPropagation();cardSaveDate(this)">Salvar</button>' +
         '</div>' +
         // Nota do técnico
@@ -3320,11 +3320,11 @@ function renderTechOSList() {
           '<input type="text" class="card-nota-input" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" ' +
             'placeholder="📝 Adicionar nota..." value="' + esc(_notaInfo(o.notaTecnico).texto) + '" ' +
             'onclick="event.stopPropagation()" ' +
-            'style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
+            'style="flex:1;min-width:0;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit;">' +
           '<button onclick="event.stopPropagation();salvarNotaCard(this)" ' +
-            'style="padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
+            'style="flex-shrink:0;padding:8px 12px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Salvar</button>' +
           '<button onclick="event.stopPropagation();apagarNotaCard(this)" ' +
-            'style="padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
+            'style="flex-shrink:0;padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
         '</div>' +
         '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
           '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
