@@ -1281,7 +1281,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-22-v58-cores-tipo-tambem-na-grade';
+const BUILD_VERSION = '2026-09-23-v59-endereco-linha-inteira';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -6106,17 +6106,26 @@ function _renderCardOSDetalhado(o) {
           ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
           : '') +
 
-        // ── Linha 3: endereço + tipo + Maps
+        // ── Linha 3: endereço (linha inteira só dele) e, embaixo, telefone + Maps
+        // Antes os três dividiam a MESMA linha, e o endereço ficava espremido
+        // numa coluna estreita, quebrando em um monte de linhinhas e
+        // esticando o card à toa. Agora o endereço usa toda a largura.
         (function() {
           const mapsLink = _mapsLinkPara(o.endereco);
-          return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
-            '<div style="font-size:11px;color:var(--muted);flex:1;min-width:0;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>' +
-
-            (o.telefone ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:2px;">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>' : '') +
-            (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
-              '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
-            '</a>' : '') +
-          '</div>';
+          const linhaEndereco = (o.endereco || o.tipo)
+            ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco||'')) + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>'
+            : '';
+          const linhaContato = (o.telefone || mapsLink)
+            ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
+                (o.telefone
+                  ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">📞 ' + esc(o.telefone) + '<button onclick="event.stopPropagation();copiarTexto(this.dataset.v,this)" data-v="' + esc(o.telefone||'') + '" title="Copiar telefone" style="padding:2px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;cursor:pointer;">📋</button></div>'
+                  : '<span></span>') +
+                (mapsLink ? '<a href="' + mapsLink + '" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:4px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">' +
+                  '<svg viewBox="0 0 24 24" width="11" height="11" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Maps' +
+                '</a>' : '') +
+              '</div>'
+            : '';
+          return linhaEndereco + linhaContato;
         })() +
 
         // ── Linha 4: log mensagem
