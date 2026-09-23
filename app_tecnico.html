@@ -210,6 +210,53 @@
   .os-mini { box-shadow: 0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,.12); }
   .os-mini.tipo-manut { box-shadow: 0 0 0 3px #f59e0b, 0 2px 6px rgba(0,0,0,.12); }
   .os-mini.tipo-remocao { box-shadow: 0 0 0 3px #ef4444, 0 2px 6px rgba(0,0,0,.12); }
+
+  /* Etiqueta do tipo de serviço com "LED" piscando, na cor do tipo.
+     A bolinha pisca e a etiqueta ganha um brilho que vai e volta — o texto
+     em si continua firme, pra não atrapalhar a leitura. */
+  .tipo-led {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 800; letter-spacing: .2px;
+    background: #eff6ff; color: #1d4ed8; border: 1px solid rgba(59,130,246,.35);
+    animation: tipo-led-halo-azul 1.6s ease-in-out infinite;
+  }
+  .tipo-led .led {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    background: #3b82f6;
+    animation: tipo-led-pisca 1.6s ease-in-out infinite;
+  }
+  .tipo-led.tipo-manut {
+    background: #fffbeb; color: #b45309; border-color: rgba(245,158,11,.4);
+    animation-name: tipo-led-halo-amarelo;
+  }
+  .tipo-led.tipo-manut .led { background: #f59e0b; }
+  .tipo-led.tipo-remocao {
+    background: #fef2f2; color: #b91c1c; border-color: rgba(239,68,68,.4);
+    animation-name: tipo-led-halo-vermelho;
+  }
+  .tipo-led.tipo-remocao .led { background: #ef4444; }
+
+  @keyframes tipo-led-pisca {
+    0%, 100% { opacity: 1;   transform: scale(1); }
+    50%      { opacity: .2;  transform: scale(.8); }
+  }
+  @keyframes tipo-led-halo-azul {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    50%      { box-shadow: 0 0 9px 1px rgba(59,130,246,.55); }
+  }
+  @keyframes tipo-led-halo-amarelo {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    50%      { box-shadow: 0 0 9px 1px rgba(245,158,11,.6); }
+  }
+  @keyframes tipo-led-halo-vermelho {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    50%      { box-shadow: 0 0 9px 1px rgba(239,68,68,.6); }
+  }
+  /* Respeita quem configurou o aparelho pra reduzir animações */
+  @media (prefers-reduced-motion: reduce) {
+    .tipo-led, .tipo-led .led { animation: none; }
+  }
   .os-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
   .os-client { font-size: 17px; font-weight: 700; color: var(--primary); }
   .os-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
@@ -1281,7 +1328,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v60-endereco-negrito';
+const BUILD_VERSION = '2026-09-23-v61-led-tipo-servico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2867,6 +2914,15 @@ function _classeTipoOS(o) {
   return '';
 }
 
+// Etiqueta do tipo de serviço com a luzinha piscando (LED), na cor do tipo.
+// Usada no card do Admin e nos cards do Técnico, pra dar pra bater o olho e
+// saber na hora se é instalação, manutenção ou retirada.
+function _badgeTipoLed(o) {
+  const t = (o && o.tipo) ? String(o.tipo).trim() : '';
+  if (!t) return '';
+  return '<span class="tipo-led' + _classeTipoOS(o) + '"><span class="led"></span>' + esc(t) + '</span>';
+}
+
 // A mesma cor, em números (usada quando o destaque do dia precisa repintar
 // o brilho do card sem perder a cor do tipo).
 function _corTipoRGB(o) {
@@ -2934,7 +2990,7 @@ function renderCardInline(o) {
     cardBg      = hasDate ? 'white' : '#fffbeb';
     tipoTagBg   = '#eff6ff'; tipoTagFg = 'var(--accent)';
   }
-  const tipoTag = o.tipo ? '<span style="background:' + tipoTagBg + ';color:' + tipoTagFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
+  const tipoTag = _badgeTipoLed(o);
   const badgeHtml = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
     (hasDate
       ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
@@ -3128,7 +3184,7 @@ function renderTechOSList() {
     borderColor = hasDate ? 'var(--accent)' : 'var(--accent2)';
     cardBg = hasDate ? 'white' : '#fffbeb';
   }
-    const tipoTag   = o.tipo ? '<span style="background:#eff6ff;color:var(--accent);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">' + esc(o.tipo) + '</span>' : '';
+    const tipoTag   = _badgeTipoLed(o);
     const badgeHtml  = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">' +
       (hasDate
         ? '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">Agendado</span>'
@@ -6113,7 +6169,7 @@ function _renderCardOSDetalhado(o) {
         (function() {
           const mapsLink = _mapsLinkPara(o.endereco);
           const linhaEndereco = (o.endereco || o.tipo)
-            ? '<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px;word-break:break-word;">📍 <span style="font-weight:700;color:var(--primary);">' + esc(_endParaExibir(o.endereco||'')) + '</span>' + (o.tipo ? ' · ' + esc(o.tipo) : '') + '</div>'
+            ? '<div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:6px;word-break:break-word;">📍 <span style="font-weight:700;color:var(--primary);">' + esc(_endParaExibir(o.endereco||'')) + '</span>' + (o.tipo ? ' ' + _badgeTipoLed(o) : '') + '</div>'
             : '';
           const linhaContato = (o.telefone || mapsLink)
             ? '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">' +
