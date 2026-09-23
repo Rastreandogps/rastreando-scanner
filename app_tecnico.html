@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-23-v70-fix-dia-futuro-e-tela-pulando';
+const BUILD_VERSION = '2026-09-23-v71-tela-parada-tambem-no-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2197,7 +2197,7 @@ function agendarAtualizacaoAdmin() {
         // assim que os dados novos chegarem, recalculando quem pertence a esse
         // dia com os dados atualizados (sem isso, uma OS remarcada pelo cliente
         // continuava aparecendo "grudada" no dia antigo até recarregar a página)
-        if (diaSelecionadoAntesData) _destacarDiaAdmin(_idsDoDiaAdmin(diaSelecionadoAntesData));
+        if (diaSelecionadoAntesData) _destacarDiaAdmin(_idsDoDiaAdmin(diaSelecionadoAntesData), true);
       });
     }
     else {
@@ -2630,7 +2630,7 @@ function _destacarDiaTecnico(ids, comAnimacao) {
 // mudança em qualquer OS de qualquer técnico fazia a tela do admin voltar sozinha
 // para "Hoje" e perder o dia que estava selecionado, deixando o card visível mas
 // sem destaque (parecendo "apagado").
-function _destacarDiaAdmin(ids) {
+function _destacarDiaAdmin(ids, semScroll) {
   _calDayAtivo = ids.join(',');
   document.querySelectorAll('.cal-clickable-admin').forEach(function(d) {
     const cellIds = (d.getAttribute('data-admin-ids') || '').split('|').filter(Boolean);
@@ -2646,7 +2646,7 @@ function _destacarDiaAdmin(ids) {
     }
   });
   // Recarregar lista com as OS do dia selecionado
-  _renderAdminListaPorIds(ids);
+  _renderAdminListaPorIds(ids, semScroll);
   // Destacar cards na lista (funciona tanto no modo Lista quanto na Grade)
   const cards = document.querySelectorAll('#admin-tech-os-list [data-os-id]');
   let primeiro = null;
@@ -2793,7 +2793,7 @@ function limparDestaqueCalendario() {
     c.style.userSelect    = 'auto';
   });
   // Recarregar lista com OS de hoje
-  if (adminTechSelecionado) _renderAdminListaPorIds(null);
+  if (adminTechSelecionado) _renderAdminListaPorIds(null, true);
   if (_adminVendoTodos) _renderAdminListaPorIdsTodos(null);
 }
 
@@ -6023,7 +6023,7 @@ function definirModoVisualizacaoOS(modo) {
   // Re-renderiza a lista do admin já carregada, sem precisar buscar de novo
   if (adminTechSelecionado) {
     const ids = _calDayAtivoDataAdmin ? _idsDoDiaAdmin(_calDayAtivoDataAdmin) : null;
-    _renderAdminListaPorIds(ids);
+    _renderAdminListaPorIds(ids, true);
   }
   // Re-renderiza o calendário do técnico, se estiver com cards na tela
   if (document.getElementById('cal-day-cards')) {
