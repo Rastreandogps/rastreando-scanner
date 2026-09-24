@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v72-remocoes-cancelamento';
+const BUILD_VERSION = '2026-09-24-v73-remocoes-veiculos-livres';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7294,9 +7294,12 @@ function _cardRemocao(r) {
   const veiculosHtml = (r.veiculos || []).map(function(v, i) {
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + '</span>';
   }).join('') || '<span style="color:var(--muted);font-size:12px;">Não informado</span>';
+  const qtdLista = (r.veiculos || []).length;
   const tipoTxt = r.veiculosTipo === 'todos'
-    ? 'Todos os veículos'
-    : 'Só parte dos veículos' + (r.totalVeiculosAssinatura ? ' (a assinatura tem ' + r.totalVeiculosAssinatura + ')' : '');
+    ? 'Todos os veículos da assinatura (' + qtdLista + ')'
+    : r.veiculosTipo === 'alguns'
+      ? 'Parte dos veículos: ' + qtdLista + ' de ' + r.totalVeiculosAssinatura + ' da assinatura'
+      : qtdLista + (qtdLista === 1 ? ' veículo informado' : ' veículos informados') + ' (valor da assinatura fora da tabela — confira quantos ela tem)';
   const optsTec = TECH_NAMES.map(function(n) {
     return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
   }).join('');
@@ -7377,7 +7380,7 @@ async function criarOSRemocao(id) {
   }).join(' || ');
   const partesObs = ['REMOÇÃO (cancelamento) — protocolo ' + r.id];
   if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
-  partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar só os veículos listados');
+  partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar os veículos listados');
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
   if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
   if (r.motivoTipo || r.motivo) partesObs.push('Motivo: ' + [r.motivoTipo, r.motivo].filter(Boolean).join(' — '));
