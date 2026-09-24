@@ -44,6 +44,9 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
 .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;width:max-content}
 .stepper button{background:#fff;color:var(--ink);width:48px;height:46px;padding:0;font-size:22px;border-radius:0}
 .stepper span{min-width:48px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.item-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.item-linha:last-child{border-bottom:none}
+.item-linha b{display:block;font-size:15px}.item-linha small{color:var(--muted);font-size:12px}
 .check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px}
 .check input{width:20px;height:20px;margin-top:1px;accent-color:var(--ink)}
 .cliente{font-size:18px;font-weight:800;margin-bottom:2px}
@@ -113,10 +116,16 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
     <section id="pAcao" class="panel hidden">
       <h2>O que aconteceu?</h2>
       <div class="seg acao" id="segAcao"><button data-v="retirar" class="on">Retirada</button><button data-v="adicionar">Instalação</button></div>
-      <label>Tipo de rastreador</label>
-      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button><button data-v="tag">Tag (R$ 9,90)</button><button data-v="livre">Valor livre</button></div>
-      <div id="boxQtd"><label id="lblQtd">Quantidade de veículos</label>
-      <div class="stepper"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div></div>
+      <label>Tipo</label>
+      <div class="seg" id="segTipo"><button data-v="itens" class="on">Rastreadores e tags</button><button data-v="livre">Valor livre</button></div>
+      <div id="boxQtd" style="margin-top:8px">
+        <div class="item-linha"><div><b>Com bloqueio</b><small>R$ 59,90 (R$ 54,90 em dia)</small></div>
+          <div class="stepper"><button data-menos="com" aria-label="Diminuir com bloqueio">−</button><span id="q-com">1</span><button data-mais="com" aria-label="Aumentar com bloqueio">+</button></div></div>
+        <div class="item-linha"><div><b>Sem bloqueio</b><small>R$ 39,90</small></div>
+          <div class="stepper"><button data-menos="sem" aria-label="Diminuir sem bloqueio">−</button><span id="q-sem">0</span><button data-mais="sem" aria-label="Aumentar sem bloqueio">+</button></div></div>
+        <div class="item-linha"><div><b>Tag</b><small>R$ 9,90 · sem proporcional</small></div>
+          <div class="stepper"><button data-menos="tag" aria-label="Diminuir tag">−</button><span id="q-tag">0</span><button data-mais="tag" aria-label="Aumentar tag">+</button></div></div>
+      </div>
       <div id="boxValor" class="hidden"><label for="valorLivre">Valor (R$)</label><input id="valorLivre" type="text" inputmode="decimal" placeholder="0,00"></div>
       <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
       <label id="boxTodas" class="check"><input id="todas" type="checkbox"><span>Aplicar em todos os boletos pendentes, inclusive os que vencem em até 10 dias</span></label>
@@ -168,7 +177,7 @@ const msgErro = (e) => (e && e.message ? e.message.replace(/^.*?:\s*/, "") : "Er
 function erro(el, e) { el.textContent = typeof e === "string" ? e : msgErro(e); show(el, true); }
 function carregando(btn, on, txt) { btn.disabled = on; btn.innerHTML = on ? '<span class="spin"></span>' : txt; }
 
-const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "com", qtd: 1, excluir: false };
+const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "itens", itens: { com: 1, sem: 0, tag: 0 }, excluir: false };
 
 onAuthStateChanged(auth, (u) => { show($("tLogin"), !u); show($("tApp"), !!u); show($("sair"), !!u); });
 try { const em = localStorage.getItem("ajuste_email"); if (em) $("email").value = em; } catch {}
@@ -280,27 +289,32 @@ function seg(id, key, cb) {
   }));
 }
 function ajustarCampos() {
-  const livre = st.tipo === "livre", tag = st.tipo === "tag";
+  const livre = st.tipo === "livre";
   show($("boxQtd"), !livre); show($("boxValor"), livre);
-  show($("boxData"), st.acao === "adicionar" && !livre && !tag);
-  show($("boxTodas"), st.acao === "retirar" || livre || tag);
-  $("lblQtd").textContent = tag ? "Quantidade de tags" : "Quantidade de veículos";
+  show($("boxData"), st.acao === "adicionar" && !livre);
+  show($("boxTodas"), st.acao === "retirar" || livre);
   const [bR, bA] = $("segAcao").querySelectorAll("button");
-  bR.textContent = livre ? "Diminuir valor" : tag ? "Remover tag" : "Retirada";
-  bA.textContent = livre ? "Aumentar valor" : tag ? "Adicionar tag" : "Instalação";
+  bR.textContent = livre ? "Diminuir valor" : "Retirada";
+  bA.textContent = livre ? "Aumentar valor" : "Instalação";
 }
 seg("segAcao", "acao", ajustarCampos);
 seg("segTipo", "tipo", ajustarCampos);
 $("valorLivre").oninput = () => show($("pPrev"), false);
 $("dataInst").value = hoje();
-$("menos").onclick = () => { st.qtd = Math.max(1, st.qtd - 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
-$("mais").onclick = () => { st.qtd = Math.min(50, st.qtd + 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
+document.querySelectorAll("[data-menos],[data-mais]").forEach((b) => {
+  b.onclick = () => {
+    const k = b.dataset.menos || b.dataset.mais;
+    st.itens[k] = Math.max(0, Math.min(50, st.itens[k] + (b.dataset.mais ? 1 : -1)));
+    $("q-" + k).textContent = st.itens[k];
+    show($("pPrev"), false);
+  };
+});
 
 function params(dryRun) {
   if (st.excluir) return { subscriptionId: st.subId, acao: "excluir", excluirFaturas: $("excluirFaturas").checked, dryRun };
-  return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, quantidade: st.qtd,
-    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre" || st.tipo === "tag") && $("todas").checked,
-    dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" && st.tipo !== "tag" ? $("dataInst").value : null,
+  return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, itens: st.tipo === "livre" ? null : { ...st.itens },
+    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre") && $("todas").checked,
+    dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" ? $("dataInst").value : null,
     valor: st.tipo === "livre" ? ((v) => (v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v))($("valorLivre").value.trim()) : null, dryRun };
 }
 
@@ -341,7 +355,7 @@ function renderPrev(p) {
   if (p.proporcional) {
     const pr = p.proporcional;
     h += pr.valorC > 0
-      ? `<p class="info">Proporcional: ${pr.dias} dias até ${dt(pr.vencimento)} = <b>${c(pr.valorC)}</b> (sem desconto).</p>`
+      ? `<p class="info">No boleto de ${dt(pr.vencimento)} (${pr.dias} dias): <b>${c(pr.valorC)}</b>${pr.tagC ? ` = ${pr.veicC ? `${c(pr.veicC)} proporcional dos rastreadores + ` : ""}${c(pr.tagC)} de tag (integral)` : ""} (sem desconto).</p>`
       : `<p class="info">Instalação a ${pr.dias} dia(s) do vencimento de ${dt(pr.vencimento)}: sem cobrança neste mês.</p>`;
   }
   if (p.boletos.length) {
