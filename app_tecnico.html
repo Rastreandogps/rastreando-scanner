@@ -1390,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v78-video-acesso';
+const BUILD_VERSION = '2026-09-24-v80-reconectar-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1490,6 +1490,7 @@ async function confirmarLoginAdmin() {
   function entrarComoAdmin() {
     if (_modoTrocarUsuario) { fecharModalAdmin(); _sairDeVerdade(); showToast('Admin desconectado. Agora é só entrar com outro usuário.', ''); return; }
     fecharModalAdmin();
+    _reconexaoPedida = false;
     _entrarAdminDesbloqueado();
     setTimeout(oferecerBiometria, 900);
   }
@@ -1679,6 +1680,25 @@ function trancarAdmin() {
   mostrarTelaBloqueio();
 }
 
+// O login do admin no Firebase caiu (ex.: senha trocada em outro aparelho).
+// Sem ele o tempo real não funciona e o calendário fica recarregando pela Planilha.
+let _reconexaoPedida = false;
+function _pedirReconexaoAdmin() {
+  if (_reconexaoPedida || currentRole !== 'admin') return;
+  _reconexaoPedida = true;
+  abrirModalAdmin();
+  document.querySelector('#modal-admin-login .modal-sub').textContent = 'A conexão do admin expirou neste aparelho (senha trocada?). Digite a senha uma vez para reconectar.';
+}
+
+async function _conferirLoginFirebaseAdmin() {
+  if (!auth || currentRole !== 'admin') return;
+  const u = await _esperarUsuarioFirebase(4000);
+  if (!u || String(u.email || '').toLowerCase() !== ADMIN_EMAIL) { _pedirReconexaoAdmin(); return; }
+  try { await u.getIdToken(true); } catch (e) {
+    if (e && e.code !== 'auth/network-request-failed') _pedirReconexaoAdmin();
+  }
+}
+
 function _entrarAdminDesbloqueado() {
   localStorage.removeItem('app_tecnico_trancado');
   localStorage.removeItem('app_tecnico_bio_falhou');
@@ -1698,6 +1718,8 @@ async function entrarComBiometria() {
   try {
     await _verificarBiometria();
     _entrarAdminDesbloqueado();
+    _reconexaoPedida = false;
+    setTimeout(_conferirLoginFirebaseAdmin, 1200);
   } catch (e) {
     localStorage.setItem('app_tecnico_bio_falhou', '1');
     erro.textContent = (e && e.name === 'NotAllowedError')
@@ -2508,6 +2530,7 @@ function iniciarListenerOSAdmin() {
     agendarAtualizacaoAdmin();
   }, function(err) {
     console.warn('[Firestore] Tempo real do admin caiu, seguindo só com a atualização a cada 30s:', err);
+    if (err && err.code === 'permission-denied') _pedirReconexaoAdmin();
   });
 }
 
@@ -7001,8 +7024,6 @@ function enviarAcessoCliente() {
   if (!tel) { showToast('Telefone do cliente não encontrado', 'error'); return; }
 
   const msg =
-    '🎥 *Veja como usar o aplicativo:*\n' +
-    'https://vimeo.com/1229911607\n\n' +
     '🔐 *ACESSO À PLATAFORMA – RASTREANDO GPS*\n\n' +
     '👤 *Login:* ' + login + '\n' +
     '🔑 *Senha:* 123456\n\n' +
@@ -7012,6 +7033,8 @@ function enviarAcessoCliente() {
     'https://play.google.com/store/apps/details?id=br.com.rastreandogps2\n\n' +
     '💻 *Acesso pelo site:*\n' +
     'http://web.nobgps.com.br\n\n' +
+    '🎥 *Vídeo explicando como usar:*\n' +
+    'https://vimeo.com/1229911607\n\n' +
     'Qualquer dúvida, estou à disposição! 🚀';
 
   fecharModalAcesso();
@@ -9132,7 +9155,7 @@ setTimeout(carregarLeaflet, 5000);
         currentRole = sess.role;
         // Renovar sessão a cada abertura para nunca expirar em uso regular
         localStorage.setItem('session', JSON.stringify({ user: sess.user, role: sess.role, ts: Date.now() }));
-        if (sess.role === 'admin') showAdminScreen();
+        if (sess.role === 'admin') { showAdminScreen(); setTimeout(_conferirLoginFirebaseAdmin, 1500); }
         else showTechScreen();
         return;
       }
