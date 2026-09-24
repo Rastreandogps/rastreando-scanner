@@ -121,6 +121,8 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
       <div id="boxQtd" style="margin-top:8px">
         <div class="item-linha"><div><b>Com bloqueio</b><small>R$ 59,90 (R$ 54,90 em dia)</small></div>
           <div class="stepper"><button data-menos="com" aria-label="Diminuir com bloqueio">−</button><span id="q-com">1</span><button data-mais="com" aria-label="Aumentar com bloqueio">+</button></div></div>
+        <div class="item-linha hidden" id="linhaAntigo"><div><b>Com bloqueio (antigo)</b><small>R$ 54,90 (R$ 49,90 em dia)</small></div>
+          <div class="stepper"><button data-menos="comAntigo" aria-label="Diminuir com bloqueio antigo">−</button><span id="q-comAntigo">0</span><button data-mais="comAntigo" aria-label="Aumentar com bloqueio antigo">+</button></div></div>
         <div class="item-linha"><div><b>Sem bloqueio</b><small>R$ 39,90</small></div>
           <div class="stepper"><button data-menos="sem" aria-label="Diminuir sem bloqueio">−</button><span id="q-sem">0</span><button data-mais="sem" aria-label="Aumentar sem bloqueio">+</button></div></div>
         <div class="item-linha"><div><b>Tag</b><small>R$ 9,90 · sem proporcional</small></div>
@@ -178,7 +180,7 @@ const msgErro = (e) => (e && e.message ? e.message.replace(/^.*?:\s*/, "") : "Er
 function erro(el, e) { el.textContent = typeof e === "string" ? e : msgErro(e); show(el, true); }
 function carregando(btn, on, txt) { btn.disabled = on; btn.innerHTML = on ? '<span class="spin"></span>' : txt; }
 
-const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "itens", itens: { com: 1, sem: 0, tag: 0 }, excluir: false };
+const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "itens", itens: { com: 1, comAntigo: 0, sem: 0, tag: 0 }, excluir: false };
 
 onAuthStateChanged(auth, (u) => { show($("tLogin"), !u); show($("tApp"), !!u); show($("sair"), !!u); });
 try { const em = localStorage.getItem("ajuste_email"); if (em) $("email").value = em; } catch {}
@@ -264,7 +266,7 @@ function renderCliente() {
     for (const s of cl.assinaturas) {
       const v = s.veiculos;
       const ve = v.confere
-        ? `<span class="tag">${v.com} com bloqueio</span><span class="tag">${v.sem} sem bloqueio</span>${v.tag ? `<span class="tag">${v.tag} ${v.tag === 1 ? "tag" : "tags"}</span>` : ""}`
+        ? `<span class="tag">${v.com - (v.comAntigo || 0)} com bloqueio</span>${v.comAntigo ? `<span class="tag">${v.comAntigo} com bloqueio (antigo)</span>` : ""}<span class="tag">${v.sem} sem bloqueio</span>${v.tag ? `<span class="tag">${v.tag} ${v.tag === 1 ? "tag" : "tags"}</span>` : ""}`
         : `<span class="tag warn">Valor fora da tabela</span>`;
       const pend = s.pendentes.length
         ? `<div class="meta">Boletos pendentes: ${s.pendentes.map((p) => `${dt(p.vencimento)} (${brl(p.valor)})`).join(", ")}</div>` : "";
@@ -281,6 +283,7 @@ function renderCliente() {
   show($("pCliente"), true);
   show($("pAcao"), !!st.subId);
   show($("pPrev"), false);
+  ajustarCampos();
 }
 
 function seg(id, key, cb) {
@@ -289,7 +292,17 @@ function seg(id, key, cb) {
     b.classList.add("on"); st[key] = b.dataset.v; cb && cb(); show($("pPrev"), false);
   }));
 }
+function subSelecionada() {
+  for (const cl of st.clientes || []) for (const s of cl.assinaturas || []) if (s.id === st.subId) return s;
+  return null;
+}
 function ajustarCampos() {
+  // contador do preço antigo: só em retirada e só se o cliente tiver veículo nesse preço
+  const sub = subSelecionada();
+  const temAntigo = !!(sub && sub.veiculos && sub.veiculos.comAntigo > 0);
+  const mostrarAntigo = st.acao === "retirar" && temAntigo;
+  show($("linhaAntigo"), mostrarAntigo);
+  if (!mostrarAntigo && st.itens.comAntigo) { st.itens.comAntigo = 0; $("q-comAntigo").textContent = "0"; }
   if (typeof resumoItens === "function" && $("resumoItens")) resumoItens();
   const livre = st.tipo === "livre";
   show($("boxQtd"), !livre); show($("boxValor"), livre);
@@ -315,6 +328,7 @@ document.querySelectorAll("[data-menos],[data-mais]").forEach((b) => {
 function resumoItens() {
   const i = st.itens, partes = [];
   if (i.com) partes.push(`${i.com} com bloqueio`);
+  if (i.comAntigo) partes.push(`${i.comAntigo} com bloqueio (antigo)`);
   if (i.sem) partes.push(`${i.sem} sem bloqueio`);
   if (i.tag) partes.push(`${i.tag} ${i.tag === 1 ? "tag" : "tags"}`);
   $("resumoItens").innerHTML = partes.length
