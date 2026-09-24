@@ -177,11 +177,7 @@ textarea{resize:vertical;min-height:80px}
 
       <div class="card">
         <div class="card-titulo">Veículos para retirar o rastreador</div>
-        <div class="seg" id="seg-veic">
-          <button type="button" data-v="todos" class="ativo">Todos os veículos</button>
-          <button type="button" data-v="alguns">Só alguns</button>
-        </div>
-        <p class="muted" id="info-veic" style="margin:10px 0 14px"></p>
+        <p class="muted" id="info-veic" style="margin:0 0 14px"></p>
         <div id="lista-veic"></div>
         <button type="button" class="btn btn-sec" id="add-veic" style="margin-top:4px">+ Adicionar veículo</button>
       </div>
@@ -271,7 +267,7 @@ textarea{resize:vertical;min-height:80px}
 (function () {
   'use strict';
   var URL_FN = 'https://southamerica-east1-rastreando-assinaturas.cloudfunctions.net/cancelamento';
-  var S = { sessao: null, r: null, veiculosTipo: 'todos', veiculos: [], periodo: '' };
+  var S = { sessao: null, r: null, veiculos: [], periodo: '' };
   var $ = function (id) { return document.getElementById(id); };
   var DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
@@ -324,7 +320,7 @@ textarea{resize:vertical;min-height:80px}
   }
 
   function recomecar() {
-    S = { sessao: null, r: null, veiculosTipo: 'todos', veiculos: [], periodo: '' };
+    S = { sessao: null, r: null, veiculos: [], periodo: '' };
     $('form-retirada').reset();
     $('cpf').value = ''; $('cpf-erro').textContent = '';
     setPeriodo(''); $('data-erro').textContent = ''; $('cep-status').textContent = '';
@@ -461,26 +457,16 @@ textarea{resize:vertical;min-height:80px}
     $('f-nome').value = r.cliente.nome || '';
     $('f-tel').value = r.cliente.telefone || '';
     $('campo-tel-cad').style.display = r.cliente.telefone ? '' : 'none';
-    if (!S.veiculos.length) {
-      var n = r.totalVeiculos && r.totalVeiculos > 0 ? Math.min(r.totalVeiculos, 30) : 1;
-      for (var i = 0; i < n; i++) S.veiculos.push({ modelo: '', placa: '' });
-    }
-    setTipoVeic(S.veiculosTipo);
+    if (!S.veiculos.length) S.veiculos.push({ modelo: '', placa: '' });
+    var tot = r.totalVeiculos;
+    $('info-veic').textContent = (tot ? 'Sua assinatura tem ' + tot + (tot === 1 ? ' veículo. ' : ' veículos. ') : '') +
+      'Informe o modelo e a placa de cada veículo que vai ter o rastreador retirado. Para mais de um, use "+ Adicionar veículo".';
+    renderVeiculos();
     var a = r.agenda; $('f-data').min = a.min; $('f-data').max = a.max;
     mostrar('tela-form', 3);
   }
   $('voltar-resumo').addEventListener('click', function () { mostrar('tela-resumo', 2); });
 
-  function setTipoVeic(t) {
-    S.veiculosTipo = t;
-    document.querySelectorAll('#seg-veic button').forEach(function (b) { b.classList.toggle('ativo', b.getAttribute('data-v') === t); });
-    var tot = S.r.totalVeiculos;
-    var info = tot ? 'Sua assinatura tem ' + tot + (tot === 1 ? ' veículo. ' : ' veículos. ') : '';
-    info += t === 'todos' ? 'Informe o modelo e a placa de cada um.' : 'Informe o modelo e a placa só dos veículos que vão ter o rastreador retirado.';
-    $('info-veic').textContent = info;
-    renderVeiculos();
-  }
-  document.querySelectorAll('#seg-veic button').forEach(function (b) { b.addEventListener('click', function () { setTipoVeic(b.getAttribute('data-v')); }); });
 
   function renderVeiculos() {
     var box = $('lista-veic');
@@ -597,7 +583,6 @@ textarea{resize:vertical;min-height:80px}
     if (!validar()) return;
     var btn = $('btn-enviar'); carregando(btn, true, 'Enviando...');
     var formulario = {
-      veiculosTipo: S.veiculosTipo,
       veiculos: S.veiculos.map(function (v) { return { modelo: String(v.modelo).trim(), placa: v.placa }; }),
       outroTelefone: soDig($('f-outro').value),
       cep: soDig($('f-cep').value), rua: $('f-rua').value, numero: $('f-num').value, complemento: $('f-comp').value,
