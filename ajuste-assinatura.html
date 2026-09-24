@@ -130,7 +130,7 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
         <p id="resumoItens" class="info" style="margin-top:10px"></p>
       </div>
       <div id="boxValor" class="hidden"><label for="valorLivre">Valor (R$)</label><input id="valorLivre" type="text" inputmode="decimal" placeholder="0,00"></div>
-      <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
+      <div id="boxData" class="hidden"><label for="dataInst" id="lblData">Data da instalação</label><input id="dataInst" type="date"></div>
       <label id="boxTodas" class="check"><input id="todas" type="checkbox"><span>Aplicar em todos os boletos pendentes, inclusive os que vencem em até 10 dias</span></label>
       <div style="margin-top:16px"><button id="calcular" class="btn" style="width:100%">Calcular</button></div>
       <div id="calcErr" class="err hidden"></div>
@@ -306,8 +306,9 @@ function ajustarCampos() {
   if (typeof resumoItens === "function" && $("resumoItens")) resumoItens();
   const livre = st.tipo === "livre";
   show($("boxQtd"), !livre); show($("boxValor"), livre);
-  show($("boxData"), st.acao === "adicionar" && !livre);
-  show($("boxTodas"), st.acao === "retirar" || livre);
+  show($("boxData"), !livre);
+  $("lblData").textContent = st.acao === "retirar" ? "Data da retirada" : "Data da instalação";
+  show($("boxTodas"), livre); // na retirada de itens o cálculo é pelo uso: não se aplica
   const [bR, bA] = $("segAcao").querySelectorAll("button");
   bR.textContent = livre ? "Diminuir valor" : "Retirada";
   bA.textContent = livre ? "Aumentar valor" : "Instalação";
@@ -340,8 +341,9 @@ resumoItens();
 function params(dryRun) {
   if (st.excluir) return { subscriptionId: st.subId, acao: "excluir", excluirFaturas: $("excluirFaturas").checked, dryRun };
   return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, itens: st.tipo === "livre" ? null : { ...st.itens },
-    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre") && $("todas").checked,
+    aplicarTodas: st.tipo === "livre" && $("todas").checked,
     dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" ? $("dataInst").value : null,
+    dataRetirada: st.acao === "retirar" && st.tipo !== "livre" ? $("dataInst").value : null,
     valor: st.tipo === "livre" ? ((v) => (v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v))($("valorLivre").value.trim()) : null, dryRun };
 }
 
@@ -379,7 +381,12 @@ function renderPrev(p) {
   </div>`;
   if (p.valorLivreC) h += `<p class="info">${p.acao === "retirar" ? "Diminuindo" : "Aumentando"} <b>${c(p.valorLivreC)}</b> na assinatura.</p>`;
   if (p.assinatura.descricao) h += `<p class="info">Nova descrição: <b>${esc(p.assinatura.descricao)}</b></p>`;
-  if (p.proporcional) {
+  if (p.proporcional && p.proporcional.tipo === "uso") {
+    const pr = p.proporcional;
+    h += pr.valorC > 0
+      ? `<p class="info">Uso de <b>${pr.dias} dia(s)</b> (${dt(pr.inicio)} a ${dt(pr.dataRetirada)}) cobrado no boleto de ${dt(pr.vencimento)}: <b>${c(pr.valorC)}</b> (sem desconto). Dali em diante, os itens saem por inteiro.</p>`
+      : `<p class="info">Retirada no dia do vencimento: nada a cobrar de uso. Os itens saem por inteiro a partir do boleto de ${dt(pr.vencimento)}.</p>`;
+  } else if (p.proporcional) {
     const pr = p.proporcional;
     h += pr.valorC > 0
       ? `<p class="info">No boleto de ${dt(pr.vencimento)} (${pr.dias} dias): <b>${c(pr.valorC)}</b>${pr.tagC ? ` = ${pr.veicC ? `${c(pr.veicC)} proporcional dos rastreadores + ` : ""}${c(pr.tagC)} de tag (integral)` : ""} (sem desconto).</p>`
