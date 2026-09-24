@@ -1390,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v83-mensagem-acesso-curta';
+const BUILD_VERSION = '2026-09-24-v85-links-cliente-dominio';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1400,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (v) v.textContent = BUILD_VERSION;
 });
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
-const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
+const URL_REAGENDAR = 'https://app.rastreandogpsbr.com.br/reagendar.html';
 // (senha reserva do admin removida do código — sem internet, use a biometria)
 const ADMIN_EMAIL = 'admin@rastreandogpsbr.com.br';
 
@@ -7052,7 +7052,7 @@ function enviarAcessoCliente() {
     '👤 *Login:* ' + login + '\n' +
     '🔑 *Senha:* 123456\n\n' +
     '📲 *Baixe o aplicativo e veja como usar:*\n' +
-    'https://rastreandogps.github.io/rastreando-scanner/tutorial.html\n\n' +
+    'https://app.rastreandogpsbr.com.br/tutorial.html\n\n' +
     'Qualquer dúvida, é só chamar aqui. Boa viagem! 🚀';
 
   fecharModalAcesso();
