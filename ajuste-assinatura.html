@@ -125,6 +125,7 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
           <div class="stepper"><button data-menos="sem" aria-label="Diminuir sem bloqueio">−</button><span id="q-sem">0</span><button data-mais="sem" aria-label="Aumentar sem bloqueio">+</button></div></div>
         <div class="item-linha"><div><b>Tag</b><small>R$ 9,90 · sem proporcional</small></div>
           <div class="stepper"><button data-menos="tag" aria-label="Diminuir tag">−</button><span id="q-tag">0</span><button data-mais="tag" aria-label="Aumentar tag">+</button></div></div>
+        <p id="resumoItens" class="info" style="margin-top:10px"></p>
       </div>
       <div id="boxValor" class="hidden"><label for="valorLivre">Valor (R$)</label><input id="valorLivre" type="text" inputmode="decimal" placeholder="0,00"></div>
       <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
@@ -289,6 +290,7 @@ function seg(id, key, cb) {
   }));
 }
 function ajustarCampos() {
+  if (typeof resumoItens === "function" && $("resumoItens")) resumoItens();
   const livre = st.tipo === "livre";
   show($("boxQtd"), !livre); show($("boxValor"), livre);
   show($("boxData"), st.acao === "adicionar" && !livre);
@@ -307,8 +309,19 @@ document.querySelectorAll("[data-menos],[data-mais]").forEach((b) => {
     st.itens[k] = Math.max(0, Math.min(50, st.itens[k] + (b.dataset.mais ? 1 : -1)));
     $("q-" + k).textContent = st.itens[k];
     show($("pPrev"), false);
+    resumoItens();
   };
 });
+function resumoItens() {
+  const i = st.itens, partes = [];
+  if (i.com) partes.push(`${i.com} com bloqueio`);
+  if (i.sem) partes.push(`${i.sem} sem bloqueio`);
+  if (i.tag) partes.push(`${i.tag} ${i.tag === 1 ? "tag" : "tags"}`);
+  $("resumoItens").innerHTML = partes.length
+    ? `${st.acao === "retirar" ? "Vai <b>retirar</b>" : "Vai <b>instalar</b>"}: ${partes.join(" + ")}`
+    : "Nenhum item marcado.";
+}
+resumoItens();
 
 function params(dryRun) {
   if (st.excluir) return { subscriptionId: st.subId, acao: "excluir", excluirFaturas: $("excluirFaturas").checked, dryRun };
