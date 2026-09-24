@@ -95,6 +95,20 @@
     .app-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
     .app-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
     footer { text-align: center; padding: 28px 20px 0; font-size: 12px; color: var(--muted); opacity: 0.5; }
+    .row-wpp { grid-column: 1 / -1; display: flex; gap: 8px; }
+    .row-wpp .app-btn.wide { flex: 1; grid-column: auto; min-width: 0; }
+    .btn-wpp {
+      width: 58px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #16a34a; border: 1px solid #16a34a; border-radius: var(--radius);
+      color: #fff; text-decoration: none; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-wpp i { font-size: 24px; }
+    .btn-wpp:hover  { background: #15803d; }
+    .btn-wpp:active { transform: scale(0.96); }
+
     /* MODAL MARKET */
     .mk-overlay {
       position: fixed; inset: 0; z-index: 100;
@@ -207,13 +221,25 @@
         <span class="app-name">Área do Cliente</span>
         <span class="app-desc">Portal do cliente</span>
       </a>
-      <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/cancelamento.html" target="_blank" rel="noopener">
-        <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
+      <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/regularizar.html" target="_blank" rel="noopener">
+        <div class="icon ic-yellow"><i class="ti ti-file-check" aria-hidden="true"></i></div>
         <div class="info">
-          <span class="app-name">Cancelamento</span>
-          <span class="app-desc">Formulário de cancelamento</span>
+          <span class="app-name">Regularizar</span>
+          <span class="app-desc">Formulário de regularização</span>
         </div>
       </a>
+      <div class="row-wpp">
+        <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/cancelamento.html" target="_blank" rel="noopener">
+          <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
+          <div class="info">
+            <span class="app-name">Cancelamento</span>
+            <span class="app-desc">Formulário de cancelamento</span>
+          </div>
+        </a>
+        <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Frastreandogps.github.io%2Frastreando-scanner%2Fcancelamento.html" target="_blank" rel="noopener" aria-label="Enviar link pelo WhatsApp">
+          <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
+        </a>
+      </div>
       <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/ajuste-assinatura.html" target="_blank" rel="noopener">
         <div class="icon ic-purple"><i class="ti ti-adjustments" aria-hidden="true"></i></div>
         <div class="info">
