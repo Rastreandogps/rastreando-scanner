@@ -1390,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v81-pagina-tutorial';
+const BUILD_VERSION = '2026-09-24-v83-mensagem-acesso-curta';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -6576,7 +6576,21 @@ function _renderCardOSDetalhado(o) {
     );
 }
 
+// Ao recarregar a página, o Firebase leva 1–2s para entregar as ordens.
+// Espera um pouco por ele antes de cair na Planilha (que é bem mais lenta).
+let _adminVerSeq = 0;
+function _esperarOrdensFirestore(ms) {
+  return new Promise(function(resolve) {
+    const inicio = Date.now();
+    (function checar() {
+      if (_firestoreTodasOrdens || !_unsubOSAdmin || Date.now() - inicio >= ms) return resolve();
+      setTimeout(checar, 100);
+    })();
+  });
+}
+
 async function adminVerTecnico(tech) {
+  const _seq = ++_adminVerSeq;
   adminTechSelecionado = tech;
   _adminVendoTodos = false;
   limparSelecao();
@@ -6608,7 +6622,14 @@ async function adminVerTecnico(tech) {
   const now       = new Date();
 
   let orders, doneAdmin;
+  if (!_firestoreTodasOrdens && _unsubOSAdmin) {
+    if (loadingEl) loadingEl.classList.add('show');
+    await _esperarOrdensFirestore(4000);
+    if (_seq !== _adminVerSeq) return; // outra atualização já assumiu a tela
+  }
   if (_firestoreTodasOrdens) {
+    if (loadingEl) loadingEl.classList.remove('show');
+    if (gridEl)    gridEl.style.display = '';
     // O Firebase já mantém uma cópia atualizada de tudo em tempo real —
     // troca de técnico fica instantânea, sem esperar resposta da Planilha.
     const doTech = _firestoreTodasOrdens.filter(o => o.tecnico === tech);
@@ -6624,6 +6645,7 @@ async function adminVerTecnico(tech) {
       gasRequest({ action: 'getOrders', tech, month: now.getMonth()+1, year: now.getFullYear() }),
       gasRequest({ action: 'getDoneOrders', tech })
     ]);
+    if (_seq !== _adminVerSeq) return; // chegou atrasado: a tela já foi atualizada por outra busca
     if (loadingEl) loadingEl.classList.remove('show');
     if (gridEl)    gridEl.style.display = '';
     orders    = normalizarOrdens(result.ok     ? (result.data     || []) : []);
@@ -7024,18 +7046,14 @@ function enviarAcessoCliente() {
   if (!tel) { showToast('Telefone do cliente não encontrado', 'error'); return; }
 
   const msg =
-    '🔐 *ACESSO À PLATAFORMA – RASTREANDO GPS*\n\n' +
+    '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
+    'Agora você acompanha seu veículo em tempo real, de onde estiver. 📍\n\n' +
+    '🔐 *Seus dados de acesso*\n' +
     '👤 *Login:* ' + login + '\n' +
     '🔑 *Senha:* 123456\n\n' +
-    '📱 *Aplicativo iPhone:*\n' +
-    'https://apps.apple.com/br/app/rastreando-gps-2-0/id6762429184\n\n' +
-    '📱 *Aplicativo Android:*\n' +
-    'https://play.google.com/store/apps/details?id=br.com.rastreandogps2\n\n' +
-    '💻 *Acesso pelo site:*\n' +
-    'http://web.nobgps.com.br\n\n' +
-    '🎥 *Vídeo explicando como usar:*\n' +
+    '📲 *Baixe o aplicativo e veja como usar:*\n' +
     'https://rastreandogps.github.io/rastreando-scanner/tutorial.html\n\n' +
-    'Qualquer dúvida, estou à disposição! 🚀';
+    'Qualquer dúvida, é só chamar aqui. Boa viagem! 🚀';
 
   fecharModalAcesso();
   window.open('https://wa.me/55' + tel + '?text=' + encodeURIComponent(msg), '_blank');
