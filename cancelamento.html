@@ -263,12 +263,39 @@ textarea{resize:vertical;min-height:80px}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 (function () {
   'use strict';
   var URL_FN = 'https://southamerica-east1-rastreando-assinaturas.cloudfunctions.net/cancelamento';
   var S = { sessao: null, r: null, veiculos: [], periodo: '' };
   var $ = function (id) { return document.getElementById(id); };
+  // Aviso em tempo real para o APP Técnico (projeto rastreando-gps), igual ao formulário de agendamento.
+  // Leva só o protocolo — nenhum dado pessoal. Se falhar, o APP vê o pedido na checagem normal.
+  var dbAviso = null;
+  try {
+    if (typeof firebase !== 'undefined') {
+      var appAviso = firebase.initializeApp({
+        apiKey: 'AIzaSyCnWCqWOBgk5D4d3KmDM-XiIxEoMojRyd8',
+        authDomain: 'rastreando-gps.firebaseapp.com',
+        projectId: 'rastreando-gps',
+        storageBucket: 'rastreando-gps.firebasestorage.app',
+        messagingSenderId: '481162335739',
+        appId: '1:481162335739:web:fe3d91aaa33749a9f3e75e'
+      });
+      dbAviso = appAviso.firestore();
+    }
+  } catch (e) { dbAviso = null; }
+  function avisarPainel(protocolo) {
+    try {
+      if (!dbAviso || !protocolo) return;
+      dbAviso.collection('agendamentos_pendentes').doc(protocolo).set({
+        idPedido: protocolo, tipo: 'remocao', lido: false,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function () {});
+    } catch (e) {}
+  }
   var DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -592,6 +619,7 @@ textarea{resize:vertical;min-height:80px}
     };
     try {
       var res = await chamar('enviar', { sessao: S.sessao, formulario: formulario });
+      avisarPainel(res.protocolo);
       $('ok-titulo').textContent = 'Pedido recebido';
       $('ok-texto').textContent = 'Nossa equipe vai confirmar a visita pelo WhatsApp.';
       $('ok-protocolo').textContent = res.protocolo;
