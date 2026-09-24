@@ -741,6 +741,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="sync-indicator"><div class="sync-dot" id="admin-sync-dot"></div><span id="admin-sync-label">Sincronizado</span></div>
+      <button class="btn-logout" onclick="abrirModalSenhaAdmin()" title="Trocar senha do admin">🔑</button>
       <button class="btn-logout" onclick="doLogout()">Sair</button>
     </div>
   </div>
@@ -1132,6 +1133,24 @@
   </div>
 </div>
 
+<!-- MODAL: TROCAR SENHA DO ADMIN -->
+<div class="modal-overlay" id="modal-senha-admin">
+  <div class="modal-box">
+    <div class="modal-title">🔑 Trocar senha do admin</div>
+    <div class="modal-sub">A senha nova vale em todos os aparelhos. Use só números, de 8 a 20 dígitos.</div>
+    <form onsubmit="salvarSenhaAdmin(); return false;" autocomplete="off">
+      <input type="password" class="modal-input" id="senha-admin-atual" placeholder="Senha atual" maxlength="20" inputmode="numeric" autocomplete="off" style="margin-bottom:10px;">
+      <input type="password" class="modal-input" id="senha-admin-nova" placeholder="Senha nova" maxlength="20" inputmode="numeric" autocomplete="new-password" style="margin-bottom:10px;">
+      <input type="password" class="modal-input" id="senha-admin-conf" placeholder="Repita a senha nova" maxlength="20" inputmode="numeric" autocomplete="new-password">
+      <p id="senha-admin-erro" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;"></p>
+      <div class="modal-btns">
+        <button type="button" class="btn-cancel" onclick="fecharModalSenhaAdmin()">Cancelar</button>
+        <button type="submit" class="btn-confirm" id="btn-senha-admin" style="background:var(--admin);">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- MODAL: ATIVAR BIOMETRIA DO ADMIN -->
 <div class="modal-overlay" id="modal-bio-ativar">
   <div class="modal-box">
@@ -1367,7 +1386,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v75-biometria-admin';
+const BUILD_VERSION = '2026-09-24-v76-trocar-senha-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1499,6 +1518,54 @@ async function confirmarLoginAdmin() {
       return;
     }
     negarAcesso();
+  }
+}
+
+// ════════════════════════════════
+// TROCAR SENHA DO ADMIN (direto no Firebase, sem precisar de e-mail)
+// ════════════════════════════════
+function abrirModalSenhaAdmin() {
+  ['senha-admin-atual', 'senha-admin-nova', 'senha-admin-conf'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('senha-admin-erro').style.display = 'none';
+  document.getElementById('modal-senha-admin').classList.add('open'); lockScroll();
+  setTimeout(function() { document.getElementById('senha-admin-atual').focus(); }, 150);
+}
+
+function fecharModalSenhaAdmin() {
+  document.getElementById('modal-senha-admin').classList.remove('open'); unlockScroll();
+}
+
+async function salvarSenhaAdmin() {
+  const atual = document.getElementById('senha-admin-atual').value;
+  const nova  = document.getElementById('senha-admin-nova').value;
+  const conf  = document.getElementById('senha-admin-conf').value;
+  const erro  = document.getElementById('senha-admin-erro');
+  const btn   = document.getElementById('btn-senha-admin');
+  function mostrarErro(msg) { erro.textContent = msg; erro.style.display = 'block'; }
+  erro.style.display = 'none';
+
+  if (!atual) return mostrarErro('Digite a senha atual.');
+  if (!/^\d{8,20}$/.test(nova)) return mostrarErro('A senha nova precisa ter de 8 a 20 números.');
+  if (nova !== conf) return mostrarErro('A confirmação não bate com a senha nova.');
+  if (nova === atual) return mostrarErro('A senha nova precisa ser diferente da atual.');
+  if (!auth) return mostrarErro('Sem conexão com o login. Tente de novo com internet.');
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    // Confirma a senha atual (também renova o login deste aparelho)
+    await auth.signInWithEmailAndPassword(ADMIN_EMAIL, atual);
+    await auth.currentUser.updatePassword(nova);
+    fecharModalSenhaAdmin();
+    showToast('Senha do admin trocada! ✅ Nos outros aparelhos, entre uma vez com a senha nova.', 'success');
+  } catch (e) {
+    const c = (e && e.code) || '';
+    if (c === 'auth/wrong-password' || c === 'auth/invalid-credential' || c === 'auth/invalid-login-credentials') mostrarErro('Senha atual incorreta.');
+    else if (c === 'auth/network-request-failed') mostrarErro('Sem internet. Tente de novo.');
+    else if (c === 'auth/too-many-requests') mostrarErro('Muitas tentativas. Aguarde alguns minutos.');
+    else if (c === 'auth/weak-password') mostrarErro('Senha fraca. Escolha outra.');
+    else mostrarErro('Não foi possível trocar a senha: ' + (e.message || c));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar';
   }
 }
 
