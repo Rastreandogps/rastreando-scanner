@@ -332,6 +332,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <button class="var-btn" onclick="insertVar('{valor}')">+ Valor</button>
           <button class="var-btn" onclick="insertVar('{link}')">+ Link</button>
           <button class="var-btn" onclick="insertVar('{link_in}')">+ Link IN</button>
+          <button class="var-btn" onclick="insertVar('{link_regularizar}')">+ Link Regularização</button>
         </div>
       </div>
     </div>
@@ -492,6 +493,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="agmodal-var" onclick="agInsertVar('{data}')">📅 Data</button>
       <button class="agmodal-var" onclick="agInsertVar('{link}')">🔗 Link</button>
       <button class="agmodal-var" onclick="agInsertVar('{link_in}')">🔗 Link IN</button>
+      <button class="agmodal-var" onclick="agInsertVar('{link_regularizar}')">🤝 Link Regularização</button>
     </div>
     <div class="agmodal-btns">
       <button class="agmodal-skip" onclick="agSkip()">Pular (sem mensagem)</button>
@@ -779,6 +781,9 @@ function getTemplate() {
   return document.getElementById('msgTemplate').value ||
     'Olá, {nome}! Consta um débito referente a {mes}, no valor de R$ {valor}. Regularize para evitar cancelamento. Contato: (21) 9 8088-6087';
 }
+// Página onde o cliente junta as faturas vencidas num PIX só (com desconto no 1º dia)
+const LINK_REGULARIZAR = 'https://rastreandogps.github.io/rastreando-scanner/regularizar.html';
+
 function buildMsg(c) {
   const primeiroNome = c.nome.trim().split(' ')[0];
   return getTemplate()
@@ -788,7 +793,8 @@ function buildMsg(c) {
     .replace(/{mes}/g, formatarData(c.mes))
     .replace(/{valor}/g, c.valor)
     .replace(/{link}/g,    c.link   || '')
-    .replace(/{link_in}/g, c.linkMP || '');
+    .replace(/{link_in}/g, c.linkMP || '')
+    .replace(/{link_regularizar}/g, LINK_REGULARIZAR);
 }
 function insertVar(v) {
   const ta = document.getElementById('msgTemplate');
@@ -1391,7 +1397,8 @@ function agBuildMsg(template, c) {
     .replace(/\{valor\}/g, 'R$ ' + c.valor)
     .replace(/\{data\}/g, formatarDataBR(c.dataComp))
     .replace(/\{link\}/g,    c.link   || '')
-    .replace(/\{link_in\}/g, c.linkMP || '');
+    .replace(/\{link_in\}/g, c.linkMP || '')
+    .replace(/\{link_regularizar\}/g, LINK_REGULARIZAR);
 }
 
 function agSend() {
