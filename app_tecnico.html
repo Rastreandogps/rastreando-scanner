@@ -1359,6 +1359,10 @@
     <div class="modal-sub">Preencha o login do cliente na plataforma</div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
       <div class="form-field">
+        <label>Toque nos nomes para montar o login</label>
+        <div id="acesso-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <div class="form-field">
         <label>Login do cliente</label>
         <input type="text" id="acesso-login" placeholder="Ex: 21987654321" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:15px;font-weight:600;width:100%;outline:none;">
       </div>
@@ -1386,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v76-trocar-senha-admin';
+const BUILD_VERSION = '2026-09-24-v77-login-baloes';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -6936,18 +6940,51 @@ function abrirModalAcessoDone(id, tech) {
   const os = (allDoneOrders[tech] || []).find(o => o.id === id);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _acessoOS = os;
-  document.getElementById('acesso-login').value = _sugerirLogin(os.nome || '');
+  _prepararChipsAcesso(os.nome || '');
   document.getElementById('modal-acesso-cliente').classList.add('open'); lockScroll();
-  setTimeout(() => { const el = document.getElementById('acesso-login'); el.focus(); el.select(); }, 150);
 }
 
 function abrirModalAcesso(id, tech) {
   const os = (allOrders[tech] || []).find(o => o.id === id);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _acessoOS = os;
-  document.getElementById('acesso-login').value = _sugerirLogin(os.nome || '');
+  _prepararChipsAcesso(os.nome || '');
   document.getElementById('modal-acesso-cliente').classList.add('open'); lockScroll();
-  setTimeout(() => { const el = document.getElementById('acesso-login'); el.focus(); el.select(); }, 150);
+}
+
+// Balões com as partes do nome: toque na ordem desejada para montar o login
+let _acessoPartes = [];
+let _acessoSel = [];
+
+function _limparParteLogin(p) {
+  return String(p || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function _prepararChipsAcesso(nome) {
+  _acessoPartes = String(nome || '').trim().split(/\s+/).filter(function(p) { return _limparParteLogin(p); });
+  _acessoSel = _acessoPartes.length === 1 ? [0] : (_acessoPartes.length ? [0, 1] : []); // padrão: 1º + 2º nome
+  _renderChipsAcesso();
+}
+
+function _renderChipsAcesso() {
+  const box = document.getElementById('acesso-chips');
+  if (!box) return;
+  box.innerHTML = _acessoPartes.map(function(p, i) {
+    const pos = _acessoSel.indexOf(i);
+    const on = pos >= 0;
+    const estilo = on
+      ? 'background:#0ea5e9;color:white;border:2px solid #0ea5e9;'
+      : 'background:white;color:var(--text);border:2px solid var(--border);';
+    const num = on ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:white;color:#0ea5e9;font-size:11px;font-weight:800;margin-right:6px;">' + (pos + 1) + '</span>' : '';
+    return '<button type="button" onclick="_toggleChipAcesso(' + i + ')" style="' + estilo + 'display:inline-flex;align-items:center;padding:7px 12px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;">' + num + esc(p) + '</button>';
+  }).join('');
+  document.getElementById('acesso-login').value = _acessoSel.map(function(i) { return _limparParteLogin(_acessoPartes[i]); }).join('');
+}
+
+function _toggleChipAcesso(i) {
+  const pos = _acessoSel.indexOf(i);
+  if (pos >= 0) _acessoSel.splice(pos, 1); else _acessoSel.push(i);
+  _renderChipsAcesso();
 }
 
 function fecharModalAcesso() {
