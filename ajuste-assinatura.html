@@ -73,6 +73,8 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
 .res .i{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff}
 .ok .i{background:var(--green)}.fail .i{background:var(--red)}
 .err{background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+.zona{margin-top:22px;padding-top:18px;border-top:1px dashed var(--line)}
+.btn.danger{background:var(--red)}
 .hidden{display:none!important}
 .spin{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-3px}
 @keyframes s{to{transform:rotate(360deg)}}
@@ -110,13 +112,19 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
       <h2>O que aconteceu?</h2>
       <div class="seg acao" id="segAcao"><button data-v="retirar" class="on">Retirada</button><button data-v="adicionar">Instalação</button></div>
       <label>Tipo de rastreador</label>
-      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button></div>
-      <label>Quantidade de veículos</label>
-      <div class="stepper"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div>
+      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button><button data-v="livre">Valor livre</button></div>
+      <div id="boxQtd"><label>Quantidade de veículos</label>
+      <div class="stepper"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div></div>
+      <div id="boxValor" class="hidden"><label for="valorLivre">Valor (R$)</label><input id="valorLivre" type="text" inputmode="decimal" placeholder="0,00"></div>
       <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
       <label id="boxTodas" class="check"><input id="todas" type="checkbox"><span>Aplicar em todos os boletos pendentes, inclusive os que vencem em até 10 dias</span></label>
       <div style="margin-top:16px"><button id="calcular" class="btn" style="width:100%">Calcular</button></div>
       <div id="calcErr" class="err hidden"></div>
+      <div class="zona">
+        <h2>Excluir assinatura</h2>
+        <label class="check" style="margin-top:0"><input id="excluirFaturas" type="checkbox"><span>Excluir também as faturas em aberto (a vencer e vencidas)</span></label>
+        <div style="margin-top:12px"><button id="btnExcluir" class="btn danger" style="width:100%">Excluir assinatura</button></div>
+      </div>
     </section>
 
     <section id="pPrev" class="panel hidden"></section>
@@ -157,7 +165,7 @@ const msgErro = (e) => (e && e.message ? e.message.replace(/^.*?:\s*/, "") : "Er
 function erro(el, e) { el.textContent = typeof e === "string" ? e : msgErro(e); show(el, true); }
 function carregando(btn, on, txt) { btn.disabled = on; btn.innerHTML = on ? '<span class="spin"></span>' : txt; }
 
-const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "com", qtd: 1 };
+const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "com", qtd: 1, excluir: false };
 
 onAuthStateChanged(auth, (u) => { show($("tLogin"), !u); show($("tApp"), !!u); show($("sair"), !!u); });
 $("entrar").onclick = async () => {
@@ -229,19 +237,42 @@ function seg(id, key, cb) {
     b.classList.add("on"); st[key] = b.dataset.v; cb && cb(); show($("pPrev"), false);
   }));
 }
-seg("segAcao", "acao", () => { show($("boxData"), st.acao === "adicionar"); show($("boxTodas"), st.acao === "retirar"); });
-seg("segTipo", "tipo");
+function ajustarCampos() {
+  const livre = st.tipo === "livre";
+  show($("boxQtd"), !livre); show($("boxValor"), livre);
+  show($("boxData"), st.acao === "adicionar" && !livre);
+  show($("boxTodas"), st.acao === "retirar" || livre);
+  const [bR, bA] = $("segAcao").querySelectorAll("button");
+  bR.textContent = livre ? "Diminuir valor" : "Retirada";
+  bA.textContent = livre ? "Aumentar valor" : "Instalação";
+}
+seg("segAcao", "acao", ajustarCampos);
+seg("segTipo", "tipo", ajustarCampos);
+$("valorLivre").oninput = () => show($("pPrev"), false);
 $("dataInst").value = hoje();
 $("menos").onclick = () => { st.qtd = Math.max(1, st.qtd - 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
 $("mais").onclick = () => { st.qtd = Math.min(50, st.qtd + 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
 
 function params(dryRun) {
+  if (st.excluir) return { subscriptionId: st.subId, acao: "excluir", excluirFaturas: $("excluirFaturas").checked, dryRun };
   return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, quantidade: st.qtd,
-    aplicarTodas: st.acao === "retirar" && $("todas").checked,
-    dataInstalacao: st.acao === "adicionar" ? $("dataInst").value : null, dryRun };
+    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre") && $("todas").checked,
+    dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" ? $("dataInst").value : null,
+    valor: st.tipo === "livre" ? ((v) => (v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v))($("valorLivre").value.trim()) : null, dryRun };
 }
 
+$("btnExcluir").onclick = async () => {
+  st.excluir = true;
+  show($("calcErr"), false); show($("pRes"), false);
+  carregando($("btnExcluir"), true);
+  try { const r = await fnProcessar(params(true)); renderPrev(r.data.plano); }
+  catch (e) { erro($("calcErr"), e); }
+  carregando($("btnExcluir"), false, "Excluir assinatura");
+};
+$("excluirFaturas").onchange = () => show($("pPrev"), false);
+
 $("calcular").onclick = async () => {
+  st.excluir = false;
   show($("calcErr"), false); show($("pRes"), false);
   carregando($("calcular"), true);
   try { const r = await fnProcessar(params(true)); renderPrev(r.data.plano); }
@@ -253,12 +284,14 @@ function renderPrev(p) {
   const a = p.antes, d = p.depois;
   const cancel = p.assinatura.acao === "cancelar";
   let h = `<h2>Confira antes de aplicar</h2>`;
-  if (cancel) h += `<div class="big-action cancel">A assinatura será cancelada (último veículo).</div>`;
+  if (p.acao === "excluir") h += `<div class="big-action cancel">A assinatura será excluída${p.boletos.some((b) => b.acao === "cancelar") ? " junto com as faturas em aberto" : " (faturas em aberto mantidas)"}.</div>`;
+  else if (cancel) h += `<div class="big-action cancel">A assinatura será cancelada (último veículo).</div>`;
   h += `<div class="compare">
     <div class="box"><small>Hoje</small><b>${c(a.valorC)}</b><em>em dia: ${c(a.valorC - a.descC)}</em></div>
     <div class="arrow" aria-hidden="true">›</div>
     <div class="box after"><small>Depois</small><b>${c(d.valorC)}</b><em>em dia: ${c(d.valorC - d.descC)}</em></div>
   </div>`;
+  if (p.valorLivreC) h += `<p class="info">${p.acao === "retirar" ? "Diminuindo" : "Aumentando"} <b>${c(p.valorLivreC)}</b> na assinatura.</p>`;
   if (p.assinatura.descricao) h += `<p class="info">Nova descrição: <b>${esc(p.assinatura.descricao)}</b></p>`;
   if (p.proporcional) {
     const pr = p.proporcional;
@@ -267,17 +300,17 @@ function renderPrev(p) {
       : `<p class="info">Instalação a ${pr.dias} dia(s) do vencimento de ${dt(pr.vencimento)}: sem cobrança neste mês.</p>`;
   }
   if (p.boletos.length) {
-    h += `<h2 style="margin-top:16px">Boletos pendentes</h2>`;
+    h += `<h2 style="margin-top:16px">${p.acao === "excluir" ? "Faturas em aberto" : "Boletos pendentes"}</h2>`;
     for (const b of p.boletos) {
       const val = b.acao === "atualizar" ? `${c(b.deC)} › <b>${c(b.paraC)}</b>` : c(b.deC);
-      h += `<div class="boleto"><div>Vence ${dt(b.vencimento)}<br><span class="badge b-${b.acao}">${{ atualizar: "Atualizar", manter: "Manter", cancelar: "Cancelar" }[b.acao]}</span>
+      h += `<div class="boleto"><div>Vence ${dt(b.vencimento)}<br><span class="badge b-${b.acao}">${{ atualizar: "Atualizar", manter: "Manter", cancelar: p.acao === "excluir" ? "Excluir" : "Cancelar" }[b.acao]}</span>
         ${b.motivo ? `<span class="info" style="font-size:12px"> ${esc(b.motivo)}</span>` : ""}</div>
         <div class="r">${val}${b.acao === "atualizar" && b.descDeC !== b.descParaC ? `<br><span class="info" style="font-size:12px">desc. ${c(b.descDeC)} › ${c(b.descParaC)}</span>` : ""}</div></div>`;
     }
-  } else h += `<p class="info">Nenhum boleto pendente.</p>`;
+  } else h += `<p class="info">Nenhum boleto ${p.acao === "excluir" ? "em aberto" : "pendente"}.</p>`;
   p.avisos.forEach((x) => (h += `<div class="aviso">${esc(x)}</div>`));
   h += `<div class="row" style="margin-top:16px"><button id="voltar" class="ghost" style="flex:none">Voltar</button>
-        <button id="aplicar" class="btn">${cancel ? "Cancelar assinatura" : "Aplicar no Asaas"}</button></div>
+        <button id="aplicar" class="btn${cancel ? " danger" : ""}">${p.acao === "excluir" ? "Confirmar exclusão" : cancel ? "Cancelar assinatura" : "Aplicar no Asaas"}</button></div>
         <div id="aplErr" class="err hidden"></div>`;
   $("pPrev").innerHTML = h;
   show($("pPrev"), true);
