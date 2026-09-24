@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ajuste de Assinatura · Rastreando GPS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EAEE; --card:#FFFFFF; --ink:#1B2230; --muted:#5E6878; --line:#D3D9E0;
+  --amber:#E8A21A; --amber-ink:#5A3D00; --red:#B8322F; --red-bg:#FBE9E8; --green:#23784B; --green-bg:#E4F3EA;
+  --focus:#2F6FD1;
+  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink)}
+body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-size:16px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.mark{width:36px;height:36px;border-radius:50%;background:var(--ink);display:grid;place-items:center;flex:none}
+.mark::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(232,162,26,.25)}
+header h1{font-size:20px;font-weight:800;letter-spacing:-.01em}
+header p{font-size:13px;color:var(--muted)}
+header button{margin-left:auto}
+.panel{background:var(--card);border-radius:14px;padding:18px;margin-bottom:14px;border:1px solid var(--line)}
+.panel h2{font-size:15px;font-weight:700;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 6px}
+input[type=text],input[type=email],input[type=password],input[type=date]{
+  width:100%;font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+input:focus,button:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;font-size:15px}
+.btn{background:var(--ink);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.ghost{background:transparent;color:var(--muted);padding:8px 10px;font-weight:600;font-size:14px}
+.seg{display:flex;background:var(--bg);border-radius:11px;padding:4px;gap:4px}
+.seg button{flex:1;background:transparent;color:var(--muted);padding:10px 8px;font-size:14px}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(27,34,48,.15)}
+.seg.acao button.on[data-v=retirar]{background:var(--red);color:#fff}
+.seg.acao button.on[data-v=adicionar]{background:var(--green);color:#fff}
+.stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;width:max-content}
+.stepper button{background:#fff;color:var(--ink);width:48px;height:46px;padding:0;font-size:22px;border-radius:0}
+.stepper span{min-width:48px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px}
+.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--ink)}
+.cliente{font-size:18px;font-weight:800;margin-bottom:2px}
+.sub{border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;cursor:pointer;background:#fff;width:100%;text-align:left;color:var(--ink);font-weight:400}
+.sub.on{border-color:var(--ink);box-shadow:inset 4px 0 0 var(--amber)}
+.sub .v{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.sub .meta{font-size:13px;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;margin:8px 6px 0 0;background:var(--bg)}
+.tag.warn{background:#FFF3D6;color:var(--amber-ink)}
+.compare{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin:4px 0 14px}
+.compare .box{border-radius:12px;padding:12px;background:var(--bg)}
+.compare .box.after{background:var(--ink);color:#fff}
+.compare small{display:block;font-size:12px;opacity:.75;font-weight:600}
+.compare b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.compare em{display:block;font-style:normal;font-size:13px;margin-top:4px;opacity:.85}
+.arrow{font-size:20px;color:var(--muted)}
+.boleto{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.boleto:first-of-type{border-top:0}
+.boleto .r{text-align:right;font-variant-numeric:tabular-nums}
+.badge{font-size:12px;font-weight:700;padding:2px 7px;border-radius:6px}
+.b-atualizar{background:#E3ECFA;color:#1D4F9A}.b-manter{background:var(--bg);color:var(--muted)}.b-cancelar{background:var(--red-bg);color:var(--red)}
+.aviso{background:#FFF3D6;color:var(--amber-ink);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+.info{font-size:14px;color:var(--muted);margin-top:8px}
+.big-action{font-size:15px;font-weight:700;padding:10px 12px;border-radius:10px;margin-bottom:10px}
+.big-action.cancel{background:var(--red-bg);color:var(--red)}
+.res{display:flex;gap:10px;padding:8px 0;font-size:14px}
+.res .i{width:22px;height:22px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff}
+.ok .i{background:var(--green)}.fail .i{background:var(--red)}
+.err{background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+.hidden{display:none!important}
+.spin{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-3px}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark" aria-hidden="true"></div>
+    <div><h1>Ajuste de assinatura</h1><p>Rastreando GPS</p></div>
+    <button id="sair" class="ghost hidden">Sair</button>
+  </header>
+
+  <!-- LOGIN -->
+  <section id="tLogin" class="panel hidden">
+    <h2>Entrar</h2>
+    <label for="email">E-mail</label><input id="email" type="email" autocomplete="username">
+    <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password">
+    <div style="margin-top:14px"><button id="entrar" class="btn" style="width:100%">Entrar</button></div>
+    <div id="loginErr" class="err hidden"></div>
+  </section>
+
+  <!-- APP -->
+  <main id="tApp" class="hidden">
+    <section class="panel">
+      <label for="cpf" style="margin-top:0">CPF ou CNPJ do cliente</label>
+      <div class="row"><input id="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00"><button id="buscar" class="btn" style="flex:none">Buscar</button></div>
+      <div id="buscaErr" class="err hidden"></div>
+    </section>
+
+    <section id="pCliente" class="panel hidden"></section>
+
+    <section id="pAcao" class="panel hidden">
+      <h2>O que aconteceu?</h2>
+      <div class="seg acao" id="segAcao"><button data-v="retirar" class="on">Retirada</button><button data-v="adicionar">Instalação</button></div>
+      <label>Tipo de rastreador</label>
+      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button></div>
+      <label>Quantidade de veículos</label>
+      <div class="stepper"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div>
+      <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
+      <label id="boxTodas" class="check"><input id="todas" type="checkbox"><span>Aplicar em todos os boletos pendentes, inclusive os que vencem em até 10 dias</span></label>
+      <div style="margin-top:16px"><button id="calcular" class="btn" style="width:100%">Calcular</button></div>
+      <div id="calcErr" class="err hidden"></div>
+    </section>
+
+    <section id="pPrev" class="panel hidden"></section>
+    <section id="pRes" class="panel hidden"></section>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+// ===== COLE AQUI A CONFIGURAÇÃO DO SEU PROJETO FIREBASE =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDkQSOOt9fIZVr2r6nEK0oo4w3HTg2E2I8",
+  authDomain: "rastreando-assinaturas.firebaseapp.com",
+  projectId: "rastreando-assinaturas",
+  storageBucket: "rastreando-assinaturas.firebasestorage.app",
+  messagingSenderId: "706454638603",
+  appId: "1:706454638603:web:f48eda23a2ca50e6b4f70e"
+};
+// ============================================================
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const fns = getFunctions(app, "southamerica-east1");
+const fnBuscar = httpsCallable(fns, "buscarCliente");
+const fnProcessar = httpsCallable(fns, "processar");
+
+const $ = (id) => document.getElementById(id);
+const brl = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const c = (cent) => brl(cent / 100);
+const dt = (s) => s ? s.split("-").reverse().join("/") : "";
+const hoje = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+const show = (el, on) => el.classList.toggle("hidden", !on);
+const msgErro = (e) => (e && e.message ? e.message.replace(/^.*?:\s*/, "") : "Erro inesperado.");
+function erro(el, e) { el.textContent = typeof e === "string" ? e : msgErro(e); show(el, true); }
+function carregando(btn, on, txt) { btn.disabled = on; btn.innerHTML = on ? '<span class="spin"></span>' : txt; }
+
+const st = { cpf: "", clientes: [], subId: null, acao: "retirar", tipo: "com", qtd: 1 };
+
+onAuthStateChanged(auth, (u) => { show($("tLogin"), !u); show($("tApp"), !!u); show($("sair"), !!u); });
+$("entrar").onclick = async () => {
+  show($("loginErr"), false);
+  carregando($("entrar"), true);
+  try { await signInWithEmailAndPassword(auth, $("email").value.trim(), $("senha").value); }
+  catch { erro($("loginErr"), "E-mail ou senha incorretos."); }
+  carregando($("entrar"), false, "Entrar");
+};
+$("senha").onkeydown = (e) => { if (e.key === "Enter") $("entrar").click(); };
+$("sair").onclick = () => signOut(auth);
+
+// máscara CPF/CNPJ
+$("cpf").oninput = (e) => {
+  let d = e.target.value.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11) d = d.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  else d = d.replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d)/, "$1-$2");
+  e.target.value = d;
+};
+$("cpf").onkeydown = (e) => { if (e.key === "Enter") $("buscar").click(); };
+
+$("buscar").onclick = () => buscar($("cpf").value);
+async function buscar(cpf) {
+  ["buscaErr"].forEach((i) => show($(i), false));
+  ["pCliente", "pAcao", "pPrev", "pRes"].forEach((i) => show($(i), false));
+  st.cpf = cpf; st.subId = null;
+  carregando($("buscar"), true);
+  try {
+    const r = await fnBuscar({ cpf });
+    st.clientes = r.data.clientes;
+    if (!st.clientes.length) erro($("buscaErr"), "Nenhum cliente encontrado com esse CPF/CNPJ no Asaas.");
+    else renderCliente();
+  } catch (e) { erro($("buscaErr"), e); }
+  carregando($("buscar"), false, "Buscar");
+}
+
+function renderCliente() {
+  const todas = st.clientes.flatMap((cl) => cl.assinaturas);
+  if (todas.length === 1) st.subId = todas[0].id;
+  let h = "";
+  for (const cl of st.clientes) {
+    h += `<div class="cliente">${esc(cl.nome)}</div>`;
+    if (!cl.assinaturas.length) h += `<p class="info">Sem assinatura ativa.</p>`;
+    for (const s of cl.assinaturas) {
+      const v = s.veiculos;
+      const ve = v.confere
+        ? `<span class="tag">${v.com} com bloqueio</span><span class="tag">${v.sem} sem bloqueio</span>`
+        : `<span class="tag warn">Valor fora da tabela</span>`;
+      const pend = s.pendentes.length
+        ? `<div class="meta">Boletos pendentes: ${s.pendentes.map((p) => `${dt(p.vencimento)} (${brl(p.valor)})`).join(", ")}</div>` : "";
+      h += `<button class="sub ${st.subId === s.id ? "on" : ""}" data-id="${s.id}">
+        <div class="v">${brl(s.valor)}</div>
+        <div class="meta">Desconto pontualidade: ${brl(s.desconto)} · pagando em dia ${brl(s.valor - s.desconto)}</div>
+        <div class="meta">Próxima geração: ${dt(s.proximoVencimento)}${s.descricao ? " · " + esc(s.descricao) : ""}</div>
+        ${pend}${ve}${s.descontoPercentual ? '<span class="tag warn">Desconto percentual</span>' : ""}
+      </button>`;
+    }
+  }
+  $("pCliente").innerHTML = h;
+  $("pCliente").querySelectorAll(".sub").forEach((b) => (b.onclick = () => { st.subId = b.dataset.id; renderCliente(); }));
+  show($("pCliente"), true);
+  show($("pAcao"), !!st.subId);
+  show($("pPrev"), false);
+}
+
+function seg(id, key, cb) {
+  $(id).querySelectorAll("button").forEach((b) => (b.onclick = () => {
+    $(id).querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+    b.classList.add("on"); st[key] = b.dataset.v; cb && cb(); show($("pPrev"), false);
+  }));
+}
+seg("segAcao", "acao", () => { show($("boxData"), st.acao === "adicionar"); show($("boxTodas"), st.acao === "retirar"); });
+seg("segTipo", "tipo");
+$("dataInst").value = hoje();
+$("menos").onclick = () => { st.qtd = Math.max(1, st.qtd - 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
+$("mais").onclick = () => { st.qtd = Math.min(50, st.qtd + 1); $("qtd").textContent = st.qtd; show($("pPrev"), false); };
+
+function params(dryRun) {
+  return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, quantidade: st.qtd,
+    aplicarTodas: st.acao === "retirar" && $("todas").checked,
+    dataInstalacao: st.acao === "adicionar" ? $("dataInst").value : null, dryRun };
+}
+
+$("calcular").onclick = async () => {
+  show($("calcErr"), false); show($("pRes"), false);
+  carregando($("calcular"), true);
+  try { const r = await fnProcessar(params(true)); renderPrev(r.data.plano); }
+  catch (e) { erro($("calcErr"), e); }
+  carregando($("calcular"), false, "Calcular");
+};
+
+function renderPrev(p) {
+  const a = p.antes, d = p.depois;
+  const cancel = p.assinatura.acao === "cancelar";
+  let h = `<h2>Confira antes de aplicar</h2>`;
+  if (cancel) h += `<div class="big-action cancel">A assinatura será cancelada (último veículo).</div>`;
+  h += `<div class="compare">
+    <div class="box"><small>Hoje</small><b>${c(a.valorC)}</b><em>em dia: ${c(a.valorC - a.descC)}</em></div>
+    <div class="arrow" aria-hidden="true">›</div>
+    <div class="box after"><small>Depois</small><b>${c(d.valorC)}</b><em>em dia: ${c(d.valorC - d.descC)}</em></div>
+  </div>`;
+  if (p.assinatura.descricao) h += `<p class="info">Nova descrição: <b>${esc(p.assinatura.descricao)}</b></p>`;
+  if (p.proporcional) {
+    const pr = p.proporcional;
+    h += pr.valorC > 0
+      ? `<p class="info">Proporcional: ${pr.dias} dias até ${dt(pr.vencimento)} = <b>${c(pr.valorC)}</b> (sem desconto).</p>`
+      : `<p class="info">Instalação a ${pr.dias} dia(s) do vencimento de ${dt(pr.vencimento)}: sem cobrança neste mês.</p>`;
+  }
+  if (p.boletos.length) {
+    h += `<h2 style="margin-top:16px">Boletos pendentes</h2>`;
+    for (const b of p.boletos) {
+      const val = b.acao === "atualizar" ? `${c(b.deC)} › <b>${c(b.paraC)}</b>` : c(b.deC);
+      h += `<div class="boleto"><div>Vence ${dt(b.vencimento)}<br><span class="badge b-${b.acao}">${{ atualizar: "Atualizar", manter: "Manter", cancelar: "Cancelar" }[b.acao]}</span>
+        ${b.motivo ? `<span class="info" style="font-size:12px"> ${esc(b.motivo)}</span>` : ""}</div>
+        <div class="r">${val}${b.acao === "atualizar" && b.descDeC !== b.descParaC ? `<br><span class="info" style="font-size:12px">desc. ${c(b.descDeC)} › ${c(b.descParaC)}</span>` : ""}</div></div>`;
+    }
+  } else h += `<p class="info">Nenhum boleto pendente.</p>`;
+  p.avisos.forEach((x) => (h += `<div class="aviso">${esc(x)}</div>`));
+  h += `<div class="row" style="margin-top:16px"><button id="voltar" class="ghost" style="flex:none">Voltar</button>
+        <button id="aplicar" class="btn">${cancel ? "Cancelar assinatura" : "Aplicar no Asaas"}</button></div>
+        <div id="aplErr" class="err hidden"></div>`;
+  $("pPrev").innerHTML = h;
+  show($("pPrev"), true);
+  $("pPrev").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  $("voltar").onclick = () => show($("pPrev"), false);
+  $("aplicar").onclick = aplicar;
+}
+
+async function aplicar() {
+  const btn = $("aplicar"), txt = btn.textContent;
+  carregando(btn, true);
+  try {
+    const r = await fnProcessar(params(false));
+    let h = `<h2>Resultado</h2>`;
+    r.data.resultados.forEach((x) => (h += `<div class="res ${x.ok ? "ok" : "fail"}"><span class="i">${x.ok ? "✓" : "!"}</span><div>${esc(x.item)}${x.erro ? `<br><span class="info">${esc(x.erro)}</span>` : ""}</div></div>`));
+    h += `<div style="margin-top:14px"><button id="recarregar" class="btn" style="width:100%">Ver cliente atualizado</button></div>`;
+    $("pRes").innerHTML = h;
+    show($("pPrev"), false); show($("pRes"), true);
+    $("recarregar").onclick = () => buscar(st.cpf);
+  } catch (e) { erro($("aplErr"), e); carregando(btn, false, txt); }
+}
+</script>
+</body>
+</html>
