@@ -66,6 +66,13 @@
     font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px;
   }
   .login-error { color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+  #screen-bloqueio {
+    min-height: 100vh;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #1e3a8a 100%);
+    padding: 24px;
+  }
+  .btn-link-bio { display:block; width:100%; margin-top:12px; background:none; border:none; color:var(--muted); font-size:12.5px; text-decoration:underline; cursor:pointer; padding:6px; }
 
   /* HEADER */
   .app-header {
@@ -608,6 +615,23 @@
   <div id="login-build-version" style="text-align:center;margin-top:12px;font-size:10px;color:#94a3b8;"></div>
 </div>
 
+<!-- TELA TRANCADA DO ADMIN (biometria) -->
+<div id="screen-bloqueio">
+  <div class="login-logo">
+    <svg viewBox="0 0 24 24"><path d="M14.5 2.5c0 1.5-1.5 7-1.5 7h-2S9.5 4 9.5 2.5a2.5 2.5 0 0 1 5 0zM12 11a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 9l2-5h10l2 5H5zm4-5l-1.5-4M15 15l-1.5-4"/></svg>
+  </div>
+  <div class="login-title">APP Técnico</div>
+  <div class="login-sub">Rastreando GPS</div>
+  <div class="login-box" style="text-align:center;">
+    <h2>🔒 Área do Administrador</h2>
+    <p style="font-size:13px;color:var(--muted);margin:-8px 0 18px;line-height:1.5;">Toque no botão e use sua digital, rosto ou Windows Hello.</p>
+    <button type="button" class="btn-login" id="btn-bio-entrar" onclick="entrarComBiometria()">👆 Entrar com biometria</button>
+    <p class="login-error" id="bio-erro"></p>
+    <button type="button" class="btn-admin" onclick="abrirModalAdmin()">Usar senha</button>
+    <button type="button" class="btn-link-bio" onclick="trocarUsuarioBloqueio()">Trocar de usuário</button>
+  </div>
+</div>
+
 <!-- TELA DO TÉCNICO -->
 <div id="screen-tech" style="display:none;">
   <div class="app-header">
@@ -1098,13 +1122,25 @@
     <div class="modal-title">🔐 Área do Administrador</div>
     <div class="modal-sub">Digite a senha para acessar.</div>
     <form onsubmit="confirmarLoginAdmin(); return false;">
-      <input type="password" class="modal-input" id="admin-senha-input" placeholder="••••••" maxlength="6" inputmode="numeric" autocomplete="off">
+      <input type="password" class="modal-input" id="admin-senha-input" placeholder="••••••" maxlength="20" inputmode="numeric" autocomplete="off">
       <div class="modal-btns">
         <button type="button" class="btn-cancel" onclick="fecharModalAdmin()">Cancelar</button>
         <button type="submit" class="btn-confirm" style="background:var(--admin);">Entrar</button>
       </div>
     </form>
     <p id="admin-senha-erro" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none;">Senha incorreta.</p>
+  </div>
+</div>
+
+<!-- MODAL: ATIVAR BIOMETRIA DO ADMIN -->
+<div class="modal-overlay" id="modal-bio-ativar">
+  <div class="modal-box">
+    <div class="modal-title" id="bio-ativar-titulo">👆 Entrar com biometria?</div>
+    <div class="modal-sub">Ao tocar em "Sair", o painel fica trancado neste aparelho e você volta usando a digital, o rosto ou o Windows Hello. A senha continua valendo como reserva.</div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="recusarBiometria()">Agora não</button>
+      <button type="button" class="btn-confirm" id="btn-bio-ativar" style="background:var(--admin);" onclick="ativarBiometria()">Ativar</button>
+    </div>
   </div>
 </div>
 
@@ -1331,7 +1367,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v74-remocoes-tempo-real';
+const BUILD_VERSION = '2026-09-24-v75-biometria-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1342,7 +1378,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://rastreandogps.github.io/rastreando-scanner/reagendar.html';
-const ADMIN_PASS = '271659'; // continua como reserva, caso o Firebase fique fora do ar
+// (senha reserva do admin removida do código — sem internet, use a biometria)
 const ADMIN_EMAIL = 'admin@rastreandogpsbr.com.br';
 
 // ════════════════════════════════════════
@@ -1412,6 +1448,7 @@ let _firestoreTodasOrdens = null; // cópia sempre atualizada de TODAS as ordens
 // MODAL ADMIN LOGIN
 // ════════════════════════════════
 function abrirModalAdmin() {
+  document.querySelector('#modal-admin-login .modal-sub').textContent = 'Digite a senha para acessar.';
   document.getElementById('admin-senha-input').value = '';
   document.getElementById('admin-senha-erro').style.display = 'none';
   document.getElementById('modal-admin-login').classList.add('open'); lockScroll();
@@ -1419,6 +1456,7 @@ function abrirModalAdmin() {
 }
 
 function fecharModalAdmin() {
+  _modoTrocarUsuario = false;
   document.getElementById('modal-admin-login').classList.remove('open');
   unlockScroll();
 }
@@ -1427,37 +1465,199 @@ async function confirmarLoginAdmin() {
   const pass = document.getElementById('admin-senha-input').value;
 
   function entrarComoAdmin() {
+    if (_modoTrocarUsuario) { fecharModalAdmin(); _sairDeVerdade(); showToast('Admin desconectado. Agora é só entrar com outro usuário.', ''); return; }
     fecharModalAdmin();
-    currentUser = 'Admin';
-    currentRole = 'admin';
-    salvarSessao('Admin', 'admin');
-    showAdminScreen();
+    _entrarAdminDesbloqueado();
+    setTimeout(oferecerBiometria, 900);
+  }
+
+  function semConexao() {
+    const el = document.getElementById('admin-senha-erro');
+    el.textContent = 'Sem conexão com o login. Use a biometria ou tente de novo com internet.';
+    el.style.display = 'block';
   }
 
   function negarAcesso() {
+    document.getElementById('admin-senha-erro').textContent = 'Senha incorreta.';
     document.getElementById('admin-senha-erro').style.display = 'block';
     document.getElementById('admin-senha-input').value = '';
     document.getElementById('admin-senha-input').focus();
   }
 
-  // Firebase não carregou/indisponível — usa a senha local, como sempre funcionou
-  if (!auth) {
-    if (pass === ADMIN_PASS) { entrarComoAdmin(); return; }
-    negarAcesso();
-    return;
-  }
+  // Firebase não carregou/indisponível — sem senha reserva no código (use a biometria)
+  if (!auth) { semConexao(); return; }
 
   try {
     await auth.signInWithEmailAndPassword(ADMIN_EMAIL, pass);
     entrarComoAdmin();
   } catch (e) {
-    // Se o Firebase estiver fora do ar (sem internet, instabilidade), usa a senha antiga como reserva
-    if (e && (e.code === 'auth/network-request-failed' || e.code === 'auth/too-many-requests')) {
-      if (pass === ADMIN_PASS) { entrarComoAdmin(); return; }
+    if (e && e.code === 'auth/network-request-failed') { semConexao(); return; }
+    if (e && e.code === 'auth/too-many-requests') {
+      const el = document.getElementById('admin-senha-erro');
+      el.textContent = 'Muitas tentativas. Aguarde alguns minutos ou use a biometria.';
+      el.style.display = 'block';
+      return;
     }
     negarAcesso();
   }
 }
+
+// ════════════════════════════════
+// BIOMETRIA DO ADMIN (digital / rosto / Windows Hello do aparelho)
+// Depois de ativada, "Sair" só tranca o painel; para voltar, usa a biometria.
+// A biometria nunca sai do aparelho: o app só recebe o "ok" do sistema.
+// ════════════════════════════════
+const BIO_KEY = 'app_tecnico_admin_bio';
+let _modoTrocarUsuario = false;
+
+function _b64u(buf) {
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function _deB64u(s) {
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s); const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return u;
+}
+function _bioAdminCadastrada() {
+  try { const b = JSON.parse(localStorage.getItem(BIO_KEY) || 'null'); return !!(b && b.id); } catch (e) { return false; }
+}
+async function _bioDisponivel() {
+  try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }
+  catch (e) { return false; }
+}
+
+async function oferecerBiometria() {
+  if (currentRole !== 'admin') return;
+  if (!(await _bioDisponivel())) return;
+  const falhou = localStorage.getItem('app_tecnico_bio_falhou') === '1';
+  if (_bioAdminCadastrada() && !falhou) return;
+  const recusadaEm = Number(localStorage.getItem('app_tecnico_bio_recusada') || 0);
+  if (!falhou && recusadaEm && (Date.now() - recusadaEm) < 7 * 24 * 60 * 60 * 1000) return;
+  document.getElementById('bio-ativar-titulo').textContent = falhou ? '👆 Cadastrar a biometria de novo?' : '👆 Entrar com biometria?';
+  document.getElementById('modal-bio-ativar').classList.add('open'); lockScroll();
+}
+
+function _fecharModalBio() {
+  document.getElementById('modal-bio-ativar').classList.remove('open'); unlockScroll();
+}
+
+async function ativarBiometria() {
+  const btn = document.getElementById('btn-bio-ativar');
+  btn.disabled = true;
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'APP Técnico Rastreando GPS' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'admin', displayName: 'Admin Rastreando GPS' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      timeout: 60000, attestation: 'none'
+    }});
+    localStorage.setItem(BIO_KEY, JSON.stringify({ id: _b64u(cred.rawId), em: Date.now() }));
+    localStorage.removeItem('app_tecnico_bio_falhou');
+    localStorage.removeItem('app_tecnico_bio_recusada');
+    _fecharModalBio();
+    showToast('Biometria ativada neste aparelho! Ao tocar em "Sair", o painel fica trancado. ✅', 'success');
+  } catch (e) {
+    showToast('Não foi possível ativar a biometria agora. Tente de novo no próximo login com senha.', 'error');
+    _fecharModalBio();
+  } finally { btn.disabled = false; }
+}
+
+function recusarBiometria() {
+  localStorage.setItem('app_tecnico_bio_recusada', String(Date.now()));
+  localStorage.removeItem('app_tecnico_bio_falhou');
+  _fecharModalBio();
+}
+
+async function _verificarBiometria() {
+  const b = JSON.parse(localStorage.getItem(BIO_KEY) || 'null');
+  if (!b || !b.id) throw new Error('sem-biometria');
+  await navigator.credentials.get({ publicKey: {
+    challenge: crypto.getRandomValues(new Uint8Array(32)),
+    allowCredentials: [{ type: 'public-key', id: _deB64u(b.id), transports: ['internal'] }],
+    userVerification: 'required', timeout: 60000
+  }});
+  return true;
+}
+
+function _esconderTelaBloqueio() {
+  const el = document.getElementById('screen-bloqueio');
+  if (el) el.style.display = 'none';
+}
+
+function mostrarTelaBloqueio() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-tech').style.display  = 'none';
+  document.getElementById('screen-admin').style.display = 'none';
+  const erro = document.getElementById('bio-erro');
+  erro.style.display = 'none'; erro.textContent = '';
+  document.getElementById('screen-bloqueio').style.display = 'flex';
+}
+
+// Chamado pelo "Sair" do admin quando este aparelho tem biometria
+function trancarAdmin() {
+  localStorage.setItem('app_tecnico_trancado', '1');
+  currentUser = null; currentRole = null;
+  if (pollInterval) clearInterval(pollInterval);
+  pararListenerOSTecnico();
+  pararListenerOSAdmin();
+  pararListenerAgendamentos();
+  mostrarTelaBloqueio();
+}
+
+function _entrarAdminDesbloqueado() {
+  localStorage.removeItem('app_tecnico_trancado');
+  localStorage.removeItem('app_tecnico_bio_falhou');
+  _esconderTelaBloqueio();
+  currentUser = 'Admin';
+  currentRole = 'admin';
+  salvarSessao('Admin', 'admin');
+  showAdminScreen();
+}
+
+async function entrarComBiometria() {
+  const btn = document.getElementById('btn-bio-entrar');
+  const erro = document.getElementById('bio-erro');
+  erro.style.display = 'none';
+  const txt = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = 'Aguardando biometria...';
+  try {
+    await _verificarBiometria();
+    _entrarAdminDesbloqueado();
+  } catch (e) {
+    localStorage.setItem('app_tecnico_bio_falhou', '1');
+    erro.textContent = (e && e.name === 'NotAllowedError')
+      ? 'Biometria cancelada ou não reconhecida. Tente de novo ou use a senha.'
+      : 'Não deu para usar a biometria neste aparelho. Use a senha.';
+    erro.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.innerHTML = txt;
+  }
+}
+
+function _sairDeVerdade() {
+  localStorage.removeItem('app_tecnico_trancado');
+  currentRole = null;
+  try { if (auth) auth.signOut().catch(function(){}); } catch (e) {}
+  doLogout(true);
+}
+
+async function trocarUsuarioBloqueio() {
+  if (!confirm('Trocar de usuário? O admin será desconectado deste aparelho.')) return;
+  try {
+    await _verificarBiometria();
+    _sairDeVerdade();
+    showToast('Admin desconectado. Agora é só entrar com outro usuário.', '');
+  } catch (e) {
+    _modoTrocarUsuario = true;
+    abrirModalAdmin();
+    document.querySelector('#modal-admin-login .modal-sub').textContent = 'Confirme a senha do admin para trocar de usuário.';
+  }
+}
+
 
 // ════════════════════════════════
 // MODAL DELETE
@@ -1560,7 +1760,11 @@ async function doLogin() {
   }
 }
 
-function doLogout() {
+function doLogout(forcar) {
+  // Admin com biometria neste aparelho: "Sair" só tranca o painel
+  if (forcar !== true && currentRole === 'admin' && _bioAdminCadastrada()) { trancarAdmin(); return; }
+  localStorage.removeItem('app_tecnico_trancado');
+  _esconderTelaBloqueio();
   localStorage.removeItem('app_tecnico_session');
   currentUser = null; currentRole = null;
   if (pollInterval) clearInterval(pollInterval);
@@ -8811,6 +9015,13 @@ setTimeout(carregarLeaflet, 5000);
       const sess = JSON.parse(raw);
       const TTL  = 30*24*60*60*1000; // 30 dias para admin e técnico
       if (sess.ts && (Date.now() - sess.ts) < TTL) {
+        // Admin trancado (tocou em "Sair" com biometria ativa): abre na tela da biometria
+        if (sess.role === 'admin' && localStorage.getItem('app_tecnico_trancado') === '1') {
+          if (_bioAdminCadastrada()) { mostrarTelaBloqueio(); return; }
+          localStorage.removeItem('app_tecnico_trancado');
+          localStorage.removeItem('app_tecnico_session');
+          return;
+        }
         currentUser = sess.user;
         currentRole = sess.role;
         // Renovar sessão a cada abertura para nunca expirar em uso regular
