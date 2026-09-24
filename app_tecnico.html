@@ -1331,7 +1331,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v73-remocoes-veiculos-livres';
+const BUILD_VERSION = '2026-09-24-v74-remocoes-tempo-real';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2351,6 +2351,7 @@ function agendarAtualizacaoAgendamentos() {
   if (_debounceAgendamentosRefresh) clearTimeout(_debounceAgendamentosRefresh);
   _debounceAgendamentosRefresh = setTimeout(function() {
     if (currentRole !== 'admin') return; // só atualiza se ainda estiver logado como admin
+    if (typeof _remocoesCache !== 'undefined') _remocoesCache.em = 0; // pode ser remoção nova: busca na hora
     console.log('[Firebase] 🔥 Agendamento novo detectado em tempo real às ' + new Date().toLocaleTimeString('pt-BR') + ' — atualizando painel...');
     checkNovasOSFormulario();
     // Só recarrega a listinha se a aba "Agendamentos" estiver aberta na tela
@@ -7341,6 +7342,14 @@ function _cardRemocao(r) {
   '</div>';
 }
 
+// Apaga o "aviso" de tempo real que o cancelamento.html grava (só leva o protocolo)
+function _apagarAvisoRemocao(id) {
+  try {
+    const db = getFirestoreDb();
+    if (db) db.collection('agendamentos_pendentes').doc(String(id)).delete().catch(function(){});
+  } catch (e) {}
+}
+
 function _cardRemocaoLoading(id, ligar) {
   const card = document.getElementById('rm-card-' + id);
   if (!card) return;
@@ -7406,6 +7415,7 @@ async function criarOSRemocao(id) {
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
     showToast('OS de remoção criada para ' + tecnico + '! ✅', 'success');
+    _apagarAvisoRemocao(id);
   } catch (e) {
     showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
   }
@@ -7421,6 +7431,7 @@ async function ignorarRemocao(id) {
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'ignorado' });
     showToast('Pedido de remoção ignorado.', '');
+    _apagarAvisoRemocao(id);
   } catch (e) {
     _cardRemocaoLoading(id, false);
     showToast('Não foi possível ignorar: ' + e.message, 'error');
