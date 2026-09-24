@@ -114,8 +114,8 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16p
       <h2>O que aconteceu?</h2>
       <div class="seg acao" id="segAcao"><button data-v="retirar" class="on">Retirada</button><button data-v="adicionar">Instalação</button></div>
       <label>Tipo de rastreador</label>
-      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button><button data-v="livre">Valor livre</button></div>
-      <div id="boxQtd"><label>Quantidade de veículos</label>
+      <div class="seg" id="segTipo"><button data-v="com" class="on">Com bloqueio</button><button data-v="sem">Sem bloqueio</button><button data-v="tag">Tag (R$ 9,90)</button><button data-v="livre">Valor livre</button></div>
+      <div id="boxQtd"><label id="lblQtd">Quantidade de veículos</label>
       <div class="stepper"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div></div>
       <div id="boxValor" class="hidden"><label for="valorLivre">Valor (R$)</label><input id="valorLivre" type="text" inputmode="decimal" placeholder="0,00"></div>
       <div id="boxData" class="hidden"><label for="dataInst">Data da instalação</label><input id="dataInst" type="date"></div>
@@ -254,7 +254,7 @@ function renderCliente() {
     for (const s of cl.assinaturas) {
       const v = s.veiculos;
       const ve = v.confere
-        ? `<span class="tag">${v.com} com bloqueio</span><span class="tag">${v.sem} sem bloqueio</span>`
+        ? `<span class="tag">${v.com} com bloqueio</span><span class="tag">${v.sem} sem bloqueio</span>${v.tag ? `<span class="tag">${v.tag} ${v.tag === 1 ? "tag" : "tags"}</span>` : ""}`
         : `<span class="tag warn">Valor fora da tabela</span>`;
       const pend = s.pendentes.length
         ? `<div class="meta">Boletos pendentes: ${s.pendentes.map((p) => `${dt(p.vencimento)} (${brl(p.valor)})`).join(", ")}</div>` : "";
@@ -280,13 +280,14 @@ function seg(id, key, cb) {
   }));
 }
 function ajustarCampos() {
-  const livre = st.tipo === "livre";
+  const livre = st.tipo === "livre", tag = st.tipo === "tag";
   show($("boxQtd"), !livre); show($("boxValor"), livre);
-  show($("boxData"), st.acao === "adicionar" && !livre);
-  show($("boxTodas"), st.acao === "retirar" || livre);
+  show($("boxData"), st.acao === "adicionar" && !livre && !tag);
+  show($("boxTodas"), st.acao === "retirar" || livre || tag);
+  $("lblQtd").textContent = tag ? "Quantidade de tags" : "Quantidade de veículos";
   const [bR, bA] = $("segAcao").querySelectorAll("button");
-  bR.textContent = livre ? "Diminuir valor" : "Retirada";
-  bA.textContent = livre ? "Aumentar valor" : "Instalação";
+  bR.textContent = livre ? "Diminuir valor" : tag ? "Remover tag" : "Retirada";
+  bA.textContent = livre ? "Aumentar valor" : tag ? "Adicionar tag" : "Instalação";
 }
 seg("segAcao", "acao", ajustarCampos);
 seg("segTipo", "tipo", ajustarCampos);
@@ -298,8 +299,8 @@ $("mais").onclick = () => { st.qtd = Math.min(50, st.qtd + 1); $("qtd").textCont
 function params(dryRun) {
   if (st.excluir) return { subscriptionId: st.subId, acao: "excluir", excluirFaturas: $("excluirFaturas").checked, dryRun };
   return { subscriptionId: st.subId, acao: st.acao, tipo: st.tipo, quantidade: st.qtd,
-    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre") && $("todas").checked,
-    dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" ? $("dataInst").value : null,
+    aplicarTodas: (st.acao === "retirar" || st.tipo === "livre" || st.tipo === "tag") && $("todas").checked,
+    dataInstalacao: st.acao === "adicionar" && st.tipo !== "livre" && st.tipo !== "tag" ? $("dataInst").value : null,
     valor: st.tipo === "livre" ? ((v) => (v.includes(",") ? v.replace(/\./g, "").replace(",", ".") : v))($("valorLivre").value.trim()) : null, dryRun };
 }
 
@@ -324,10 +325,12 @@ $("calcular").onclick = async () => {
 
 function renderPrev(p) {
   const a = p.antes, d = p.depois;
-  const cancel = p.assinatura.acao === "cancelar";
+  const cancel = p.assinatura.acao === "cancelar" || p.assinatura.acao === "desativar";
   let h = `<h2>Confira antes de aplicar</h2>`;
-  if (p.acao === "excluir") h += `<div class="big-action cancel">A assinatura será excluída${p.boletos.some((b) => b.acao === "cancelar") ? " junto com as faturas em aberto" : " (faturas em aberto mantidas)"}.</div>`;
-  else if (cancel) h += `<div class="big-action cancel">A assinatura será cancelada (último veículo).</div>`;
+  if (p.acao === "excluir") h += p.assinatura.acao === "desativar"
+    ? `<div class="big-action cancel">A assinatura será desativada (para de gerar cobranças). As faturas em aberto continuam valendo.</div>`
+    : `<div class="big-action cancel">A assinatura será excluída junto com as faturas em aberto.</div>`;
+  else if (cancel) h += `<div class="big-action cancel">A assinatura será desativada (último veículo). Os boletos marcados como "Manter" continuam valendo.</div>`;
   h += `<div class="compare">
     <div class="box"><small>Hoje</small><b>${c(a.valorC)}</b><em>em dia: ${c(a.valorC - a.descC)}</em></div>
     <div class="arrow" aria-hidden="true">›</div>
