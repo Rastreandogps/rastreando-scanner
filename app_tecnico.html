@@ -1390,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-24-v86-link-ajuste-assinatura';
+const BUILD_VERSION = '2026-09-25-v87-manutencao-formulario';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7376,7 +7376,7 @@ async function carregarAgendamentos() {
   const _rem = await _promRemocoes;
   const _htmlRem = _htmlBlocoRemocoes(_rem);
   if (!result.ok || !result.data) {
-    _atualizarBadgeAgendamentos(0, _rem.lista.length);
+    _atualizarBadgeAgendamentos(0, _rem.lista.length + _rem.manut.length);
     list.innerHTML = _htmlRem + '<div class="empty-state"><p>Erro ao carregar.</p></div>';
     return;
   }
@@ -7385,7 +7385,7 @@ async function carregarAgendamentos() {
   await _completarDataHoraViaFirestore(pendentes);
 
   // Atualiza badge (formulário + remoções)
-  _atualizarBadgeAgendamentos(pendentes.length, _rem.lista.length);
+  _atualizarBadgeAgendamentos(pendentes.length, _rem.lista.length + _rem.manut.length);
 
   if (pendentes.length === 0) {
     list.innerHTML = _htmlRem + '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhum agendamento pendente.</p></div>';
@@ -7551,6 +7551,7 @@ async function ignorarAgendamentoAba(rowIndex, idPedido) {
 // ════════════════════════════════
 const REMOCOES_URL = 'https://southamerica-east1-rastreando-assinaturas.cloudfunctions.net/remocoesAdmin';
 let _remocoesLista = [];
+let _manutLista = [];
 let _remocoesCache = { em: 0, n: 0 };
 
 function _esperarUsuarioFirebase(ms) {
@@ -7588,20 +7589,22 @@ async function _buscarRemocoesSeguro() {
   try {
     const res = await _chamarRemocoes({ acao: 'listar' });
     _remocoesLista = (res.remocoes || []).filter(function(r) { return /^CAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
-    _remocoesCache = { em: Date.now(), n: _remocoesLista.length };
-    return { ok: true, lista: _remocoesLista, erro: '' };
+    _manutLista = (res.manutencoes || []).filter(function(r) { return /^MAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
+    _remocoesCache = { em: Date.now(), n: _remocoesLista.length + _manutLista.length };
+    return { ok: true, lista: _remocoesLista, manut: _manutLista, erro: '' };
   } catch (e) {
     console.warn('[Remoções] Não foi possível carregar:', e);
     _remocoesLista = [];
+    _manutLista = [];
     _remocoesCache = { em: Date.now(), n: 0 };
-    return { ok: false, lista: [], erro: (e && e.message) || 'Erro' };
+    return { ok: false, lista: [], manut: [], erro: (e && e.message) || 'Erro' };
   }
 }
 
 async function _contarRemocoesComCache() {
   if (Date.now() - _remocoesCache.em < 60000) return _remocoesCache.n;
   const r = await _buscarRemocoesSeguro();
-  return r.lista.length;
+  return r.lista.length + r.manut.length;
 }
 
 function _atualizarBadgeAgendamentos(nForm, nRem) {
@@ -7629,14 +7632,136 @@ function _fmtTelRemocao(t) {
 
 function _htmlBlocoRemocoes(rem) {
   if (!rem.ok) {
-    return '<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;">⚠️ Remoções (cancelamento): não foi possível carregar agora — ' + esc(rem.erro) + '</div>';
+    return '<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:10px 14px;font-size:12.5px;margin-bottom:14px;">⚠️ Remoções e manutenções (formulários): não foi possível carregar agora — ' + esc(rem.erro) + '</div>';
   }
+  let h = '';
   if (!rem.lista.length) {
-    return '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">📤 Nenhum pedido de remoção (cancelamento) pendente.</div>';
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">📤 Nenhum pedido de remoção (cancelamento) pendente.</div>';
+  } else {
+    h += '<div style="font-size:15px;font-weight:700;color:#b91c1c;margin:2px 0 10px;">📤 Remoções — pedidos de cancelamento (' + rem.lista.length + ')</div>' +
+      rem.lista.map(_cardRemocao).join('');
   }
-  return '<div style="font-size:15px;font-weight:700;color:#b91c1c;margin:2px 0 10px;">📤 Remoções — pedidos de cancelamento (' + rem.lista.length + ')</div>' +
-    rem.lista.map(_cardRemocao).join('') +
-    '<div style="height:1px;background:var(--border);margin:6px 0 16px;"></div>';
+  if (!rem.manut.length) {
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">🔧 Nenhum pedido de manutenção pendente.</div>';
+  } else {
+    h += '<div style="font-size:15px;font-weight:700;color:#b45309;margin:10px 0 10px;">🔧 Manutenções — pedidos dos clientes (' + rem.manut.length + ')</div>' +
+      rem.manut.map(_cardManutencao).join('');
+  }
+  return h + '<div style="height:1px;background:var(--border);margin:6px 0 16px;"></div>';
+}
+
+// ─── Card e ações dos pedidos de MANUTENÇÃO (manutencao.html) ───
+function _cardManutencao(r) {
+  const id = r.id;
+  const lbl = 'font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;';
+  const inp = 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;';
+  const veiculosHtml = (r.veiculos || []).map(function(v, i) {
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + '</span>';
+  }).join('');
+  const optsTec = TECH_NAMES.map(function(n) {
+    return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
+  }).join('');
+  const telCad = _fmtTelRemocao(r.telefone);
+  const telOutro = _fmtTelRemocao(r.telefoneContato);
+  const enviado = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+  const novo = r.novoVeiculo ? '<div style="font-size:12px;color:#b45309;margin-bottom:6px;">➡️ Transferir para: <b>' + esc(r.novoVeiculo.modelo || '') + ' — ' + esc(r.novoVeiculo.placa || '') + '</b> (cobrar nova taxa de instalação)</div>' : '';
+
+  return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #fde68a;border-left:5px solid #f59e0b;box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
+      '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
+      '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔧 Manutenção</span>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
+    '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px;margin-bottom:8px;">' +
+      '<div style="font-size:13px;font-weight:700;color:#92400e;">' + esc(r.motivoTexto || '') + '</div>' +
+      (r.descricao ? '<div style="font-size:12.5px;color:#78350f;margin-top:3px;">💬 ' + esc(r.descricao) + '</div>' : '') +
+    '</div>' +
+    novo +
+    (telCad ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(telCad) + ' <span style="font-size:11px;">(cadastro)</span></div>' : '') +
+    (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(r.enderecoTexto || '') + '</div>' +
+    (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
+    '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>' +
+    (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
+    '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
+      '<div style="flex:1;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
+      '<div style="flex:1;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
+      '<div style="flex:1;"><label style="' + lbl + '">Horário (opcional)</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
+    '</div>' +
+    '<div style="margin-bottom:10px;">' +
+      '<label style="' + lbl + '">💰 Valor do serviço</label>' +
+      '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
+        '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;">' +
+      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:#f59e0b;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS de manutenção</button>' +
+      '<button onclick="ignorarManutencao(\'' + id + '\')" style="padding:10px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
+    '</div>' +
+  '</div>';
+}
+
+async function criarOSManutencao(id) {
+  const r = _manutLista.find(function(x) { return x.id === id; });
+  if (!r) { showToast('Pedido não encontrado. Atualize a lista.', 'error'); return; }
+  const tecnico = document.getElementById('rm-tec-' + id)?.value || '';
+  const data = document.getElementById('rm-data-' + id)?.value || '';
+  const hora = document.getElementById('rm-hora-' + id)?.value || '';
+  const valor = document.getElementById('rm-valor-' + id)?.value || '';
+  if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
+
+  const veiculoStr = (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
+  const partesObs = ['MANUTENÇÃO — protocolo ' + r.id, 'Motivo: ' + (r.motivoTexto || '')];
+  if (r.descricao) partesObs.push('Relato do cliente: ' + r.descricao);
+  if (r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
+  if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
+  if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
+  if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
+
+  _cardRemocaoLoading(id, true);
+  const novoId = genId();
+  setAdminSyncStatus('syncing');
+  const resultSave = await gasRequest({
+    action: 'saveOrder', tech: tecnico, id: novoId,
+    nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
+    endereco: r.enderecoTexto || '', tipo: 'Manutenção', data: data,
+    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora)
+  });
+  if (!resultSave.ok) {
+    _cardRemocaoLoading(id, false);
+    showToast('Erro ao criar OS.', 'error');
+    setAdminSyncStatus('ok');
+    return;
+  }
+  if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
+  try {
+    await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
+    showToast('OS de manutenção criada para ' + tecnico + '! ✅', 'success');
+    _apagarAvisoRemocao(id);
+  } catch (e) {
+    showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
+  }
+  _remocoesCache.em = 0;
+  marcarMapaDesatualizado();
+  await loadAllOrders();
+  carregarAgendamentos();
+}
+
+async function ignorarManutencao(id) {
+  if (!confirm('Ignorar este pedido de manutenção? Ele não aparecerá mais na lista.')) return;
+  _cardRemocaoLoading(id, true);
+  try {
+    await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'ignorado' });
+    showToast('Pedido de manutenção ignorado.', '');
+    _apagarAvisoRemocao(id);
+  } catch (e) {
+    _cardRemocaoLoading(id, false);
+    showToast('Não foi possível ignorar: ' + e.message, 'error');
+    return;
+  }
+  _remocoesCache.em = 0;
+  carregarAgendamentos();
 }
 
 function _cardRemocao(r) {
