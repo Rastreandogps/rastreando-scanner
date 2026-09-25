@@ -1390,7 +1390,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-25-v87-manutencao-formulario';
+const BUILD_VERSION = '2026-09-25-v88-obs-sem-protocolo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7712,7 +7712,7 @@ async function criarOSManutencao(id) {
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
 
   const veiculoStr = (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
-  const partesObs = ['MANUTENÇÃO — protocolo ' + r.id, 'Motivo: ' + (r.motivoTexto || '')];
+  const partesObs = ['Motivo: ' + (r.motivoTexto || '')];
   if (r.descricao) partesObs.push('Relato do cliente: ' + r.descricao);
   if (r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
   if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
@@ -7863,7 +7863,7 @@ async function criarOSRemocao(id) {
   const veiculoStr = (r.veiculos || []).map(function(v) {
     return (v.modelo || '') + ' | Placa: ' + (v.placa || '');
   }).join(' || ');
-  const partesObs = ['REMOÇÃO (cancelamento) — protocolo ' + r.id];
+  const partesObs = [];
   if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
   partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar os veículos listados');
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
