@@ -110,6 +110,19 @@
     .gaveta { grid-column: 1 / -1; }
     .gaveta > summary { list-style: none; }
     .gaveta > summary::-webkit-details-marker { display: none; }
+    /* Modal de login do tutorial */
+    .modal-tut-fundo{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:50}
+    .modal-tut-fundo[hidden]{display:none}
+    .modal-tut-caixa{background:#fff;border-radius:16px;max-width:480px;width:100%;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+    .modal-tut-caixa h2{font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+    .modal-tut-caixa p{font-size:.85rem;color:#4A5568;margin-bottom:14px}
+    .modal-tut-campo{width:100%;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:1rem;margin-bottom:14px;outline:none}
+    .modal-tut-campo:focus{border-color:var(--navy)}
+    .modal-tut-btns{display:flex;gap:8px}
+    .modal-tut-btns button{flex:1;padding:13px;border:none;border-radius:10px;font-size:.92rem;font-weight:700;cursor:pointer}
+    .modal-tut-ok{background:var(--navy);color:#fff}
+    .modal-tut-cancel{background:#f1f5f9;color:#475569}
+    @media(min-width:520px){.modal-tut-fundo{align-items:center}}
     .gaveta .chev { margin-left: auto; font-size: 18px; color: var(--muted); transition: transform 0.2s; }
     .gaveta[open] .chev { transform: rotate(180deg); }
     .gaveta[open] > summary { border-color: var(--border-h); }
@@ -247,9 +260,9 @@
             <span class="app-desc">Vídeo e download do aplicativo</span>
           </div>
         </a>
-        <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Ftutorial.html" target="_blank" rel="noopener" aria-label="Enviar link do tutorial pelo WhatsApp">
+        <button type="button" class="btn-wpp" id="btn-wpp-tutorial" aria-label="Enviar acesso com tutorial pelo WhatsApp">
           <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
-        </a>
+        </button>
       </div>
       <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
         <div class="icon ic-purple"><i class="ti ti-user-circle" aria-hidden="true"></i></div>
@@ -476,6 +489,57 @@
     const blob = new Blob([manifestData], {type: 'application/json'});
     document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blob));
   </script>
+
+<!-- Modal de login do tutorial -->
+<div class="modal-tut-fundo" id="modal-tut" hidden>
+  <div class="modal-tut-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-tut-titulo">
+    <h2 id="modal-tut-titulo">Enviar acesso pelo WhatsApp</h2>
+    <p>Digite o login do cliente. A senha e o link do tutorial já vêm prontos.</p>
+    <input class="modal-tut-campo" id="modal-tut-login" type="text" placeholder="Ex.: LuizCastilho" autocomplete="off" autocorrect="off" autocapitalize="none">
+    <div class="modal-tut-btns">
+      <button class="modal-tut-cancel" id="modal-tut-fechar">Cancelar</button>
+      <button class="modal-tut-ok" id="modal-tut-ok">Abrir WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var modal = document.getElementById('modal-tut');
+  var campo = document.getElementById('modal-tut-login');
+  var btnOk = document.getElementById('modal-tut-ok');
+  var btnFechar = document.getElementById('modal-tut-fechar');
+
+  document.getElementById('btn-wpp-tutorial').addEventListener('click', function(ev){
+    ev.preventDefault();
+    campo.value = '';
+    modal.hidden = false;
+    setTimeout(function(){ campo.focus(); }, 80);
+  });
+
+  function fechar(){ modal.hidden = true; }
+  btnFechar.addEventListener('click', fechar);
+  modal.addEventListener('click', function(ev){ if(ev.target === modal) fechar(); });
+
+  function enviar(){
+    var login = campo.value.trim();
+    if(!login){ campo.focus(); campo.style.borderColor='#E03131'; return; }
+    campo.style.borderColor='';
+    var msg = '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
+      'Agora você acompanha seu veículo em tempo real, de onde estiver. 📍\n\n' +
+      '🔐 *Seus dados de acesso*\n' +
+      '👤 *Login:* ' + login + '\n' +
+      '🔑 *Senha:* 123456\n\n' +
+      '📲 *Baixe o aplicativo e veja como usar:*\n' +
+      'https://app.rastreandogpsbr.com.br/tutorial.html\n\n' +
+      'Qualquer dúvida, é só chamar aqui. Boa viagem! 🚀';
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    fechar();
+  }
+  btnOk.addEventListener('click', enviar);
+  campo.addEventListener('keydown', function(ev){ if(ev.key === 'Enter') enviar(); });
+})();
+</script>
 
 </body>
 </html>
