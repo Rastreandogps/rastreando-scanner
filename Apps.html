@@ -106,6 +106,14 @@
       -webkit-tap-highlight-color: transparent;
     }
     .btn-wpp i { font-size: 24px; }
+    /* Gaveta dos formulários de visita */
+    .gaveta { grid-column: 1 / -1; }
+    .gaveta > summary { list-style: none; }
+    .gaveta > summary::-webkit-details-marker { display: none; }
+    .gaveta .chev { margin-left: auto; font-size: 18px; color: var(--muted); transition: transform 0.2s; }
+    .gaveta[open] .chev { transform: rotate(180deg); }
+    .gaveta[open] > summary { border-color: var(--border-h); }
+    .gaveta-itens { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 0 12px; padding-left: 10px; border-left: 2px solid var(--border); }
     .btn-wpp:hover  { background: #15803d; }
     .btn-wpp:active { transform: scale(0.96); }
 
@@ -211,15 +219,60 @@
   <section>
     <p class="section-label">Clientes</p>
     <div class="grid">
-      <a class="app-btn" href="https://app.rastreandogpsbr.com.br/agendamentocliente.html" target="_blank" rel="noopener">
-        <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
-        <span class="app-name">Agendamento</span>
-        <span class="app-desc">Formulário de OS</span>
-      </a>
-      <a class="app-btn" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
+      <details class="gaveta">
+        <summary class="app-btn wide">
+          <div class="icon ic-teal"><i class="ti ti-folders" aria-hidden="true"></i></div>
+          <div class="info">
+            <span class="app-name">Formulários de visita</span>
+            <span class="app-desc">Agendamento · Manutenção · Retirada</span>
+          </div>
+          <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+        </summary>
+        <div class="gaveta-itens">
+          <div class="row-wpp">
+            <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/agendamentocliente.html" target="_blank" rel="noopener">
+              <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
+              <div class="info">
+                <span class="app-name">Agendamento</span>
+                <span class="app-desc">Instalação nova</span>
+              </div>
+            </a>
+            <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fagendamentocliente.html" target="_blank" rel="noopener" aria-label="Enviar link do agendamento pelo WhatsApp">
+              <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
+            </a>
+          </div>
+          <div class="row-wpp">
+            <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/Manutencao.html" target="_blank" rel="noopener">
+              <div class="icon ic-orange"><i class="ti ti-tool" aria-hidden="true"></i></div>
+              <div class="info">
+                <span class="app-name">Manutenção</span>
+                <span class="app-desc">Visita técnica</span>
+              </div>
+            </a>
+            <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2FManutencao.html" target="_blank" rel="noopener" aria-label="Enviar link da manutenção pelo WhatsApp">
+              <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
+            </a>
+          </div>
+          <div class="row-wpp">
+            <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/cancelamento.html" target="_blank" rel="noopener">
+              <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
+              <div class="info">
+                <span class="app-name">Retirada</span>
+                <span class="app-desc">Cancelamento e retirada do equipamento</span>
+              </div>
+            </a>
+            <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fcancelamento.html" target="_blank" rel="noopener" aria-label="Enviar link da retirada pelo WhatsApp">
+              <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
+            </a>
+          </div>
+        </div>
+      </details>
+      <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
         <div class="icon ic-purple"><i class="ti ti-user-circle" aria-hidden="true"></i></div>
-        <span class="app-name">Área do Cliente</span>
-        <span class="app-desc">Portal do cliente</span>
+        <div class="info">
+          <span class="app-name">Área do Cliente</span>
+          <span class="app-desc">Portal do cliente</span>
+        </div>
       </a>
       <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/regularizar.html" target="_blank" rel="noopener">
         <div class="icon ic-yellow"><i class="ti ti-file-check" aria-hidden="true"></i></div>
@@ -228,18 +281,6 @@
           <span class="app-desc">Formulário de regularização</span>
         </div>
       </a>
-      <div class="row-wpp">
-        <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/cancelamento.html" target="_blank" rel="noopener">
-          <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
-          <div class="info">
-            <span class="app-name">Cancelamento</span>
-            <span class="app-desc">Formulário de cancelamento</span>
-          </div>
-        </a>
-        <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fcancelamento.html" target="_blank" rel="noopener" aria-label="Enviar link pelo WhatsApp">
-          <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
-        </a>
-      </div>
       <div class="row-wpp">
         <a class="app-btn wide" href="https://app.rastreandogpsbr.com.br/tutorial.html" target="_blank" rel="noopener">
           <div class="icon ic-blue"><i class="ti ti-player-play" aria-hidden="true"></i></div>
