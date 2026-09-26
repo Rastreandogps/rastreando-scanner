@@ -787,7 +787,7 @@ body{background:var(--bg,#F5F7FA)}
     var NOMES = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
     var linhas = '', tCli = 0, tPot = 0, tEst = 0, tRec = 0;
     ['ouro', 'prata', 'latao'].forEach(function (k) {
-      var r = R[k], est = r.total * (GPCT[k] / 100);
+      var r = R[k], est = r.recebido + r.aReceber * (GPCT[k] / 100);
       tCli += r.clientes; tPot += r.total; tEst += est; tRec += r.recebido;
       linhas += '<tr><td>' + NOMES[k] + '</td><td>' + r.clientes + '</td><td>' + brl(r.total) + '</td>' +
         '<td><input type="number" min="0" max="100" step="0.5" data-pct="' + k + '" value="' + GPCT[k] + '">%</td>' +
@@ -797,7 +797,7 @@ body{background:var(--bg,#F5F7FA)}
     function quadrantes(pct) {
       var t = { pot: 0, est: 0, rec: 0, falta: 0, cli: 0 };
       var h = ['ouro', 'prata', 'latao'].map(function (k) {
-        var r = R[k], est = r.total * (pct[k] / 100), falta = Math.max(0, est - r.recebido);
+        var r = R[k], falta = r.aReceber * (pct[k] / 100), est = r.recebido + falta;
         t.pot += r.total; t.est += est; t.rec += r.recebido; t.falta += falta; t.cli += r.clientes;
         return '<div class="g-q ' + k + '"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' +
           '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
@@ -825,14 +825,14 @@ body{background:var(--bg,#F5F7FA)}
         '<div class="g-card"><b class="ruim">' + pctFmt(taxaValor) + '</b><span>do valor em aberto: ' + brl(valorAberto) + ' de ' + brl(valorTotal) + '</span></div>' +
       '</div>' +
       '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
-      '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Estimativa</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Esperado no mês</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
       '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>';
     function recalcEst() {
       var soma = 0, pctTela = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) {
         var v = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value) || 0;
         pctTela[k] = v;
-        var est = R[k].total * (v / 100); soma += est;
+        var est = R[k].recebido + R[k].aReceber * (v / 100); soma += est;
         $('g-est-' + k).textContent = brl(est);
       });
       $('g-est-tot').textContent = brl(soma);
