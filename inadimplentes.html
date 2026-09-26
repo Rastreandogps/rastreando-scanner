@@ -169,6 +169,25 @@ body{background:var(--bg,#F5F7FA)}
 .form-retorno{margin-top:10px;padding:12px;background:var(--bg,#F5F7FA);border-radius:10px}
 .form-retorno input,.form-retorno textarea{width:100%;margin-bottom:8px}
 .form-retorno textarea{min-height:60px}
+.cc-retorno{margin:0 16px 12px;padding:10px 12px;background:rgba(36,81,160,.06);border:1px solid rgba(36,81,160,.18);border-radius:10px;font-size:.84rem;color:var(--text-2)}
+.cc-retorno b{color:var(--navy)}
+.linha-limpar{display:flex;justify-content:flex-end;margin:-4px 0 8px}
+.cal{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-head b{font-family:var(--font-display);color:var(--navy);text-transform:capitalize}
+.cal-head button{background:#EEF3FB;border:none;border-radius:8px;width:38px;height:34px;font-size:1.2rem;color:var(--navy);cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-sem{font-size:.7rem;color:var(--text-3);text-align:center;font-weight:700;padding:4px 0}
+.cal-dia{aspect-ratio:1;border:1.5px solid transparent;border-radius:8px;background:var(--bg);font-size:.86rem;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-family:inherit}
+.cal-dia.fora{background:none;cursor:default}
+.cal-dia.hoje{border-color:var(--navy-light)}
+.cal-dia.tem{background:rgba(36,81,160,.14);font-weight:700;color:var(--navy)}
+.cal-dia.tem.passou{background:var(--danger-dim);color:var(--danger)}
+.cal-dia.sel{background:var(--navy)!important;color:#fff!important}
+.cal-dia .qtd{font-size:.62rem;font-weight:800;line-height:1;margin-top:2px}
+.cal-legenda{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--text-3);margin-top:8px}
+.cal-legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.cal-titulo-dia{font-weight:700;color:var(--navy);margin:4px 0 10px}
 .retorno-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .retorno-item .data-tag{display:inline-block;background:var(--navy);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
 .retorno-item .data-tag.atrasada{background:var(--danger)}
@@ -229,6 +248,7 @@ body{background:var(--bg,#F5F7FA)}
       <button type="button" data-v="{valor_total}">{valor_total}</button>
       <button type="button" data-v="{qtd_boletos}">{qtd_boletos}</button>
       <button type="button" data-v="{dias_atraso}">{dias_atraso}</button>
+      <button type="button" data-v="{vencimento}">{vencimento}</button>
       <button type="button" data-v="{link_regularizar}">{link_regularizar}</button>
     </div>
   </details>
@@ -241,6 +261,7 @@ body{background:var(--bg,#F5F7FA)}
       <button type="button" data-v="{valor_total}">{valor_total}</button>
       <button type="button" data-v="{qtd_boletos}">{qtd_boletos}</button>
       <button type="button" data-v="{dias_atraso}">{dias_atraso}</button>
+      <button type="button" data-v="{vencimento}">{vencimento}</button>
       <button type="button" data-v="{link_boleto}">{link_boleto}</button>
     </div>
   </details>
@@ -253,6 +274,10 @@ body{background:var(--bg,#F5F7FA)}
       <option value="nome">Nome (A-Z)</option>
     </select>
     <button type="button" class="btn btn-sec" id="btn-atualizar" style="flex:0 0 auto">🔄 Atualizar</button>
+  </div>
+
+  <div class="linha-limpar" id="linha-limpar">
+    <button type="button" class="btn-link" id="btn-limpar">🧹 Limpar marcações de envio</button>
   </div>
 
   <div id="lista-clientes"></div>
@@ -391,6 +416,7 @@ body{background:var(--bg,#F5F7FA)}
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
       $('toolbar-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
+      $('linha-limpar').style.display = abaAtual === 'retornos' ? 'none' : '';
       $('resumo-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
       $('lista-clientes').hidden = abaAtual === 'retornos';
       $('aba-retornos').hidden = abaAtual !== 'retornos';
@@ -437,7 +463,8 @@ body{background:var(--bg,#F5F7FA)}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + '</span><span>' + brl(f.valor) + ' · ' + f.dias + 'd</span></div>';
       }).join('');
-      var retornoCliente = DADOS.retornos.find(function (r) { return soDig(r.cpf) === soDig(c.cpf); });
+      var retornoCliente = DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); })
+        .sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); })[0];
       var iniciais = String(c.nome || '?').trim().split(/\s+/).filter(Boolean);
       iniciais = ((iniciais[0] || '?')[0] + (iniciais.length > 1 ? iniciais[iniciais.length - 1][0] : '')).toUpperCase();
       var selos = '<span class="cc-dias' + (c.diasAtrasoMax >= 15 ? ' grave' : '') + '">⏱ ' + c.diasAtrasoMax + ' dias de atraso</span>';
@@ -461,6 +488,7 @@ body{background:var(--bg,#F5F7FA)}
           '<div><span style="min-width:0"><small>CPF/CNPJ</small><b>' + esc(c.cpf || '—') + '</b></span>' + (c.cpf ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.cpf) + '">copiar</button>' : '') + '</div>' +
         '</div>' +
         '<div class="cc-fats">' + fats + '</div>' +
+        (retornoCliente ? '<div class="cc-retorno">📅 Retorno para <b>' + dataBR(retornoCliente.dataPromessa) + '</b>: ' + esc(retornoCliente.texto) + '</div>' : '') +
         '<div class="form-retorno" id="form-ret-' + i + '" hidden>' +
           '<input type="date" id="ret-data-' + i + '">' +
           '<textarea id="ret-texto-' + i + '" placeholder="Ex.: cliente disse que paga na sexta-feira"></textarea>' +
@@ -511,21 +539,48 @@ body{background:var(--bg,#F5F7FA)}
     } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); carregando(btn, false, 'Salvar'); }
   }
 
+  // ---------- RETORNOS EM CALENDÁRIO ----------
+  var calMes = null, calSel = null;
+  function isoLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function renderRetornos() {
-    var lista = DADOS.retornos.slice();
-    if (!lista.length) { $('lista-retornos').innerHTML = '<div class="vazio">Nenhum retorno registrado ainda.</div>'; return; }
-    var hoje = new Date(); hoje.setHours(0,0,0,0);
-    $('lista-retornos').innerHTML = lista.map(function (r) {
-      var d = new Date(r.dataPromessa + 'T00:00:00');
-      var atrasada = d < hoje;
+    var hojeIso = isoLocal(new Date());
+    if (!calMes) { var h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
+    if (!calSel) calSel = hojeIso;
+    var porDia = {};
+    DADOS.retornos.forEach(function (r) { (porDia[r.dataPromessa] = porDia[r.dataPromessa] || []).push(r); });
+    var ano = calMes.getFullYear(), mes = calMes.getMonth();
+    var nomeMes = calMes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    var primeiroDiaSem = new Date(ano, mes, 1).getDay();
+    var diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    var cel = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(function (x) { return '<div class="cal-sem">' + x + '</div>'; }).join('');
+    for (var k = 0; k < primeiroDiaSem; k++) cel += '<div class="cal-dia fora"></div>';
+    for (var d = 1; d <= diasNoMes; d++) {
+      var iso = ano + '-' + String(mes + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var n = (porDia[iso] || []).length;
+      var cls = 'cal-dia' + (n ? ' tem' : '') + (n && iso < hojeIso ? ' passou' : '') + (iso === hojeIso ? ' hoje' : '') + (iso === calSel ? ' sel' : '');
+      cel += '<button type="button" class="' + cls + '" data-dia="' + iso + '">' + d + (n ? '<span class="qtd">' + n + '</span>' : '') + '</button>';
+    }
+    var doDia = (porDia[calSel] || []).slice();
+    var lista = doDia.length ? doDia.map(function (r) {
       var criado = r.criadoEm ? new Date(r.criadoEm).toLocaleDateString('pt-BR') : '';
       return '<div class="retorno-item">' +
-        '<span class="data-tag' + (atrasada ? ' atrasada' : '') + '">' + dataBR(r.dataPromessa) + (atrasada ? ' · venceu' : '') + '</span>' +
         '<div class="nome">' + esc(r.nome) + '</div>' +
         '<div class="texto">"' + esc(r.texto) + '"</div>' +
         '<div class="rodape"><span>CPF ' + esc(r.cpf) + ' · anotado em ' + criado + '</span><button type="button" class="excluir" data-id="' + esc(r.id) + '">Excluir</button></div>' +
       '</div>';
-    }).join('');
+    }).join('') : '<div class="vazio">Nenhum retorno neste dia.</div>';
+    $('lista-retornos').innerHTML =
+      '<div class="cal">' +
+        '<div class="cal-head"><button type="button" id="cal-ant" aria-label="Mês anterior">‹</button><b>' + esc(nomeMes) + '</b><button type="button" id="cal-prox" aria-label="Próximo mês">›</button></div>' +
+        '<div class="cal-grid">' + cel + '</div>' +
+        '<div class="cal-legenda"><span><i style="background:rgba(36,81,160,.14)"></i>com retorno</span><span><i style="background:var(--danger-dim)"></i>data já passou</span><span><i style="border:1.5px solid var(--navy-light)"></i>hoje</span></div>' +
+      '</div>' +
+      '<div class="cal-titulo-dia">Retornos de ' + dataBR(calSel) + '</div>' + lista;
+    $('cal-ant').addEventListener('click', function () { calMes = new Date(ano, mes - 1, 1); renderRetornos(); });
+    $('cal-prox').addEventListener('click', function () { calMes = new Date(ano, mes + 1, 1); renderRetornos(); });
+    $('lista-retornos').querySelectorAll('[data-dia]').forEach(function (b) {
+      b.addEventListener('click', function () { calSel = b.getAttribute('data-dia'); renderRetornos(); });
+    });
     $('lista-retornos').querySelectorAll('.excluir').forEach(function (b) {
       b.addEventListener('click', async function () {
         if (!confirm('Excluir este retorno?')) return;
@@ -533,6 +588,26 @@ body{background:var(--bg,#F5F7FA)}
         catch (e) { toast((e && e.message) || 'Erro ao excluir.', 'erro'); }
       });
     });
+  }
+
+  // ---------- LIMPAR MARCAÇÕES DE ENVIO ----------
+  $('btn-limpar').addEventListener('click', async function () {
+    if (!confirm('Tirar a marcação de "Enviado" de TODOS os clientes (das duas abas)?\n\nOs retornos anotados continuam salvos.')) return;
+    var b = this, txtOrig = b.textContent;
+    b.disabled = true; b.textContent = 'Limpando...';
+    try {
+      await chamar('limparEnviados');
+      ['dois', 'um'].forEach(function (k) { (DADOS[k] || []).forEach(function (c) { c.ultimoEnvio = null; }); });
+      renderLista();
+      toast('Marcações de envio limpas.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); }
+    b.disabled = false; b.textContent = txtOrig;
+  });
+
+  function listaVencimentos(c) {
+    var ds = c.faturas.map(function (f) { return f.vencimento; }).sort().map(dataBR);
+    if (ds.length <= 1) return ds[0] || '';
+    return ds.slice(0, -1).join(', ') + ' e ' + ds[ds.length - 1];
   }
 
   function enviarMensagem(c) {
@@ -544,6 +619,7 @@ body{background:var(--bg,#F5F7FA)}
       .replace(/\{valor_total\}/g, brl(c.valorTotal))
       .replace(/\{qtd_boletos\}/g, String(c.faturas.length))
       .replace(/\{dias_atraso\}/g, String(diasMax))
+      .replace(/\{vencimento\}/g, listaVencimentos(c))
       .replace(/\{link_regularizar\}/g, LINK_REGULARIZAR)
       .replace(/\{link_boleto\}/g, LINK_BOLETO);
     var tel = soDig(c.telefone);
