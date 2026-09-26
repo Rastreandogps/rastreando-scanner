@@ -221,6 +221,21 @@ body{background:var(--bg,#F5F7FA)}
 .cls-bols{margin-top:8px;font-size:.8rem;border-top:1px solid var(--border);padding-top:6px}
 .cls-bols div{display:flex;justify-content:space-between;padding:2px 0}
 .st-pago{color:var(--green);font-weight:700} .st-aberto{color:var(--navy-light);font-weight:700} .st-vencido{color:var(--danger);font-weight:700}
+.g-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+@media (max-width:560px){.g-cards{grid-template-columns:1fr}}
+.g-card{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.g-card b{display:block;font-family:var(--font-display);font-size:1.6rem;color:var(--navy)}
+.g-card b.ruim{color:var(--danger)}
+.g-card span{font-size:.8rem;color:var(--text-2)}
+.g-titulo{font-weight:800;color:var(--navy);margin:16px 0 8px}
+.g-tabela-box{overflow-x:auto;background:#fff;border:2px solid var(--border);border-radius:12px}
+.g-tabela{width:100%;border-collapse:collapse;font-size:.85rem;min-width:520px}
+.g-tabela th,.g-tabela td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+.g-tabela th:first-child,.g-tabela td:first-child{text-align:left}
+.g-tabela th{font-size:.74rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.03em}
+.g-tabela tr.tot td{font-weight:800;background:var(--bg);border-bottom:none}
+.g-tabela input{width:62px;padding:6px;text-align:right;font-size:.85rem}
+.g-est{color:var(--navy);font-weight:800}
 .retorno-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .retorno-item .data-tag{display:inline-block;background:var(--navy);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
 .retorno-item .data-tag.atrasada{background:var(--danger)}
@@ -264,8 +279,10 @@ body{background:var(--bg,#F5F7FA)}
   <div class="tabs">
     <button type="button" data-tab="dois" class="ativo">2+ meses vencidos <span id="cnt-dois"></span></button>
     <button type="button" data-tab="um">1 boleto vencido <span id="cnt-um"></span></button>
+    <button type="button" data-tab="pagos">✅ Pagos</button>
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
+    <button type="button" data-tab="gestao">📊 Gestão</button>
   </div>
 
   <div class="resumo" id="resumo-clientes">
@@ -331,6 +348,29 @@ body{background:var(--bg,#F5F7FA)}
 
   <div id="aba-retornos" hidden>
     <div id="lista-retornos"></div>
+  </div>
+
+  <div id="aba-pagos" hidden>
+    <div class="toolbar">
+      <input type="text" id="pg-busca" placeholder="Buscar por nome ou CPF...">
+      <select id="pg-classe" aria-label="Filtrar por medalha">
+        <option value="">Todas as medalhas</option>
+        <option value="ouro">🥇 Ouro</option>
+        <option value="prata">🥈 Prata</option>
+        <option value="latao">🚩 Latão</option>
+      </select>
+      <select id="pg-venc" aria-label="Filtrar por dia de vencimento">
+        <option value="">Todos os vencimentos</option>
+        <option value="15">Vence dia 15</option>
+        <option value="20">Vence dia 20</option>
+        <option value="outro">Outros dias</option>
+      </select>
+    </div>
+    <div id="pagos-conteudo"></div>
+  </div>
+
+  <div id="aba-gestao" hidden>
+    <div id="gestao-conteudo"></div>
   </div>
 
   <div id="aba-classif" hidden>
@@ -466,15 +506,18 @@ body{background:var(--bg,#F5F7FA)}
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif';
+      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao';
       $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
       $('lista-clientes').hidden = abaExtra;
       $('aba-retornos').hidden = abaAtual !== 'retornos';
       $('aba-classif').hidden = abaAtual !== 'classif';
+      $('aba-pagos').hidden = abaAtual !== 'pagos';
+      $('aba-gestao').hidden = abaAtual !== 'gestao';
       if (abaAtual === 'retornos') renderRetornos();
-      else if (abaAtual === 'classif') abrirClassificacao();
+      else if (abaAtual === 'gestao') abrirGestao();
+      else if (abaAtual === 'classif' || abaAtual === 'pagos') abrirClassificacao();
       else renderLista();
     });
   });
@@ -679,20 +722,22 @@ body{background:var(--bg,#F5F7FA)}
   // ---------- CLASSIFICAÇÃO OURO / PRATA / LATÃO ----------
   var CLS = null, clsFiltro = { classe: '', status: 'receber' }, clsCarregando = false;
   var CLS_NOME = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
+  function alvoCls() { return abaAtual === 'pagos' ? $('pagos-conteudo') : abaAtual === 'gestao' ? $('gestao-conteudo') : $('classif-conteudo'); }
+  function renderClsAtual() { if (abaAtual === 'pagos') renderPagos(); else if (abaAtual === 'gestao') renderGestao(); else renderClassificacao(); }
   async function abrirClassificacao(forcar) {
-    if (CLS && !forcar) { renderClassificacao(); return; }
+    if (CLS && !forcar) { renderClsAtual(); return; }
     if (clsCarregando) return;
     clsCarregando = true;
-    $('classif-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>' +
+    alvoCls().innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>' +
       (forcar ? 'Calculando a classificação dos clientes no Asaas...<br>Pode levar até 1 minuto.' : 'Carregando a última classificação...') + '</div>';
     try {
       var res = await chamar('classificacao', forcar ? { recalcular: true } : {});
       if (res && res.vazio) {
         CLS = null;
-        $('classif-conteudo').innerHTML = '<div class="vazio">Ainda não há classificação calculada.<br><br><button type="button" class="btn btn-pri" id="cls-primeira" style="width:auto;margin:0 auto">Calcular classificação</button></div>';
+        alvoCls().innerHTML = '<div class="vazio">Ainda não há classificação calculada.<br><br><button type="button" class="btn btn-pri" id="cls-primeira" style="width:auto;margin:0 auto">Calcular classificação</button></div>';
         $('cls-primeira').addEventListener('click', function () { abrirClassificacao(true); });
       } else {
-        CLS = res; renderClassificacao();
+        CLS = res; renderClsAtual();
         if (forcar) { // atualiza as medalhas dos cards sem precisar recarregar a lista
           var mapa = {};
           (CLS.clientes || []).forEach(function (c) { mapa[soDig(c.cpf)] = { classe: c.classe, pontos: c.pontos, poucos: !!c.poucos }; });
@@ -701,11 +746,120 @@ body{background:var(--bg,#F5F7FA)}
       }
     }
     catch (e) {
-      $('classif-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível calcular agora.') + '<br><br><button type="button" class="btn btn-sec" id="cls-tentar" style="width:auto;margin:0 auto">Tentar de novo</button></div>';
+      alvoCls().innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível calcular agora.') + '<br><br><button type="button" class="btn btn-sec" id="cls-tentar" style="width:auto;margin:0 auto">Tentar de novo</button></div>';
       $('cls-tentar').addEventListener('click', function () { abrirClassificacao(true); });
     }
     clsCarregando = false;
   }
+  // ---------- ABA GESTÃO (usa a classificação salva) ----------
+  var GPCT = null;
+  async function abrirGestao() {
+    if (!GPCT) {
+      try { GPCT = (await chamar('gestaoConfig')).pct; }
+      catch (e) { GPCT = { ouro: 98, prata: 75, latao: 65 }; }
+    }
+    abrirClassificacao();
+  }
+  function renderGestao() {
+    if (!CLS || !GPCT) return;
+    var R = CLS.resumo, cl = CLS.clientes || [];
+    var total = cl.length;
+    var pagos = cl.filter(function (c) { return c.aReceber === 0 && c.recebido > 0; }).length;
+    var naoPagou = total - pagos;
+    var valorTotal = cl.reduce(function (t, c) { return t + c.total; }, 0);
+    var valorAberto = cl.reduce(function (t, c) { return t + c.aReceber; }, 0);
+    var taxa = total ? (naoPagou / total) * 100 : 0;
+    var taxaValor = valorTotal ? (valorAberto / valorTotal) * 100 : 0;
+    var pctFmt = function (v) { return v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; };
+    var NOMES = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
+    var linhas = '', tCli = 0, tPot = 0, tEst = 0, tRec = 0;
+    ['ouro', 'prata', 'latao'].forEach(function (k) {
+      var r = R[k], est = r.total * (GPCT[k] / 100);
+      tCli += r.clientes; tPot += r.total; tEst += est; tRec += r.recebido;
+      linhas += '<tr><td>' + NOMES[k] + '</td><td>' + r.clientes + '</td><td>' + brl(r.total) + '</td>' +
+        '<td><input type="number" min="0" max="100" step="0.5" data-pct="' + k + '" value="' + GPCT[k] + '">%</td>' +
+        '<td class="g-est" id="g-est-' + k + '">' + brl(est) + '</td><td>' + brl(r.recebido) + '</td></tr>';
+    });
+    linhas += '<tr class="tot"><td>Total</td><td>' + tCli + '</td><td>' + brl(tPot) + '</td><td></td><td class="g-est" id="g-est-tot">' + brl(tEst) + '</td><td>' + brl(tRec) + '</td></tr>';
+    var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
+    var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    $('gestao-conteudo').innerHTML =
+      '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' · atualizado em ' + gerado + '</span>' +
+        '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Recalcular</button></div>' +
+      '<div class="g-titulo">Inadimplência do mês</div>' +
+      '<div class="g-cards">' +
+        '<div class="g-card"><b class="ruim">' + pctFmt(taxa) + '</b><span>' + naoPagou + ' de ' + total + ' assinantes ainda não pagaram</span></div>' +
+        '<div class="g-card"><b>' + pagos + '</b><span>assinantes já pagaram</span></div>' +
+        '<div class="g-card"><b class="ruim">' + pctFmt(taxaValor) + '</b><span>do valor em aberto: ' + brl(valorAberto) + ' de ' + brl(valorTotal) + '</span></div>' +
+      '</div>' +
+      '<div class="g-titulo">Potencial e estimativa por classe</div>' +
+      '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Estimativa</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '<div class="cls-info" style="margin-top:8px">Potencial = quanto entra se todos pagarem. Estimativa = potencial × a porcentagem que você costuma receber de cada classe.</div>' +
+      '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto">Salvar porcentagens</button>';
+    function recalcEst() {
+      var soma = 0;
+      ['ouro', 'prata', 'latao'].forEach(function (k) {
+        var v = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value) || 0;
+        var est = R[k].total * (v / 100); soma += est;
+        $('g-est-' + k).textContent = brl(est);
+      });
+      $('g-est-tot').textContent = brl(soma);
+    }
+    $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
+    $('g-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+    $('g-salvar-pct').addEventListener('click', async function () {
+      var b = this, pct = {};
+      ['ouro', 'prata', 'latao'].forEach(function (k) { pct[k] = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value); });
+      b.disabled = true;
+      try { GPCT = (await chamar('gestaoConfig', { salvar: true, pct: pct })).pct; toast('Porcentagens salvas.', 'ok'); }
+      catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); }
+      b.disabled = false;
+    });
+  }
+
+  // ---------- ABA PAGOS (usa a classificação salva) ----------
+  function renderPagos() {
+    if (!CLS) return;
+    var MED = { ouro: '🥇', prata: '🥈', latao: '🚩' };
+    var termo = $('pg-busca').value.trim().toLowerCase(), termoDig = soDig($('pg-busca').value);
+    var fCls = $('pg-classe').value, fVen = $('pg-venc').value;
+    var lista = (CLS.clientes || []).filter(function (c) { return c.recebido > 0 && c.aReceber === 0; });
+    if (termo) lista = lista.filter(function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || (c.nome || '').toLowerCase().indexOf(termo) >= 0; });
+    if (fCls) lista = lista.filter(function (c) { return c.classe === fCls; });
+    if (fVen) lista = lista.filter(function (c) {
+      var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
+      if (fVen === 'outro') return dias.some(function (d) { return d !== 15 && d !== 20; });
+      return dias.indexOf(Number(fVen)) >= 0;
+    });
+    lista.sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
+    var soma = lista.reduce(function (t, c) { return t + c.recebido; }, 0);
+    var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
+    var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    var itens = lista.length ? lista.map(function (c) {
+      var bols = c.boletos.map(function (b) {
+        var info = '';
+        if (b.pagamento) {
+          var atraso = Math.round((new Date(b.pagamento + 'T12:00:00') - new Date(b.vencimento + 'T12:00:00')) / 86400000);
+          info = ' · pago ' + dataBR(b.pagamento) + (atraso > 0 ? ' <span class="st-vencido">(+' + atraso + 'd)</span>' : ' <span class="st-pago">(em dia)</span>');
+        }
+        return '<div><span>Venceu ' + dataBR(b.vencimento) + info + (b.prorata ? ' · Pró-rata' : '') + '</span><b>' + brl(b.valor) + '</b></div>';
+      }).join('');
+      return '<div class="cls-item">' +
+        '<div class="topo"><div><div class="nome">' + MED[c.classe] + ' ' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div></div>' +
+          '<div style="text-align:right"><b>' + brl(c.recebido) + '</b><div class="sub">recebido</div></div></div>' +
+        '<div class="cls-bols">' + bols + '</div>' +
+      '</div>';
+    }).join('') : '<div class="vazio">Nenhum cliente neste filtro.</div>';
+    $('pagos-conteudo').innerHTML =
+      '<div class="resumo"><div class="card"><b>' + lista.length + '</b><span>clientes pagos</span></div><div class="card"><b>' + brl(soma) + '</b><span>recebido</span></div></div>' +
+      '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' já quitadas · atualizado em ' + gerado + '</span>' +
+        '<button type="button" id="pg-recalcular" style="margin-left:auto">🔄 Recalcular</button></div>' + itens;
+    $('pg-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+  }
+  $('pg-busca').addEventListener('input', renderPagos);
+  $('pg-classe').addEventListener('change', renderPagos);
+  $('pg-venc').addEventListener('change', renderPagos);
+
   function renderClassificacao() {
     var R = CLS.resumo;
     var cards = ['ouro', 'prata', 'latao'].map(function (k) {
