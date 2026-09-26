@@ -141,6 +141,11 @@ body{background:var(--bg,#F5F7FA)}
 .cc-head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
 .cc-avatar{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:.95rem}
 .cliente-card.enviado .cc-avatar{background:var(--green)}
+.cc-avatar.med{font-size:1.45rem;border:3px solid transparent}
+.cc-avatar.med-ouro{background:#FEF3C7;border-color:#F59E0B}
+.cc-avatar.med-prata{background:#F1F5F9;border-color:#94A3B8}
+.cc-avatar.med-latao{background:#FFEDD5;border-color:#EA580C}
+.cliente-card.enviado .cc-avatar.med{box-shadow:0 0 0 2px var(--green)}
 .cc-titulo{flex:1;min-width:0}
 .cc-titulo .nome{font-weight:700;font-size:1rem;color:var(--text);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cc-titulo .sub{font-size:.76rem;color:var(--text-3);margin-top:1px}
@@ -300,6 +305,19 @@ body{background:var(--bg,#F5F7FA)}
       <option value="valor">Maior valor</option>
       <option value="dias">Mais atrasado</option>
       <option value="nome">Nome (A-Z)</option>
+    </select>
+    <select id="f-classe" aria-label="Filtrar por classificação">
+      <option value="">Todas as medalhas</option>
+      <option value="ouro">🥇 Ouro</option>
+      <option value="prata">🥈 Prata</option>
+      <option value="latao">🚩 Latão</option>
+      <option value="sem">Sem classificação</option>
+    </select>
+    <select id="f-venc" aria-label="Filtrar por dia de vencimento">
+      <option value="">Todos os vencimentos</option>
+      <option value="15">Vence dia 15</option>
+      <option value="20">Vence dia 20</option>
+      <option value="outro">Outros dias</option>
     </select>
     <button type="button" class="btn btn-sec" id="btn-atualizar" style="flex:0 0 auto">🔄 Atualizar</button>
   </div>
@@ -463,6 +481,8 @@ body{background:var(--bg,#F5F7FA)}
 
   $('busca').addEventListener('input', renderLista);
   $('ordenar').addEventListener('change', renderLista);
+  $('f-classe').addEventListener('change', renderLista);
+  $('f-venc').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { DADOS = await chamar('listar'); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -484,6 +504,13 @@ body{background:var(--bg,#F5F7FA)}
                (c.nome || '').toLowerCase().indexOf($('busca').value.trim().toLowerCase()) >= 0;
       });
     }
+    var fCls = $('f-classe').value, fVen = $('f-venc').value;
+    if (fCls) lista = lista.filter(function (c) { return fCls === 'sem' ? !c.medalha : (c.medalha && c.medalha.classe === fCls); });
+    if (fVen) lista = lista.filter(function (c) {
+      var dias = c.faturas.map(function (f) { return Number(String(f.vencimento).slice(8, 10)); });
+      if (fVen === 'outro') return dias.some(function (d) { return d !== 15 && d !== 20; });
+      return dias.indexOf(Number(fVen)) >= 0;
+    });
     var ord = $('ordenar').value;
     if (ord === 'valor') lista.sort(function (a, b) { return b.valorTotal - a.valorTotal; });
     else if (ord === 'dias') lista.sort(function (a, b) { return b.diasAtrasoMax - a.diasAtrasoMax; });
@@ -514,7 +541,9 @@ body{background:var(--bg,#F5F7FA)}
       }).join('');
       return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + '" id="cli-' + i + '">' +
         '<div class="cc-head">' +
-          '<div class="cc-avatar">' + esc(iniciais) + '</div>' +
+          (c.medalha
+            ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
+            : '<div class="cc-avatar">' + esc(iniciais) + '</div>') +
           '<div class="cc-titulo"><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
@@ -661,7 +690,14 @@ body{background:var(--bg,#F5F7FA)}
         CLS = null;
         $('classif-conteudo').innerHTML = '<div class="vazio">Ainda não há classificação calculada.<br><br><button type="button" class="btn btn-pri" id="cls-primeira" style="width:auto;margin:0 auto">Calcular classificação</button></div>';
         $('cls-primeira').addEventListener('click', function () { abrirClassificacao(true); });
-      } else { CLS = res; renderClassificacao(); }
+      } else {
+        CLS = res; renderClassificacao();
+        if (forcar) { // atualiza as medalhas dos cards sem precisar recarregar a lista
+          var mapa = {};
+          (CLS.clientes || []).forEach(function (c) { mapa[soDig(c.cpf)] = { classe: c.classe, pontos: c.pontos, poucos: !!c.poucos }; });
+          ['dois', 'um'].forEach(function (k) { (DADOS[k] || []).forEach(function (c) { c.medalha = mapa[soDig(c.cpf)] || null; }); });
+        }
+      }
     }
     catch (e) {
       $('classif-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível calcular agora.') + '<br><br><button type="button" class="btn btn-sec" id="cls-tentar" style="width:auto;margin:0 auto">Tentar de novo</button></div>';
