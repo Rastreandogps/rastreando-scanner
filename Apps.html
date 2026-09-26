@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#f4f6fa" />
   <meta name="description" content="Central de aplicativos Rastreando GPS" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Rastreando GPS" />
   <title>Rastreando GPS — Apps</title>
 
@@ -21,14 +21,15 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:        #0f172a;
-      --surface:   #1e293b;
-      --surface2:  #273348;
-      --border:    rgba(255,255,255,0.07);
-      --border-h:  rgba(255,255,255,0.14);
-      --text:      #f1f5f9;
-      --muted:     #94a3b8;
-      --accent:    #3b82f6;
+      --bg:        #f4f6fa;
+      --surface:   #ffffff;
+      --surface2:  #eef2f7;
+      --border:    #e2e8f0;
+      --border-h:  #cbd5e1;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --accent:    #2563eb;
+      --navy:      #1e3a8a;
       --radius:    14px;
     }
     html, body {
@@ -70,6 +71,7 @@
       transition: background 0.15s, border-color 0.15s, transform 0.1s;
       -webkit-tap-highlight-color: transparent;
     }
+    .app-btn { box-shadow: 0 1px 2px rgba(15,23,42,0.05); }
     .app-btn:hover  { background: var(--surface2); border-color: var(--border-h); }
     .app-btn:active { transform: scale(0.96); background: var(--surface2); }
     .app-btn.wide {
@@ -81,18 +83,18 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .icon i { font-size: 19px; }
-    .ic-blue   { background: rgba(59,130,246,0.15); } .ic-blue   i { color: #60a5fa; }
-    .ic-green  { background: rgba(34,197,94,0.13);  } .ic-green  i { color: #4ade80; }
-    .ic-red    { background: rgba(239,68,68,0.13);  } .ic-red    i { color: #f87171; }
-    .ic-orange { background: rgba(251,146,60,0.13); } .ic-orange i { color: #fb923c; }
-    .ic-purple { background: rgba(167,139,250,0.13);} .ic-purple i { color: #c084fc; }
-    .ic-teal   { background: rgba(45,212,191,0.12); } .ic-teal   i { color: #2dd4bf; }
-    .ic-indigo { background: rgba(99,102,241,0.14); } .ic-indigo i { color: #818cf8; }
-    .ic-pink   { background: rgba(244,114,182,0.13);} .ic-pink   i { color: #f472b6; }
-    .ic-sky    { background: rgba(56,189,248,0.13); } .ic-sky    i { color: #38bdf8; }
-    .ic-gray   { background: rgba(148,163,184,0.12);} .ic-gray   i { color: #94a3b8; }
-    .ic-yellow { background: rgba(234,179,8,0.13);  } .ic-yellow i { color: #facc15; }
-    .app-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
+    .ic-blue   { background: #dbeafe; } .ic-blue   i { color: #2563eb; }
+    .ic-green  { background: #dcfce7; } .ic-green  i { color: #16a34a; }
+    .ic-red    { background: #fee2e2; } .ic-red    i { color: #dc2626; }
+    .ic-orange { background: #ffedd5; } .ic-orange i { color: #ea580c; }
+    .ic-purple { background: #f3e8ff; } .ic-purple i { color: #9333ea; }
+    .ic-teal   { background: #ccfbf1; } .ic-teal   i { color: #0d9488; }
+    .ic-indigo { background: #e0e7ff; } .ic-indigo i { color: #4f46e5; }
+    .ic-pink   { background: #fce7f3; } .ic-pink   i { color: #db2777; }
+    .ic-sky    { background: #e0f2fe; } .ic-sky    i { color: #0284c7; }
+    .ic-gray   { background: #f1f5f9; } .ic-gray   i { color: #64748b; }
+    .ic-yellow { background: #fef9c3; } .ic-yellow i { color: #ca8a04; }
+    .app-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
     .app-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
     footer { text-align: center; padding: 28px 20px 0; font-size: 12px; color: var(--muted); opacity: 0.5; }
     .row-wpp { grid-column: 1 / -1; display: flex; gap: 8px; }
@@ -133,7 +135,7 @@
     /* MODAL MARKET */
     .mk-overlay {
       position: fixed; inset: 0; z-index: 100;
-      background: rgba(2,6,23,0.7);
+      background: rgba(15,23,42,0.45);
       display: none; align-items: flex-end; justify-content: center;
     }
     .mk-overlay.open { display: flex; }
@@ -173,7 +175,7 @@
     .mk-act i { font-size: 16px; }
     .mk-act:active { transform: scale(0.96); }
     .mk-act.wpp { background: #16a34a; border-color: #16a34a; color: #fff; }
-    .mk-act.ok { color: #4ade80; border-color: rgba(74,222,128,0.4); }
+    .mk-act.ok { color: #16a34a; border-color: rgba(22,163,74,0.4); }
     @media (prefers-reduced-motion: reduce) { .app-btn { transition: none; } .mk-sheet { animation: none; } }
   </style>
 </head>
@@ -197,7 +199,7 @@
           <div class="icon ic-teal"><i class="ti ti-folders" aria-hidden="true"></i></div>
           <div class="info">
             <span class="app-name">Formulários de visita</span>
-            <span class="app-desc">Agendamento · Manutenção · Retirada</span>
+            <span class="app-desc">Links para o cliente marcar visita</span>
           </div>
           <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
         </summary>
@@ -207,7 +209,7 @@
               <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Agendamento</span>
-                <span class="app-desc">Instalação nova</span>
+                <span class="app-desc">Cliente marca o dia da instalação</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fagendamentocliente.html" target="_blank" rel="noopener" aria-label="Enviar link do agendamento pelo WhatsApp">
@@ -219,7 +221,7 @@
               <div class="icon ic-orange"><i class="ti ti-tool" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Manutenção</span>
-                <span class="app-desc">Visita técnica</span>
+                <span class="app-desc">Cliente pede visita para conserto</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2FManutencao.html" target="_blank" rel="noopener" aria-label="Enviar link da manutenção pelo WhatsApp">
@@ -231,7 +233,7 @@
               <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Retirada</span>
-                <span class="app-desc">Cancelamento e retirada do equipamento</span>
+                <span class="app-desc">Cliente cancela e agenda a retirada</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fcancelamento.html" target="_blank" rel="noopener" aria-label="Enviar link da retirada pelo WhatsApp">
@@ -245,7 +247,7 @@
           <div class="icon ic-yellow"><i class="ti ti-file-check" aria-hidden="true"></i></div>
           <div class="info">
             <span class="app-name">Regularizar</span>
-            <span class="app-desc">Formulário de regularização</span>
+            <span class="app-desc">Junta as faturas vencidas em um PIX só</span>
           </div>
         </a>
         <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fregularizar.html" target="_blank" rel="noopener" aria-label="Enviar link de regularização pelo WhatsApp">
@@ -257,7 +259,7 @@
           <div class="icon ic-blue"><i class="ti ti-player-play" aria-hidden="true"></i></div>
           <div class="info">
             <span class="app-name">Tutorial</span>
-            <span class="app-desc">Vídeo e download do aplicativo</span>
+            <span class="app-desc">Ensina a baixar e usar o app de rastreio</span>
           </div>
         </a>
         <button type="button" class="btn-wpp" id="btn-wpp-tutorial" aria-label="Enviar acesso com tutorial pelo WhatsApp">
@@ -269,20 +271,13 @@
           <div class="icon ic-red"><i class="ti ti-receipt-2" aria-hidden="true"></i></div>
           <div class="info">
             <span class="app-name">Boleto Atrasado</span>
-            <span class="app-desc">Paga 1 fatura vencida direto no PIX</span>
+            <span class="app-desc">Cliente paga 1 fatura vencida no PIX</span>
           </div>
         </a>
         <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fboleto_atrasado.html" target="_blank" rel="noopener" aria-label="Enviar link do boleto atrasado pelo WhatsApp">
           <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
         </a>
       </div>
-      <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/area-cliente" target="_blank" rel="noopener">
-        <div class="icon ic-purple"><i class="ti ti-user-circle" aria-hidden="true"></i></div>
-        <div class="info">
-          <span class="app-name">Área do Cliente</span>
-          <span class="app-desc">Portal do cliente</span>
-        </div>
-      </a>
     </div>
   </section>
 
@@ -294,42 +289,42 @@
         <div class="icon ic-red"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Inadimplentes</span>
-          <span class="app-desc">Lista de devedores puxada do Asaas</span>
+          <span class="app-desc">Quem está devendo, com cobrança pelo WhatsApp</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/ajuste-assinatura.html" target="_blank" rel="noopener">
         <div class="icon ic-purple"><i class="ti ti-adjustments" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">+/- Asaas</span>
-          <span class="app-desc">Ajuste de assinaturas</span>
+          <span class="app-desc">Ajusta a mensalidade ao instalar ou retirar</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/Catalogo_j16.html" target="_blank" rel="noopener">
         <div class="icon ic-yellow"><i class="ti ti-terminal-2" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Catálogo J16 / GT06</span>
-          <span class="app-desc">Comandos SMS do rastreador</span>
+          <span class="app-desc">Comandos SMS para configurar o rastreador</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/calculadora_proporcional.html" target="_blank" rel="noopener">
         <div class="icon ic-green"><i class="ti ti-calculator" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Calculadora Proporcional</span>
-          <span class="app-desc">Cobrança e mensalidade</span>
+          <span class="app-desc">Calcula o valor pelos dias usados</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
         <div class="icon ic-orange"><i class="ti ti-world" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Site Rastreando GPS</span>
-          <span class="app-desc">rastreandogpsbr.com.br</span>
+          <span class="app-desc">Site de vendas da empresa</span>
         </div>
       </a>
       <a class="app-btn wide" id="btn-market" href="https://rastreandogpsbrmarket.com.br/" target="_blank" rel="noopener">
         <div class="icon ic-pink"><i class="ti ti-shopping-cart" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Market</span>
-          <span class="app-desc">rastreandogpsbrmarket.com.br</span>
+          <span class="app-desc">Links de venda para enviar ao cliente</span>
         </div>
       </a>
     </div>
@@ -353,28 +348,28 @@
             <div class="icon ic-blue"><i class="ti ti-tool" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">APP Técnico</span>
-              <span class="app-desc">Ordens de serviço</span>
+              <span class="app-desc">Agenda e ordens de serviço dos técnicos</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/financeiro.html" target="_blank" rel="noopener">
             <div class="icon ic-green"><i class="ti ti-cash" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Financeiro</span>
-              <span class="app-desc">Dashboard financeiro</span>
+              <span class="app-desc">Resumo de recebimentos e faturas</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/" target="_blank" rel="noopener">
             <div class="icon ic-indigo"><i class="ti ti-scan" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Scanner</span>
-              <span class="app-desc">Leitor principal</span>
+              <span class="app-desc">Lê o IMEI dos equipamentos pela câmera</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://dashboard.smsmarket.com.br/" target="_blank" rel="noopener">
             <div class="icon ic-teal"><i class="ti ti-message" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">SMS Market</span>
-              <span class="app-desc">Disparos de SMS</span>
+              <span class="app-desc">Envio de SMS em massa</span>
             </div>
           </a>
         </div>
@@ -390,7 +385,7 @@
       <a class="app-btn" href="https://smartmanager2.smartsim.com.br/auth/realms/0d5a3954/protocol/openid-connect/auth?client_id=portal&redirect_uri=https%3A%2F%2Fsmartmanager2.smartsim.com.br%2Fmanagement%2Finventory%3Fmsisdn%3D11920631756&state=4104abac-f230-4236-8aa1-22c6f871a414&response_mode=fragment&response_type=code&scope=openid&nonce=0c559fc7-4b0c-4cae-af5e-0ed28a09ec36" target="_blank" rel="noopener">
         <div class="icon ic-sky"><i class="ti ti-device-sim" aria-hidden="true"></i></div>
         <span class="app-name">SmartSIM</span>
-        <span class="app-desc">Gestão de chips</span>
+        <span class="app-desc">Consulta e gestão dos chips</span>
       </a>
       <a class="app-btn" href="https://shift.laboratoriodecorreas.com.br/shift/lis/correas/elis/s01.iu.web.Login.cls?config=UNICO" target="_blank" rel="noopener">
         <div class="icon ic-orange"><i class="ti ti-package" aria-hidden="true"></i></div>
@@ -400,7 +395,7 @@
       <a class="app-btn" href="https://apps.apple.com/br/app/traccar-client/id843156974" target="_blank" rel="noopener">
         <div class="icon ic-gray"><i class="ti ti-location" aria-hidden="true"></i></div>
         <span class="app-name">Traccar Client</span>
-        <span class="app-desc">App rastreamento</span>
+        <span class="app-desc">Transforma o celular em rastreador</span>
       </a>
     </div>
   </section>
