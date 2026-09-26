@@ -203,6 +203,7 @@ body{background:var(--bg,#F5F7FA)}
 .cls-card .l{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-2);padding:2px 0}
 .cls-card .l b{color:var(--text)}
 .cls-card .l.rec b{color:var(--navy)}
+.cls-card.cls-avulso{grid-column:1/-1} .cls-avulso .t{color:#0369A1}
 .cls-ouro .t{color:#B7791F} .cls-prata .t{color:#64748B} .cls-latao .t{color:#C2410C}
 .cls-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .cls-filtros button{padding:7px 12px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:.8rem;font-weight:600;color:var(--text-2);cursor:pointer}
@@ -717,6 +718,16 @@ body{background:var(--bg,#F5F7FA)}
         '<div class="l"><span>Total do mês</span><b>' + brl(r.total) + '</b></div>' +
       '</button>';
     }).join('');
+    var rAv = R.avulso;
+    cards += '<button type="button" class="cls-card cls-avulso' + (clsFiltro.status === 'avulsos' ? ' sel' : '') + '" data-av="1">' +
+      (rAv
+        ? '<div class="t">🧾 PIX avulsos · ' + rAv.clientes + (rAv.clientes === 1 ? ' pessoa' : ' pessoas') + ' · ' + rAv.cobrancas + (rAv.cobrancas === 1 ? ' cobrança' : ' cobranças') + '</div>' +
+          '<div class="l"><span>Recebido</span><b>' + brl(rAv.recebido) + '</b></div>' +
+          '<div class="l rec"><span>A receber</span><b>' + brl(rAv.aReceber) + '</b></div>' +
+          '<div class="l"><span>Total do mês</span><b>' + brl(rAv.total) + '</b></div>'
+        : '<div class="t">🧾 PIX avulsos</div><div class="l"><span>Toque em 🔄 Recalcular para ver os avulsos do mês.</span></div>') +
+    '</button>';
+    if (clsFiltro.status === 'avulsos') { renderAvulsos(cards); return; }
     var lista = CLS.clientes.filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
       if (clsFiltro.status === 'receber') return c.aReceber > 0;
@@ -752,6 +763,7 @@ body{background:var(--bg,#F5F7FA)}
         '<button type="button" data-st="receber"' + (clsFiltro.status === 'receber' ? ' class="ativo"' : '') + '>A receber</button>' +
         '<button type="button" data-st="pagos"' + (clsFiltro.status === 'pagos' ? ' class="ativo"' : '') + '>Já pagos</button>' +
         '<button type="button" data-st="todos"' + (clsFiltro.status === 'todos' ? ' class="ativo"' : '') + '>Todos</button>' +
+        '<button type="button" data-st="avulsos">Avulsos</button>' +
         (clsFiltro.classe ? '<button type="button" id="cls-limpa-classe">✕ ' + CLS_NOME[clsFiltro.classe] + '</button>' : '') +
         '<button type="button" id="cls-recalcular" style="margin-left:auto">🔄 Recalcular</button>' +
       '</div>' +
@@ -764,6 +776,46 @@ body{background:var(--bg,#F5F7FA)}
     });
     if ($('cls-limpa-classe')) $('cls-limpa-classe').addEventListener('click', function () { clsFiltro.classe = ''; renderClassificacao(); });
     $('cls-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+    ligarAvulsoCard();
+  }
+
+  function ligarAvulsoCard() {
+    var b = $('classif-conteudo').querySelector('[data-av]');
+    if (b) b.addEventListener('click', function () { clsFiltro.status = clsFiltro.status === 'avulsos' ? 'receber' : 'avulsos'; renderClassificacao(); });
+  }
+
+  function renderAvulsos(cards) {
+    var lista = CLS.avulsos || [];
+    var itens = lista.length ? lista.map(function (c) {
+      var cobs = c.cobrancas.map(function (b) {
+        var st = b.status === 'pago' ? 'Pago' : b.status === 'vencido' ? 'Vencido' : 'Em aberto';
+        return '<div><span>' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span>' + (b.descricao ? ' · ' + esc(b.descricao) : '') + '</span><b>' + brl(b.valor) + '</b></div>';
+      }).join('');
+      return '<div class="cls-item">' +
+        '<div class="topo"><div><div class="nome">' + esc(c.nome || 'Cliente sem cadastro') + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div></div>' +
+          '<div style="text-align:right"><b>' + brl(c.total) + '</b><div class="sub">' + (c.aReceber > 0 ? brl(c.aReceber) + ' a receber' : 'tudo pago') + '</div></div></div>' +
+        '<div class="cls-bols">' + cobs + '</div>' +
+      '</div>';
+    }).join('') : '<div class="vazio">' + (CLS.avulsos ? 'Nenhum PIX avulso neste mês.' : 'Toque em 🔄 Recalcular para ver os avulsos do mês.') + '</div>';
+    $('classif-conteudo').innerHTML =
+      '<div class="cls-info">Cobranças fora de assinatura (vendas, PIX avulsos) que vencem em ' + esc(CLS.mes) + '. Acordos da página Regularizar não entram.</div>' +
+      '<div class="cls-cards">' + cards + '</div>' +
+      '<div class="cls-filtros">' +
+        '<button type="button" data-st="receber">A receber</button>' +
+        '<button type="button" data-st="pagos">Já pagos</button>' +
+        '<button type="button" data-st="todos">Todos</button>' +
+        '<button type="button" data-st="avulsos" class="ativo">Avulsos</button>' +
+        '<button type="button" id="cls-recalcular" style="margin-left:auto">🔄 Recalcular</button>' +
+      '</div>' +
+      '<div class="cls-info">' + lista.length + (lista.length === 1 ? ' pessoa' : ' pessoas') + ' com PIX avulso</div>' + itens;
+    $('classif-conteudo').querySelectorAll('[data-cls]').forEach(function (b) {
+      b.addEventListener('click', function () { clsFiltro.classe = b.getAttribute('data-cls'); clsFiltro.status = 'receber'; renderClassificacao(); });
+    });
+    $('classif-conteudo').querySelectorAll('[data-st]').forEach(function (b) {
+      b.addEventListener('click', function () { clsFiltro.status = b.getAttribute('data-st'); renderClassificacao(); });
+    });
+    $('cls-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+    ligarAvulsoCard();
   }
 
   function enviarMensagem(c) {
