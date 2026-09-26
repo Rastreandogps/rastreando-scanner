@@ -854,6 +854,15 @@
         </div>
         <button id="bloqueio-hoje-btn" onclick="toggleBloqueioHoje()" style="padding:9px 16px;border:1.5px solid #9a3412;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fff;color:#9a3412;">Bloquear hoje</button>
       </div>
+      <!-- Liberar hoje: Manutenção e Retirada (qualquer dia e horário) -->
+      <div style="margin-bottom:16px;padding:14px 16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;">
+        <div style="font-size:13px;font-weight:700;color:#166534;">✅ Liberar o dia de hoje</div>
+        <div style="font-size:11.5px;color:#166534;opacity:.85;margin-top:2px;" id="liberacao-hoje-status">Verificando...</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button id="liberar-manutencao-btn" onclick="toggleLiberacaoHoje('manutencao')" style="padding:9px 12px;border:1.5px solid #15803d;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;background:#fff;color:#15803d;flex:1;min-width:140px;">Liberar Manutenção</button>
+          <button id="liberar-retirada-btn" onclick="toggleLiberacaoHoje('retirada')" style="padding:9px 12px;border:1.5px solid #15803d;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;background:#fff;color:#15803d;flex:1;min-width:140px;">Liberar Retirada</button>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="font-size:16px;font-weight:700;color:var(--primary);">📋 Agendamentos do formulário</div>
         <button onclick="carregarAgendamentos()" style="padding:8px 14px;background:#f0f4ff;border:none;border-radius:10px;font-size:12px;font-weight:700;color:var(--admin);cursor:pointer;">🔄 Atualizar</button>
@@ -1390,7 +1399,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-25-v88-obs-sem-protocolo';
+const BUILD_VERSION = '2026-09-26-v89-liberar-hoje';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2001,7 +2010,7 @@ function showAdminTab(tab) {
     }
   }
   if (tab === 'acessos') loadAcessos();
-  if (tab === 'agendamentos') { carregarAgendamentos(); carregarStatusBloqueioHoje(); }
+  if (tab === 'agendamentos') { carregarAgendamentos(); carregarStatusBloqueioHoje(); carregarStatusLiberacaoHoje(); }
   // Mapa admin: auto-carrega na primeira visita ou após 30 min
   if (tab === 'mapa') {
     const expirado = _mapaAdminCarregadoEm && (Date.now() - _mapaAdminCarregadoEm > MAPA_VALIDADE_MS);
@@ -7360,6 +7369,60 @@ async function toggleBloqueioHoje() {
   } catch (e) {
     console.warn('[Firestore] Não conseguiu atualizar o bloqueio de hoje:', e);
     alert('Não foi possível atualizar agora. Tente de novo.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ════════════════════════════════
+// LIBERAR HOJE — Manutenção e Retirada
+// Liga, só para o dia de hoje, a possibilidade de o cliente marcar
+// manutenção/retirada para HOJE, mesmo sábado à tarde, domingo ou feriado.
+// Fica gravado no Firebase "rastreando-assinaturas" com a data de hoje,
+// então desliga sozinho à meia-noite.
+// ════════════════════════════════
+let _liberacaoHoje = { manutencao: false, retirada: false };
+
+function _atualizarBotoesLiberacao(st) {
+  _liberacaoHoje = { manutencao: !!(st && st.manutencao), retirada: !!(st && st.retirada) };
+  const nomes = { manutencao: 'Manutenção', retirada: 'Retirada' };
+  ['manutencao', 'retirada'].forEach(function(tipo) {
+    const btn = document.getElementById('liberar-' + tipo + '-btn');
+    if (!btn) return;
+    const on = _liberacaoHoje[tipo];
+    btn.textContent = on ? '✓ ' + nomes[tipo] + ' liberada — desligar' : 'Liberar ' + nomes[tipo];
+    btn.style.background = on ? '#15803d' : '#fff';
+    btn.style.color = on ? '#fff' : '#15803d';
+  });
+  const status = document.getElementById('liberacao-hoje-status');
+  if (!status) return;
+  const lib = [];
+  if (_liberacaoHoje.manutencao) lib.push('Manutenção');
+  if (_liberacaoHoje.retirada) lib.push('Retirada');
+  status.textContent = lib.length
+    ? lib.join(' e ') + ': o cliente pode marcar para hoje, em qualquer horário. Desliga sozinho à meia-noite.'
+    : 'Normal: Manutenção e Retirada seguem a antecedência de sempre.';
+}
+
+async function carregarStatusLiberacaoHoje() {
+  const status = document.getElementById('liberacao-hoje-status');
+  try {
+    const st = await _chamarRemocoes({ acao: 'liberacao_status' });
+    _atualizarBotoesLiberacao(st);
+  } catch (e) {
+    if (status) status.textContent = 'Não foi possível verificar agora: ' + (e && e.message ? e.message : 'erro');
+  }
+}
+
+async function toggleLiberacaoHoje(tipo) {
+  const btn = document.getElementById('liberar-' + tipo + '-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const st = await _chamarRemocoes({ acao: 'liberacao_set', tipo: tipo, ativo: !_liberacaoHoje[tipo] });
+    _atualizarBotoesLiberacao(st);
+    showToast(_liberacaoHoje[tipo] ? 'Hoje liberado para o cliente.' : 'Liberação desligada.', 'success');
+  } catch (e) {
+    alert('Não foi possível atualizar agora: ' + (e && e.message ? e.message : 'erro'));
   } finally {
     if (btn) btn.disabled = false;
   }
