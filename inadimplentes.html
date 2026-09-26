@@ -477,7 +477,7 @@ body{background:var(--bg,#F5F7FA)}
     btn.dataset.txt = 'Entrar';
     $('pin-erro').textContent = '';
     try {
-      DADOS = await chamar('listar');
+      aplicarDados(await chamar('listar'));
       $('tela-pin').hidden = true; $('tela-lista').hidden = false;
       carregarTemplates();
       renderLista();
@@ -542,7 +542,7 @@ body{background:var(--bg,#F5F7FA)}
   $('f-venc').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
-    try { DADOS = await chamar('listar'); renderLista(); toast('Lista atualizada.', 'ok'); }
+    try { aplicarDados(await chamar('listar')); renderLista(); toast('Lista atualizada.', 'ok'); }
     catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); }
     finally { carregando(btn, false, '🔄 Atualizar'); }
   });
@@ -655,7 +655,7 @@ body{background:var(--bg,#F5F7FA)}
     carregando(btn, true, 'Salvando...');
     try {
       await chamar('salvarRetorno', { cpf: c.cpf, nome: c.nome, dataPromessa: dataP, texto: texto });
-      DADOS = await chamar('listar');
+      aplicarDados(await chamar('listar'));
       renderLista();
       toast('Retorno registrado.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); carregando(btn, false, 'Salvar'); }
@@ -706,7 +706,7 @@ body{background:var(--bg,#F5F7FA)}
     $('lista-retornos').querySelectorAll('.excluir').forEach(function (b) {
       b.addEventListener('click', async function () {
         if (!confirm('Excluir este retorno?')) return;
-        try { await chamar('excluirRetorno', { id: b.getAttribute('data-id') }); DADOS = await chamar('listar'); renderRetornos(); }
+        try { await chamar('excluirRetorno', { id: b.getAttribute('data-id') }); aplicarDados(await chamar('listar')); renderRetornos(); }
         catch (e) { toast((e && e.message) || 'Erro ao excluir.', 'erro'); }
       });
     });
@@ -732,6 +732,17 @@ body{background:var(--bg,#F5F7FA)}
     return ds.slice(0, -1).join(', ') + ' e ' + ds[ds.length - 1];
   }
 
+  // A lista já traz os números do mês atualizados (Gestão, Pagos, Classificação)
+  function aplicarDados(res) {
+    DADOS = res;
+    if (res && res.classificacao) CLS = res.classificacao;
+  }
+  async function atualizarTudo(btn) {
+    var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Atualizando...';
+    try { aplicarDados(await chamar('listar')); renderClsAtual(); toast('Atualizado.', 'ok'); }
+    catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); btn.disabled = false; btn.textContent = txt; }
+  }
+
   // ---------- CLASSIFICAÇÃO OURO / PRATA / LATÃO ----------
   var CLS = null, clsFiltro = { classe: '', status: 'receber' }, clsCarregando = false;
   var CLS_NOME = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
@@ -742,7 +753,7 @@ body{background:var(--bg,#F5F7FA)}
     if (clsCarregando) return;
     clsCarregando = true;
     alvoCls().innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>' +
-      (forcar ? 'Calculando a classificação dos clientes no Asaas...<br>Pode levar até 1 minuto.' : 'Carregando a última classificação...') + '</div>';
+      (forcar ? 'Recalculando as medalhas pelo histórico do Asaas...<br>Pode levar até 1 minuto.' : 'Carregando a última classificação...') + '</div>';
     try {
       var res = await chamar('classificacao', forcar ? { recalcular: true } : {});
       if (res && res.vazio) {
@@ -816,7 +827,7 @@ body{background:var(--bg,#F5F7FA)}
     var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     $('gestao-conteudo').innerHTML =
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' · atualizado em ' + gerado + '</span>' +
-        '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Recalcular</button></div>' +
+        '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Atualizar</button></div>' +
       '<div class="g-quad" id="g-quad">' + quadrantes(GPCT) + '</div>' +
       '<div class="g-titulo">Inadimplência do mês</div>' +
       '<div class="g-cards">' +
@@ -839,7 +850,7 @@ body{background:var(--bg,#F5F7FA)}
       $('g-quad').innerHTML = quadrantes(pctTela);
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
-    $('g-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+    $('g-recalcular').addEventListener('click', function () { atualizarTudo(this); });
     $('g-salvar-pct').addEventListener('click', async function () {
       var b = this, pct = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) { pct[k] = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value); });
@@ -886,8 +897,8 @@ body{background:var(--bg,#F5F7FA)}
     $('pagos-conteudo').innerHTML =
       '<div class="resumo"><div class="card"><b>' + lista.length + '</b><span>clientes pagos</span></div><div class="card"><b>' + brl(soma) + '</b><span>recebido</span></div></div>' +
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' já quitadas · atualizado em ' + gerado + '</span>' +
-        '<button type="button" id="pg-recalcular" style="margin-left:auto">🔄 Recalcular</button></div>' + itens;
-    $('pg-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
+        '<button type="button" id="pg-recalcular" style="margin-left:auto">🔄 Atualizar</button></div>' + itens;
+    $('pg-recalcular').addEventListener('click', function () { atualizarTudo(this); });
   }
   $('pg-busca').addEventListener('input', renderPagos);
   $('pg-classe').addEventListener('change', renderPagos);
@@ -944,7 +955,7 @@ body{background:var(--bg,#F5F7FA)}
     var agora = new Date(), mesAgora = String(agora.getMonth() + 1).padStart(2, '0') + '/' + agora.getFullYear();
     var avisoMes = CLS.mes !== mesAgora ? '<div class="aviso azul" style="margin-bottom:10px">Este cálculo é de ' + esc(CLS.mes) + '. Toque em 🔄 Recalcular para ver o mês atual.</div>' : '';
     $('classif-conteudo').innerHTML =
-      '<div class="cls-info">Boletos que vencem em ' + esc(CLS.mes) + '. Pontos pelos 5 últimos boletos pagos: em dia +3 · até 7 dias +2 · até 15 dias +1 · mais que isso 0. Calculado em ' + gerado + '.</div>' + avisoMes +
+      '<div class="cls-info">Boletos que vencem em ' + esc(CLS.mes) + '. Pontos pelos 5 últimos boletos pagos: em dia +3 · até 7 dias +2 · até 15 dias +1 · mais que isso 0. Números do mês de ' + gerado + (CLS.medalhasEm ? ' · medalhas de ' + new Date(CLS.medalhasEm).toLocaleDateString('pt-BR') + ' (recalculadas toda madrugada)' : '') + '.</div>' + avisoMes +
       '<div class="cls-cards">' + cards + '</div>' +
       '<div class="cls-filtros">' +
         '<button type="button" data-st="receber"' + (clsFiltro.status === 'receber' ? ' class="ativo"' : '') + '>A receber</button>' +
@@ -952,7 +963,7 @@ body{background:var(--bg,#F5F7FA)}
         '<button type="button" data-st="todos"' + (clsFiltro.status === 'todos' ? ' class="ativo"' : '') + '>Todos</button>' +
         '<button type="button" data-st="avulsos">Avulsos</button>' +
         (clsFiltro.classe ? '<button type="button" id="cls-limpa-classe">✕ ' + CLS_NOME[clsFiltro.classe] + '</button>' : '') +
-        '<button type="button" id="cls-recalcular" style="margin-left:auto">🔄 Recalcular</button>' +
+        '<button type="button" id="cls-recalcular" style="margin-left:auto">🏅 Recalcular medalhas</button>' +
       '</div>' +
       '<div class="cls-info">' + lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' nesta lista</div>' + itens;
     $('classif-conteudo').querySelectorAll('[data-cls]').forEach(function (b) {
@@ -992,7 +1003,7 @@ body{background:var(--bg,#F5F7FA)}
         '<button type="button" data-st="pagos">Já pagos</button>' +
         '<button type="button" data-st="todos">Todos</button>' +
         '<button type="button" data-st="avulsos" class="ativo">Avulsos</button>' +
-        '<button type="button" id="cls-recalcular" style="margin-left:auto">🔄 Recalcular</button>' +
+        '<button type="button" id="cls-recalcular" style="margin-left:auto">🏅 Recalcular medalhas</button>' +
       '</div>' +
       '<div class="cls-info">' + lista.length + (lista.length === 1 ? ' pessoa' : ' pessoas') + ' com PIX avulso</div>' + itens;
     $('classif-conteudo').querySelectorAll('[data-cls]').forEach(function (b) {
