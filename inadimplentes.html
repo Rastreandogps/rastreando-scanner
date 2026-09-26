@@ -742,7 +742,7 @@ body{background:var(--bg,#F5F7FA)}
       }).join('');
       var bols = c.boletos.map(function (b) {
         var st = b.status === 'pago' ? 'Pago' : b.status === 'vencido' ? 'Vencido' : 'Em aberto';
-        return '<div><span>Vence ' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span></span><b>' + brl(b.valor) + '</b></div>';
+        return '<div><span>Vence ' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span>' + (b.prorata ? ' · Pró-rata' : '') + '</span><b>' + brl(b.valor) + '</b></div>';
       }).join('');
       return '<div class="cls-item">' +
         '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
