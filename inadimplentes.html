@@ -188,6 +188,33 @@ body{background:var(--bg,#F5F7FA)}
 .cal-legenda{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--text-3);margin-top:8px}
 .cal-legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .cal-titulo-dia{font-weight:700;color:var(--navy);margin:4px 0 10px}
+.tabs{flex-wrap:wrap}
+@media (max-width:560px){.tabs button{flex:1 1 calc(50% - 4px)}}
+.cls-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+@media (max-width:560px){.cls-cards{grid-template-columns:1fr}}
+.cls-card{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit}
+.cls-card.sel{border-color:var(--navy)}
+.cls-card .t{font-weight:800;font-size:.95rem;margin-bottom:6px}
+.cls-card .l{display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-2);padding:2px 0}
+.cls-card .l b{color:var(--text)}
+.cls-card .l.rec b{color:var(--navy)}
+.cls-ouro .t{color:#B7791F} .cls-prata .t{color:#64748B} .cls-latao .t{color:#C2410C}
+.cls-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.cls-filtros button{padding:7px 12px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:.8rem;font-weight:600;color:var(--text-2);cursor:pointer}
+.cls-filtros button.ativo{background:var(--navy);border-color:var(--navy);color:#fff}
+.cls-info{font-size:.76rem;color:var(--text-3);margin-bottom:10px}
+.cls-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.cls-item .topo{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.cls-item .nome{font-weight:700}
+.cls-item .sub{font-size:.76rem;color:var(--text-3)}
+.cls-selo{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:20px;margin-top:4px}
+.cls-selo.ouro{background:#FEF3C7;color:#B7791F} .cls-selo.prata{background:#F1F5F9;color:#475569} .cls-selo.latao{background:#FFEDD5;color:#C2410C}
+.cls-hist{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.cls-hist span{font-size:.7rem;padding:2px 6px;border-radius:6px;font-weight:700}
+.h3{background:var(--green-dim);color:var(--green)} .h2{background:#E0F2FE;color:#0369A1} .h1{background:var(--amber-dim);color:var(--amber)} .h0{background:var(--danger-dim);color:var(--danger)}
+.cls-bols{margin-top:8px;font-size:.8rem;border-top:1px solid var(--border);padding-top:6px}
+.cls-bols div{display:flex;justify-content:space-between;padding:2px 0}
+.st-pago{color:var(--green);font-weight:700} .st-aberto{color:var(--navy-light);font-weight:700} .st-vencido{color:var(--danger);font-weight:700}
 .retorno-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .retorno-item .data-tag{display:inline-block;background:var(--navy);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
 .retorno-item .data-tag.atrasada{background:var(--danger)}
@@ -232,6 +259,7 @@ body{background:var(--bg,#F5F7FA)}
     <button type="button" data-tab="dois" class="ativo">2+ meses vencidos <span id="cnt-dois"></span></button>
     <button type="button" data-tab="um">1 boleto vencido <span id="cnt-um"></span></button>
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
+    <button type="button" data-tab="classif">🏅 Classificação</button>
   </div>
 
   <div class="resumo" id="resumo-clientes">
@@ -284,6 +312,10 @@ body{background:var(--bg,#F5F7FA)}
 
   <div id="aba-retornos" hidden>
     <div id="lista-retornos"></div>
+  </div>
+
+  <div id="aba-classif" hidden>
+    <div id="classif-conteudo"></div>
   </div>
 </section>
 
@@ -415,12 +447,16 @@ body{background:var(--bg,#F5F7FA)}
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      $('toolbar-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
-      $('linha-limpar').style.display = abaAtual === 'retornos' ? 'none' : '';
-      $('resumo-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
-      $('lista-clientes').hidden = abaAtual === 'retornos';
+      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif';
+      $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
+      $('linha-limpar').style.display = abaExtra ? 'none' : '';
+      $('resumo-clientes').style.display = abaExtra ? 'none' : '';
+      $('lista-clientes').hidden = abaExtra;
       $('aba-retornos').hidden = abaAtual !== 'retornos';
-      if (abaAtual === 'retornos') renderRetornos(); else renderLista();
+      $('aba-classif').hidden = abaAtual !== 'classif';
+      if (abaAtual === 'retornos') renderRetornos();
+      else if (abaAtual === 'classif') abrirClassificacao();
+      else renderLista();
     });
   });
   $('editor-um').style.display = 'none';
@@ -608,6 +644,79 @@ body{background:var(--bg,#F5F7FA)}
     var ds = c.faturas.map(function (f) { return f.vencimento; }).sort().map(dataBR);
     if (ds.length <= 1) return ds[0] || '';
     return ds.slice(0, -1).join(', ') + ' e ' + ds[ds.length - 1];
+  }
+
+  // ---------- CLASSIFICAÇÃO OURO / PRATA / LATÃO ----------
+  var CLS = null, clsFiltro = { classe: '', status: 'receber' }, clsCarregando = false;
+  var CLS_NOME = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
+  async function abrirClassificacao(forcar) {
+    if (CLS && !forcar) { renderClassificacao(); return; }
+    if (clsCarregando) return;
+    clsCarregando = true;
+    $('classif-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>Calculando a classificação dos clientes no Asaas...<br>Pode levar até 1 minuto.</div>';
+    try { CLS = await chamar('classificacao'); renderClassificacao(); }
+    catch (e) {
+      $('classif-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível calcular agora.') + '<br><br><button type="button" class="btn btn-sec" id="cls-tentar" style="width:auto;margin:0 auto">Tentar de novo</button></div>';
+      $('cls-tentar').addEventListener('click', function () { abrirClassificacao(true); });
+    }
+    clsCarregando = false;
+  }
+  function renderClassificacao() {
+    var R = CLS.resumo;
+    var cards = ['ouro', 'prata', 'latao'].map(function (k) {
+      var r = R[k];
+      return '<button type="button" class="cls-card cls-' + k + (clsFiltro.classe === k ? ' sel' : '') + '" data-cls="' + k + '">' +
+        '<div class="t">' + CLS_NOME[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' +
+        '<div class="l rec"><span>A receber</span><b>' + brl(r.aReceber) + '</b></div>' +
+        '<div class="l"><span>Já vencido</span><b>' + brl(r.vencido) + '</b></div>' +
+        '<div class="l"><span>Recebido</span><b>' + brl(r.recebido) + '</b></div>' +
+        '<div class="l"><span>Total do mês</span><b>' + brl(r.total) + '</b></div>' +
+      '</button>';
+    }).join('');
+    var lista = CLS.clientes.filter(function (c) {
+      if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
+      if (clsFiltro.status === 'receber') return c.aReceber > 0;
+      if (clsFiltro.status === 'pagos') return c.aReceber === 0;
+      return true;
+    });
+    var itens = lista.length ? lista.map(function (c) {
+      var hist = c.historico.map(function (h) {
+        var cls = h.atraso === 0 ? 'h3' : h.atraso <= 7 ? 'h2' : h.atraso <= 15 ? 'h1' : 'h0';
+        var txt = h.atraso === 0 ? 'em dia' : '+' + h.atraso + 'd';
+        return '<span class="' + cls + '" title="Venceu ' + dataBR(h.vencimento) + ', pago ' + dataBR(h.pagamento) + '">' + dataBR(h.vencimento).slice(0, 5) + ' ' + txt + '</span>';
+      }).join('');
+      var bols = c.boletos.map(function (b) {
+        var st = b.status === 'pago' ? 'Pago' : b.status === 'vencido' ? 'Vencido' : 'Em aberto';
+        return '<div><span>Vence ' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span></span><b>' + brl(b.valor) + '</b></div>';
+      }).join('');
+      return '<div class="cls-item">' +
+        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
+          '<span class="cls-selo ' + c.classe + '">' + CLS_NOME[c.classe] + ' · ' + c.pontos + ' pts' + (c.poucos ? ' (menos de 5 pagos)' : '') + '</span></div>' +
+          '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
+        (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
+        '<div class="cls-bols">' + bols + '</div>' +
+      '</div>';
+    }).join('') : '<div class="vazio">Nenhum cliente neste filtro.</div>';
+    var gerado = CLS.geradoEm ? new Date(CLS.geradoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    $('classif-conteudo').innerHTML =
+      '<div class="cls-info">Boletos que vencem em ' + esc(CLS.mes) + '. Pontos pelos 5 últimos boletos pagos: em dia +3 · até 7 dias +2 · até 15 dias +1 · mais que isso 0. Calculado às ' + gerado + '.</div>' +
+      '<div class="cls-cards">' + cards + '</div>' +
+      '<div class="cls-filtros">' +
+        '<button type="button" data-st="receber"' + (clsFiltro.status === 'receber' ? ' class="ativo"' : '') + '>A receber</button>' +
+        '<button type="button" data-st="pagos"' + (clsFiltro.status === 'pagos' ? ' class="ativo"' : '') + '>Já pagos</button>' +
+        '<button type="button" data-st="todos"' + (clsFiltro.status === 'todos' ? ' class="ativo"' : '') + '>Todos</button>' +
+        (clsFiltro.classe ? '<button type="button" id="cls-limpa-classe">✕ ' + CLS_NOME[clsFiltro.classe] + '</button>' : '') +
+        '<button type="button" id="cls-recalcular" style="margin-left:auto">🔄 Recalcular</button>' +
+      '</div>' +
+      '<div class="cls-info">' + lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' nesta lista</div>' + itens;
+    $('classif-conteudo').querySelectorAll('[data-cls]').forEach(function (b) {
+      b.addEventListener('click', function () { var k = b.getAttribute('data-cls'); clsFiltro.classe = clsFiltro.classe === k ? '' : k; renderClassificacao(); });
+    });
+    $('classif-conteudo').querySelectorAll('[data-st]').forEach(function (b) {
+      b.addEventListener('click', function () { clsFiltro.status = b.getAttribute('data-st'); renderClassificacao(); });
+    });
+    if ($('cls-limpa-classe')) $('cls-limpa-classe').addEventListener('click', function () { clsFiltro.classe = ''; renderClassificacao(); });
+    $('cls-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
   }
 
   function enviarMensagem(c) {
