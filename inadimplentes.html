@@ -236,6 +236,19 @@ body{background:var(--bg,#F5F7FA)}
 .g-tabela tr.tot td{font-weight:800;background:var(--bg);border-bottom:none}
 .g-tabela input{width:62px;padding:6px;text-align:right;font-size:.85rem}
 .g-est{color:var(--navy);font-weight:800}
+.g-quad{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px}
+@media (min-width:900px){.g-quad{grid-template-columns:repeat(4,1fr)}}
+.g-q{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px}
+.g-q .cab{font-weight:800;font-size:.95rem;margin-bottom:8px}
+.g-q .lin{display:flex;justify-content:space-between;gap:6px;font-size:.8rem;color:var(--text-2);padding:2px 0}
+.g-q .lin b{color:var(--text)}
+.g-q .falta{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+.g-q .falta small{display:block;font-size:.74rem;color:var(--text-3)}
+.g-q .falta b{display:block;font-family:var(--font-display);font-size:1.35rem;color:var(--navy)}
+.g-q.ouro{border-color:#F59E0B;background:#FFFBEB} .g-q.ouro .cab{color:#B7791F}
+.g-q.prata{border-color:#94A3B8;background:#F8FAFC} .g-q.prata .cab{color:#475569}
+.g-q.latao{border-color:#EA580C;background:#FFF7ED} .g-q.latao .cab{color:#C2410C}
+.g-q.total{border-color:var(--navy);background:#EEF3FB} .g-q.total .cab{color:var(--navy)}
 .retorno-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .retorno-item .data-tag{display:inline-block;background:var(--navy);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
 .retorno-item .data-tag.atrasada{background:var(--danger)}
@@ -781,29 +794,49 @@ body{background:var(--bg,#F5F7FA)}
         '<td class="g-est" id="g-est-' + k + '">' + brl(est) + '</td><td>' + brl(r.recebido) + '</td></tr>';
     });
     linhas += '<tr class="tot"><td>Total</td><td>' + tCli + '</td><td>' + brl(tPot) + '</td><td></td><td class="g-est" id="g-est-tot">' + brl(tEst) + '</td><td>' + brl(tRec) + '</td></tr>';
+    function quadrantes(pct) {
+      var t = { pot: 0, est: 0, rec: 0, falta: 0, cli: 0 };
+      var h = ['ouro', 'prata', 'latao'].map(function (k) {
+        var r = R[k], est = r.total * (pct[k] / 100), falta = Math.max(0, est - r.recebido);
+        t.pot += r.total; t.est += est; t.rec += r.recebido; t.falta += falta; t.cli += r.clientes;
+        return '<div class="g-q ' + k + '"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' +
+          '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
+          '<div class="lin"><span>Chance</span><b>' + String(pct[k]).replace('.', ',') + '%</b></div>' +
+          '<div class="lin"><span>Já recebido</span><b>' + brl(r.recebido) + '</b></div>' +
+          '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(falta) + '</b></div></div>';
+      }).join('');
+      h += '<div class="g-q total"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' +
+        '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
+        '<div class="lin"><span>Esperado</span><b>' + brl(t.est) + '</b></div>' +
+        '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
+        '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(t.falta) + '</b></div></div>';
+      return h;
+    }
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
     var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     $('gestao-conteudo').innerHTML =
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' · atualizado em ' + gerado + '</span>' +
         '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Recalcular</button></div>' +
+      '<div class="g-quad" id="g-quad">' + quadrantes(GPCT) + '</div>' +
       '<div class="g-titulo">Inadimplência do mês</div>' +
       '<div class="g-cards">' +
         '<div class="g-card"><b class="ruim">' + pctFmt(taxa) + '</b><span>' + naoPagou + ' de ' + total + ' assinantes ainda não pagaram</span></div>' +
         '<div class="g-card"><b>' + pagos + '</b><span>assinantes já pagaram</span></div>' +
         '<div class="g-card"><b class="ruim">' + pctFmt(taxaValor) + '</b><span>do valor em aberto: ' + brl(valorAberto) + ' de ' + brl(valorTotal) + '</span></div>' +
       '</div>' +
-      '<div class="g-titulo">Potencial e estimativa por classe</div>' +
+      '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
       '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Estimativa</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-      '<div class="cls-info" style="margin-top:8px">Potencial = quanto entra se todos pagarem. Estimativa = potencial × a porcentagem que você costuma receber de cada classe.</div>' +
-      '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto">Salvar porcentagens</button>';
+      '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>';
     function recalcEst() {
-      var soma = 0;
+      var soma = 0, pctTela = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) {
         var v = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value) || 0;
+        pctTela[k] = v;
         var est = R[k].total * (v / 100); soma += est;
         $('g-est-' + k).textContent = brl(est);
       });
       $('g-est-tot').textContent = brl(soma);
+      $('g-quad').innerHTML = quadrantes(pctTela);
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
     $('g-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
