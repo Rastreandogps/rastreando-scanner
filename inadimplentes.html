@@ -653,8 +653,16 @@ body{background:var(--bg,#F5F7FA)}
     if (CLS && !forcar) { renderClassificacao(); return; }
     if (clsCarregando) return;
     clsCarregando = true;
-    $('classif-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>Calculando a classificação dos clientes no Asaas...<br>Pode levar até 1 minuto.</div>';
-    try { CLS = await chamar('classificacao'); renderClassificacao(); }
+    $('classif-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>' +
+      (forcar ? 'Calculando a classificação dos clientes no Asaas...<br>Pode levar até 1 minuto.' : 'Carregando a última classificação...') + '</div>';
+    try {
+      var res = await chamar('classificacao', forcar ? { recalcular: true } : {});
+      if (res && res.vazio) {
+        CLS = null;
+        $('classif-conteudo').innerHTML = '<div class="vazio">Ainda não há classificação calculada.<br><br><button type="button" class="btn btn-pri" id="cls-primeira" style="width:auto;margin:0 auto">Calcular classificação</button></div>';
+        $('cls-primeira').addEventListener('click', function () { abrirClassificacao(true); });
+      } else { CLS = res; renderClassificacao(); }
+    }
     catch (e) {
       $('classif-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível calcular agora.') + '<br><br><button type="button" class="btn btn-sec" id="cls-tentar" style="width:auto;margin:0 auto">Tentar de novo</button></div>';
       $('cls-tentar').addEventListener('click', function () { abrirClassificacao(true); });
@@ -697,9 +705,12 @@ body{background:var(--bg,#F5F7FA)}
         '<div class="cls-bols">' + bols + '</div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.</div>';
-    var gerado = CLS.geradoEm ? new Date(CLS.geradoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
+    var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    var agora = new Date(), mesAgora = String(agora.getMonth() + 1).padStart(2, '0') + '/' + agora.getFullYear();
+    var avisoMes = CLS.mes !== mesAgora ? '<div class="aviso azul" style="margin-bottom:10px">Este cálculo é de ' + esc(CLS.mes) + '. Toque em 🔄 Recalcular para ver o mês atual.</div>' : '';
     $('classif-conteudo').innerHTML =
-      '<div class="cls-info">Boletos que vencem em ' + esc(CLS.mes) + '. Pontos pelos 5 últimos boletos pagos: em dia +3 · até 7 dias +2 · até 15 dias +1 · mais que isso 0. Calculado às ' + gerado + '.</div>' +
+      '<div class="cls-info">Boletos que vencem em ' + esc(CLS.mes) + '. Pontos pelos 5 últimos boletos pagos: em dia +3 · até 7 dias +2 · até 15 dias +1 · mais que isso 0. Calculado em ' + gerado + '.</div>' + avisoMes +
       '<div class="cls-cards">' + cards + '</div>' +
       '<div class="cls-filtros">' +
         '<button type="button" data-st="receber"' + (clsFiltro.status === 'receber' ? ' class="ativo"' : '') + '>A receber</button>' +
