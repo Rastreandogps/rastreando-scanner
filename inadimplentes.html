@@ -126,10 +126,6 @@ body{background:var(--bg,#F5F7FA)}
 .toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .toolbar input[type=text]{flex:1;min-width:160px}
 .toolbar select{width:auto}
-.cliente-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
-.cliente-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
-.cliente-topo .nome{font-weight:700;font-size:1rem}
-.cliente-topo .valor{font-family:var(--font-display);font-weight:800;color:var(--navy);white-space:nowrap}
 .cliente-info{font-size:.82rem;color:var(--text-2);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px 14px}
 .cliente-info span b{color:var(--text)}
 .copiar-mini{background:none;border:none;color:var(--navy-light);cursor:pointer;font-size:.78rem;text-decoration:underline;padding:0}
@@ -144,6 +140,21 @@ body{background:var(--bg,#F5F7FA)}
 .var-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .var-chips button{background:var(--bg,#F5F7FA);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.75rem;cursor:pointer;color:var(--navy)}
 .vazio{text-align:center;color:var(--text-3);padding:40px 20px;font-size:.9rem}
+.cliente-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:border-color .15s,background .15s}
+.cliente-card.enviado{border-color:var(--green);background:linear-gradient(0deg,rgba(0,179,126,.05),rgba(0,179,126,.05))}
+.selo-enviado{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);color:var(--green);font-size:.76rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+.selo-retorno{display:inline-flex;align-items:center;gap:5px;background:var(--amber-dim);color:var(--amber);font-size:.76rem;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:8px;margin-left:6px}
+.btn-retorno{background:none;border:1.5px dashed var(--border);color:var(--text-2);border-radius:8px;padding:9px;font-size:.82rem;cursor:pointer;width:100%;margin-top:8px}
+.form-retorno{margin-top:10px;padding:12px;background:var(--bg,#F5F7FA);border-radius:10px}
+.form-retorno input,.form-retorno textarea{width:100%;margin-bottom:8px}
+.form-retorno textarea{min-height:60px}
+.retorno-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.retorno-item .data-tag{display:inline-block;background:var(--navy);color:#fff;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.retorno-item .data-tag.atrasada{background:var(--danger)}
+.retorno-item .nome{font-weight:700;margin-bottom:2px}
+.retorno-item .texto{font-size:.88rem;color:var(--text-2);margin:6px 0}
+.retorno-item .rodape{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;color:var(--text-3)}
+.retorno-item .excluir{background:none;border:none;color:var(--danger);cursor:pointer;font-size:.78rem;text-decoration:underline}
 </style>
 
 </head>
@@ -175,9 +186,10 @@ body{background:var(--bg,#F5F7FA)}
   <div class="tabs">
     <button type="button" data-tab="dois" class="ativo">2+ meses vencidos <span id="cnt-dois"></span></button>
     <button type="button" data-tab="um">1 boleto vencido <span id="cnt-um"></span></button>
+    <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
   </div>
 
-  <div class="resumo">
+  <div class="resumo" id="resumo-clientes">
     <div class="card"><b id="res-qtd">0</b><span>clientes</span></div>
     <div class="card"><b id="res-valor">R$ 0</b><span>em aberto</span></div>
   </div>
@@ -207,7 +219,7 @@ body{background:var(--bg,#F5F7FA)}
     </div>
   </details>
 
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar-clientes">
     <input type="text" id="busca" placeholder="Buscar por nome ou CPF...">
     <select id="ordenar">
       <option value="valor">Maior valor</option>
@@ -218,6 +230,10 @@ body{background:var(--bg,#F5F7FA)}
   </div>
 
   <div id="lista-clientes"></div>
+
+  <div id="aba-retornos" hidden>
+    <div id="lista-retornos"></div>
+  </div>
 </section>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -231,7 +247,7 @@ body{background:var(--bg,#F5F7FA)}
   var LINK_BOLETO = 'https://app.rastreandogpsbr.com.br/boleto_atrasado.html';
   var $ = function (id) { return document.getElementById(id); };
   var pin = '';
-  var DADOS = { dois: [], um: [] };
+  var DADOS = { dois: [], um: [], retornos: [] };
   var abaAtual = 'dois';
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -317,9 +333,13 @@ body{background:var(--bg,#F5F7FA)}
     b.addEventListener('click', function () {
       abaAtual = b.getAttribute('data-tab');
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
-      $('editor-dois').open = abaAtual === 'dois'; $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
+      $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      renderLista();
+      $('toolbar-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
+      $('resumo-clientes').style.display = abaAtual === 'retornos' ? 'none' : '';
+      $('lista-clientes').hidden = abaAtual === 'retornos';
+      $('aba-retornos').hidden = abaAtual !== 'retornos';
+      if (abaAtual === 'retornos') renderRetornos(); else renderLista();
     });
   });
   $('editor-um').style.display = 'none';
@@ -337,6 +357,7 @@ body{background:var(--bg,#F5F7FA)}
   function renderLista() {
     $('cnt-dois').textContent = '(' + DADOS.dois.length + ')';
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
+    $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
 
     var termo = soDig($('busca').value) || $('busca').value.trim().toLowerCase();
@@ -361,7 +382,15 @@ body{background:var(--bg,#F5F7FA)}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + '</span><span>' + brl(f.valor) + ' · ' + f.dias + 'd</span></div>';
       }).join('');
-      return '<div class="cliente-card">' +
+      var retornoCliente = DADOS.retornos.find(function (r) { return soDig(r.cpf) === soDig(c.cpf); });
+      var selos = '';
+      if (c.ultimoEnvio) {
+        var dt = new Date(c.ultimoEnvio);
+        selos += '<span class="selo-enviado">✓ Enviado ' + dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+      }
+      if (retornoCliente) selos += '<span class="selo-retorno">📅 Retorno: ' + dataBR(retornoCliente.dataPromessa) + '</span>';
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + '" id="cli-' + i + '">' +
+        (selos ? '<div>' + selos + '</div>' : '') +
         '<div class="cliente-topo"><div class="nome">' + esc(c.nome) + '</div><div class="valor">' + brl(c.valorTotal) + '</div></div>' +
         '<div class="cliente-info">' +
           '<span>📞 <b>' + esc(c.telefone || '—') + '</b> <button type="button" class="copiar-mini" data-copy="' + esc(c.telefone) + '">copiar</button></span>' +
@@ -369,6 +398,12 @@ body{background:var(--bg,#F5F7FA)}
           '<span>⏱ até <b>' + c.diasAtrasoMax + ' dias</b> de atraso</span>' +
         '</div>' +
         '<div class="fat-mini">' + fats + '</div>' +
+        '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Anotar retorno do cliente</button>' +
+        '<div class="form-retorno" id="form-ret-' + i + '" hidden>' +
+          '<input type="date" id="ret-data-' + i + '">' +
+          '<textarea id="ret-texto-' + i + '" placeholder="Ex.: cliente disse que paga na sexta-feira"></textarea>' +
+          '<button type="button" class="btn btn-pri" data-idx="' + i + '" data-acao="salvar-retorno" style="width:100%">Salvar</button>' +
+        '</div>' +
         '<div class="acoes"><button type="button" class="btn-wpp-cliente" data-idx="' + i + '">' +
           '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>' +
           'Enviar mensagem</button></div>' +
@@ -383,6 +418,55 @@ body{background:var(--bg,#F5F7FA)}
     });
     $('lista-clientes').querySelectorAll('.btn-wpp-cliente').forEach(function (b) {
       b.addEventListener('click', function () { enviarMensagem(lista[Number(b.getAttribute('data-idx'))]); });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="retorno"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = b.getAttribute('data-idx'), form = $('form-ret-' + i);
+        form.hidden = !form.hidden;
+        if (!form.hidden) { $('ret-data-' + i).value = ''; $('ret-texto-' + i).value = ''; }
+      });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="salvar-retorno"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = Number(b.getAttribute('data-idx')); salvarRetorno(lista[i], i, b);
+      });
+    });
+  }
+
+  async function salvarRetorno(c, i, btn) {
+    var dataP = $('ret-data-' + i).value, texto = $('ret-texto-' + i).value.trim();
+    if (!dataP) { toast('Escolha a data em que o cliente disse que paga.', 'erro'); return; }
+    if (!texto) { toast('Escreva o que o cliente disse.', 'erro'); return; }
+    carregando(btn, true, 'Salvando...');
+    try {
+      await chamar('salvarRetorno', { cpf: c.cpf, nome: c.nome, dataPromessa: dataP, texto: texto });
+      DADOS = await chamar('listar');
+      renderLista();
+      toast('Retorno registrado.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); carregando(btn, false, 'Salvar'); }
+  }
+
+  function renderRetornos() {
+    var lista = DADOS.retornos.slice();
+    if (!lista.length) { $('lista-retornos').innerHTML = '<div class="vazio">Nenhum retorno registrado ainda.</div>'; return; }
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    $('lista-retornos').innerHTML = lista.map(function (r) {
+      var d = new Date(r.dataPromessa + 'T00:00:00');
+      var atrasada = d < hoje;
+      var criado = r.criadoEm ? new Date(r.criadoEm).toLocaleDateString('pt-BR') : '';
+      return '<div class="retorno-item">' +
+        '<span class="data-tag' + (atrasada ? ' atrasada' : '') + '">' + dataBR(r.dataPromessa) + (atrasada ? ' · venceu' : '') + '</span>' +
+        '<div class="nome">' + esc(r.nome) + '</div>' +
+        '<div class="texto">"' + esc(r.texto) + '"</div>' +
+        '<div class="rodape"><span>CPF ' + esc(r.cpf) + ' · anotado em ' + criado + '</span><button type="button" class="excluir" data-id="' + esc(r.id) + '">Excluir</button></div>' +
+      '</div>';
+    }).join('');
+    $('lista-retornos').querySelectorAll('.excluir').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (!confirm('Excluir este retorno?')) return;
+        try { await chamar('excluirRetorno', { id: b.getAttribute('data-id') }); DADOS = await chamar('listar'); renderRetornos(); }
+        catch (e) { toast((e && e.message) || 'Erro ao excluir.', 'erro'); }
+      });
     });
   }
 
@@ -401,6 +485,10 @@ body{background:var(--bg,#F5F7FA)}
     if (tel && tel.length <= 11) tel = '55' + tel;
     var url = tel ? ('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg)) : ('https://wa.me/?text=' + encodeURIComponent(msg));
     window.open(url, '_blank');
+    chamar('marcarEnviado', { cpf: c.cpf, nome: c.nome }).then(function () {
+      c.ultimoEnvio = new Date().toISOString();
+      renderLista();
+    }).catch(function () {});
   }
 })();
 </script>
