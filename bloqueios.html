@@ -254,7 +254,7 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
     var u = ST.ultima;
     $('rodada-info').innerHTML = u
       ? 'Última rodada em ' + esc(quando(u.em)) + (u.simulacao ? ' <span class="selo amber">simulação</span>' : '') + ': ' +
-        u.devedores + ' em atraso, ' + u.bloqueados + (u.simulacao ? ' seriam bloqueados' : ' bloqueados') + ', ' + u.desbloqueados + ' desbloqueados, ' + u.excecoes + ' exceções, ' + u.emConfianca + ' em confiança' + (u.falhas ? ', <b style="color:var(--red)">' + u.falhas + ' falhas</b>' : '') + '.'
+        u.devedores + ' em atraso, ' + u.bloqueados + (u.simulacao ? ' seriam bloqueados' : ' bloqueados') + (u.reconfirmados ? ', ' + u.reconfirmados + ' bloqueios reconfirmados' : '') + ', ' + u.desbloqueados + ' desbloqueados, ' + u.excecoes + ' exceções, ' + u.emConfianca + ' em confiança' + (u.falhas ? ', <b style="color:var(--red)">' + u.falhas + ' falhas</b>' : '') + '.'
       : 'Nenhuma rodada ainda. Toque em "Rodar agora" para ver a primeira lista.';
     renderLista();
   }
