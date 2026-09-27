@@ -256,6 +256,14 @@ body{background:var(--bg,#F5F7FA)}
 .g-q.prata{border-color:#94A3B8;background:#F8FAFC} .g-q.prata .cab{color:#475569}
 .g-q.latao{border-color:#EA580C;background:#FFF7ED} .g-q.latao .cab{color:#C2410C}
 .g-q.total{border-color:var(--navy);background:#EEF3FB} .g-q.total .cab{color:var(--navy)}
+.g-q .cab-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.g-q .cab-linha .cab{margin-bottom:0}
+.selo-real{flex:none;width:54px;height:54px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid;background:#fff;line-height:1}
+.selo-real b{font-family:var(--font-display);font-size:1rem}
+.selo-real small{font-size:.58rem;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;opacity:.8}
+.selo-real.bom{border-color:#16A34A;color:#15803D}
+.selo-real.baixo{border-color:#E8A317;color:#B45309}
+.selo-real.neutro{border-color:var(--navy);color:var(--navy)}
 .g-av{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px}
 .g-av-cab{font-weight:800;color:#0369A1;margin-bottom:8px}
 .g-av-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -822,18 +830,24 @@ body{background:var(--bg,#F5F7FA)}
         '<td class="g-est" id="g-est-' + k + '">' + brl(est) + '</td><td>' + brl(r.recebido) + '</td></tr>';
     });
     linhas += '<tr class="tot"><td>Total</td><td>' + tCli + '</td><td>' + brl(tPot) + '</td><td></td><td class="g-est" id="g-est-tot">' + brl(tEst) + '</td><td>' + brl(tRec) + '</td></tr>';
+    function seloReal(rec, pot, chance) {
+      if (!pot) return '';
+      var v = (rec / pot) * 100;
+      var cls = chance == null ? 'neutro' : v >= chance ? 'bom' : 'baixo';
+      return '<div class="selo-real ' + cls + '" title="Porcentagem real já recebida do potencial"><b>' + Math.round(v) + '%</b><small>real</small></div>';
+    }
     function quadrantes(pct) {
       var t = { pot: 0, est: 0, rec: 0, falta: 0, cli: 0 };
       var h = ['ouro', 'prata', 'latao'].map(function (k) {
         var r = R[k], falta = r.aReceber * (pct[k] / 100), est = r.recebido + falta;
         t.pot += r.total; t.est += est; t.rec += r.recebido; t.falta += falta; t.cli += r.clientes;
-        return '<div class="g-q ' + k + '"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' +
+        return '<div class="g-q ' + k + '"><div class="cab-linha"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' + seloReal(r.recebido, r.total, pct[k]) + '</div>' +
           '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
           '<div class="lin"><span>Chance</span><b>' + String(pct[k]).replace('.', ',') + '%</b></div>' +
           '<div class="lin"><span>Já recebido</span><b>' + brl(r.recebido) + '</b></div>' +
           '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(falta) + '</b></div></div>';
       }).join('');
-      h += '<div class="g-q total"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' +
+      h += '<div class="g-q total"><div class="cab-linha"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' + seloReal(t.rec, t.pot, null) + '</div>' +
         '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
         '<div class="lin"><span>Esperado</span><b>' + brl(t.est) + '</b></div>' +
         '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
@@ -864,7 +878,8 @@ body{background:var(--bg,#F5F7FA)}
       })() +
       '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
       '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Esperado no mês</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-      '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>';
+      '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>' +
+      '<div class="g-titulo">Histórico mês a mês</div><div id="g-hist"><div class="vazio">Carregando histórico...</div></div>';
     function recalcEst() {
       var soma = 0, pctTela = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) {
@@ -878,6 +893,7 @@ body{background:var(--bg,#F5F7FA)}
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
     $('g-recalcular').addEventListener('click', function () { atualizarTudo(this); });
+    renderHistorico();
     $('g-salvar-pct').addEventListener('click', async function () {
       var b = this, pct = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) { pct[k] = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value); });
@@ -885,6 +901,36 @@ body{background:var(--bg,#F5F7FA)}
       try { GPCT = (await chamar('gestaoConfig', { salvar: true, pct: pct })).pct; toast('Porcentagens salvas.', 'ok'); }
       catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); }
       b.disabled = false;
+    });
+  }
+
+  // ---------- HISTÓRICO MÊS A MÊS ----------
+  var HIST = null;
+  async function renderHistorico(forcar) {
+    var box = $('g-hist'); if (!box) return;
+    if (!HIST || forcar) {
+      try { HIST = await chamar('historico'); } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar o histórico.') + '</div>'; return; }
+    }
+    var pf = function (v) { return v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ',') + '%'; };
+    var media = function (f) { var vs = HIST.map(f).filter(function (v) { return v != null; }); return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null; };
+    var corpo = HIST.map(function (h) {
+      return '<tr><td>' + esc(h.mes) + '</td><td>' + pf(h.classes.ouro.realPct) + '</td><td>' + pf(h.classes.prata.realPct) + '</td><td>' + pf(h.classes.latao.realPct) + '</td>' +
+        '<td>' + pf(h.total.realPct) + '</td><td>' + brl(h.total.recebido) + '</td><td>' + pf(h.inadimplencia.taxaClientes) + '</td><td>' + h.total.clientes + '</td>' +
+        '<td>' + brl(h.avulsos ? h.avulsos.recebido : 0) + '</td></tr>';
+    }).join('');
+    var mediaLinha = HIST.length ? '<tr class="tot"><td>Média real</td><td>' + pf(media(function (h) { return h.classes.ouro.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.prata.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.latao.realPct; })) + '</td>' +
+      '<td>' + pf(media(function (h) { return h.total.realPct; })) + '</td><td>' + brl(media(function (h) { return h.total.recebido; }) || 0) + '</td><td>' + pf(media(function (h) { return h.inadimplencia.taxaClientes; })) + '</td>' +
+      '<td>' + Math.round(media(function (h) { return h.total.clientes; }) || 0) + '</td><td>' + brl(media(function (h) { return h.avulsos ? h.avulsos.recebido : 0; }) || 0) + '</td></tr>' : '';
+    box.innerHTML = (HIST.length
+      ? '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Mês</th><th>🥇 Ouro</th><th>🥈 Prata</th><th>🚩 Latão</th><th>Total</th><th>Recebido</th><th>Inadimpl.</th><th>Assinantes</th><th>Avulsos</th></tr></thead><tbody>' + corpo + mediaLinha + '</tbody></table></div>' +
+        '<div class="cls-info" style="margin-top:8px">As porcentagens são o recebido de verdade sobre o potencial de cada classe. A foto do mês é salva sozinha no último dia, às 23h30.</div>'
+      : '<div class="vazio">Ainda não há meses salvos. A primeira foto é salva sozinha no último dia do mês, às 23h30.</div>') +
+      '<button type="button" class="btn-link" id="g-salvar-mes" style="margin-top:8px">Salvar a foto deste mês agora</button>';
+    $('g-salvar-mes').addEventListener('click', async function () {
+      if (!confirm('Salvar agora a foto deste mês? No último dia do mês ela é atualizada sozinha.')) return;
+      var b = this; b.disabled = true; b.textContent = 'Salvando...';
+      try { await chamar('salvarMes'); toast('Foto do mês salva.', 'ok'); await renderHistorico(true); }
+      catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; b.textContent = 'Salvar a foto deste mês agora'; }
     });
   }
 
