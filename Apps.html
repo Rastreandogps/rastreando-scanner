@@ -96,6 +96,7 @@
     .ic-yellow { background: #fef9c3; } .ic-yellow i { color: #ca8a04; }
     .app-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.2; }
     .app-desc { font-size: 11px; color: var(--muted); line-height: 1.3; }
+    .app-file { display: inline-block; margin-top: 3px; font-size: 10px; color: var(--muted); background: var(--surface2); border-radius: 5px; padding: 1px 6px; font-family: ui-monospace, "SF Mono", Consolas, monospace; letter-spacing: -0.01em; word-break: normal; overflow-wrap: anywhere; align-self: flex-start; max-width: 100%; }
     footer { text-align: center; padding: 28px 20px 0; font-size: 12px; color: var(--muted); opacity: 0.5; }
     .row-wpp { grid-column: 1 / -1; display: flex; gap: 8px; }
     .row-wpp .app-btn.wide { flex: 1; grid-column: auto; min-width: 0; }
@@ -185,7 +186,7 @@
     <div class="logo"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
     <div class="header-text">
       <h1>Rastreando GPS</h1>
-      <p>Central de Aplicativos</p>
+      <p>Central de Aplicativos <span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 Apps.html · scanner</span></p>
     </div>
   </header>
 
@@ -209,7 +210,7 @@
               <div class="icon ic-teal"><i class="ti ti-calendar-plus" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Agendamento</span>
-                <span class="app-desc">Cliente marca o dia da instalação</span>
+                <span class="app-desc">Cliente marca o dia da instalação</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 agendamentocliente.html · cliente</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fagendamentocliente.html" target="_blank" rel="noopener" aria-label="Enviar link do agendamento pelo WhatsApp">
@@ -221,7 +222,7 @@
               <div class="icon ic-orange"><i class="ti ti-tool" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Manutenção</span>
-                <span class="app-desc">Cliente pede visita para conserto</span>
+                <span class="app-desc">Cliente pede visita para conserto</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 Manutencao.html · cliente</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2FManutencao.html" target="_blank" rel="noopener" aria-label="Enviar link da manutenção pelo WhatsApp">
@@ -233,7 +234,7 @@
               <div class="icon ic-red"><i class="ti ti-circle-x" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Retirada</span>
-                <span class="app-desc">Cliente cancela e agenda a retirada</span>
+                <span class="app-desc">Cliente cancela e agenda a retirada</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 cancelamento.html · cliente</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fcancelamento.html" target="_blank" rel="noopener" aria-label="Enviar link da retirada pelo WhatsApp">
@@ -256,14 +257,14 @@
             <div class="icon ic-red"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Inadimplentes</span>
-              <span class="app-desc">Quem está devendo, com cobrança pelo WhatsApp</span>
+              <span class="app-desc">Quem está devendo, com cobrança pelo WhatsApp</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 inadimplentes.html · scanner</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/bloqueios.html" target="_blank" rel="noopener">
             <div class="icon ic-red"><i class="ti ti-lock" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Bloqueios</span>
-              <span class="app-desc">Bloqueia e libera o acesso na plataforma</span>
+              <span class="app-desc">Bloqueia e libera o acesso na plataforma</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 bloqueios.html · scanner</span>
             </div>
           </a>
           <div class="row-wpp">
@@ -271,7 +272,7 @@
               <div class="icon ic-red"><i class="ti ti-receipt-2" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Boleto Atrasado</span>
-                <span class="app-desc">Cliente paga 1 fatura vencida no PIX</span>
+                <span class="app-desc">Cliente paga 1 fatura vencida no PIX</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 boleto_atrasado.html · cliente</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fboleto_atrasado.html" target="_blank" rel="noopener" aria-label="Enviar link do boleto atrasado pelo WhatsApp">
@@ -283,7 +284,7 @@
               <div class="icon ic-yellow"><i class="ti ti-file-check" aria-hidden="true"></i></div>
               <div class="info">
                 <span class="app-name">Regularizar</span>
-                <span class="app-desc">Junta as faturas vencidas em um PIX só</span>
+                <span class="app-desc">Junta as faturas vencidas em um PIX só</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 regularizar.html · cliente</span>
               </div>
             </a>
             <a class="btn-wpp" href="https://wa.me/?text=https%3A%2F%2Fapp.rastreandogpsbr.com.br%2Fregularizar.html" target="_blank" rel="noopener" aria-label="Enviar link de regularização pelo WhatsApp">
@@ -294,7 +295,7 @@
             <div class="icon ic-purple"><i class="ti ti-adjustments" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">+/- Asaas</span>
-              <span class="app-desc">Ajusta a mensalidade ao instalar ou retirar</span>
+              <span class="app-desc">Ajusta a mensalidade ao instalar ou retirar</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 ajuste-assinatura.html · scanner</span>
             </div>
           </a>
         </div>
@@ -304,7 +305,7 @@
           <div class="icon ic-blue"><i class="ti ti-player-play" aria-hidden="true"></i></div>
           <div class="info">
             <span class="app-name">Tutorial</span>
-            <span class="app-desc">Ensina a baixar e usar o app de rastreio</span>
+            <span class="app-desc">Ensina a baixar e usar o app de rastreio</span><span class="app-file" title="Repositório rastreando-cliente no GitHub">📄 tutorial.html · cliente</span>
           </div>
         </a>
         <button type="button" class="btn-wpp" id="btn-wpp-tutorial" aria-label="Enviar acesso com tutorial pelo WhatsApp">
@@ -322,14 +323,14 @@
         <div class="icon ic-yellow"><i class="ti ti-terminal-2" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Catálogo J16 / GT06</span>
-          <span class="app-desc">Comandos SMS para configurar o rastreador</span>
+          <span class="app-desc">Comandos SMS para configurar o rastreador</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 Catalogo_j16.html · scanner</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/calculadora_proporcional.html" target="_blank" rel="noopener">
         <div class="icon ic-green"><i class="ti ti-calculator" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Calculadora Proporcional</span>
-          <span class="app-desc">Calcula o valor pelos dias usados</span>
+          <span class="app-desc">Calcula o valor pelos dias usados</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 calculadora_proporcional.html · scanner</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://www.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
@@ -367,21 +368,21 @@
             <div class="icon ic-blue"><i class="ti ti-tool" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">APP Técnico</span>
-              <span class="app-desc">Agenda e ordens de serviço dos técnicos</span>
+              <span class="app-desc">Agenda e ordens de serviço dos técnicos</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 app_tecnico.html · scanner</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/financeiro.html" target="_blank" rel="noopener">
             <div class="icon ic-green"><i class="ti ti-cash" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Financeiro</span>
-              <span class="app-desc">Resumo de recebimentos e faturas</span>
+              <span class="app-desc">Resumo de recebimentos e faturas</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 financeiro.html · scanner</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://rastreandogps.github.io/rastreando-scanner/" target="_blank" rel="noopener">
             <div class="icon ic-indigo"><i class="ti ti-scan" aria-hidden="true"></i></div>
             <div class="info">
               <span class="app-name">Scanner</span>
-              <span class="app-desc">Lê o IMEI dos equipamentos pela câmera</span>
+              <span class="app-desc">Lê o IMEI dos equipamentos pela câmera</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 index.html · scanner</span>
             </div>
           </a>
           <a class="app-btn wide" href="https://dashboard.smsmarket.com.br/" target="_blank" rel="noopener">
@@ -427,7 +428,7 @@
         <div class="icon ic-sky"><i class="ti ti-device-mobile" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Linhas do Felipe</span>
-          <span class="app-desc">Controle de linhas e aparelhos</span>
+          <span class="app-desc">Controle de linhas e aparelhos</span><span class="app-file" title="Repositório rastreando-scanner no GitHub">📄 LINHAS_FELIPE.html · scanner</span>
         </div>
       </a>
     </div>
