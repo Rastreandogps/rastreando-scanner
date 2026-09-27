@@ -912,6 +912,7 @@
           <div class="form-row">
             <div class="form-field"><label>Data de Instalação</label><input type="date" id="if-data"></div>
             <div class="form-field"><label>Horário (opcional)</label><input type="time" id="if-hora"></div>
+            <div class="form-field"><label>Período</label><select id="if-periodo"><option value="">Sem período</option><option value="manha">☀️ Manhã (8h–12h)</option><option value="tarde">🌇 Tarde (13h–18h)</option></select></div>
           </div>
           <div class="form-row">
             <div class="form-field">
@@ -959,6 +960,7 @@
       <div class="form-row">
         <div class="form-field"><label>Data de Instalação</label><input type="date" id="f-data"></div>
         <div class="form-field"><label>Horário (opcional)</label><input type="time" id="f-hora"></div>
+        <div class="form-field"><label>Período</label><select id="f-periodo"><option value="">Sem período</option><option value="manha">☀️ Manhã (8h–12h)</option><option value="tarde">🌇 Tarde (13h–18h)</option></select></div>
       </div>
       <div class="form-row">
         <div class="form-field" style="grid-column:1/-1;">
@@ -1202,6 +1204,7 @@
         <div class="form-field"><label>Data</label><input type="date" id="edit-data"></div>
       </div>
       <div class="form-field"><label>Horário (opcional)</label><input type="time" id="edit-hora"></div>
+      <div class="form-field"><label>Período</label><select id="edit-periodo"><option value="">Sem período</option><option value="manha">☀️ Manhã (8h–12h)</option><option value="tarde">🌇 Tarde (13h–18h)</option></select></div>
       <div class="form-field"><label>Observações</label><textarea id="edit-obs" rows="2" style="resize:vertical;"></textarea></div>
       <div class="form-field">
         <label>💰 Valor da Instalação</label>
@@ -1399,7 +1402,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-26-v89-liberar-hoje';
+const BUILD_VERSION = '2026-09-27-v90-periodo-no-card';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3252,6 +3255,7 @@ function _renderCardTecnicoCompacto(o) {
   const modelo = _modeloPrincipalVeiculo(o.veiculo);
   return '<div data-os-id="' + esc(o.id) + '" data-glow="' + _corTipoRGB(o) + '" class="os-mini' + _classeTipoOS(o) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;">' +
     _badgeTipoLed(o, true) +
+    (getPeriodoOS(o) ? '<div style="margin-bottom:3px;">' + _periodoPill(o, true) + '</div>' : '') +
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
@@ -3376,7 +3380,7 @@ function renderCardInline(o) {
       '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;">' +
         '<div style="font-size:10px;font-weight:700;color:' + (hasDate ? '#1d4ed8' : '#b45309') + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
         '<div style="font-size:16px;font-weight:800;color:' + (hasDate ? 'var(--primary)' : 'var(--accent2)') + ';">' + dataExib + '</div>' +
-        (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
+        (getPeriodoOS(o) ? '<div style="margin-top:4px;">' + _periodoPill(o, true) + '</div>' : '') + (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
       '</div>' +
     '</div>' +
     // Endereço + Maps
@@ -3584,7 +3588,7 @@ function renderTechOSList() {
           '<div style="background:' + (hasDate ? '#dbeafe' : '#fef3c7') + ';border-radius:10px;padding:8px 12px;flex:1;">' +
             '<div style="font-size:10px;font-weight:700;color:' + diaColor + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">' + (hasDate ? diaExib : 'Aguardando agendamento') + '</div>' +
             '<div style="font-size:16px;font-weight:800;color:' + dataColor + ';">' + dataExib + '</div>' +
-            (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
+            (getPeriodoOS(o) ? '<div style="margin-top:4px;">' + _periodoPill(o, true) + '</div>' : '') + (getHoraOS(o) ? '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;">⏰ ' + getHoraOS(o) + '</div>' : '') +
           '</div>' +
         '</div>' +
 
@@ -4088,7 +4092,7 @@ async function submitOS() {
 
   const novaId = genId();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs: embutirHora(obs, _fHoraVal), id: novaId });
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo, obs: embutirHora(obs, _fHoraVal, _lerPeriodo('f-periodo')), id: novaId });
   if (result.ok) {
     // Salvar valor separadamente se preenchido
     if (valorInst) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: valorInst });
@@ -4142,7 +4146,7 @@ function clearForm() {
   });
   { const _ft = document.getElementById('f-tecnico'); if (_ft) _ft.classList.remove('campo-erro'); }
   document.getElementById('f-data').value = '';
-  { const _fh = document.getElementById('f-hora'); if (_fh) _fh.value = ''; }
+  { const _fh = document.getElementById('f-hora'); if (_fh) _fh.value = ''; const _fp = document.getElementById('f-periodo'); if (_fp) _fp.value = ''; }
   document.getElementById('f-tipo').value = 'Instalação';
   document.getElementById('f-tecnico').value = '';
   // Resetar veículos para um campo só
@@ -4309,7 +4313,7 @@ function renderCardConfirmacao() {
   atualizarPreviewMsg();
 }
 
-function _rotuloDataCliente(dataRaw, hora) {
+function _rotuloDataCliente(dataRaw, hora, periodo) {
   const dp = parseDate(dataRaw);
   if (!dp) return '';
   const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -4318,7 +4322,7 @@ function _rotuloDataCliente(dataRaw, hora) {
   const eHoje   = dp.getDate() === hoje.getDate()   && dp.getMonth() === hoje.getMonth()   && dp.getFullYear() === hoje.getFullYear();
   const eAmanha = dp.getDate() === amanha.getDate() && dp.getMonth() === amanha.getMonth() && dp.getFullYear() === amanha.getFullYear();
   const rotulo  = eHoje ? 'Hoje' : eAmanha ? 'Amanhã' : formatDateBR(dataRaw);
-  return rotulo + ' (' + DIAS[dp.getDay()] + ')' + (hora ? ' às ' + hora : '');
+  return rotulo + ' (' + DIAS[dp.getDay()] + ')' + (hora ? ' às ' + hora : periodo === 'manha' ? ', no período da manhã (8h–12h)' : periodo === 'tarde' ? ', no período da tarde (13h–18h)' : '');
 }
 
 function atualizarPreviewMsg() {
@@ -4424,7 +4428,7 @@ async function submitImportOS() {
   }
 
   const _ifId    = genId();
-  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs: embutirHora(obs, _ifHoraVal), id: _ifId });
+  const result = await gasRequest({ action: 'saveOrder', tech: tecnico, nome, telefone: tel, endereco: end, tipo, data, veiculo: veiculosStr, obs: embutirHora(obs, _ifHoraVal, _lerPeriodo('if-periodo')), id: _ifId });
   if (result.ok) {
     if (_ifValor) await gasRequest({ action: 'salvarValorInstalacao', id: _ifId, tech: tecnico, valor: _ifValor });
     showToast('OS enviada para ' + tecnico + '!', 'success');
@@ -4450,7 +4454,7 @@ function toggleImport() {
 
 function resetImportForm() {
   document.getElementById('paste-area').value = '';
-  { const _ifh = document.getElementById('if-hora'); if (_ifh) _ifh.value = ''; }
+  { const _ifh = document.getElementById('if-hora'); if (_ifh) _ifh.value = ''; const _ifp = document.getElementById('if-periodo'); if (_ifp) _ifp.value = ''; }
   document.getElementById('parsed-preview').style.display = 'none';
   document.getElementById('import-form').style.display = 'none';
   document.getElementById('if-veiculos-wrap').innerHTML = '';
@@ -4504,21 +4508,59 @@ function extrairHora(obs) {
   const m = String(obs || '').match(/\[H:(\d{1,2}:\d{2})\]/);
   return m ? m[1] : '';
 }
-function limparObs(obs) {
-  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+// Período (manhã/tarde): guardado em Observações com o marcador [P:manha] ou [P:tarde]
+function extrairPeriodo(obs) {
+  const m = String(obs || '').match(/\[P:(manha|tarde)\]/);
+  return m ? m[1] : '';
 }
-function embutirHora(obs, hora) {
-  const base = limparObs(obs);
+function limparObs(obs) {
+  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+function embutirHora(obs, hora, periodo) {
+  let base = limparObs(obs);
+  if (periodo === 'manha' || periodo === 'tarde') base = base ? base + ' [P:' + periodo + ']' : '[P:' + periodo + ']';
   if (!hora) return base;
   return base ? base + ' [H:' + hora + ']' : '[H:' + hora + ']';
 }
 function normalizarHoraOS(o) {
   if (!o) return o;
   const h = extrairHora(o.obs);
-  if (h) { o.hora = h; o.obs = limparObs(o.obs); }
-  else if (!('hora' in o)) { o.hora = ''; }
+  const p = extrairPeriodo(o.obs);
+  if (h) o.hora = h; else if (!('hora' in o)) o.hora = '';
+  if (p) o.periodo = p; else if (!('periodo' in o)) o.periodo = '';
+  if (h || p) o.obs = limparObs(o.obs);
   return o;
 }
+function getPeriodoOS(o) { return (o && o.periodo) ? o.periodo : ''; }
+function _periodoLabel(p, curto) {
+  if (p === 'manha') return curto ? '☀️ Manhã' : '☀️ Manhã (8h–12h)';
+  if (p === 'tarde') return curto ? '🌇 Tarde' : '🌇 Tarde (13h–18h)';
+  return '';
+}
+// Converte o texto que o cliente escolheu ("Manhã (8h–12h)", "tarde"...) em manha/tarde
+function _periodoDeTexto(t) {
+  t = String(t || '').toLowerCase();
+  if (t.indexOf('manh') >= 0) return 'manha';
+  if (t.indexOf('tarde') >= 0) return 'tarde';
+  return '';
+}
+function _periodoPill(o, grande) {
+  const p = getPeriodoOS(o);
+  if (!p) return '';
+  const cor = p === 'manha' ? 'background:#fef9c3;color:#a16207;border:1px solid #fde047;' : 'background:#ffedd5;color:#c2410c;border:1px solid #fdba74;';
+  return '<span style="display:inline-flex;align-items:center;gap:3px;' + cor + 'padding:2px 8px;border-radius:20px;font-size:' + (grande ? '12px' : '11px') + ';font-weight:800;white-space:nowrap;flex-shrink:0;">' + _periodoLabel(p, !grande) + '</span>';
+}
+// Caixinha de escolha do período para os formulários
+function _selPeriodoHTML(id, valor, estilo) {
+  const v = valor || '';
+  return '<select id="' + id + '"' + (estilo ? ' style="' + estilo + '"' : '') + '>' +
+    '<option value=""' + (v === '' ? ' selected' : '') + '>Sem período</option>' +
+    '<option value="manha"' + (v === 'manha' ? ' selected' : '') + '>☀️ Manhã (8h–12h)</option>' +
+    '<option value="tarde"' + (v === 'tarde' ? ' selected' : '') + '>🌇 Tarde (13h–18h)</option>' +
+  '</select>';
+}
+function _lerPeriodo(id) { const el = document.getElementById(id); return el ? (el.value || '') : ''; }
+function _horaValida(h) { return /^\d{1,2}:\d{2}$/.test(String(h || '')) ? h : ''; }
 function normalizarOrdens(x) {
   if (Array.isArray(x)) { x.forEach(normalizarHoraOS); }
   else if (x && typeof x === 'object') { Object.keys(x).forEach(function(k){ if (Array.isArray(x[k])) x[k].forEach(normalizarHoraOS); }); }
@@ -4529,7 +4571,7 @@ function getHoraOS(o) {
 }
 function _horaPill(o) {
   const h = getHoraOS(o);
-  return h ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">⏰ ' + h + '</span>' : '';
+  return _periodoPill(o) + (h ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">⏰ ' + h + '</span>' : '');
 }
 
 // ── ADMIN: HISTÓRICO DE ACESSOS
@@ -4951,7 +4993,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os)) + '\n\n'
+    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os), getPeriodoOS(os)) + '\n\n'
     : '';
 
   // Confirmação varia por tipo
@@ -4986,7 +5028,7 @@ function enviarLembreteHoje(id, tech) {
   const tipo = (os.tipo || 'Instalação').toLowerCase();
   const tipoLabel = tipo.includes('manut') ? 'manutenção' : tipo.includes('retir') || tipo.includes('remo') ? 'retirada' : 'instalação';
 
-  const dataStr = _rotuloDataCliente(os.data, getHoraOS(os));
+  const dataStr = _rotuloDataCliente(os.data, getHoraOS(os), getPeriodoOS(os));
   const linkRemarcar = URL_REAGENDAR + '?os=' + encodeURIComponent(os.id);
 
   const msg =
@@ -5284,6 +5326,7 @@ function enviarOSParaTecnico(id, tech) {
   }
   const _horaTec = getHoraOS(os);
   if (_horaTec) dataDestaque += ' ⏰ *' + _horaTec + '*';
+  else if (getPeriodoOS(os)) dataDestaque += ' ' + _periodoLabel(getPeriodoOS(os)).replace(/^(\S+) (.*)$/, '$1 *$2*');
   let servicoLabel, servicoEmoji;
   if (tipo.includes('manut')) { servicoLabel = 'MANUTENÇÃO'; servicoEmoji = '🔧'; }
   else if (tipo.includes('retir') || tipo.includes('remo')) { servicoLabel = 'RETIRADA'; servicoEmoji = '🔩'; }
@@ -5366,7 +5409,8 @@ function enviarResumoDiaTecnico(tech, refId) {
       modelos = lista.map(function(v) { return v.split(' | ')[0].trim(); }).filter(Boolean).join(', ');
     }
     const _h = getHoraOS(o);
-    return '*' + (i + 1) + '. ' + label + '*' + (_h ? ' às ' + _h : '') + '\n' +
+    const _p = getPeriodoOS(o);
+    return '*' + (i + 1) + '. ' + label + '*' + (_h ? ' às ' + _h : _p ? ' — ' + _periodoLabel(_p) : '') + '\n' +
       (o.nome || '') + '\n' +
       _endParaExibir(o.endereco || '') +
       (modelos ? '\n' + modelos : '');
@@ -5703,7 +5747,7 @@ function atualizarPreviewModalCliente() {
   }
 
   const dataStr = (os.data && os.data.trim() && os.data !== 'undefined')
-    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os)) + '\n\n'
+    ? '📅 *Data agendada:* ' + _rotuloDataCliente(os.data, getHoraOS(os), getPeriodoOS(os)) + '\n\n'
     : '';
 
   const msg =
@@ -6400,6 +6444,7 @@ function _renderCardOSCompacto(o) {
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
     _badgeTipoLed(o, true) +
+    (getPeriodoOS(o) ? '<div style="margin-bottom:3px;">' + _periodoPill(o, true) + '</div>' : '') +
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
@@ -7114,6 +7159,7 @@ async function abrirModalEdit(id, tech) {
   document.getElementById('edit-tipo').value     = o.tipo    || 'Instalação';
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
   document.getElementById('edit-hora').value     = getHoraOS(o);
+  { const _ep = document.getElementById('edit-periodo'); if (_ep) _ep.value = getPeriodoOS(o); }
   document.getElementById('edit-obs').value      = o.obs     || '';
   document.getElementById('edit-valor').value    = o.valorInstalacao || '';
 
@@ -7174,7 +7220,7 @@ async function confirmarEdit() {
 
   fecharModalEdit();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal) });
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo')) });
   // Salvar valor separadamente se preenchido
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id, tech, valor });
   if (result.ok) {
@@ -7496,7 +7542,11 @@ async function carregarAgendamentos() {
         '</div>' +
         '<div style="flex:1;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Horário (opcional)</label>' +
-          '<input type="time" id="ag-hora-' + ag.rowIndex + '" value="' + esc(ag.horaDesejada || '') + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
+          '<input type="time" id="ag-hora-' + ag.rowIndex + '" value="' + esc(_horaValida(ag.horaDesejada)) + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Período</label>' +
+          _selPeriodoHTML('ag-periodo-' + ag.rowIndex, _periodoDeTexto(ag.horaDesejada), 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;') +
         '</div>' +
       '</div>' +
       (ag.dataDesejada ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(ag.dataDesejada) + (ag.horaDesejada ? ' às ' + esc(ag.horaDesejada) : '') + ' — já preenchido abaixo, confira antes de criar a OS.</div>' : '') +
@@ -7578,7 +7628,7 @@ async function confirmarAgendamentoAba(rowIndex) {
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
     endereco: ag.endereco || '', tipo: (document.getElementById('ag-tipo-' + rowIndex)||{}).value||'Instalação', data: data,
-    veiculo: veiculoStr, obs: embutirHora(ag.pontoReferencia || '', _agHoraVal)
+    veiculo: veiculoStr, obs: embutirHora(ag.pontoReferencia || '', _agHoraVal, _lerPeriodo('ag-periodo-' + rowIndex))
   });
 
   if (resultSave.ok) {
@@ -7750,6 +7800,7 @@ function _cardManutencao(r) {
       '<div style="flex:1;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
       '<div style="flex:1;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
       '<div style="flex:1;"><label style="' + lbl + '">Horário (opcional)</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
+      '<div style="flex:1;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
       '<label style="' + lbl + '">💰 Valor do serviço</label>' +
@@ -7778,7 +7829,6 @@ async function criarOSManutencao(id) {
   const partesObs = ['Motivo: ' + (r.motivoTexto || '')];
   if (r.descricao) partesObs.push('Relato do cliente: ' + r.descricao);
   if (r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
-  if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
   if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
 
@@ -7789,7 +7839,7 @@ async function criarOSManutencao(id) {
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
     endereco: r.enderecoTexto || '', tipo: 'Manutenção', data: data,
-    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora)
+    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id))
   });
   if (!resultSave.ok) {
     _cardRemocaoLoading(id, false);
@@ -7866,6 +7916,7 @@ function _cardRemocao(r) {
       '<div style="flex:1;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
       '<div style="flex:1;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
       '<div style="flex:1;"><label style="' + lbl + '">Horário (opcional)</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
+      '<div style="flex:1;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
       '<label style="' + lbl + '">💰 Valor do serviço</label>' +
@@ -7927,7 +7978,6 @@ async function criarOSRemocao(id) {
     return (v.modelo || '') + ' | Placa: ' + (v.placa || '');
   }).join(' || ');
   const partesObs = [];
-  if (r.periodo) partesObs.push('Período pedido: ' + _periodoRemocao(r.periodo));
   partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar os veículos listados');
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
   if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
@@ -7940,7 +7990,7 @@ async function criarOSRemocao(id) {
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
     endereco: r.enderecoTexto || '', tipo: 'Remoção', data: data,
-    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora)
+    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id))
   });
 
   if (!resultSave.ok) {
@@ -8042,7 +8092,8 @@ function mostrarProximaNovaOS() {
       '<div class="nova-os-campo"><label>Veículo(s)</label><div>' + veiculosHtml + '</div></div>' +
       '<div class="nova-os-tecnico-wrap"><label>Técnico</label><select id="nova-os-tecnico">' + optsTec + '</select></div>' +
       '<div class="nova-os-date-wrap"><label>Data</label><input type="date" id="nova-os-data"></div>' +
-      '<div class="nova-os-date-wrap"><label>Horário (opcional)</label><input type="time" id="nova-os-hora"></div>';
+      '<div class="nova-os-date-wrap"><label>Horário (opcional)</label><input type="time" id="nova-os-hora" value="' + esc(_horaValida(_novaOSAtual.horaDesejada)) + '"></div>' +
+      '<div class="nova-os-date-wrap"><label>Período</label>' + _selPeriodoHTML('nova-os-periodo', _periodoDeTexto(_novaOSAtual.horaDesejada)) + '</div>';
   }
   document.getElementById('modal-nova-os').classList.add('open');
   lockScroll();
@@ -8074,7 +8125,7 @@ async function confirmarNovaOS() {
     action: 'saveOrder', tech: tecnico, id: novaId,
     nome: _novaOSAtual.nome || '', telefone: _novaOSAtual.telefone || '',
     endereco: _novaOSAtual.endereco || '', tipo: 'Instalação', data: data,
-    veiculo: veiculoStr, obs: embutirHora(_novaOSAtual.pontoReferencia || '', _noHoraVal)
+    veiculo: veiculoStr, obs: embutirHora(_novaOSAtual.pontoReferencia || '', _noHoraVal, _lerPeriodo('nova-os-periodo'))
   });
   if (result.ok) {
     if (_agValor) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: _agValor });
@@ -8794,7 +8845,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       dataHtml =
         '<div style="background:' + _dataBg + ';border-radius:8px;padding:6px 10px;margin-bottom:8px;">' +
           '<div style="font-size:10px;font-weight:700;color:' + _dataFg + ';letter-spacing:.5px;margin-bottom:1px;">' + _dataLabel + '</div>' +
-          '<div style="font-size:13px;font-weight:700;color:' + _dataFg + ';">' + formatDateBR(o.data) + (getHoraOS(o) ? ' · ⏰ ' + getHoraOS(o) : '') + '</div>' +
+          '<div style="font-size:13px;font-weight:700;color:' + _dataFg + ';">' + formatDateBR(o.data) + (getHoraOS(o) ? ' · ⏰ ' + getHoraOS(o) : '') + (getPeriodoOS(o) ? ' · ' + _periodoLabel(getPeriodoOS(o), true) : '') + '</div>' +
         '</div>';
     } else {
       dataHtml = '<div style="background:#fef3c7;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:12px;font-weight:700;color:#b45309;">⏳ Sem data agendada</div>';
