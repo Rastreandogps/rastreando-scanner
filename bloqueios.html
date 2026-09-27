@@ -250,7 +250,7 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
 
   function btnAcoes(cpf, nome, tipos) {
     return '<div class="acoes">' + tipos.map(function (t) {
-      var r = { desbloquear: ['btn-green', 'Desbloquear'], bloquear: ['btn-red', 'Bloquear'], confianca: ['btn-amber', 'Confiança 5 dias'], excecaoAdd: ['btn-sec', 'Nunca bloquear'], excecaoRemover: ['btn-sec', 'Tirar das exceções'] }[t];
+      var r = { desbloquear: ['btn-green', 'Desbloquear'], bloquear: ['btn-red', 'Bloquear'], confianca: ['btn-amber', 'Confiança 5 dias'], excecaoAdd: ['btn-sec', 'Nunca bloquear'], excecaoRemover: ['btn-sec', 'Tirar das exceções'], remover: ['btn-sec', 'Tirar da lista'] }[t];
       return '<button type="button" class="btn ' + r[0] + '" data-acao="' + t + '" data-cpf="' + esc(cpf) + '" data-nome="' + esc(nome) + '">' + r[1] + '</button>';
     }).join('') + '</div>';
   }
@@ -264,8 +264,8 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
         var selo = aba === 'bloq' ? '<span class="selo red">bloqueado desde ' + dataBR(c.bloqueadoEm) + '</span>' + (c.confiancaUsada ? '<span class="selo cinza">já usou confiança</span>' : '')
           : aba === 'conf' ? '<span class="selo amber">confiança até ' + dataBR(c.confiancaAte) + '</span>'
           : '<span class="selo cinza">não achado em ' + dataBR(c.naoEncontradoEm) + '</span>';
-        var acoes = aba === 'bloq' ? ['desbloquear'].concat(c.confiancaUsada ? [] : ['confianca'])
-          : aba === 'conf' ? ['bloquear'] : [];
+        var acoes = aba === 'bloq' ? ['desbloquear'].concat(c.confiancaUsada ? [] : ['confianca'], ['remover'])
+          : aba === 'conf' ? ['bloquear'] : ['remover'];
         return '<div class="item ' + (aba === 'bloq' ? 'bloq' : aba === 'conf' ? 'conf' : '') + '"><div><div class="nome">' + esc(c.nome || 'Sem nome') + '</div>' +
           '<div class="sub">' + fmtDoc(c.cpf) + (aba === 'nf' ? ' · a plataforma não achou o e-mail ' + esc(c.cpf) + '@gmail.com' : '') + '</div>' +
           '<div class="motivo">' + selo + (c.motivo && aba === 'bloq' ? ' ' + esc(c.motivo) : '') + '</div></div>' +
@@ -285,7 +285,7 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
       }).join('') : '<div class="vazio">' + (u ? 'Na última rodada ninguém novo precisou ser bloqueado.' : 'Nenhuma rodada ainda.') + '</div>';
     } else {
       var hi = ST.historico || [];
-      var nomes = { bloquear: 'Bloqueio', desbloquear: 'Desbloqueio', pagamento: 'Pagamento', config: 'Configuração' };
+      var nomes = { bloquear: 'Bloqueio', desbloquear: 'Desbloqueio', pagamento: 'Pagamento', config: 'Configuração', remover: 'Tirado da lista' };
       h = hi.length ? '<div style="border:1.5px solid var(--border);border-radius:12px">' + hi.map(function (x) {
         var tipo = (nomes[x.acao] || x.acao) + (x.simulado ? ' (simulação)' : '') + (x.ok === false ? (x.naoEncontrado ? ' · não achado' : ' · falhou') : '');
         return '<div class="hist"><div class="q">' + esc(quando(x.em)) + '</div><div><b>' + esc(tipo) + '</b>' + (x.nome ? ' · ' + esc(x.nome) : '') + (x.cpf ? ' · ' + fmtDoc(x.cpf) : '') +
@@ -342,12 +342,12 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
   document.addEventListener('click', async function (ev) {
     var b = ev.target.closest('[data-acao]'); if (!b) return;
     var acao = b.getAttribute('data-acao'), cpf = b.getAttribute('data-cpf'), nome = b.getAttribute('data-nome');
-    var pergunta = { bloquear: 'Bloquear o acesso de ' + nome + ' agora?', desbloquear: 'Desbloquear o acesso de ' + nome + ' agora?', confianca: 'Liberar ' + nome + ' por 5 dias de confiança? Ele só pode usar isso uma vez até pagar.', excecaoAdd: 'Colocar ' + nome + ' na lista de quem nunca é bloqueado?', excecaoRemover: 'Tirar ' + nome + ' das exceções?' }[acao];
+    var pergunta = { bloquear: 'Bloquear o acesso de ' + nome + ' agora?', desbloquear: 'Desbloquear o acesso de ' + nome + ' agora?', confianca: 'Liberar ' + nome + ' por 5 dias de confiança? Ele só pode usar isso uma vez até pagar.', excecaoAdd: 'Colocar ' + nome + ' na lista de quem nunca é bloqueado?', excecaoRemover: 'Tirar ' + nome + ' das exceções?', remover: 'Tirar ' + nome + ' da lista? Use quando o cliente saiu da plataforma do Márcio. Nada é enviado à plataforma, e se ele continuar devendo, o sistema tenta de novo na próxima rodada.' }[acao];
     if (!confirm(pergunta)) return;
     b.disabled = true;
     try {
       var r = await chamar(acao, { cpf: cpf, nome: nome });
-      toast({ bloquear: 'Acesso bloqueado.', desbloquear: 'Acesso desbloqueado.', confianca: 'Liberado até ' + dataBR(r && r.ate) + '.', excecaoAdd: 'Incluído nas exceções.', excecaoRemover: 'Removido das exceções.' }[acao]);
+      toast({ bloquear: 'Acesso bloqueado.', desbloquear: 'Acesso desbloqueado.', confianca: 'Liberado até ' + dataBR(r && r.ate) + '.', excecaoAdd: 'Incluído nas exceções.', excecaoRemover: 'Removido das exceções.', remover: 'Tirado da lista.' }[acao]);
       await carregar();
       if (soDig($('busca-cpf').value) === cpf) buscar();
     } catch (e) { toast(e.message, true); b.disabled = false; }
