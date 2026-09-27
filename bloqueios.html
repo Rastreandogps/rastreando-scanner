@@ -76,6 +76,17 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
 .item .nome{font-weight:700}
 .item .sub{font-size:.8rem;color:var(--text-3);margin-top:2px}
 .item .motivo{font-size:.84rem;color:var(--text-2);margin-top:4px}
+.item .acoes{margin-top:0;justify-content:flex-end}
+@media (max-width:620px){
+  .item{grid-template-columns:1fr;gap:10px;padding:14px}
+  .item .nome{font-size:1.02rem;line-height:1.25}
+  .item .motivo{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .item .motivo .selo{margin:0}
+  .item .acoes{justify-content:stretch;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+  .item .acoes .btn{flex:1 1 0;min-width:0;padding:9px 6px;font-size:.82rem;white-space:normal;line-height:1.15;min-height:44px}
+  .achado .acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .achado .acoes .btn{padding:10px 8px;font-size:.84rem}
+}
 .item.bloq{border-left:5px solid var(--red)} .item.conf{border-left:5px solid #E8A317} .item.exc{border-left:5px solid var(--navy-2)}
 .selo{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-right:4px}
 .selo.red{background:var(--red-bg);color:var(--red)} .selo.amber{background:var(--amber-bg);color:var(--amber)} .selo.green{background:var(--green-bg);color:var(--green)} .selo.cinza{background:#EEF1F5;color:var(--text-2)}
