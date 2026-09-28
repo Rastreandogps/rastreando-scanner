@@ -1097,9 +1097,9 @@ body{background:var(--bg,#F5F7FA)}
       '</div>';
     }).join('') : '<div class="vazio">' + (indFiltro === 'conceder' ? 'Nenhuma mensalidade para conceder agora. 🎉' : 'Nada por aqui.') + '</div>';
     $('indicacoes-conteudo').innerHTML =
-      '<div class="cls-filtros"><span class="cls-info" style="margin:0">Indique e ganhe · 1 mensalidade por pessoa indicada (não por veículo)</span><button type="button" id="ind-atualizar" style="margin-left:auto">🔄 Atualizar</button></div>' +
+      '<div class="cls-filtros"><span class="cls-info" style="margin:0">Indique e ganhe · mensalidade grátis de 1 veículo por pessoa indicada</span><button type="button" id="ind-atualizar" style="margin-left:auto">🔄 Atualizar</button></div>' +
       '<div class="cls-filtros">' + filtros + '</div>' + itens +
-      '<div class="ind-teto"><label for="ind-teto-v">Teto da mensalidade grátis (R$)</label><input type="number" id="ind-teto-v" min="0" step="0.10" value="' + IND.teto + '"><button type="button" class="btn btn-sec" id="ind-teto-salvar" style="width:auto">Salvar teto</button></div>' +
+      '<div class="ind-teto"><label for="ind-teto-v">Teto da mensalidade grátis de 1 veículo (R$)</label><input type="number" id="ind-teto-v" min="0" step="0.10" value="' + IND.teto + '"><button type="button" class="btn btn-sec" id="ind-teto-salvar" style="width:auto">Salvar teto</button></div>' +
       '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida".</div>';
     var box = $('indicacoes-conteudo');
     box.querySelectorAll('[data-indf]').forEach(function (b) { b.addEventListener('click', function () { indFiltro = b.getAttribute('data-indf'); renderIndicacoes(); }); });
