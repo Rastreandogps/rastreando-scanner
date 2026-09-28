@@ -1402,7 +1402,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-27-v91-periodo-compacto';
+const BUILD_VERSION = '2026-09-28-v92-campos-alinhados';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7531,25 +7531,25 @@ async function carregarAgendamentos() {
       '<div style="margin-bottom:12px;">' + veiculosHtml + '</div>' +
 
       // Selects
-      '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
-        '<div style="flex:1;">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
+        '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Técnico</label>' +
           '<select id="ag-tec-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;">' + optsTec + '</select>' +
         '</div>' +
-        '<div style="flex:1;">' +
+        '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Data</label>' +
           '<input type="date" id="ag-data-' + ag.rowIndex + '" value="' + esc(ag.dataDesejada || '') + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
         '</div>' +
-        '<div style="flex:1;">' +
-          '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Horário (opcional)</label>' +
+        '<div style="min-width:0;">' +
+          '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Horário</label>' +
           '<input type="time" id="ag-hora-' + ag.rowIndex + '" value="' + esc(_horaValida(ag.horaDesejada)) + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
         '</div>' +
-        '<div style="flex:1;">' +
+        '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Período</label>' +
           _selPeriodoHTML('ag-periodo-' + ag.rowIndex, _periodoDeTexto(ag.horaDesejada), 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;') +
         '</div>' +
       '</div>' +
-      (ag.dataDesejada ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(ag.dataDesejada) + (ag.horaDesejada ? ' às ' + esc(ag.horaDesejada) : '') + ' — já preenchido abaixo, confira antes de criar a OS.</div>' : '') +
+      (ag.dataDesejada ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(ag.dataDesejada) + (_horaValida(ag.horaDesejada) ? ' às ' + esc(ag.horaDesejada) : _periodoDeTexto(ag.horaDesejada) ? ', no período da ' + (_periodoDeTexto(ag.horaDesejada) === 'manha' ? 'manhã (8h–12h)' : 'tarde (13h–18h)') : (ag.horaDesejada ? ' — ' + esc(ag.horaDesejada) : '')) + ' — já preenchido nos campos acima, confira antes de criar a OS.</div>' : '') +
       '<div style="margin-bottom:10px;">' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">TIPO DE SERVIÇO</label>' +
         '<select id="ag-tipo-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px;">' +
@@ -7796,11 +7796,11 @@ function _cardManutencao(r) {
     (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
     '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>' +
     (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
-    '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
-      '<div style="flex:1;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Horário (opcional)</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Horário</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
       '<label style="' + lbl + '">💰 Valor do serviço</label>' +
@@ -7912,11 +7912,11 @@ function _cardRemocao(r) {
     '<div style="margin-bottom:8px;">' + veiculosHtml + '</div>' +
     (motivo ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">💬 Motivo: ' + esc(motivo) + '</div>' : '') +
     (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
-    '<div style="display:flex;gap:8px;margin-bottom:10px;">' +
-      '<div style="flex:1;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Horário (opcional)</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
-      '<div style="flex:1;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Horário</label><input type="time" id="rm-hora-' + id + '" style="' + inp + '"></div>' +
+      '<div style="min-width:0;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
       '<label style="' + lbl + '">💰 Valor do serviço</label>' +
