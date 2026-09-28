@@ -1192,6 +1192,7 @@
   <div class="modal-box" style="max-width:480px;max-height:90vh;overflow-y:auto;">
     <div class="modal-title">✏️ Editar Ordem de Serviço</div>
     <input type="hidden" id="edit-os-id">
+    <input type="hidden" id="edit-os-ind">
     <input type="hidden" id="edit-os-tech">
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
       <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="edit-nome"></div>
@@ -1413,7 +1414,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-28-v94-titularidade-aviso';
+const BUILD_VERSION = '2026-09-28-v95-indicacoes';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2546,6 +2547,7 @@ function iniciarListenerOSAdmin() {
     // Mantém sempre uma cópia fresca de todas as ordens — é o que permite
     // trocar de técnico na hora, sem esperar a Planilha responder.
     _firestoreTodasOrdens = snapshot.docs.map(docFirestoreParaOrdem);
+    _indConciliar(); // OS de indicação concluída → marca "instalada" (Gestão → Indicações)
     // Ignora o "eco" da própria escrita feita nesta mesma tela — ela já se
     // atualiza sozinha pelo caminho de sempre; isso é só pra pegar mudanças
     // feitas por outro técnico/admin em outro aparelho.
@@ -4524,12 +4526,18 @@ function extrairPeriodo(obs) {
   const m = String(obs || '').match(/\[P:(manha|tarde)\]/);
   return m ? m[1] : '';
 }
-function limparObs(obs) {
-  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+// Indicação: código de quem indicou, guardado em Observações como [IND:K7Q3XM]
+function extrairInd(obs) {
+  const m = String(obs || '').match(/\[IND:([A-Z2-9]{6})\]/);
+  return m ? m[1] : '';
 }
-function embutirHora(obs, hora, periodo) {
+function limparObs(obs) {
+  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s*\[IND:[A-Z2-9]{6}\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+function embutirHora(obs, hora, periodo, ind) {
   let base = limparObs(obs);
   if (periodo === 'manha' || periodo === 'tarde') base = base ? base + ' [P:' + periodo + ']' : '[P:' + periodo + ']';
+  if (ind) base = base ? base + ' [IND:' + ind + ']' : '[IND:' + ind + ']';
   if (!hora) return base;
   return base ? base + ' [H:' + hora + ']' : '[H:' + hora + ']';
 }
@@ -4537,9 +4545,11 @@ function normalizarHoraOS(o) {
   if (!o) return o;
   const h = extrairHora(o.obs);
   const p = extrairPeriodo(o.obs);
+  const ind = extrairInd(o.obs);
   if (h) o.hora = h; else if (!('hora' in o)) o.hora = '';
   if (p) o.periodo = p; else if (!('periodo' in o)) o.periodo = '';
-  if (h || p) o.obs = limparObs(o.obs);
+  if (ind) o.ind = ind; else if (!('ind' in o)) o.ind = '';
+  if (h || p || ind) o.obs = limparObs(o.obs);
   return o;
 }
 function getPeriodoOS(o) { return (o && o.periodo) ? o.periodo : ''; }
@@ -4582,7 +4592,8 @@ function getHoraOS(o) {
 }
 function _horaPill(o) {
   const h = getHoraOS(o);
-  return _periodoPill(o) + (h ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">⏰ ' + h + '</span>' : '');
+  const _ip = (currentRole === 'admin' && o && o.ind) ? '<span title="Cliente veio por indicação" style="display:inline-flex;align-items:center;background:#ecfdf5;color:#047857;border:1px solid #6ee7b7;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:800;flex-shrink:0;">🎁 Indicação</span>' : '';
+  return _ip + _periodoPill(o) + (h ? '<span style="display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">⏰ ' + h + '</span>' : '');
 }
 
 // ── ADMIN: HISTÓRICO DE ACESSOS
@@ -5224,7 +5235,7 @@ async function adminReatribuirDireto(id, techOld, techNew) {
     action: 'saveOrder', tech: techNew, id: os.id,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
     tipo: os.tipo || 'Instalação', data: dataISO,
-    veiculo: os.veiculo || '', obs: os.obs || ''
+    veiculo: os.veiculo || '', obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '')
   });
   if (!r1.ok) {
     showToast('Erro ao mover OS: ' + (r1.error || ''), 'error');
@@ -7171,6 +7182,7 @@ async function abrirModalEdit(id, tech) {
   document.getElementById('edit-data').value     = o.data ? toInputDate(o.data) : '';
   document.getElementById('edit-hora').value     = getHoraOS(o);
   { const _ep = document.getElementById('edit-periodo'); if (_ep) _ep.value = getPeriodoOS(o); }
+  { const _ei = document.getElementById('edit-os-ind'); if (_ei) _ei.value = o.ind || ''; }
   document.getElementById('edit-obs').value      = o.obs     || '';
   document.getElementById('edit-valor').value    = o.valorInstalacao || '';
 
@@ -7231,7 +7243,7 @@ async function confirmarEdit() {
 
   fecharModalEdit();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo')) });
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo'), (document.getElementById('edit-os-ind') || {}).value || '') });
   // Salvar valor separadamente se preenchido
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id, tech, valor });
   if (result.ok) {
@@ -7268,7 +7280,7 @@ async function adminReatribuir(btn) {
   // 2. Salvar na nova aba
   const r1 = await gasRequest({ action: 'saveOrder', tech: techNew,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
-    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: os.obs, id: os.id });
+    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || ''), id: os.id });
   if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
   if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
@@ -7591,6 +7603,89 @@ async function titMudarStatus(id, status, silencioso) {
   } catch (e) { alert('Não foi possível atualizar: ' + (e && e.message ? e.message : 'erro')); }
 }
 
+
+// ════════════════════════════════
+// 🎁 INDICAÇÃO (indicacao.html → agendamentocliente.html?ind=CODIGO)
+// A OS do amigo nasce com [IND:codigo]. Aqui: mostra quem indicou, registra
+// a indicação no Firebase e avisa quando a instalação é concluída.
+// A mensalidade grátis é concedida na aba Indicações do Gestao.html.
+// ════════════════════════════════
+const _indCache = {};
+function _indDe(txt) { return extrairInd(txt); }
+function _indBoxHTML(codigo) {
+  return '<div data-ind="' + esc(codigo) + '" style="margin:6px 0 8px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#065f46;">🎁 Indicação… carregando</div>';
+}
+async function _indPreencher() {
+  const els = Array.from(document.querySelectorAll('[data-ind]:not([data-done])'));
+  if (!els.length) return;
+  const faltam = Array.from(new Set(els.map(e => e.getAttribute('data-ind')).filter(c => c && !(c in _indCache))));
+  if (faltam.length) {
+    try {
+      const r = await _chamarRemocoes({ acao: 'ind_resolver', codigos: faltam });
+      faltam.forEach(c => { _indCache[c] = (r.codigos && r.codigos[c]) || null; });
+    } catch (e) { return; }
+  }
+  els.forEach(el => {
+    const i = _indCache[el.getAttribute('data-ind')];
+    el.setAttribute('data-done', '1');
+    el.innerHTML = i ? '🎁 <b>Indicado por ' + esc(i.nome) + '</b> · CPF ' + _titDoc(i.cpf) : '🎁 Veio por indicação (código não encontrado)';
+  });
+}
+(function _iniciarObservadorInd() {
+  let t = null;
+  const obs = new MutationObserver(function() { clearTimeout(t); t = setTimeout(_indPreencher, 80); });
+  const ligar = function() { ['agendamentos-list', 'nova-os-body'].forEach(function(id) { const el = document.getElementById(id); if (el) obs.observe(el, { childList: true, subtree: true }); }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ligar); else ligar();
+})();
+
+function _indFilaLer() { try { return JSON.parse(localStorage.getItem('indPendentes') || '[]'); } catch (e) { return []; } }
+function _indFilaSalvar(l) { try { localStorage.setItem('indPendentes', JSON.stringify(l.slice(-50))); } catch (e) {} }
+async function _indRegistrar(codigo, osId, nome, telefone, silencioso) {
+  try {
+    const r = await _chamarRemocoes({ acao: 'ind_registrar', codigo: codigo, osId: osId, nome: nome || '', telefone: telefone || '' });
+    if (!silencioso) setTimeout(function() {
+      if (r.duplicada) showToast('🎁 Esse amigo já tinha sido indicado antes: só vale 1 indicação por pessoa.', 'error');
+      else if (!r.jaRegistrada) showToast('🎁 Indicação registrada!', 'success');
+    }, 1800);
+    return true;
+  } catch (e) {
+    if (!silencioso) {
+      const l = _indFilaLer(); l.push({ codigo: codigo, osId: osId, nome: nome || '', telefone: telefone || '' }); _indFilaSalvar(l);
+      setTimeout(function() { showToast('🎁 Não consegui registrar a indicação agora. Vou tentar de novo sozinho.', 'error'); }, 1800);
+    }
+    return false;
+  }
+}
+let _indConciliando = false;
+async function _indConciliar() {
+  if (_indConciliando || currentRole !== 'admin' || !_firestoreTodasOrdens) return;
+  _indConciliando = true;
+  try {
+    // 1) tenta de novo os registros que falharam
+    let fila = _indFilaLer();
+    if (fila.length) {
+      const resto = [];
+      for (const it of fila) { const ok = await _indRegistrar(it.codigo, it.osId, it.nome, it.telefone, true); if (!ok) resto.push(it); }
+      _indFilaSalvar(resto);
+    }
+    // 2) OS com indicação que foram concluídas: avisa o Firebase (1 vez por OS)
+    let feitos; try { feitos = JSON.parse(localStorage.getItem('indInstaladas') || '[]'); } catch (e) { feitos = []; }
+    const set = new Set(feitos);
+    const novos = _firestoreTodasOrdens.filter(o => o.status === 'concluido' && extrairInd(o.obs) && !set.has(o.id));
+    for (const o of novos) {
+      try {
+        const r = await _chamarRemocoes({ acao: 'ind_instalada', osId: o.id });
+        set.add(o.id);
+        if (r && r.mudou) {
+          showToast('🎁 Instalação de indicação concluída! Conceda a mensalidade' + (r.indicador ? ' a ' + String(r.indicador).split(' ')[0] : '') + ' na Gestão → Indicações.', 'success');
+          try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+        }
+      } catch (e) { break; }
+    }
+    if (novos.length) { try { localStorage.setItem('indInstaladas', JSON.stringify(Array.from(set).slice(-300))); } catch (e) {} }
+  } finally { _indConciliando = false; }
+}
+
 async function carregarAgendamentos() {
   loadTitularidades(true); // atualiza o contador da aba Titularidade
   const list = document.getElementById('agendamentos-list');
@@ -7645,7 +7740,8 @@ async function carregarAgendamentos() {
       // Dados
       '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(ag.telefone || '') + '</div>' +
       '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(ag.endereco || '') + '</div>' +
-      (ag.pontoReferencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">📌 ' + esc(ag.pontoReferencia) + '</div>' : '') +
+      (_indDe(ag.pontoReferencia) ? _indBoxHTML(_indDe(ag.pontoReferencia)) : '') +
+      (limparObs(ag.pontoReferencia) ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">📌 ' + esc(limparObs(ag.pontoReferencia)) + '</div>' : '') +
       '<div style="margin-bottom:12px;">' + veiculosHtml + '</div>' +
 
       // Selects
@@ -7746,10 +7842,11 @@ async function confirmarAgendamentoAba(rowIndex) {
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: ag.nome || '', telefone: ag.telefone || '',
     endereco: ag.endereco || '', tipo: (document.getElementById('ag-tipo-' + rowIndex)||{}).value||'Instalação', data: data,
-    veiculo: veiculoStr, obs: embutirHora(ag.pontoReferencia || '', _agHoraVal, _lerPeriodo('ag-periodo-' + rowIndex))
+    veiculo: veiculoStr, obs: embutirHora(ag.pontoReferencia || '', _agHoraVal, _lerPeriodo('ag-periodo-' + rowIndex), _indDe(ag.pontoReferencia))
   });
 
   if (resultSave.ok) {
+    { const _cInd = _indDe(ag.pontoReferencia); if (_cInd) _indRegistrar(_cInd, novoId, ag.nome, ag.telefone); }
     if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
     await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true', idPedido: ag.id });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
@@ -8202,7 +8299,8 @@ function mostrarProximaNovaOS() {
              '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
     }).join('');
   }
-  const refFull = _novaOSAtual.pontoReferencia || '';
+  const refFull = limparObs(_novaOSAtual.pontoReferencia || '');
+  const _indModal = _indDe(_novaOSAtual.pontoReferencia);
   const optsTec = TECH_NAMES.map(function(n) {
     return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
   }).join('');
@@ -8211,6 +8309,7 @@ function mostrarProximaNovaOS() {
     body.innerHTML =
       '<div class="nova-os-campo"><label>Cliente</label><div class="val">' + esc(_novaOSAtual.nome || '') + '</div></div>' +
       '<div class="nova-os-campo"><label>Telefone</label><div class="val">' + esc(_novaOSAtual.telefone || '') + '</div></div>' +
+      (_indModal ? '<div class="nova-os-campo"><label>Indicação</label>' + _indBoxHTML(_indModal) + '</div>' : '') +
       '<div class="nova-os-campo"><label>Endereço</label><div class="val">' + esc(_novaOSAtual.endereco || '') +
         (refFull ? '<br><span style="font-size:12px;color:var(--muted);">📌 ' + esc(refFull) + '</span>' : '') + '</div></div>' +
       '<div class="nova-os-campo"><label>Veículo(s)</label><div>' + veiculosHtml + '</div></div>' +
@@ -8249,9 +8348,10 @@ async function confirmarNovaOS() {
     action: 'saveOrder', tech: tecnico, id: novaId,
     nome: _novaOSAtual.nome || '', telefone: _novaOSAtual.telefone || '',
     endereco: _novaOSAtual.endereco || '', tipo: 'Instalação', data: data,
-    veiculo: veiculoStr, obs: embutirHora(_novaOSAtual.pontoReferencia || '', _noHoraVal, _lerPeriodo('nova-os-periodo'))
+    veiculo: veiculoStr, obs: embutirHora(_novaOSAtual.pontoReferencia || '', _noHoraVal, _lerPeriodo('nova-os-periodo'), _indDe(_novaOSAtual.pontoReferencia))
   });
   if (result.ok) {
+    { const _cInd = _indDe(_novaOSAtual.pontoReferencia); if (_cInd) _indRegistrar(_cInd, novaId, _novaOSAtual.nome, _novaOSAtual.telefone); }
     if (_agValor) await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: tecnico, valor: _agValor });
     await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: _novaOSAtual.rowIndex, lido: 'true', idPedido: _novaOSAtual.id });
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
