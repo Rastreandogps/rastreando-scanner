@@ -264,6 +264,23 @@ body{background:var(--bg,#F5F7FA)}
 .selo-real.bom{border-color:#16A34A;color:#15803D}
 .selo-real.baixo{border-color:#E8A317;color:#B45309}
 .selo-real.neutro{border-color:var(--navy);color:var(--navy)}
+.ind-selo{display:inline-block;font-size:.76rem;font-weight:800;padding:3px 10px;border-radius:20px}
+.ind-par{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media (max-width:560px){.ind-par{grid-template-columns:1fr}}
+.ind-par span,.ind-conceder span{display:block;font-size:.72rem;color:var(--text-3)}
+.ind-par b{display:block;font-size:.95rem}
+.ind-par small{display:block;font-size:.76rem;color:var(--text-3)}
+.ind-par a{color:var(--navy-light);font-weight:700}
+.ind-conceder{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+@media (max-width:560px){.ind-conceder{grid-template-columns:1fr}}
+.ind-conceder div{background:var(--bg);border-radius:10px;padding:8px 10px}
+.ind-conceder b{font-size:.95rem}
+.ind-conceder b.dest{color:var(--green);font-size:1.1rem}
+.ind-alerta{margin-top:8px;background:var(--danger-dim);color:var(--danger);border-radius:10px;padding:8px 10px;font-size:.84rem;font-weight:600}
+.ind-botoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.ind-teto{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px}
+.ind-teto label{font-weight:700;color:var(--navy);font-size:.88rem}
+.ind-teto input{width:110px}
 .g-meta{background:#fff;border:2px solid #1B3A6B;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .g-meta-cab{font-family:var(--font-display);font-weight:800;color:var(--navy);font-size:1.05rem;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .g-meta-cab span{font-family:inherit;font-size:.8rem;color:var(--text-3);font-weight:600}
@@ -346,6 +363,7 @@ body{background:var(--bg,#F5F7FA)}
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
     <button type="button" data-tab="gestao">📊 Gestão</button>
+    <button type="button" data-tab="indicacoes">🎁 Indicações <span id="cnt-indicacoes"></span></button>
   </div>
 
   <div class="resumo" id="resumo-clientes">
@@ -434,6 +452,10 @@ body{background:var(--bg,#F5F7FA)}
 
   <div id="aba-gestao" hidden>
     <div id="gestao-conteudo"></div>
+  </div>
+
+  <div id="aba-indicacoes" hidden>
+    <div id="indicacoes-conteudo"></div>
   </div>
 
   <div id="aba-classif" hidden>
@@ -531,6 +553,7 @@ body{background:var(--bg,#F5F7FA)}
       $('tela-pin').hidden = true; $('tela-lista').hidden = false;
       carregarTemplates();
       renderLista();
+      atualizarContadorIndicacoes();
     } catch (e) {
       $('tela-lista').hidden = true; $('tela-pin').hidden = false;
       $('pin-erro').textContent = (e && e.message) || 'Não foi possível carregar a lista.';
@@ -569,7 +592,7 @@ body{background:var(--bg,#F5F7FA)}
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao';
+      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'indicacoes';
       $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
@@ -578,7 +601,9 @@ body{background:var(--bg,#F5F7FA)}
       $('aba-classif').hidden = abaAtual !== 'classif';
       $('aba-pagos').hidden = abaAtual !== 'pagos';
       $('aba-gestao').hidden = abaAtual !== 'gestao';
+      $('aba-indicacoes').hidden = abaAtual !== 'indicacoes';
       if (abaAtual === 'retornos') renderRetornos();
+      else if (abaAtual === 'indicacoes') abrirIndicacoes();
       else if (abaAtual === 'gestao') abrirGestao();
       else if (abaAtual === 'classif' || abaAtual === 'pagos') abrirClassificacao();
       else renderLista();
@@ -1000,6 +1025,111 @@ body{background:var(--bg,#F5F7FA)}
         var m = b.getAttribute('data-meta-desfazer');
         if (!confirm('Desmarcar o aporte de ' + mesTxt(m) + '?')) return;
         try { META = await chamar('metaMarcar', { mes: m, feito: false }); renderMeta(); } catch (e) { toast((e && e.message) || 'Erro.', 'erro'); }
+      });
+    });
+  }
+
+  // ---------- 🎁 INDICAÇÕES (indique e ganhe) ----------
+  var IND = null, indFiltro = 'conceder';
+  var IND_ST = {
+    agendou:   { txt: '🆕 Agendou', cor: '#1d4ed8', bg: '#dbeafe' },
+    instalada: { txt: '✅ Instalada · conceder', cor: '#15803d', bg: '#dcfce7' },
+    concedida: { txt: '🎁 Concedida', cor: '#6d28d9', bg: '#ede9fe' },
+    duplicada: { txt: '⚠️ Duplicada', cor: '#b45309', bg: '#fef3c7' },
+    cancelada: { txt: '❌ Cancelada', cor: '#b91c1c', bg: '#fee2e2' }
+  };
+  function fmtDoc(c) { c = soDig(c); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c.length === 14 ? c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : c; }
+  function fmtTel(t) { t = soDig(t); return t.length === 11 ? '(' + t.slice(0,2) + ') ' + t.slice(2,7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0,2) + ') ' + t.slice(2,6) + '-' + t.slice(6) : t; }
+  function quandoInd(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('pt-BR'); }
+  function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada'; }).length : 0; }
+  function marcarContador() { var n = contarConceder(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
+  async function atualizarContadorIndicacoes() {
+    try { IND = await chamar('ind_lista'); marcarContador(); } catch (e) { /* segue sem o contador */ }
+  }
+  async function abrirIndicacoes(forcar) {
+    if (!IND || forcar) {
+      $('indicacoes-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>Carregando as indicações...</div>';
+      try { IND = await chamar('ind_lista'); }
+      catch (e) { $('indicacoes-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar.') + '</div>'; return; }
+    }
+    marcarContador();
+    renderIndicacoes();
+  }
+  function renderIndicacoes() {
+    var todos = IND.itens;
+    var cont = { conceder: 0, andamento: 0, concedidas: 0 };
+    todos.forEach(function (i) { if (i.status === 'instalada') cont.conceder++; else if (i.status === 'agendou') cont.andamento++; else if (i.status === 'concedida') cont.concedidas++; });
+    var lista = todos.filter(function (i) {
+      if (indFiltro === 'conceder') return i.status === 'instalada';
+      if (indFiltro === 'andamento') return i.status === 'agendou';
+      if (indFiltro === 'concedidas') return i.status === 'concedida';
+      return true;
+    });
+    var filtros = [['conceder', 'A conceder (' + cont.conceder + ')'], ['andamento', 'Em andamento (' + cont.andamento + ')'], ['concedidas', 'Concedidas (' + cont.concedidas + ')'], ['todas', 'Todas']]
+      .map(function (f) { return '<button type="button" data-indf="' + f[0] + '"' + (indFiltro === f[0] ? ' class="ativo"' : '') + '>' + f[1] + '</button>'; }).join('');
+    var itens = lista.length ? lista.map(function (i) {
+      var st = IND_ST[i.status] || IND_ST.agendou;
+      var tel = soDig(i.amigo.telefone);
+      var amigoTxt = esc(i.amigo.nome || 'Sem nome') + (tel ? ' · <a href="https://wa.me/55' + tel + '" target="_blank" rel="noopener">' + esc(fmtTel(tel)) + '</a>' : '');
+      var extra = '', botoes = '';
+      if (i.status === 'instalada') {
+        extra = '<div class="ind-conceder">' +
+          '<div><span>Mensalidade do indicador</span><b>' + (i.mensalidade != null ? brl(i.mensalidade) : '—') + '</b></div>' +
+          '<div><span>Desconto a dar (teto ' + brl(IND.teto) + ')</span><b class="dest">' + (i.desconto != null ? brl(i.desconto) : '—') + '</b></div>' +
+          '<div><span>Próxima fatura dele</span><b>' + (i.proximaFatura ? dataBR(i.proximaFatura.vencimento) + ' · ' + brl(i.proximaFatura.valor) : '—') + '</b></div>' +
+        '</div>' + (i.alertas || []).map(function (a) { return '<div class="ind-alerta">⚠️ ' + esc(a) + '</div>'; }).join('');
+        botoes = '<button type="button" class="btn btn-ok" data-ind-conceder="' + esc(i.id) + '" style="width:auto">✅ Mensalidade concedida</button>' +
+                 '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
+      } else if (i.status === 'agendou') {
+        extra = '<div class="cls-info" style="margin:8px 0 0">Aguardando a instalação. Ela é marcada sozinha quando o técnico conclui a OS (com o APP Técnico aberto).</div>';
+        botoes = '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
+                 '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
+      } else if (i.status === 'concedida') {
+        extra = '<div class="cls-info" style="margin:8px 0 0">Concedida em ' + esc(quandoInd(i.concedidaEm)) + (i.valorConcedido != null ? ' · ' + brl(i.valorConcedido) : '') + '</div>';
+      } else if (i.status === 'duplicada') {
+        extra = '<div class="cls-info" style="margin:8px 0 0">Este amigo (mesmo telefone) já tinha sido indicado antes. Só vale 1 indicação por pessoa.</div>';
+      }
+      return '<div class="cls-item" style="border-left:5px solid ' + st.cor + '">' +
+        '<div class="topo"><div><span class="ind-selo" style="background:' + st.bg + ';color:' + st.cor + '">' + st.txt + '</span></div><div class="sub">Agendou em ' + esc(quandoInd(i.criadoEm)) + (i.instaladaEm ? ' · instalou em ' + esc(quandoInd(i.instaladaEm)) : '') + '</div></div>' +
+        '<div class="ind-par"><div><span>Quem indicou</span><b>' + esc(i.indicador.nome || '—') + '</b><small>' + esc(fmtDoc(i.indicador.cpf)) + '</small></div>' +
+        '<div><span>Amigo indicado</span><b>' + amigoTxt + '</b></div></div>' +
+        extra + (botoes ? '<div class="ind-botoes">' + botoes + '</div>' : '') +
+      '</div>';
+    }).join('') : '<div class="vazio">' + (indFiltro === 'conceder' ? 'Nenhuma mensalidade para conceder agora. 🎉' : 'Nada por aqui.') + '</div>';
+    $('indicacoes-conteudo').innerHTML =
+      '<div class="cls-filtros"><span class="cls-info" style="margin:0">Indique e ganhe · 1 mensalidade por pessoa indicada (não por veículo)</span><button type="button" id="ind-atualizar" style="margin-left:auto">🔄 Atualizar</button></div>' +
+      '<div class="cls-filtros">' + filtros + '</div>' + itens +
+      '<div class="ind-teto"><label for="ind-teto-v">Teto da mensalidade grátis (R$)</label><input type="number" id="ind-teto-v" min="0" step="0.10" value="' + IND.teto + '"><button type="button" class="btn btn-sec" id="ind-teto-salvar" style="width:auto">Salvar teto</button></div>' +
+      '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida".</div>';
+    var box = $('indicacoes-conteudo');
+    box.querySelectorAll('[data-indf]').forEach(function (b) { b.addEventListener('click', function () { indFiltro = b.getAttribute('data-indf'); renderIndicacoes(); }); });
+    $('ind-atualizar').addEventListener('click', function () { abrirIndicacoes(true); });
+    $('ind-teto-salvar').addEventListener('click', async function () {
+      var b = this; b.disabled = true;
+      try { var r = await chamar('ind_teto', { teto: Number($('ind-teto-v').value) }); IND.teto = r.teto; toast('Teto salvo: ' + brl(r.teto) + '.', 'ok'); abrirIndicacoes(true); }
+      catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; }
+    });
+    box.querySelectorAll('[data-ind-conceder]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-ind-conceder');
+        var it = IND.itens.find(function (x) { return x.id === id; });
+        var sug = it && it.desconto != null ? it.desconto : IND.teto;
+        var v = prompt('Você já deu o desconto para ' + ((it && it.indicador.nome) || 'o cliente') + '?\n\nConfirme o valor concedido (R$):', String(sug).replace('.', ','));
+        if (v === null) return;
+        var valor = Number(String(v).replace(',', '.'));
+        if (!(valor >= 0)) { toast('Valor inválido.', 'erro'); return; }
+        b.disabled = true;
+        try { await chamar('ind_conceder', { id: id, valor: valor }); toast('Mensalidade registrada como concedida. 🎁', 'ok'); abrirIndicacoes(true); }
+        catch (e) { toast((e && e.message) || 'Erro ao registrar.', 'erro'); b.disabled = false; }
+      });
+    });
+    box.querySelectorAll('[data-ind-status]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var novo = b.getAttribute('data-novo');
+        if (!confirm(novo === 'cancelada' ? 'Cancelar esta indicação? Ela não dará mensalidade grátis.' : 'Marcar esta indicação como instalada?')) return;
+        b.disabled = true;
+        try { await chamar('ind_status', { id: b.getAttribute('data-ind-status'), status: novo }); abrirIndicacoes(true); }
+        catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); b.disabled = false; }
       });
     });
   }
