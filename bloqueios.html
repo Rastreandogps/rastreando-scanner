@@ -278,11 +278,11 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
         var acoes = aba === 'bloq' ? ['desbloquear'].concat(c.confiancaUsada ? [] : ['confianca'], ['remover'])
           : aba === 'conf' ? ['bloquear'] : ['remover'];
         return '<div class="item ' + (aba === 'bloq' ? 'bloq' : aba === 'conf' ? 'conf' : '') + '"><div><div class="nome">' + esc(c.nome || 'Sem nome') + '</div>' +
-          '<div class="sub">' + fmtDoc(c.cpf) + (aba === 'nf' ? ' · a plataforma não achou o e-mail ' + esc(c.cpf) + '@gmail.com' : '') + '</div>' +
+          '<div class="sub">' + fmtDoc(c.cpf) + (aba === 'nf' ? ' · a plataforma não achou ' + esc(c.cpf) + '@gmail.com nem @hotmail.com' : '') + '</div>' +
           '<div class="motivo">' + selo + (c.motivo && aba === 'bloq' ? ' ' + esc(c.motivo) : '') + '</div></div>' +
           '<div>' + (acoes.length ? btnAcoes(c.cpf, c.nome, acoes) : '') + '</div></div>';
       }).join('') : '<div class="vazio">' + ({ bloq: 'Ninguém bloqueado agora.', conf: 'Ninguém em desbloqueio de confiança.', nf: 'Todos os clientes foram encontrados na plataforma.' })[aba] + '</div>';
-      if (aba === 'nf' && l.length) h = '<div class="vazio" style="margin-bottom:8px;text-align:left">Esses clientes estão devendo, mas a plataforma do Márcio não achou o login deles. Pode ser cliente da plataforma do Felipe, ou cadastro com e-mail diferente de CPF@gmail.com. O sistema tenta de novo depois de 7 dias.</div>' + h;
+      if (aba === 'nf' && l.length) h = '<div class="vazio" style="margin-bottom:8px;text-align:left">Esses clientes estão devendo, mas a plataforma do Márcio não achou o login deles. Pode ser cliente da plataforma do Felipe, ou cadastro com e-mail diferente de CPF@gmail.com ou CPF@hotmail.com. O sistema tenta de novo depois de 7 dias.</div>' + h;
     } else if (aba === 'exc') {
       var ex = ST.excecoes || [];
       h = ex.length ? ex.map(function (c) {
@@ -343,7 +343,7 @@ input[type=email],input[type=password],input[type=text]{width:100%;padding:11px 
       var acoes = ['desbloquear', 'bloquear'];
       if (!reg.confiancaUsada) acoes.push('confianca');
       acoes.push(exc ? 'excecaoRemover' : 'excecaoAdd');
-      $('achado').innerHTML = '<div class="achado"><div class="nome">' + esc(r.nome || 'Não encontrado no Asaas') + '</div><div class="sub" style="font-size:.82rem;color:var(--text-3)">' + fmtDoc(cpf) + ' · login na plataforma: ' + cpf + '@gmail.com</div><div style="margin-top:6px">' + situ + '</div>' + btnAcoes(cpf, r.nome || '', acoes) + '</div>';
+      $('achado').innerHTML = '<div class="achado"><div class="nome">' + esc(r.nome || 'Não encontrado no Asaas') + '</div><div class="sub" style="font-size:.82rem;color:var(--text-3)">' + fmtDoc(cpf) + ' · login na plataforma: ' + cpf + '@gmail.com ou @hotmail.com</div><div style="margin-top:6px">' + situ + '</div>' + btnAcoes(cpf, r.nome || '', acoes) + '</div>';
     } catch (e) { $('achado').innerHTML = ''; toast(e.message, true); }
   }
   $('btn-buscar').addEventListener('click', buscar);
