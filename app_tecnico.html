@@ -1413,7 +1413,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-28-v93-titularidade';
+const BUILD_VERSION = '2026-09-28-v94-titularidade-aviso';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7491,6 +7491,7 @@ async function toggleLiberacaoHoje(tipo) {
 // Pedidos ficam no Firebase "rastreando-assinaturas" e NÃO viram OS.
 // ════════════════════════════════
 let _titPedidos = [], _titFiltro = 'abertos';
+let _titIdsVistos = null; // null = ainda não carregou nenhuma vez (não avisa dos que já existiam)
 const TIT_ST = {
   novo:      { txt: '🆕 Novo',       cor: '#1d4ed8', bg: '#dbeafe' },
   contato:   { txt: '📞 Em contato', cor: '#b45309', bg: '#fef3c7' },
@@ -7507,12 +7508,25 @@ function _titBadge() {
   b.textContent = n > 9 ? '9+' : String(n);
   b.style.display = n ? 'block' : 'none';
 }
+function _titAvisarNovos() {
+  const ids = new Set(_titPedidos.map(p => p.id));
+  if (_titIdsVistos !== null) {
+    const novos = _titPedidos.filter(p => p.status === 'novo' && !_titIdsVistos.has(p.id));
+    if (novos.length) {
+      const nome = String(novos[0].nome || '').split(' ')[0];
+      showToast('🔁 ' + (novos.length === 1 ? 'Nova troca de titularidade' + (nome ? ': ' + nome : '') : novos.length + ' novas trocas de titularidade') + ' — veja na aba 🔁', 'success');
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+    }
+  }
+  _titIdsVistos = ids;
+}
 async function loadTitularidades(silencioso) {
   const lista = document.getElementById('tit-lista');
   if (!silencioso && lista && !_titPedidos.length) lista.innerHTML = '<div class="empty-state" style="padding:24px 0;"><p>Carregando...</p></div>';
   try {
     const r = await _chamarRemocoes({ acao: 'tit_lista' });
     _titPedidos = (r && r.pedidos) || [];
+    _titAvisarNovos();
     _titBadge();
     if (!silencioso || document.getElementById('admin-tab-acessos').classList.contains('active')) renderTitularidades();
   } catch (e) {
@@ -8139,6 +8153,11 @@ async function ignorarRemocao(id) {
 var _pendingAgendamentos = [];
 var _novaOSAtual = null;
 
+// Ao voltar para o app (ex.: depois de deixar o celular bloqueado), confere logo, sem esperar os 30s
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && currentRole === 'admin') { try { checkNovasOSFormulario(); } catch (e) {} }
+});
+
 async function pollCompleto() {
   tentarSincronizarFilaPlanilha(); // reforço: tenta reenviar o que ainda estiver pendente
   if (currentRole === 'tech')  await loadTechOrders();
@@ -8159,6 +8178,7 @@ async function checkNovasOSFormulario() {
   const pendentes = (result.ok && result.data) ? result.data : [];
   const nRem = await _contarRemocoesComCache();
   _atualizarBadgeAgendamentos(pendentes.length, nRem);
+  loadTitularidades(true); // pedidos de troca de titularidade: atualiza o contador da aba e avisa se chegou novo
 }
 
 function mostrarProximaNovaOS() {
