@@ -762,7 +762,7 @@
         <line x1="16" y1="17" x2="8" y2="17"/>
         <polyline points="10 9 9 9 8 9"/>
       </svg>
-      <span id="badge-agendamentos" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
+      <span id="badge-agendamentos" style="display:none;position:absolute;top:3px;left:calc(50% + 5px);right:auto;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
     <span id="favaba-agendamentos" onclick="event.stopPropagation();toggleFavAba('agendamentos')" style="position:absolute;top:2px;right:2px;font-size:8px;cursor:pointer;color:#94a3b8;line-height:1;" title="Fixar aba favorita">☆</span></button>
     <!-- 🗓️ Técnico / Agenda -->
     <button class="tab-btn admin-tab" onclick="showAdminTab('view-tech')" id="at-view" style="position:relative;" title="Ver Técnico">
@@ -789,7 +789,7 @@
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
       </svg>
-      <span id="badge-titularidade" style="display:none;position:absolute;top:4px;left:4px;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
+      <span id="badge-titularidade" style="display:none;position:absolute;top:3px;left:calc(50% + 5px);right:auto;background:#ef4444;color:white;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
     <span id="favaba-acessos" onclick="event.stopPropagation();toggleFavAba('acessos')" style="position:absolute;top:2px;right:2px;font-size:8px;cursor:pointer;color:#94a3b8;line-height:1;" title="Fixar aba favorita">☆</span></button>
     <!-- 🗺️ Mapa -->
     <button class="tab-btn admin-tab" onclick="showAdminTab('mapa')" id="at-mapa" style="position:relative;" title="Mapa">
@@ -1414,7 +1414,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-28-v95-indicacoes';
+const BUILD_VERSION = '2026-09-28-v96-numero-da-aba';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
