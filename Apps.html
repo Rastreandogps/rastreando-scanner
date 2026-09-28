@@ -535,8 +535,8 @@
 <div class="modal-tut-fundo" id="modal-tut" hidden>
   <div class="modal-tut-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-tut-titulo">
     <h2 id="modal-tut-titulo">Enviar acesso pelo WhatsApp</h2>
-    <p>Digite o login do cliente. A senha e o link do tutorial já vêm prontos.</p>
-    <input class="modal-tut-campo" id="modal-tut-login" type="text" placeholder="Ex.: LuizCastilho" autocomplete="off" autocorrect="off" autocapitalize="none">
+    <p>Digite o login do cliente, se quiser. A senha e o link do tutorial já vêm prontos. Sem login, vai só a mensagem com o link do tutorial.</p>
+    <input class="modal-tut-campo" id="modal-tut-login" type="text" placeholder="Login (opcional) — ex.: LuizCastilho" autocomplete="off" autocorrect="off" autocapitalize="none">
     <div class="modal-tut-btns">
       <button class="modal-tut-cancel" id="modal-tut-fechar">Cancelar</button>
       <button class="modal-tut-ok" id="modal-tut-ok">Abrir WhatsApp</button>
@@ -564,13 +564,12 @@
 
   function enviar(){
     var login = campo.value.trim();
-    if(!login){ campo.focus(); campo.style.borderColor='#E03131'; return; }
-    campo.style.borderColor='';
+    // Login é opcional: sem login, vai só a mensagem com o link do tutorial
     var msg = '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
       'Agora você acompanha seu veículo em tempo real, de onde estiver. 📍\n\n' +
-      '🔐 *Seus dados de acesso*\n' +
+      (login ? '🔐 *Seus dados de acesso*\n' +
       '👤 *Login:* ' + login + '\n' +
-      '🔑 *Senha:* 123456\n\n' +
+      '🔑 *Senha:* 123456\n\n' : '') +
       '📲 *Baixe o aplicativo e veja como usar:*\n' +
       'https://app.rastreandogpsbr.com.br/tutorial.html\n\n' +
       'Qualquer dúvida, é só chamar aqui. Boa viagem! 🚀';
