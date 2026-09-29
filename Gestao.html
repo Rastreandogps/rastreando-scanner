@@ -252,6 +252,8 @@ body{background:var(--bg,#F5F7FA)}
 .g-q .falta{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
 .g-q .falta small{display:block;font-size:.74rem;color:var(--text-3)}
 .g-q .falta b{display:block;font-family:var(--font-display);font-size:1.35rem;color:var(--navy)}
+.g-q .falta.sup small{color:#15803D;font-weight:700}
+.g-q .falta.sup b{color:#15803D}
 .g-q.ouro{border-color:#F59E0B;background:#FFFBEB} .g-q.ouro .cab{color:#B7791F}
 .g-q.prata{border-color:#94A3B8;background:#F8FAFC} .g-q.prata .cab{color:#475569}
 .g-q.latao{border-color:#EA580C;background:#FFF7ED} .g-q.latao .cab{color:#C2410C}
@@ -921,6 +923,14 @@ body{background:var(--bg,#F5F7FA)}
   }
   // ---------- ABA GESTÃO (usa a classificação salva) ----------
   var GPCT = null;
+  // Esperado da classe = potencial × chance (ex.: 50% do potencial). dif = esperado − já recebido:
+  // positivo = ainda falta receber; negativo = a estimativa foi superada (superávit da estimativa).
+  function esperadoClasse(r, pct) { var est = r.total * (pct / 100); return { est: est, dif: est - r.recebido }; }
+  function htmlFalta(dif) {
+    return dif >= 0
+      ? '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(dif) + '</b></div>'
+      : '<div class="falta sup"><small>✅ Superávit da estimativa</small><b>+' + brl(-dif) + '</b></div>';
+  }
   var SALDO = null;
   async function carregarSaldo() {
     try { SALDO = await chamar('saldo'); } catch (e) { SALDO = { erro: (e && e.message) || 'Não foi possível ler o saldo.' }; }
@@ -979,7 +989,7 @@ body{background:var(--bg,#F5F7FA)}
     var NOMES = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
     var linhas = '', tCli = 0, tPot = 0, tEst = 0, tRec = 0;
     ['ouro', 'prata', 'latao'].forEach(function (k) {
-      var r = R[k], est = r.recebido + r.aReceber * (GPCT[k] / 100);
+      var r = R[k], est = esperadoClasse(r, GPCT[k]).est;
       tCli += r.clientes; tPot += r.total; tEst += est; tRec += r.recebido;
       linhas += '<tr><td>' + NOMES[k] + '</td><td>' + r.clientes + '</td><td>' + brl(r.total) + '</td>' +
         '<td><input type="number" min="0" max="100" step="0.5" data-pct="' + k + '" value="' + GPCT[k] + '">%</td>' +
@@ -993,21 +1003,22 @@ body{background:var(--bg,#F5F7FA)}
       return '<div class="selo-real ' + cls + '" title="Porcentagem real já recebida do potencial"><b>' + Math.round(v) + '%</b><small>real</small></div>';
     }
     function quadrantes(pct) {
-      var t = { pot: 0, est: 0, rec: 0, falta: 0, cli: 0 };
+      var t = { pot: 0, est: 0, rec: 0, cli: 0 };
       var h = ['ouro', 'prata', 'latao'].map(function (k) {
-        var r = R[k], falta = r.aReceber * (pct[k] / 100), est = r.recebido + falta;
-        t.pot += r.total; t.est += est; t.rec += r.recebido; t.falta += falta; t.cli += r.clientes;
+        var r = R[k], e = esperadoClasse(r, pct[k]), est = e.est;
+        t.pot += r.total; t.est += est; t.rec += r.recebido; t.cli += r.clientes;
         return '<div class="g-q ' + k + '"><div class="cab-linha"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' + seloReal(r.recebido, r.total, pct[k]) + '</div>' +
           '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
           '<div class="lin"><span>Chance</span><b>' + String(pct[k]).replace('.', ',') + '%</b></div>' +
+          '<div class="lin"><span>Esperado</span><b>' + brl(est) + '</b></div>' +
           '<div class="lin"><span>Já recebido</span><b>' + brl(r.recebido) + '</b></div>' +
-          '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(falta) + '</b></div></div>';
+          htmlFalta(e.dif) + '</div>';
       }).join('');
       h += '<div class="g-q total"><div class="cab-linha"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' + seloReal(t.rec, t.pot, null) + '</div>' +
         '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
         '<div class="lin"><span>Esperado</span><b>' + brl(t.est) + '</b></div>' +
         '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
-        '<div class="falta"><small>➜ Ainda falta receber</small><b>' + brl(t.falta) + '</b></div></div>';
+        htmlFalta(t.est - t.rec) + '</div>';
       return h;
     }
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
@@ -1035,6 +1046,7 @@ body{background:var(--bg,#F5F7FA)}
       })() +
       '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
       '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Esperado no mês</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
+      '<div class="cls-info" style="margin-top:8px">Esperado no mês = potencial × %. "Ainda falta receber" = esperado − já recebido; quando o recebido passa do esperado, aparece como superávit da estimativa.</div>' +
       '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>' +
       '<div class="g-titulo">Histórico mês a mês</div><div id="g-hist"><div class="vazio">Carregando histórico...</div></div>';
     function recalcEst() {
@@ -1042,7 +1054,7 @@ body{background:var(--bg,#F5F7FA)}
       ['ouro', 'prata', 'latao'].forEach(function (k) {
         var v = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value) || 0;
         pctTela[k] = v;
-        var est = R[k].recebido + R[k].aReceber * (v / 100); soma += est;
+        var est = esperadoClasse(R[k], v).est; soma += est;
         $('g-est-' + k).textContent = brl(est);
       });
       $('g-est-tot').textContent = brl(soma);
@@ -1080,9 +1092,10 @@ body{background:var(--bg,#F5F7FA)}
   }
   // Receita do mês: mensalidades recebidas + o que falta receber (mesma chance da Gestão) + receitas variáveis
   function despReceita() {
-    var r = { recebido: 0, falta: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma' };
+    var r = { recebido: 0, falta: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma' }, estTot = 0;
     if (despMesSel === mesAtualKey() && CLS && CLS.resumo && GPCT) {
-      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) { r.recebido += x.recebido; r.falta += x.aReceber * (GPCT[k] / 100); } });
+      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) { r.recebido += x.recebido; estTot += esperadoClasse(x, GPCT[k]).est; } });
+      r.falta = Math.max(0, estTot - r.recebido);
       r.fonte = 'app';
       if (DESP.incluirAvulsos && CLS.resumo.avulso) r.avulso = CLS.resumo.avulso.recebido;
     } else if (HIST) {
@@ -1170,7 +1183,7 @@ body{background:var(--bg,#F5F7FA)}
       '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="5" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
       '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
-    h += '<div class="cls-info">Estimativa: mensalidades recebidas + o que falta receber (pela chance de cada classe, como na Gestão) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
+    h += '<div class="cls-info">Estimativa: mensalidades recebidas + o que ainda falta para chegar ao esperado (potencial × chance, como na Gestão; se já passou do esperado, vale o recebido) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
     h += '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>💰 Receitas variáveis (empresa)</h3><div class="dp-tot"><span>Total <b>' + brl(rec.variaveis) + '</b></span><span>Recebido <b class="ok">' + brl(rec.variaveisRec) + '</b></span><span>A receber <b class="ab">' + brl(rec.variaveis - rec.variaveisRec) + '</b></span></div></div>' +
