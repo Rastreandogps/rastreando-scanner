@@ -281,6 +281,47 @@ body{background:var(--bg,#F5F7FA)}
 .ind-teto{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px}
 .ind-teto label{font-weight:700;color:var(--navy);font-size:.88rem}
 .ind-teto input{width:110px}
+.dp-mes{display:flex;align-items:center;justify-content:center;gap:16px;margin:4px 0 12px}
+.dp-mes b{font-family:var(--font-display);font-size:1.15rem;color:var(--navy);min-width:120px;text-align:center;text-transform:capitalize}
+.dp-mes button{width:42px;height:42px;border-radius:50%;border:2px solid var(--border);background:#fff;font-size:1rem;color:var(--navy);cursor:pointer}
+.dp-mes button:disabled{opacity:.35;cursor:default}
+.dp-resumo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media (max-width:640px){.dp-resumo{grid-template-columns:1fr}}
+.dp-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 14px}
+.dp-card .t{font-size:.8rem;color:var(--text-3);font-weight:700}
+.dp-card .v{font-family:var(--font-display);font-weight:800;font-size:1.4rem;color:var(--text);margin:2px 0 6px}
+.dp-card .v small{font-size:.75rem;color:var(--text-3);font-weight:600}
+.dp-card .l{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--text-2);padding:2px 0}
+.dp-card .l b{color:var(--text);text-align:right}
+.dp-card b.ok,.dp-tot b.ok{color:var(--green)} .dp-card b.ab,.dp-tot b.ab{color:var(--danger)}
+.dp-liq{grid-column:1/-1;background:linear-gradient(135deg,#1B3A6B,#2451A0);border-color:#1B3A6B}
+.dp-liq .t,.dp-liq .l,.dp-liq .l b{color:rgba(255,255,255,.85)} .dp-liq .v{color:#fff;font-size:1.9rem}
+.dp-liq.neg{background:linear-gradient(135deg,#8B1A1A,#C62828);border-color:#8B1A1A}
+.dp-poup{grid-column:1/-1;border-color:var(--green)}
+.dp-poup-lin{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;color:var(--text-2);margin:6px 0}
+.dp-poup-lin input{width:72px;text-align:center;font-weight:800}
+.dp-info{margin-top:8px;background:var(--green-dim);color:#046C4E;border-radius:10px;padding:8px 10px;font-size:.84rem;font-weight:600}
+.dp-chk{display:flex;gap:8px;align-items:flex-start;font-size:.78rem;color:var(--text-2);margin-top:8px;cursor:pointer}
+.dp-chk input{margin-top:2px;flex:none}
+.dp-grupo{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 14px;margin:12px 0}
+.dp-grupo h3{font-family:var(--font-display);font-size:1rem;color:var(--navy);margin-bottom:6px}
+.dp-tot{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--text-3)} .dp-tot b{color:var(--text)}
+.dp-sub{font-size:.74rem;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
+.dp-vazio{font-size:.82rem;color:var(--text-3);padding:6px 0}
+.dp-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--border)}
+.dp-nome b{display:block;font-size:.92rem;color:var(--text)} .dp-nome span{font-size:.85rem;color:var(--text-2);font-family:var(--font-display);font-weight:700}
+.dp-item.ok .dp-nome b{color:var(--text-3)}
+.dp-acoes{display:flex;align-items:center;gap:6px}
+.dp-pago{border:2px solid #F4D58A;background:#FEF3C7;color:#92400E;border-radius:20px;padding:7px 12px;font-weight:800;font-size:.78rem;cursor:pointer;white-space:nowrap;font-family:var(--font-body)}
+.dp-pago.on{border-color:#86E0BC;background:var(--green-dim);color:#046C4E}
+.dp-ic{border:none;background:none;font-size:1rem;cursor:pointer;padding:6px}
+.dp-add{width:auto!important;margin-top:12px;padding:10px 16px!important;font-size:.85rem!important}
+.dp-form{margin-top:12px;background:var(--bg);border-radius:12px;padding:12px 14px}
+.dp-form label{display:block;font-size:.78rem;font-weight:700;color:var(--text-2);margin:8px 0 4px}
+.dp-form input[type=text],.dp-form input[type=number]{width:100%}
+.dp-tipos{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.dp-tipos label{display:flex;gap:8px;align-items:center;font-weight:600;margin:0;cursor:pointer}
+.dp-form-bt{display:flex;gap:10px;align-items:center;margin-top:12px}
 .g-meta{background:#fff;border:2px solid #1B3A6B;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .g-meta-cab{font-family:var(--font-display);font-weight:800;color:var(--navy);font-size:1.05rem;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .g-meta-cab span{font-family:inherit;font-size:.8rem;color:var(--text-3);font-weight:600}
@@ -372,6 +413,7 @@ body{background:var(--bg,#F5F7FA)}
     <button type="button" data-tab="pagos">✅ Pagos</button>
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
+    <button type="button" data-tab="despesas">💸 Despesas</button>
     <button type="button" data-tab="metas">🎯 Metas</button>
     <button type="button" data-tab="indicacoes">🎁 Indicações <span id="cnt-indicacoes"></span></button>
   </div>
@@ -462,6 +504,10 @@ body{background:var(--bg,#F5F7FA)}
 
   <div id="aba-gestao" hidden>
     <div id="gestao-conteudo"></div>
+  </div>
+
+  <div id="aba-despesas" hidden>
+    <div id="despesas-conteudo"></div>
   </div>
 
   <div id="aba-metas" hidden>
@@ -606,7 +652,7 @@ body{background:var(--bg,#F5F7FA)}
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'metas' || abaAtual === 'indicacoes';
+      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'despesas' || abaAtual === 'metas' || abaAtual === 'indicacoes';
       $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
@@ -615,9 +661,11 @@ body{background:var(--bg,#F5F7FA)}
       $('aba-classif').hidden = abaAtual !== 'classif';
       $('aba-pagos').hidden = abaAtual !== 'pagos';
       $('aba-gestao').hidden = abaAtual !== 'gestao';
+      $('aba-despesas').hidden = abaAtual !== 'despesas';
       $('aba-metas').hidden = abaAtual !== 'metas';
       $('aba-indicacoes').hidden = abaAtual !== 'indicacoes';
       if (abaAtual === 'retornos') renderRetornos();
+      else if (abaAtual === 'despesas') abrirDespesas();
       else if (abaAtual === 'metas') abrirMetas();
       else if (abaAtual === 'indicacoes') abrirIndicacoes();
       else if (abaAtual === 'gestao') abrirGestao();
@@ -1013,6 +1061,172 @@ body{background:var(--bg,#F5F7FA)}
       b.disabled = false;
     });
   }
+
+  // ---------- 💸 DESPESAS ----------
+  var DESP = null, despMesSel = null, despForm = null, MES_MIN = '2026-09';
+  function mesAtualKey() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function despAchar(id) {
+    var listas = ['fixos', 'variaveis', 'receitas'];
+    for (var a = 0; a < listas.length; a++) {
+      var i = DESP[listas[a]].findIndex(function (x) { return x.id === id; });
+      if (i >= 0) return { lista: listas[a], i: i, item: DESP[listas[a]][i] };
+    }
+    return null;
+  }
+  function somaGrupo(grupo) {
+    var total = 0, pago = 0;
+    DESP.fixos.concat(DESP.variaveis).forEach(function (i) { if (i.grupo === grupo) { total += i.valor; if (i.pago) pago += i.valor; } });
+    return { total: total, pago: pago, aberto: total - pago };
+  }
+  // Receita do mês: mensalidades recebidas + o que falta receber (mesma chance da Gestão) + receitas variáveis
+  function despReceita() {
+    var r = { recebido: 0, falta: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma' };
+    if (despMesSel === mesAtualKey() && CLS && CLS.resumo && GPCT) {
+      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) { r.recebido += x.recebido; r.falta += x.aReceber * (GPCT[k] / 100); } });
+      r.fonte = 'app';
+      if (DESP.incluirAvulsos && CLS.resumo.avulso) r.avulso = CLS.resumo.avulso.recebido;
+    } else if (HIST) {
+      var h = HIST.find(function (x) { return x.chave === despMesSel; });
+      if (h) { r.recebido = h.total.recebido; r.fonte = 'foto'; }
+    }
+    DESP.receitas.forEach(function (x) { r.variaveis += x.valor; if (x.recebido) r.variaveisRec += x.valor; });
+    r.total = r.recebido + r.falta + r.avulso + r.variaveis;
+    return r;
+  }
+  async function abrirDespesas() {
+    if (!despMesSel) despMesSel = mesAtualKey();
+    var box = $('despesas-conteudo');
+    if (!DESP || DESP.mes !== despMesSel) box.innerHTML = '<div class="vazio">Carregando as despesas...</div>';
+    try {
+      var tarefas = [chamar('desp_mes', { mes: despMesSel })];
+      if (!GPCT) tarefas.push(chamar('gestaoConfig').then(function (r) { GPCT = r.pct; }).catch(function () { GPCT = { ouro: 98, prata: 75, latao: 65 }; }));
+      if (!CLS) tarefas.push(chamar('classificacao').then(function (r) { if (r && !r.vazio) CLS = r; }).catch(function () { }));
+      if (!META) tarefas.push(chamar('meta').then(function (r) { META = r; }).catch(function () { }));
+      DESP = (await Promise.all(tarefas))[0];
+    } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar as despesas.') + '</div>'; return; }
+    if (despMesSel !== mesAtualKey() && !HIST) { try { HIST = await chamar('historico'); } catch (e) { } }
+    renderDespesas();
+  }
+  function htmlDespItem(i, lista) {
+    var rec = lista === 'receitas', ok = rec ? i.recebido : i.pago;
+    return '<div class="dp-item' + (ok ? ' ok' : '') + '"><div class="dp-nome"><b>' + esc(i.nome) + '</b><span>' + brl(i.valor) + '</span></div>' +
+      '<div class="dp-acoes"><button type="button" class="dp-pago' + (ok ? ' on' : '') + '" data-d-pago="' + esc(i.id) + '">' + (ok ? (rec ? '✅ Recebido' : '✅ Pago') : (rec ? '⏳ A receber' : '⏳ Em aberto')) + '</button>' +
+      '<button type="button" class="dp-ic" data-d-edit="' + esc(i.id) + '" aria-label="Editar">✏️</button>' +
+      '<button type="button" class="dp-ic" data-d-del="' + esc(i.id) + '" aria-label="Remover">🗑️</button></div></div>';
+  }
+  function htmlDespForm(grupo) {
+    if (!despForm || despForm.grupo !== grupo) return '';
+    var it = despForm.id ? despAchar(despForm.id) : null, item = it ? it.item : null;
+    var novo = !despForm.id, rec = grupo === 'receita';
+    return '<div class="dp-form"><b>' + (novo ? (rec ? 'Nova receita' : 'Nova despesa') : 'Editar') + '</b>' +
+      '<label for="dpf-nome">Nome</label><input type="text" id="dpf-nome" maxlength="80" value="' + esc(item ? item.nome : '') + '" placeholder="' + (rec ? 'Ex.: Venda de rastreador' : 'Ex.: Compra de rastreadores') + '">' +
+      '<label for="dpf-valor">Valor (R$)</label><input type="number" id="dpf-valor" step="0.01" min="0" inputmode="decimal" value="' + (item ? item.valor : '') + '">' +
+      (novo && !rec ? '<div class="dp-tipos"><label><input type="radio" name="dpf-tipo" value="variavel" checked> Só deste mês (variável)</label><label><input type="radio" name="dpf-tipo" value="fixa"> Fixa (repete todo mês)</label></div>' : '') +
+      (!novo && it && it.lista === 'fixos' ? '<div class="cls-info">A mudança vale para este mês e para os próximos (itens já pagos não mudam).</div>' : '') +
+      '<div class="dp-form-bt"><button type="button" class="btn btn-ok" id="dpf-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="dpf-cancelar">Cancelar</button></div></div>';
+  }
+  function htmlDespGrupo(grupo, titulo) {
+    var t = somaGrupo(grupo);
+    var doGrupo = function (i) { return i.grupo === grupo; };
+    var fixos = DESP.fixos.filter(doGrupo), vari = DESP.variaveis.filter(doGrupo);
+    return '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>' + titulo + '</h3><div class="dp-tot"><span>Total <b>' + brl(t.total) + '</b></span><span>Pago <b class="ok">' + brl(t.pago) + '</b></span><span>Em aberto <b class="ab">' + brl(t.aberto) + '</b></span></div></div>' +
+      '<div class="dp-sub">Fixas (todo mês)</div>' + (fixos.length ? fixos.map(function (i) { return htmlDespItem(i, 'fixos'); }).join('') : '<div class="dp-vazio">Nenhuma despesa fixa.</div>') +
+      '<div class="dp-sub">Variáveis (só deste mês)</div>' + (vari.length ? vari.map(function (i) { return htmlDespItem(i, 'variaveis'); }).join('') : '<div class="dp-vazio">Nenhuma despesa variável neste mês.</div>') +
+      '<button type="button" class="btn btn-sec dp-add" data-d-add="' + grupo + '">+ Adicionar despesa ' + (grupo === 'empresa' ? 'da empresa' : 'pessoal') + '</button>' + htmlDespForm(grupo) + '</div>';
+  }
+  function renderDespesas() {
+    var emp = somaGrupo('empresa'), pes = somaGrupo('pessoal'), rec = despReceita();
+    var totalDesp = emp.total + pes.total, liq = rec.total - totalDesp;
+    var atual = despMesSel === mesAtualKey();
+    var pct = DESP.poupancaPct, guardar = Math.max(0, liq * pct / 100);
+    var h = '<div class="dp-mes"><button type="button" data-d-mes="-1"' + (despMesSel <= MES_MIN ? ' disabled' : '') + ' aria-label="Mês anterior">◀</button><b>' + esc(mesTxt(despMesSel)) + '</b>' +
+      '<button type="button" data-d-mes="1"' + (despMesSel >= somaMes(mesAtualKey(), 2) ? ' disabled' : '') + ' aria-label="Próximo mês">▶</button></div>';
+    // ---- resumo
+    h += '<div class="dp-resumo">' +
+      '<div class="dp-card"><div class="t">💰 Receita estimada</div><div class="v">' + brl(rec.total) + '</div>' +
+        (rec.fonte === 'nenhuma' ? '<div class="cls-info" style="margin:0">' + (despMesSel > mesAtualKey() ? 'Este mês ainda não começou: ainda não há mensalidades para somar. Lance aqui as despesas e receitas que já conhece.' : 'Sem dados de mensalidades para este mês (elas entram quando a foto do mês é salva).') + '</div>' :
+          '<div class="l"><span>Mensalidades recebidas</span><b>' + brl(rec.recebido) + '</b></div>' +
+          (rec.fonte === 'app' ? '<div class="l"><span>A receber (estimativa)</span><b>' + brl(rec.falta) + '</b></div>' : '')) +
+        (rec.avulso ? '<div class="l"><span>PIX avulsos recebidos</span><b>' + brl(rec.avulso) + '</b></div>' : '') +
+        '<div class="l"><span>Receitas variáveis</span><b>' + brl(rec.variaveis) + '</b></div>' +
+        (atual && CLS && CLS.resumo && CLS.resumo.avulso ? '<label class="dp-chk"><input type="checkbox" id="dp-avulsos"' + (DESP.incluirAvulsos ? ' checked' : '') + '> Somar os PIX avulsos recebidos (' + brl(CLS.resumo.avulso.recebido) + ')</label>' : '') +
+      '</div>' +
+      '<div class="dp-card"><div class="t">💸 Despesas</div><div class="v">' + brl(totalDesp) + '</div>' +
+        '<div class="l"><span>🏢 Empresa</span><b>' + brl(emp.total) + '</b></div><div class="l"><span>🏠 Pessoal</span><b>' + brl(pes.total) + '</b></div>' +
+        '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div></div>' +
+      '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">Líquido estimado do mês</div><div class="v">' + brl(liq) + '</div><div class="l"><span>Receita estimada − despesas</span><b></b></div></div>';
+    // ---- poupança / meta
+    var m = META, extra = '';
+    if (liq <= 0) extra = '<div class="dp-info">Sem sobra neste mês para guardar.</div>';
+    else if (m) {
+      var juntado = Object.keys(m.meses || {}).reduce(function (t, k) { return t + Number(m.meses[k].valor || 0); }, 0);
+      var faltaMeta = Math.max(0, m.meta - juntado), dif = guardar - m.aporte;
+      extra = '<div class="l"><span>Aporte da meta</span><b>' + brl(m.aporte) + '</b></div>' +
+        '<div class="l"><span>Comparado ao aporte</span><b class="' + (dif >= 0 ? 'ok' : 'ab') + '">' + (dif >= 0 ? '+' + brl(dif) + ' acima' : brl(-dif) + ' abaixo') + '</b></div>' +
+        '<div class="l"><span>Já juntado / falta</span><b>' + brl(juntado) + ' / ' + brl(faltaMeta) + '</b></div>' +
+        (faltaMeta > 0 && guardar > 0 ? '<div class="dp-info">Guardando ' + brl(guardar) + ' por mês, os ' + brl(m.meta) + ' saem em <b>' + Math.ceil(faltaMeta / guardar) + ' meses</b> (' + esc(mesTxt(somaMes(mesAtualKey(), Math.ceil(faltaMeta / guardar) - 1))) + ').</div>' : (faltaMeta <= 0 ? '<div class="dp-info">Meta atingida! 🎉</div>' : ''));
+    }
+    h += '<div class="dp-card dp-poup"><div class="t">🎯 Guardar para a meta de R$ 100 mil</div>' +
+      '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="5" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
+      '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
+      '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
+    h += '<div class="cls-info">Estimativa: mensalidades recebidas + o que falta receber (pela chance de cada classe, como na Gestão) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
+    // ---- listas
+    h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
+    h += '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>💰 Receitas variáveis (empresa)</h3><div class="dp-tot"><span>Total <b>' + brl(rec.variaveis) + '</b></span><span>Recebido <b class="ok">' + brl(rec.variaveisRec) + '</b></span><span>A receber <b class="ab">' + brl(rec.variaveis - rec.variaveisRec) + '</b></span></div></div>' +
+      (DESP.receitas.length ? DESP.receitas.map(function (i) { return htmlDespItem(i, 'receitas'); }).join('') : '<div class="dp-vazio">Nenhuma receita variável neste mês (ex.: venda de equipamento).</div>') +
+      '<button type="button" class="btn btn-sec dp-add" data-d-add="receita">+ Adicionar receita</button>' + htmlDespForm('receita') + '</div>';
+    $('despesas-conteudo').innerHTML = h;
+    var f = $('dpf-nome'); if (f && !f.value) f.focus();
+  }
+  async function despOp(dados, msgOk) {
+    try { DESP = await chamar('desp_op', Object.assign({ mes: despMesSel }, dados)); despForm = null; renderDespesas(); if (msgOk) toast(msgOk, 'ok'); return true; }
+    catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); return false; }
+  }
+  $('despesas-conteudo').addEventListener('click', async function (ev) {
+    var b = ev.target.closest('button'); if (!b || !DESP) return;
+    if (b.hasAttribute('data-d-mes')) {
+      var novo = somaMes(despMesSel, Number(b.getAttribute('data-d-mes')));
+      if (novo < MES_MIN || novo > somaMes(mesAtualKey(), 2)) return;
+      despMesSel = novo; despForm = null; abrirDespesas(); return;
+    }
+    if (b.hasAttribute('data-d-ir-metas')) { document.querySelector('.tabs button[data-tab="metas"]').click(); return; }
+    if (b.hasAttribute('data-d-add')) { despForm = { grupo: b.getAttribute('data-d-add'), id: null }; renderDespesas(); return; }
+    if (b.hasAttribute('data-d-edit')) { var a = despAchar(b.getAttribute('data-d-edit')); if (a) { despForm = { grupo: a.lista === 'receitas' ? 'receita' : a.item.grupo, id: a.item.id }; renderDespesas(); } return; }
+    if (b.id === 'dpf-cancelar') { despForm = null; renderDespesas(); return; }
+    if (b.id === 'dpf-salvar') {
+      var nome = $('dpf-nome').value.trim(), valor = Number(String($('dpf-valor').value).replace(',', '.'));
+      if (nome.length < 2) { toast('Informe o nome.', 'erro'); return; }
+      if (!(valor > 0)) { toast('Informe um valor maior que zero.', 'erro'); return; }
+      b.disabled = true;
+      var ok;
+      if (despForm.id) ok = await despOp({ op: 'edit', id: despForm.id, nome: nome, valor: valor }, 'Salvo.');
+      else { var tipo = document.querySelector('input[name="dpf-tipo"]:checked'); ok = await despOp({ op: 'add', grupo: despForm.grupo, nome: nome, valor: valor, recorrente: !!(tipo && tipo.value === 'fixa') }, 'Adicionado.'); }
+      if (!ok) b.disabled = false;
+      return;
+    }
+    if (b.hasAttribute('data-d-del')) {
+      var d = despAchar(b.getAttribute('data-d-del')); if (!d) return;
+      var msg = d.lista === 'fixos' ? 'Remover "' + d.item.nome + '" deste mês e dos próximos meses?' : 'Remover "' + d.item.nome + '"?';
+      if (confirm(msg)) despOp({ op: 'remove', id: d.item.id }, 'Removido.');
+      return;
+    }
+    if (b.hasAttribute('data-d-pago')) { // marca pago / em aberto na hora e confirma com o servidor
+      var p = despAchar(b.getAttribute('data-d-pago')); if (!p) return;
+      var flag = p.lista === 'receitas' ? 'recebido' : 'pago', novoVal = !p.item[flag];
+      p.item[flag] = novoVal; renderDespesas();
+      try { DESP = await chamar('desp_op', { mes: despMesSel, op: 'pago', id: p.item.id, pago: novoVal }); renderDespesas(); }
+      catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); abrirDespesas(); }
+    }
+  });
+  $('despesas-conteudo').addEventListener('change', function (ev) {
+    if (!DESP) return;
+    if (ev.target.id === 'dp-pct') {
+      var v = Math.round(Number(ev.target.value));
+      if (!(v >= 0 && v <= 100)) { toast('Informe de 0 a 100.', 'erro'); renderDespesas(); return; }
+      despOp({ op: 'config', poupancaPct: v });
+    } else if (ev.target.id === 'dp-avulsos') despOp({ op: 'config', incluirAvulsos: ev.target.checked });
+  });
 
   // ---------- META DE POUPANÇA ----------
   var META = null;
