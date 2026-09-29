@@ -304,7 +304,13 @@ body{background:var(--bg,#F5F7FA)}
 .g-meta-bt{padding:6px 12px!important;font-size:.8rem!important;width:auto!important}
 .g-topo{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
 .g-topo .g-saldo{margin-bottom:0}
+.g-topo .g-saldo:not(.azul){display:flex;flex-direction:column;justify-content:center}
 .g-saldo.azul{background:linear-gradient(135deg,#1B3A6B,#2451A0)}
+.g-cres{display:flex;flex-direction:column;gap:1px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.28)}
+.g-cres b{font-family:var(--font-display);font-size:1.2rem;font-weight:800}
+.g-cres.up b{color:#86EFAC} .g-cres.down b{color:#FCA5A5}
+.g-cres span{font-size:.74rem;opacity:.92;line-height:1.35}
+.g-cres span.aviso{opacity:.8;font-style:italic;margin-top:3px}
 .g-saldo{background:linear-gradient(135deg,#0F5E2F,#15803D);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .g-saldo-lbl{font-size:.82rem;opacity:.9;font-weight:600}
 .g-saldo-v{font-family:var(--font-display);font-size:1.7rem;font-weight:800;margin-top:2px}
@@ -875,17 +881,25 @@ body{background:var(--bg,#F5F7FA)}
   }
   var BASE = null;
   async function carregarBase() {
-    try { BASE = await chamar('assinantes'); } catch (e) { BASE = { erro: (e && e.message) || 'Não foi possível ler.' }; }
+    var cids = (CLS && CLS.clientes ? CLS.clientes.map(function (c) { return c.cid; }).filter(Boolean) : []);
+    try { BASE = await chamar('assinantes', { cids: cids }); } catch (e) { BASE = { erro: (e && e.message) || 'Não foi possível ler.' }; }
     var box = $('g-base'); if (box) box.innerHTML = htmlBase();
   }
   function htmlBase() {
     if (!BASE) return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v" style="font-size:1rem;opacity:.8">Carregando...</div>';
     if (BASE.erro) return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v" style="font-size:.9rem">' + esc(BASE.erro) + '</div>';
-    return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · hoje</div>';
+    var c = BASE.crescimento, cres = '';
+    if (c) {
+      var pos = c.liquido >= 0;
+      var pctTxt = c.pct == null ? '' : (pos ? '+' : '') + String(c.pct).replace('.', ',') + '%';
+      cres = '<div class="g-cres ' + (pos ? 'up' : 'down') + '"><b>' + (pos ? '▲ ' : '▼ ') + pctTxt + '</b><span>' + (pos ? '+' : '') + c.liquido + ' em relação aos ' + c.doMes + ' do mês</span>' +
+        '<span>' + c.entram + ' entram · ' + c.saem + ' saíram</span>' +
+        (new Date().getDate() <= 5 ? '<span class="aviso">Até o dia 5 a diferença aparece maior: os boletos do dia 20 ainda não foram gerados.</span>' : '') + '</div>';
+    }
+    return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · hoje</div>' + cres;
   }
   async function abrirGestao() {
     carregarSaldo();
-    carregarBase();
     if (!GPCT) {
       try { GPCT = (await chamar('gestaoConfig')).pct; }
       catch (e) { GPCT = { ouro: 98, prata: 75, latao: 65 }; }
@@ -976,7 +990,8 @@ body{background:var(--bg,#F5F7FA)}
       $('g-quad').innerHTML = quadrantes(pctTela);
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
-    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); carregarBase(); atualizarTudo(this); });
+    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); atualizarTudo(this); });
+    carregarBase();
     renderHistorico();
     $('g-salvar-pct').addEventListener('click', async function () {
       var b = this, pct = {};
@@ -1174,24 +1189,25 @@ body{background:var(--bg,#F5F7FA)}
       try { HIST = await chamar('historico'); } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar o histórico.') + '</div>'; return; }
     }
     var pf = function (v) { return v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ',') + '%'; };
+    var pfs = function (v) { return v == null ? '—' : (v > 0 ? '+' : '') + String(Math.round(v * 10) / 10).replace('.', ',') + '%'; };
     var media = function (f) { var vs = HIST.map(f).filter(function (v) { return v != null; }); return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null; };
     var corpo = HIST.map(function (h) {
       return '<tr><td>' + esc(h.mes) + '</td><td>' + pf(h.classes.ouro.realPct) + '</td><td>' + pf(h.classes.prata.realPct) + '</td><td>' + pf(h.classes.latao.realPct) + '</td>' +
-        '<td>' + pf(h.total.realPct) + '</td><td>' + brl(h.total.recebido) + '</td><td>' + pf(h.inadimplencia.taxaClientes) + '</td><td>' + h.total.clientes + '</td><td>' + (h.base ? h.base.clientes : '—') + '</td>' +
+        '<td>' + pf(h.total.realPct) + '</td><td>' + brl(h.total.recebido) + '</td><td>' + pf(h.inadimplencia.taxaClientes) + '</td><td>' + h.total.clientes + '</td><td>' + (h.base ? h.base.clientes : '—') + '</td><td>' + pfs(h.crescimento ? h.crescimento.pct : null) + '</td>' +
         '<td>' + brl(h.avulsos ? h.avulsos.recebido : 0) + '</td></tr>';
     }).join('');
     var mediaLinha = HIST.length ? '<tr class="tot"><td>Média real</td><td>' + pf(media(function (h) { return h.classes.ouro.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.prata.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.latao.realPct; })) + '</td>' +
       '<td>' + pf(media(function (h) { return h.total.realPct; })) + '</td><td>' + brl(media(function (h) { return h.total.recebido; }) || 0) + '</td><td>' + pf(media(function (h) { return h.inadimplencia.taxaClientes; })) + '</td>' +
-      '<td>' + Math.round(media(function (h) { return h.total.clientes; }) || 0) + '</td><td>' + (function () { var m = media(function (h) { return h.base ? h.base.clientes : null; }); return m == null ? '—' : Math.round(m); })() + '</td><td>' + brl(media(function (h) { return h.avulsos ? h.avulsos.recebido : 0; }) || 0) + '</td></tr>' : '';
+      '<td>' + Math.round(media(function (h) { return h.total.clientes; }) || 0) + '</td><td>' + (function () { var m = media(function (h) { return h.base ? h.base.clientes : null; }); return m == null ? '—' : Math.round(m); })() + '</td><td>' + pfs(media(function (h) { return h.crescimento ? h.crescimento.pct : null; })) + '</td><td>' + brl(media(function (h) { return h.avulsos ? h.avulsos.recebido : 0; }) || 0) + '</td></tr>' : '';
     box.innerHTML = (HIST.length
-      ? '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Mês</th><th>🥇 Ouro</th><th>🥈 Prata</th><th>🚩 Latão</th><th>Total</th><th>Recebido</th><th>Inadimpl.</th><th>Assinantes</th><th>Base ativa</th><th>Avulsos</th></tr></thead><tbody>' + corpo + mediaLinha + '</tbody></table></div>' +
-        '<div class="cls-info" style="margin-top:8px">As porcentagens são o recebido de verdade sobre o potencial de cada classe. A foto do mês é salva sozinha no último dia, às 23h30.</div>'
+      ? '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Mês</th><th>🥇 Ouro</th><th>🥈 Prata</th><th>🚩 Latão</th><th>Total</th><th>Recebido</th><th>Inadimpl.</th><th>Assinantes</th><th>Base ativa</th><th>Crescimento</th><th>Avulsos</th></tr></thead><tbody>' + corpo + mediaLinha + '</tbody></table></div>' +
+        '<div class="cls-info" style="margin-top:8px">As porcentagens são o recebido de verdade sobre o potencial de cada classe. A foto do mês é salva sozinha no último dia, às 23h30. <b>Crescimento</b> = assinantes ativos no fim do mês comparados com os clientes que têm boleto no mês: é o que a mais entra no mês seguinte.</div>'
       : '<div class="vazio">Ainda não há meses salvos. A primeira foto é salva sozinha no último dia do mês, às 23h30.</div>') +
       '<button type="button" class="btn-link" id="g-salvar-mes" style="margin-top:8px">Salvar a foto deste mês agora</button>';
     $('g-salvar-mes').addEventListener('click', async function () {
       if (!confirm('Salvar agora a foto deste mês? No último dia do mês ela é atualizada sozinha.')) return;
       var b = this; b.disabled = true; b.textContent = 'Salvando...';
-      try { await chamar('salvarMes'); toast('Foto do mês salva.', 'ok'); await renderHistorico(true); }
+      try { var rs = await chamar('salvarMes'); toast(rs && rs.base === false ? 'Foto salva, mas não consegui ler os assinantes ativos agora. Tente salvar de novo em instantes.' : 'Foto do mês salva.', rs && rs.base === false ? 'erro' : 'ok'); await renderHistorico(true); }
       catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; b.textContent = 'Salvar a foto deste mês agora'; }
     });
   }
