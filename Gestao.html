@@ -554,6 +554,15 @@ body.modal-aberto{overflow:hidden}
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="dpm-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="dpm-cancelar">Cancelar</button></div>
   </div>
 </div>
+<div class="modal-fundo" id="mt-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="mt-titulo">
+    <h3 id="mt-titulo">Quanto você guardou?</h3>
+    <label for="mt-valor">Valor guardado (R$)</label>
+    <input type="number" id="mt-valor" step="0.01" min="0" inputmode="decimal">
+    <div class="cls-info" id="mt-nota" style="margin-top:8px"></div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="mt-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="mt-cancelar">Cancelar</button></div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
@@ -1314,6 +1323,31 @@ body.modal-aberto{overflow:hidden}
   var NOMES_MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   function mesTxt(k) { var p = k.split('-'); return NOMES_MES[Number(p[1]) - 1] + '/' + p[0]; }
   function somaMes(k, n) { var p = k.split('-').map(Number); var d = new Date(p[0], p[1] - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  // ---- janelinha: quanto você guardou em um mês
+  var mtMes = null, metaAberta = null; // metaAberta: lembra se a lista de meses estava aberta (null = decide sozinho)
+  function abrirModalMeta(mes, valor, edicao) {
+    mtMes = mes;
+    $('mt-titulo').textContent = (edicao ? 'Editar o valor de ' : 'Quanto você guardou em ') + mesTxt(mes) + (edicao ? '' : '?');
+    $('mt-valor').value = valor;
+    $('mt-nota').textContent = 'Aporte planejado: ' + brl(META ? META.aporte : 0) + '. Confirme ou digite o valor que realmente guardou.';
+    $('mt-salvar').disabled = false;
+    $('mt-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+    setTimeout(function () { $('mt-valor').focus(); $('mt-valor').select(); }, 30);
+  }
+  function fecharModalMeta() { $('mt-fundo').hidden = true; document.body.classList.remove('modal-aberto'); mtMes = null; }
+  $('mt-cancelar').addEventListener('click', fecharModalMeta);
+  $('mt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalMeta(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('mt-fundo').hidden) fecharModalMeta(); });
+  $('mt-valor').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('mt-salvar').click(); } });
+  $('mt-salvar').addEventListener('click', async function () {
+    if (!mtMes) return;
+    var mes = mtMes, v = Number(String($('mt-valor').value).replace(',', '.'));
+    if (!(v > 0)) { toast('Informe um valor maior que zero.', 'erro'); $('mt-valor').focus(); return; }
+    var b = this; b.disabled = true;
+    try { META = await chamar('metaMarcar', { mes: mes, feito: true, valor: v }); fecharModalMeta(); renderMeta(); toast('Guardado em ' + mesTxt(mes) + ': ' + brl(v) + '. 💪', 'ok'); }
+    catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; }
+  });
   function abrirMetas() {
     $('metas-conteudo').innerHTML = '<div class="g-meta" id="g-meta"><div class="g-meta-cab">🎯 Meta R$ 100 mil</div><div class="cls-info" style="margin:6px 0 0">Carregando...</div></div>';
     renderMeta(true);
@@ -1344,18 +1378,20 @@ body.modal-aberto{overflow:hidden}
         : k < mesAtual ? '<span class="g-meta-atr">⚠️ não guardado</span>'
         : k === mesAtual ? '<span class="g-meta-pend">⏳ guardar ' + brl(M.aporte) + '</span>'
         : '<span class="g-meta-fut">' + brl(M.aporte) + '</span>';
-      var bt = f ? '<button type="button" class="btn-link" data-meta-desfazer="' + k + '">desfazer</button>'
+      var bt = f ? '<button type="button" class="btn-link" data-meta-editar="' + k + '">editar</button> <button type="button" class="btn-link" data-meta-desfazer="' + k + '">desfazer</button>'
         : k <= mesAtual ? '<button type="button" class="btn btn-ok g-meta-bt" data-meta-feito="' + k + '">Concluído</button>' : '';
       return '<div class="g-meta-linha' + (k === mesAtual ? ' atual' : '') + '"><span class="m">' + mesTxt(k) + '</span>' + st + '<span class="a">' + bt + '</span></div>';
     }).join('');
     var previsao = falta <= 0 ? 'Meta atingida! 🎉' : 'Previsão: ' + mesTxt(lista[lista.length - 1]) + ' · faltam ' + mesesFaltam + (mesesFaltam === 1 ? ' aporte' : ' aportes');
     box.innerHTML =
       '<div class="g-meta-cab">🎯 Meta ' + brl(M.meta) + '<span>' + brl(M.aporte) + ' por mês</span></div>' +
-      '<div class="g-meta-nums"><div><small>Juntado</small><b>' + brl(juntado) + '</b></div><div><small>Falta</small><b>' + brl(falta) + '</b></div><div><small>' + Math.round(pct) + '%</small><b class="prev">' + esc(previsao) + '</b></div></div>' +
+      '<div class="g-meta-nums"><div><small>Juntado</small><b>' + brl(juntado) + '</b></div><div><small>Falta</small><b>' + brl(falta) + '</b></div><div><small>' + pct2(pct) + '</small><b class="prev">' + esc(previsao) + '</b></div></div>' +
       '<div class="g-meta-barra"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
-      '<details class="g-meta-lista"' + (M.meses[mesAtual] ? '' : ' open') + '><summary>Aportes mês a mês</summary>' + linhas + '</details>' +
+      '<details class="g-meta-lista"' + (metaAberta !== null ? (metaAberta ? ' open' : '') : (M.meses[mesAtual] ? '' : ' open')) + '><summary>Aportes mês a mês</summary>' + linhas + '</details>' +
       '<div class="ind-teto"><label for="meta-aporte-v">Aporte por mês (R$)</label><input type="number" id="meta-aporte-v" min="500" step="50" value="' + M.aporte + '"><button type="button" class="btn btn-sec" id="meta-aporte-salvar" style="width:auto">Salvar</button></div>' +
-      '<div class="cls-info" style="margin:8px 0 0">Guarde logo que o dinheiro entrar (depois dos dias 15 e 20). Dinheiro extra do mês também vai para a meta. Se mudar o aporte, os meses já marcados continuam com o valor de antes.</div>';
+      '<div class="cls-info" style="margin:8px 0 0">Toque em Concluído e informe quanto guardou de verdade (pode ser mais ou menos que o aporte). Guarde logo que o dinheiro entrar (depois dos dias 15 e 20). Se mudar o aporte, os meses já marcados continuam com o valor de antes.</div>';
+    var detLista = box.querySelector('details.g-meta-lista');
+    if (detLista) detLista.addEventListener('toggle', function () { metaAberta = detLista.open; });
     $('meta-aporte-salvar').addEventListener('click', async function () {
       var v = Number($('meta-aporte-v').value);
       if (!(v >= 500)) { toast('Informe um valor a partir de R$ 500.', 'erro'); return; }
@@ -1365,13 +1401,10 @@ body.modal-aberto{overflow:hidden}
       catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; }
     });
     box.querySelectorAll('[data-meta-feito]').forEach(function (b) {
-      b.addEventListener('click', async function () {
-        var m = b.getAttribute('data-meta-feito');
-        if (!confirm('Confirmar que você guardou ' + brl(M.aporte) + ' de ' + mesTxt(m) + '?')) return;
-        b.disabled = true;
-        try { META = await chamar('metaMarcar', { mes: m, feito: true }); renderMeta(); toast('Aporte de ' + mesTxt(m) + ' concluído! 💪', 'ok'); }
-        catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; }
-      });
+      b.addEventListener('click', function () { abrirModalMeta(b.getAttribute('data-meta-feito'), M.aporte, false); });
+    });
+    box.querySelectorAll('[data-meta-editar]').forEach(function (b) {
+      b.addEventListener('click', function () { var m = b.getAttribute('data-meta-editar'); abrirModalMeta(m, M.meses[m].valor, true); });
     });
     box.querySelectorAll('[data-meta-desfazer]').forEach(function (b) {
       b.addEventListener('click', async function () {
