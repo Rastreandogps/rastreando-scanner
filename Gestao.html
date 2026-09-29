@@ -1090,7 +1090,8 @@ body{background:var(--bg,#F5F7FA)}
   function fmtDoc(c) { c = soDig(c); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c.length === 14 ? c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : c; }
   function fmtTel(t) { t = soDig(t); return t.length === 11 ? '(' + t.slice(0,2) + ') ' + t.slice(2,7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0,2) + ') ' + t.slice(2,6) + '-' + t.slice(6) : t; }
   function quandoInd(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('pt-BR'); }
-  function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada'; }).length : 0; }
+  function aguarda(i) { return i.status === 'instalada' && i.emDia === false; } // indicador com fatura vencida
+  function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada' && !aguarda(i); }).length : 0; }
   function marcarContador() { var n = contarConceder(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
   async function atualizarContadorIndicacoes() {
     try { IND = await chamar('ind_lista'); marcarContador(); } catch (e) { /* segue sem o contador */ }
@@ -1106,18 +1107,19 @@ body{background:var(--bg,#F5F7FA)}
   }
   function renderIndicacoes() {
     var todos = IND.itens;
-    var cont = { conceder: 0, andamento: 0, concedidas: 0 };
-    todos.forEach(function (i) { if (i.status === 'instalada') cont.conceder++; else if (i.status === 'agendou') cont.andamento++; else if (i.status === 'concedida') cont.concedidas++; });
+    var cont = { conceder: 0, regularizar: 0, andamento: 0, concedidas: 0 };
+    todos.forEach(function (i) { if (aguarda(i)) cont.regularizar++; else if (i.status === 'instalada') cont.conceder++; else if (i.status === 'agendou') cont.andamento++; else if (i.status === 'concedida') cont.concedidas++; });
     var lista = todos.filter(function (i) {
-      if (indFiltro === 'conceder') return i.status === 'instalada';
+      if (indFiltro === 'conceder') return i.status === 'instalada' && !aguarda(i);
+      if (indFiltro === 'regularizar') return aguarda(i);
       if (indFiltro === 'andamento') return i.status === 'agendou';
       if (indFiltro === 'concedidas') return i.status === 'concedida';
       return true;
     });
-    var filtros = [['conceder', 'A conceder (' + cont.conceder + ')'], ['andamento', 'Em andamento (' + cont.andamento + ')'], ['concedidas', 'Concedidas (' + cont.concedidas + ')'], ['todas', 'Todas']]
+    var filtros = [['conceder', 'A conceder (' + cont.conceder + ')'], ['regularizar', 'Aguardando regularizar (' + cont.regularizar + ')'], ['andamento', 'Em andamento (' + cont.andamento + ')'], ['concedidas', 'Concedidas (' + cont.concedidas + ')'], ['todas', 'Todas']]
       .map(function (f) { return '<button type="button" data-indf="' + f[0] + '"' + (indFiltro === f[0] ? ' class="ativo"' : '') + '>' + f[1] + '</button>'; }).join('');
     var itens = lista.length ? lista.map(function (i) {
-      var st = IND_ST[i.status] || IND_ST.agendou;
+      var st = aguarda(i) ? { txt: '⏳ Aguardando regularizar', cor: '#b45309', bg: '#fef3c7' } : (IND_ST[i.status] || IND_ST.agendou);
       var tel = soDig(i.amigo.telefone);
       var amigoTxt = esc(i.amigo.nome || 'Sem nome') + (tel ? ' · <a href="https://wa.me/55' + tel + '" target="_blank" rel="noopener">' + esc(fmtTel(tel)) + '</a>' : '');
       var extra = '', botoes = '';
@@ -1126,8 +1128,12 @@ body{background:var(--bg,#F5F7FA)}
           '<div><span>Mensalidade do indicador</span><b>' + (i.mensalidade != null ? brl(i.mensalidade) : '—') + '</b></div>' +
           '<div><span>Desconto a dar (teto ' + brl(IND.teto) + ')</span><b class="dest">' + (i.desconto != null ? brl(i.desconto) : '—') + '</b></div>' +
           '<div><span>Próxima fatura dele</span><b>' + (i.proximaFatura ? dataBR(i.proximaFatura.vencimento) + ' · ' + brl(i.proximaFatura.valor) : '—') + '</b></div>' +
-        '</div>' + (i.alertas || []).map(function (a) { return '<div class="ind-alerta">⚠️ ' + esc(a) + '</div>'; }).join('');
-        botoes = '<button type="button" class="btn btn-ok" data-ind-conceder="' + esc(i.id) + '" style="width:auto">✅ Mensalidade concedida</button>' +
+        '</div>' + (i.alertas || []).map(function (a) { return '<div class="ind-alerta">⚠️ ' + esc(a) + '</div>'; }).join('') +
+          (i.prazoAte ? (i.prazoVencido
+            ? '<div class="ind-alerta">⏰ O prazo de ' + (IND.prazoDias || 60) + ' dias após a instalação passou (venceu em ' + esc(dataBR(i.prazoAte)) + ').</div>'
+            : '<div class="cls-info" style="margin:8px 0 0">Prazo para conceder: até ' + esc(dataBR(i.prazoAte)) + ' (faltam ' + i.diasRestantes + (i.diasRestantes === 1 ? ' dia' : ' dias') + ').</div>') : '');
+        var ressalva = aguarda(i) || i.prazoVencido;
+        botoes = '<button type="button" class="btn ' + (ressalva ? 'btn-sec' : 'btn-ok') + '" data-ind-conceder="' + esc(i.id) + '" style="width:auto">' + (ressalva ? 'Conceder mesmo assim' : '✅ Mensalidade concedida') + '</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'agendou') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Aguardando a instalação. Ela é marcada sozinha quando o técnico conclui a OS (com o APP Técnico aberto).</div>';
@@ -1149,7 +1155,7 @@ body{background:var(--bg,#F5F7FA)}
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Indique e ganhe · mensalidade grátis de 1 veículo por pessoa indicada</span><button type="button" id="ind-atualizar" style="margin-left:auto">🔄 Atualizar</button></div>' +
       '<div class="cls-filtros">' + filtros + '</div>' + itens +
       '<div class="ind-teto"><label for="ind-teto-v">Teto da mensalidade grátis de 1 veículo (R$)</label><input type="number" id="ind-teto-v" min="0" step="0.10" value="' + IND.teto + '"><button type="button" class="btn btn-sec" id="ind-teto-salvar" style="width:auto">Salvar teto</button></div>' +
-      '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida".</div>';
+      '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida". O prêmio é do indicador em dia: quem está devendo fica em "Aguardando regularizar". Prazo para conceder: ' + (IND.prazoDias || 60) + ' dias após a instalação.</div>';
     var box = $('indicacoes-conteudo');
     box.querySelectorAll('[data-indf]').forEach(function (b) { b.addEventListener('click', function () { indFiltro = b.getAttribute('data-indf'); renderIndicacoes(); }); });
     $('ind-atualizar').addEventListener('click', function () { abrirIndicacoes(true); });
@@ -1162,13 +1168,22 @@ body{background:var(--bg,#F5F7FA)}
       b.addEventListener('click', async function () {
         var id = b.getAttribute('data-ind-conceder');
         var it = IND.itens.find(function (x) { return x.id === id; });
+        var nome = (it && it.indicador.nome) || 'o cliente';
+        var confirmar = false;
+        if (it && (aguarda(it) || it.prazoVencido)) {
+          var motivos = [];
+          if (aguarda(it)) motivos.push('está com fatura vencida');
+          if (it.prazoVencido) motivos.push('o prazo de ' + (IND.prazoDias || 60) + ' dias após a instalação já passou');
+          if (!confirm('Atenção: ' + nome + ' — ' + motivos.join(' e ') + '.\n\nConceder a mensalidade grátis mesmo assim?')) return;
+          confirmar = true;
+        }
         var sug = it && it.desconto != null ? it.desconto : IND.teto;
-        var v = prompt('Você já deu o desconto para ' + ((it && it.indicador.nome) || 'o cliente') + '?\n\nConfirme o valor concedido (R$):', String(sug).replace('.', ','));
+        var v = prompt('Você já deu o desconto para ' + nome + '?\n\nConfirme o valor concedido (R$):', String(sug).replace('.', ','));
         if (v === null) return;
         var valor = Number(String(v).replace(',', '.'));
         if (!(valor >= 0)) { toast('Valor inválido.', 'erro'); return; }
         b.disabled = true;
-        try { await chamar('ind_conceder', { id: id, valor: valor }); toast('Mensalidade registrada como concedida. 🎁', 'ok'); abrirIndicacoes(true); }
+        try { await chamar('ind_conceder', { id: id, valor: valor, confirmar: confirmar }); toast('Mensalidade registrada como concedida. 🎁', 'ok'); abrirIndicacoes(true); }
         catch (e) { toast((e && e.message) || 'Erro ao registrar.', 'erro'); b.disabled = false; }
       });
     });
