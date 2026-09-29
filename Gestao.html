@@ -984,12 +984,12 @@ body{background:var(--bg,#F5F7FA)}
     var falta = Math.max(0, M.meta - juntado);
     var pct = Math.min(100, (juntado / M.meta) * 100);
     var mesesFaltam = Math.ceil(falta / M.aporte);
-    // meses do plano: do início até completar a meta (contando os já feitos)
-    var total = Math.ceil(M.meta / M.aporte), lista = [], k = M.inicio, feitos = 0, planejados = 0;
-    for (var g = 0; g < 60; g++) {
+    // meses do plano: do início até o mês atual + os aportes que ainda faltam
+    var lista = [], k = M.inicio, planejados = 0;
+    for (var g = 0; g < 240; g++) {
       lista.push(k);
-      if (M.meses[k]) feitos++; else if (k >= mesAtual) planejados++;
-      if (k >= mesAtual && feitos + planejados >= total) break;
+      if (!M.meses[k] && k >= mesAtual) planejados++;
+      if (k >= mesAtual && planejados >= mesesFaltam) break;
       k = somaMes(k, 1);
     }
     var ultimoFeito = null;
@@ -1010,7 +1010,16 @@ body{background:var(--bg,#F5F7FA)}
       '<div class="g-meta-nums"><div><small>Juntado</small><b>' + brl(juntado) + '</b></div><div><small>Falta</small><b>' + brl(falta) + '</b></div><div><small>' + Math.round(pct) + '%</small><b class="prev">' + esc(previsao) + '</b></div></div>' +
       '<div class="g-meta-barra"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
       '<details class="g-meta-lista"' + (M.meses[mesAtual] ? '' : ' open') + '><summary>Aportes mês a mês</summary>' + linhas + '</details>' +
-      '<div class="cls-info" style="margin:8px 0 0">Guarde logo que o dinheiro entrar (depois dos dias 15 e 20). Dinheiro extra do mês também vai para a meta.</div>';
+      '<div class="ind-teto"><label for="meta-aporte-v">Aporte por mês (R$)</label><input type="number" id="meta-aporte-v" min="500" step="50" value="' + M.aporte + '"><button type="button" class="btn btn-sec" id="meta-aporte-salvar" style="width:auto">Salvar</button></div>' +
+      '<div class="cls-info" style="margin:8px 0 0">Guarde logo que o dinheiro entrar (depois dos dias 15 e 20). Dinheiro extra do mês também vai para a meta. Se mudar o aporte, os meses já marcados continuam com o valor de antes.</div>';
+    $('meta-aporte-salvar').addEventListener('click', async function () {
+      var v = Number($('meta-aporte-v').value);
+      if (!(v >= 500)) { toast('Informe um valor a partir de R$ 500.', 'erro'); return; }
+      if (!confirm('Mudar o aporte mensal para ' + brl(v) + '? Os meses já marcados continuam com o valor de antes.')) return;
+      var b = this; b.disabled = true;
+      try { META = await chamar('metaConfig', { aporte: v }); renderMeta(); toast('Aporte mensal agora é ' + brl(v) + '.', 'ok'); }
+      catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); b.disabled = false; }
+    });
     box.querySelectorAll('[data-meta-feito]').forEach(function (b) {
       b.addEventListener('click', async function () {
         var m = b.getAttribute('data-meta-feito');
