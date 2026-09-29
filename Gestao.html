@@ -1003,10 +1003,10 @@ body{background:var(--bg,#F5F7FA)}
       return '<div class="selo-real ' + cls + '" title="Porcentagem real já recebida do potencial"><b>' + Math.round(v) + '%</b><small>real</small></div>';
     }
     function quadrantes(pct) {
-      var t = { pot: 0, est: 0, rec: 0, cli: 0 };
+      var t = { pot: 0, rec: 0, aberto: 0, cli: 0 };
       var h = ['ouro', 'prata', 'latao'].map(function (k) {
         var r = R[k], e = esperadoClasse(r, pct[k]), est = e.est;
-        t.pot += r.total; t.est += est; t.rec += r.recebido; t.cli += r.clientes;
+        t.pot += r.total; t.rec += r.recebido; t.aberto += r.aReceber; t.cli += r.clientes;
         return '<div class="g-q ' + k + '"><div class="cab-linha"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' + seloReal(r.recebido, r.total, pct[k]) + '</div>' +
           '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
           '<div class="lin"><span>Chance</span><b>' + String(pct[k]).replace('.', ',') + '%</b></div>' +
@@ -1016,9 +1016,8 @@ body{background:var(--bg,#F5F7FA)}
       }).join('');
       h += '<div class="g-q total"><div class="cab-linha"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' + seloReal(t.rec, t.pot, null) + '</div>' +
         '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
-        '<div class="lin"><span>Esperado</span><b>' + brl(t.est) + '</b></div>' +
         '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
-        htmlFalta(t.est - t.rec) + '</div>';
+        '<div class="falta"><small>➜ Ainda em aberto (real)</small><b>' + brl(t.aberto) + '</b></div></div>';
       return h;
     }
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
@@ -1046,7 +1045,7 @@ body{background:var(--bg,#F5F7FA)}
       })() +
       '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
       '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Classe</th><th>Clientes</th><th>Potencial</th><th>% que recebo</th><th>Esperado no mês</th><th>Já recebido</th></tr></thead><tbody>' + linhas + '</tbody></table></div>' +
-      '<div class="cls-info" style="margin-top:8px">Esperado no mês = potencial × %. "Ainda falta receber" = esperado − já recebido; quando o recebido passa do esperado, aparece como superávit da estimativa.</div>' +
+      '<div class="cls-info" style="margin-top:8px">Esperado no mês = potencial × %. "Ainda falta receber" = esperado − já recebido; quando o recebido passa do esperado, aparece como superávit da estimativa. O card Total mostra só números reais.</div>' +
       '<button type="button" class="btn btn-sec" id="g-salvar-pct" style="width:auto;margin-top:10px">Salvar porcentagens</button>' +
       '<div class="g-titulo">Histórico mês a mês</div><div id="g-hist"><div class="vazio">Carregando histórico...</div></div>';
     function recalcEst() {
