@@ -252,6 +252,7 @@ body{background:var(--bg,#F5F7FA)}
 .g-q .falta{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
 .g-q .falta small{display:block;font-size:.74rem;color:var(--text-3)}
 .g-q .falta b{display:block;font-family:var(--font-display);font-size:1.35rem;color:var(--navy)}
+.g-q .g-abertos{margin-top:6px}
 .g-q .falta.sup small{color:#15803D;font-weight:700}
 .g-q .falta.sup b{color:#15803D}
 .g-q.ouro{border-color:#F59E0B;background:#FFFBEB} .g-q.ouro .cab{color:#B7791F}
@@ -1017,7 +1018,10 @@ body{background:var(--bg,#F5F7FA)}
       h += '<div class="g-q total"><div class="cab-linha"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' + seloReal(t.rec, t.pot, null) + '</div>' +
         '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
         '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
-        '<div class="falta"><small>➜ Ainda em aberto (real)</small><b>' + brl(t.aberto) + '</b></div></div>';
+        '<div class="falta"><small>➜ Ainda em aberto (real)</small><b>' + brl(t.aberto) + '</b></div>' +
+        '<div class="g-abertos">' + ['ouro', 'prata', 'latao'].map(function (k) {
+          return '<div class="lin"><span>' + NOMES[k] + '</span><b>' + brl(R[k].aReceber) + '</b></div>';
+        }).join('') + '</div></div>';
       return h;
     }
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
