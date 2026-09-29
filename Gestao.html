@@ -261,8 +261,8 @@ body{background:var(--bg,#F5F7FA)}
 .g-q.total{border-color:var(--navy);background:#EEF3FB} .g-q.total .cab{color:var(--navy)}
 .g-q .cab-linha{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
 .g-q .cab-linha .cab{margin-bottom:0}
-.selo-real{flex:none;width:54px;height:54px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid;background:#fff;line-height:1}
-.selo-real b{font-family:var(--font-display);font-size:1rem}
+.selo-real{flex:none;width:66px;height:66px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid;background:#fff;line-height:1}
+.selo-real b{font-family:var(--font-display);font-size:.74rem;letter-spacing:-.01em}
 .selo-real small{font-size:.58rem;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;opacity:.8}
 .selo-real.bom{border-color:#16A34A;color:#15803D}
 .selo-real.baixo{border-color:#E8A317;color:#B45309}
@@ -952,6 +952,8 @@ body.modal-aberto{overflow:hidden}
   }
   // ---------- ABA GESTÃO (usa a classificação salva) ----------
   var GPCT = null;
+  function pct2(v) { return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; }          // medido: 91,17%
+  function pctLivre(v) { return v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 6 }) + '%'; }       // digitado: 91,168904%
   // Esperado da classe = potencial × chance (ex.: 50% do potencial). dif = esperado − já recebido:
   // positivo = ainda falta receber; negativo = a estimativa foi superada (superávit da estimativa).
   function esperadoClasse(r, pct) { var est = r.total * (pct / 100); return { est: est, dif: est - r.recebido }; }
@@ -989,7 +991,7 @@ body.modal-aberto{overflow:hidden}
     var c = BASE.crescimento, cres = '';
     if (c) {
       var pos = c.liquido >= 0;
-      var pctTxt = c.pct == null ? '' : (pos ? '+' : '') + String(c.pct).replace('.', ',') + '%';
+      var pctTxt = c.pct == null ? '' : (pos ? '+' : '') + pct2(c.pct);
       cres = '<div class="g-cres ' + (pos ? 'up' : 'down') + '"><b>' + (pos ? '▲ ' : '▼ ') + pctTxt + '</b><span>' + (pos ? '+' : '') + c.liquido + ' em relação aos ' + c.doMes + ' do mês</span>' +
         '<span>' + c.entram + ' entram · ' + c.saem + ' saíram</span>' +
         (new Date().getDate() <= 5 ? '<span class="aviso">Até o dia 5 a diferença aparece maior: os boletos do dia 20 ainda não foram gerados.</span>' : '') + '</div>';
@@ -1014,14 +1016,14 @@ body.modal-aberto{overflow:hidden}
     var valorAberto = cl.reduce(function (t, c) { return t + c.aReceber; }, 0);
     var taxa = total ? (naoPagou / total) * 100 : 0;
     var taxaValor = valorTotal ? (valorAberto / valorTotal) * 100 : 0;
-    var pctFmt = function (v) { return v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; };
+    var pctFmt = function (v) { return pct2(v); };
     var NOMES = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
     var linhas = '', tCli = 0, tPot = 0, tEst = 0, tRec = 0;
     ['ouro', 'prata', 'latao'].forEach(function (k) {
       var r = R[k], est = esperadoClasse(r, GPCT[k]).est;
       tCli += r.clientes; tPot += r.total; tEst += est; tRec += r.recebido;
       linhas += '<tr><td>' + NOMES[k] + '</td><td>' + r.clientes + '</td><td>' + brl(r.total) + '</td>' +
-        '<td><input type="number" min="0" max="100" step="0.5" data-pct="' + k + '" value="' + GPCT[k] + '">%</td>' +
+        '<td><input type="number" min="0" max="100" step="any" data-pct="' + k + '" value="' + GPCT[k] + '">%</td>' +
         '<td class="g-est" id="g-est-' + k + '">' + brl(est) + '</td><td>' + brl(r.recebido) + '</td></tr>';
     });
     linhas += '<tr class="tot"><td>Total</td><td>' + tCli + '</td><td>' + brl(tPot) + '</td><td></td><td class="g-est" id="g-est-tot">' + brl(tEst) + '</td><td>' + brl(tRec) + '</td></tr>';
@@ -1029,7 +1031,7 @@ body.modal-aberto{overflow:hidden}
       if (!pot) return '';
       var v = (rec / pot) * 100;
       var cls = chance == null ? 'neutro' : v >= chance ? 'bom' : 'baixo';
-      return '<div class="selo-real ' + cls + '" title="Porcentagem real já recebida do potencial"><b>' + Math.round(v) + '%</b><small>real</small></div>';
+      return '<div class="selo-real ' + cls + '" title="Porcentagem real já recebida do potencial"><b>' + pct2(v) + '</b><small>real</small></div>';
     }
     function quadrantes(pct) {
       var t = { pot: 0, rec: 0, aberto: 0, cli: 0 };
@@ -1038,7 +1040,7 @@ body.modal-aberto{overflow:hidden}
         t.pot += r.total; t.rec += r.recebido; t.aberto += r.aReceber; t.cli += r.clientes;
         return '<div class="g-q ' + k + '"><div class="cab-linha"><div class="cab">' + NOMES[k] + ' · ' + r.clientes + (r.clientes === 1 ? ' cliente' : ' clientes') + '</div>' + seloReal(r.recebido, r.total, pct[k]) + '</div>' +
           '<div class="lin"><span>Potencial</span><b>' + brl(r.total) + '</b></div>' +
-          '<div class="lin"><span>Chance</span><b>' + String(pct[k]).replace('.', ',') + '%</b></div>' +
+          '<div class="lin"><span>Chance</span><b>' + pctLivre(pct[k]) + '</b></div>' +
           '<div class="lin"><span>Esperado</span><b>' + brl(est) + '</b></div>' +
           '<div class="lin"><span>Já recebido</span><b>' + brl(r.recebido) + '</b></div>' +
           htmlFalta(e.dif) + '</div>';
@@ -1125,18 +1127,19 @@ body.modal-aberto{overflow:hidden}
   // (do histórico); se ainda não há histórico, a média das chances por classe.
   function pctReceitaPadrao() {
     var ant = (HIST || []).filter(function (h) { return h.chave < despMesSel && h.total && h.total.realPct != null; });
-    if (ant.length) return { pct: Math.round(ant.reduce(function (t, h) { return t + h.total.realPct; }, 0) / ant.length * 10) / 10, fonte: 'média real dos meses anteriores' };
+    if (ant.length) return { pct: Math.round(ant.reduce(function (t, h) { return t + h.total.realPct; }, 0) / ant.length * 1e6) / 1e6, fonte: 'média real dos meses anteriores' };
     var R = CLS && CLS.resumo, pot = 0, soma = 0;
     ['ouro', 'prata', 'latao'].forEach(function (k) { if (R && R[k] && GPCT) { pot += R[k].total; soma += R[k].total * GPCT[k] / 100; } });
-    return { pct: pot ? Math.round(soma / pot * 1000) / 10 : 90, fonte: 'média das suas chances por classe' };
+    return { pct: pot ? Math.round(soma / pot * 1e8) / 1e6 : 90, fonte: 'média das suas chances por classe' };
   }
   // Receita do mês (projeção): potencial do mês × a % que o dono estima receber + receitas variáveis.
   // Não usa o que já foi recebido: a estimativa manda, mesmo que fique abaixo (ou acima) do real.
   // Meses já fechados usam o valor real da foto do mês.
   function despReceita() {
-    var r = { mens: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma', pot: 0, pct: 0, pctPadrao: true, pctFonte: '' };
+    var r = { rec: 0, pctReal: null, mens: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma', pot: 0, pct: 0, pctPadrao: true, pctFonte: '' };
     if (despMesSel === mesAtualKey() && CLS && CLS.resumo && GPCT) {
-      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) r.pot += x.total; });
+      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) { r.pot += x.total; r.rec += x.recebido; } });
+      r.pctReal = r.pot > 0 ? r.rec / r.pot * 100 : null;
       var pd = pctReceitaPadrao();
       r.pctPadrao = !(DESP.receitaPct != null); r.pctFonte = pd.fonte;
       r.pct = r.pctPadrao ? pd.pct : DESP.receitaPct;
@@ -1191,8 +1194,9 @@ body.modal-aberto{overflow:hidden}
     // ---- resumo
     h += '<div class="dp-resumo">' +
       '<div class="dp-card"><div class="t">💰 Receita estimada</div><div class="v">' + brl(rec.total) + '</div>' +
-        (rec.fonte === 'app' ? '<div class="dp-rpct">Estimo receber <input type="number" id="dp-rpct" min="0" max="100" step="0.5" value="' + rec.pct + '" inputmode="decimal" aria-label="Porcentagem do potencial que estimo receber">% <small>do potencial de ' + brl(rec.pot) + '</small></div>' +
-          '<div class="cls-info dp-rpct-nota">' + (rec.pctPadrao ? 'Padrão: ' + esc(rec.pctFonte) + '. ' : 'Definida por você. ') + 'Apague o campo para voltar ao padrão.</div>' : '') +
+        (rec.fonte === 'app' ? '<div class="dp-rpct">Estimo receber <input type="number" id="dp-rpct" min="0" max="100" step="any" value="' + rec.pct + '" inputmode="decimal" aria-label="Porcentagem do potencial que estimo receber">% <small>do potencial de ' + brl(rec.pot) + '</small></div>' +
+          '<div class="cls-info dp-rpct-nota">' + (rec.pctPadrao ? 'Padrão: ' + esc(rec.pctFonte) + '. ' : 'Definida por você. ') + 'Apague o campo para voltar ao padrão.</div>' +
+          (rec.rec > 0 && rec.pctReal != null ? '<div class="cls-info dp-rpct-nota">Real até agora: <b>' + pct2(rec.pctReal) + '</b> · <button type="button" class="btn-link" data-d-usar-real="' + (Math.round(rec.pctReal * 1e6) / 1e6) + '">usar esta (sem arredondar)</button></div>' : '') : '') +
         (rec.fonte === 'nenhuma' ? '<div class="cls-info" style="margin:0">' + (despMesSel > mesAtualKey() ? 'Este mês ainda não começou: ainda não há mensalidades para somar. Lance aqui as despesas e receitas que já conhece.' : 'Sem dados de mensalidades para este mês (elas entram quando a foto do mês é salva).') + '</div>' :
           '<div class="l"><span>' + (rec.fonte === 'app' ? 'Mensalidades (estimativa)' : 'Mensalidades recebidas') + '</span><b>' + brl(rec.mens) + '</b></div>') +
         (rec.avulso ? '<div class="l"><span>PIX avulsos recebidos</span><b>' + brl(rec.avulso) + '</b></div>' : '') +
@@ -1215,7 +1219,7 @@ body.modal-aberto{overflow:hidden}
         (faltaMeta > 0 && guardar > 0 ? '<div class="dp-info">Guardando ' + brl(guardar) + ' por mês, os ' + brl(m.meta) + ' saem em <b>' + Math.ceil(faltaMeta / guardar) + ' meses</b> (' + esc(mesTxt(somaMes(mesAtualKey(), Math.ceil(faltaMeta / guardar) - 1))) + ').</div>' : (faltaMeta <= 0 ? '<div class="dp-info">Meta atingida! 🎉</div>' : ''));
     }
     h += '<div class="dp-card dp-poup"><div class="t">🎯 Guardar para a meta de R$ 100 mil</div>' +
-      '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="5" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
+      '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="any" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
       '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
     h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
@@ -1271,6 +1275,7 @@ body.modal-aberto{overflow:hidden}
       if (novo < MES_MIN || novo > somaMes(mesAtualKey(), 2)) return;
       despMesSel = novo; despForm = null; abrirDespesas(); return;
     }
+    if (b.hasAttribute('data-d-usar-real')) { despOp({ op: 'config', receitaPct: Number(b.getAttribute('data-d-usar-real')) }); return; }
     if (b.hasAttribute('data-d-ir-metas')) { document.querySelector('.tabs button[data-tab="metas"]').click(); return; }
     if (b.hasAttribute('data-d-add')) { abrirModalDesp({ grupo: b.getAttribute('data-d-add'), id: null }); return; }
     if (b.hasAttribute('data-d-edit')) { var a = despAchar(b.getAttribute('data-d-edit')); if (a) abrirModalDesp({ grupo: a.lista === 'receitas' ? 'receita' : a.item.grupo, id: a.item.id }); return; }
@@ -1291,7 +1296,7 @@ body.modal-aberto{overflow:hidden}
   $('despesas-conteudo').addEventListener('change', function (ev) {
     if (!DESP) return;
     if (ev.target.id === 'dp-pct') {
-      var v = Math.round(Number(ev.target.value));
+      var v = Math.round(Number(ev.target.value) * 100) / 100;
       if (!(v >= 0 && v <= 100)) { toast('Informe de 0 a 100.', 'erro'); renderDespesas(); return; }
       despOp({ op: 'config', poupancaPct: v });
     } else if (ev.target.id === 'dp-avulsos') despOp({ op: 'config', incluirAvulsos: ev.target.checked });
@@ -1504,8 +1509,8 @@ body.modal-aberto{overflow:hidden}
     if (!HIST || forcar) {
       try { HIST = await chamar('historico'); } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar o histórico.') + '</div>'; return; }
     }
-    var pf = function (v) { return v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ',') + '%'; };
-    var pfs = function (v) { return v == null ? '—' : (v > 0 ? '+' : '') + String(Math.round(v * 10) / 10).replace('.', ',') + '%'; };
+    var pf = function (v) { return v == null ? '—' : pct2(v); };
+    var pfs = function (v) { return v == null ? '—' : (v > 0 ? '+' : '') + pct2(v); };
     var media = function (f) { var vs = HIST.map(f).filter(function (v) { return v != null; }); return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null; };
     var corpo = HIST.map(function (h) {
       return '<tr><td>' + esc(h.mes) + '</td><td>' + pf(h.classes.ouro.realPct) + '</td><td>' + pf(h.classes.prata.realPct) + '</td><td>' + pf(h.classes.latao.realPct) + '</td>' +
