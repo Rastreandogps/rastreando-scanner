@@ -302,6 +302,9 @@ body{background:var(--bg,#F5F7FA)}
 .g-meta-pend{color:var(--navy);font-weight:700}
 .g-meta-fut{color:var(--text-3)}
 .g-meta-bt{padding:6px 12px!important;font-size:.8rem!important;width:auto!important}
+.g-topo{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
+.g-topo .g-saldo{margin-bottom:0}
+.g-saldo.azul{background:linear-gradient(135deg,#1B3A6B,#2451A0)}
 .g-saldo{background:linear-gradient(135deg,#0F5E2F,#15803D);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .g-saldo-lbl{font-size:.82rem;opacity:.9;font-weight:600}
 .g-saldo-v{font-family:var(--font-display);font-size:1.7rem;font-weight:800;margin-top:2px}
@@ -363,6 +366,7 @@ body{background:var(--bg,#F5F7FA)}
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
     <button type="button" data-tab="gestao">📊 Gestão</button>
+    <button type="button" data-tab="metas">🎯 Metas</button>
     <button type="button" data-tab="indicacoes">🎁 Indicações <span id="cnt-indicacoes"></span></button>
   </div>
 
@@ -452,6 +456,10 @@ body{background:var(--bg,#F5F7FA)}
 
   <div id="aba-gestao" hidden>
     <div id="gestao-conteudo"></div>
+  </div>
+
+  <div id="aba-metas" hidden>
+    <div id="metas-conteudo"></div>
   </div>
 
   <div id="aba-indicacoes" hidden>
@@ -592,7 +600,7 @@ body{background:var(--bg,#F5F7FA)}
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
-      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'indicacoes';
+      var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'metas' || abaAtual === 'indicacoes';
       $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
@@ -601,8 +609,10 @@ body{background:var(--bg,#F5F7FA)}
       $('aba-classif').hidden = abaAtual !== 'classif';
       $('aba-pagos').hidden = abaAtual !== 'pagos';
       $('aba-gestao').hidden = abaAtual !== 'gestao';
+      $('aba-metas').hidden = abaAtual !== 'metas';
       $('aba-indicacoes').hidden = abaAtual !== 'indicacoes';
       if (abaAtual === 'retornos') renderRetornos();
+      else if (abaAtual === 'metas') abrirMetas();
       else if (abaAtual === 'indicacoes') abrirIndicacoes();
       else if (abaAtual === 'gestao') abrirGestao();
       else if (abaAtual === 'classif' || abaAtual === 'pagos') abrirClassificacao();
@@ -863,8 +873,19 @@ body{background:var(--bg,#F5F7FA)}
     var h = new Date(SALDO.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     return '<div class="g-saldo-lbl">💰 Saldo em conta (Asaas)</div><div class="g-saldo-v">' + brl(SALDO.saldo) + '</div><div class="g-saldo-h">consultado às ' + h + '</div>';
   }
+  var BASE = null;
+  async function carregarBase() {
+    try { BASE = await chamar('assinantes'); } catch (e) { BASE = { erro: (e && e.message) || 'Não foi possível ler.' }; }
+    var box = $('g-base'); if (box) box.innerHTML = htmlBase();
+  }
+  function htmlBase() {
+    if (!BASE) return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v" style="font-size:1rem;opacity:.8">Carregando...</div>';
+    if (BASE.erro) return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v" style="font-size:.9rem">' + esc(BASE.erro) + '</div>';
+    return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · hoje</div>';
+  }
   async function abrirGestao() {
     carregarSaldo();
+    carregarBase();
     if (!GPCT) {
       try { GPCT = (await chamar('gestaoConfig')).pct; }
       catch (e) { GPCT = { ouro: 98, prata: 75, latao: 65 }; }
@@ -921,8 +942,7 @@ body{background:var(--bg,#F5F7FA)}
     $('gestao-conteudo').innerHTML =
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' · atualizado em ' + gerado + '</span>' +
         '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Atualizar</button></div>' +
-      '<div class="g-saldo" id="g-saldo">' + htmlSaldo() + '</div>' +
-      '<div class="g-meta" id="g-meta"><div class="g-meta-cab">🎯 Meta R$ 100 mil</div><div class="cls-info" style="margin:6px 0 0">Carregando...</div></div>' +
+      '<div class="g-topo"><div class="g-saldo" id="g-saldo">' + htmlSaldo() + '</div><div class="g-saldo azul" id="g-base">' + htmlBase() + '</div></div>' +
       '<div class="g-quad" id="g-quad">' + quadrantes(GPCT) + '</div>' +
       '<div class="g-titulo">Inadimplência do mês</div>' +
       '<div class="g-cards">' +
@@ -956,9 +976,8 @@ body{background:var(--bg,#F5F7FA)}
       $('g-quad').innerHTML = quadrantes(pctTela);
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
-    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); atualizarTudo(this); });
+    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); carregarBase(); atualizarTudo(this); });
     renderHistorico();
-    renderMeta();
     $('g-salvar-pct').addEventListener('click', async function () {
       var b = this, pct = {};
       ['ouro', 'prata', 'latao'].forEach(function (k) { pct[k] = Number($('gestao-conteudo').querySelector('[data-pct="' + k + '"]').value); });
@@ -974,6 +993,10 @@ body{background:var(--bg,#F5F7FA)}
   var NOMES_MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   function mesTxt(k) { var p = k.split('-'); return NOMES_MES[Number(p[1]) - 1] + '/' + p[0]; }
   function somaMes(k, n) { var p = k.split('-').map(Number); var d = new Date(p[0], p[1] - 1 + n, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function abrirMetas() {
+    $('metas-conteudo').innerHTML = '<div class="g-meta" id="g-meta"><div class="g-meta-cab">🎯 Meta R$ 100 mil</div><div class="cls-info" style="margin:6px 0 0">Carregando...</div></div>';
+    renderMeta(true);
+  }
   async function renderMeta(forcar) {
     var box = $('g-meta'); if (!box) return;
     if (!META || forcar) {
@@ -1154,14 +1177,14 @@ body{background:var(--bg,#F5F7FA)}
     var media = function (f) { var vs = HIST.map(f).filter(function (v) { return v != null; }); return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null; };
     var corpo = HIST.map(function (h) {
       return '<tr><td>' + esc(h.mes) + '</td><td>' + pf(h.classes.ouro.realPct) + '</td><td>' + pf(h.classes.prata.realPct) + '</td><td>' + pf(h.classes.latao.realPct) + '</td>' +
-        '<td>' + pf(h.total.realPct) + '</td><td>' + brl(h.total.recebido) + '</td><td>' + pf(h.inadimplencia.taxaClientes) + '</td><td>' + h.total.clientes + '</td>' +
+        '<td>' + pf(h.total.realPct) + '</td><td>' + brl(h.total.recebido) + '</td><td>' + pf(h.inadimplencia.taxaClientes) + '</td><td>' + h.total.clientes + '</td><td>' + (h.base ? h.base.clientes : '—') + '</td>' +
         '<td>' + brl(h.avulsos ? h.avulsos.recebido : 0) + '</td></tr>';
     }).join('');
     var mediaLinha = HIST.length ? '<tr class="tot"><td>Média real</td><td>' + pf(media(function (h) { return h.classes.ouro.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.prata.realPct; })) + '</td><td>' + pf(media(function (h) { return h.classes.latao.realPct; })) + '</td>' +
       '<td>' + pf(media(function (h) { return h.total.realPct; })) + '</td><td>' + brl(media(function (h) { return h.total.recebido; }) || 0) + '</td><td>' + pf(media(function (h) { return h.inadimplencia.taxaClientes; })) + '</td>' +
-      '<td>' + Math.round(media(function (h) { return h.total.clientes; }) || 0) + '</td><td>' + brl(media(function (h) { return h.avulsos ? h.avulsos.recebido : 0; }) || 0) + '</td></tr>' : '';
+      '<td>' + Math.round(media(function (h) { return h.total.clientes; }) || 0) + '</td><td>' + (function () { var m = media(function (h) { return h.base ? h.base.clientes : null; }); return m == null ? '—' : Math.round(m); })() + '</td><td>' + brl(media(function (h) { return h.avulsos ? h.avulsos.recebido : 0; }) || 0) + '</td></tr>' : '';
     box.innerHTML = (HIST.length
-      ? '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Mês</th><th>🥇 Ouro</th><th>🥈 Prata</th><th>🚩 Latão</th><th>Total</th><th>Recebido</th><th>Inadimpl.</th><th>Assinantes</th><th>Avulsos</th></tr></thead><tbody>' + corpo + mediaLinha + '</tbody></table></div>' +
+      ? '<div class="g-tabela-box"><table class="g-tabela"><thead><tr><th>Mês</th><th>🥇 Ouro</th><th>🥈 Prata</th><th>🚩 Latão</th><th>Total</th><th>Recebido</th><th>Inadimpl.</th><th>Assinantes</th><th>Base ativa</th><th>Avulsos</th></tr></thead><tbody>' + corpo + mediaLinha + '</tbody></table></div>' +
         '<div class="cls-info" style="margin-top:8px">As porcentagens são o recebido de verdade sobre o potencial de cada classe. A foto do mês é salva sozinha no último dia, às 23h30.</div>'
       : '<div class="vazio">Ainda não há meses salvos. A primeira foto é salva sozinha no último dia do mês, às 23h30.</div>') +
       '<button type="button" class="btn-link" id="g-salvar-mes" style="margin-top:8px">Salvar a foto deste mês agora</button>';
