@@ -1130,24 +1130,25 @@ body.modal-aberto{overflow:hidden}
     ['ouro', 'prata', 'latao'].forEach(function (k) { if (R && R[k] && GPCT) { pot += R[k].total; soma += R[k].total * GPCT[k] / 100; } });
     return { pct: pot ? Math.round(soma / pot * 1000) / 10 : 90, fonte: 'média das suas chances por classe' };
   }
-  // Receita do mês: mensalidades recebidas + o que falta para chegar à % estimada do potencial + receitas variáveis
+  // Receita do mês (projeção): potencial do mês × a % que o dono estima receber + receitas variáveis.
+  // Não usa o que já foi recebido: a estimativa manda, mesmo que fique abaixo (ou acima) do real.
+  // Meses já fechados usam o valor real da foto do mês.
   function despReceita() {
-    var r = { recebido: 0, falta: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma', pot: 0, pct: 0, pctPadrao: true, pctFonte: '', estMens: 0 };
+    var r = { mens: 0, avulso: 0, variaveis: 0, variaveisRec: 0, fonte: 'nenhuma', pot: 0, pct: 0, pctPadrao: true, pctFonte: '' };
     if (despMesSel === mesAtualKey() && CLS && CLS.resumo && GPCT) {
-      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) { r.recebido += x.recebido; r.pot += x.total; } });
+      ['ouro', 'prata', 'latao'].forEach(function (k) { var x = CLS.resumo[k]; if (x) r.pot += x.total; });
       var pd = pctReceitaPadrao();
       r.pctPadrao = !(DESP.receitaPct != null); r.pctFonte = pd.fonte;
       r.pct = r.pctPadrao ? pd.pct : DESP.receitaPct;
-      r.estMens = r.pot * r.pct / 100;
-      r.falta = Math.max(0, r.estMens - r.recebido);
+      r.mens = r.pot * r.pct / 100;
       r.fonte = 'app';
       if (DESP.incluirAvulsos && CLS.resumo.avulso) r.avulso = CLS.resumo.avulso.recebido;
     } else if (HIST) {
       var h = HIST.find(function (x) { return x.chave === despMesSel; });
-      if (h) { r.recebido = h.total.recebido; r.fonte = 'foto'; }
+      if (h) { r.mens = h.total.recebido; r.fonte = 'foto'; }
     }
     DESP.receitas.forEach(function (x) { r.variaveis += x.valor; if (x.recebido) r.variaveisRec += x.valor; });
-    r.total = r.recebido + r.falta + r.avulso + r.variaveis;
+    r.total = r.mens + r.avulso + r.variaveis;
     return r;
   }
   async function abrirDespesas() {
@@ -1190,11 +1191,10 @@ body.modal-aberto{overflow:hidden}
     // ---- resumo
     h += '<div class="dp-resumo">' +
       '<div class="dp-card"><div class="t">💰 Receita estimada</div><div class="v">' + brl(rec.total) + '</div>' +
-        (rec.fonte === 'app' ? '<div class="dp-rpct">Estimo receber <input type="number" id="dp-rpct" min="0" max="100" step="0.5" value="' + rec.pct + '" inputmode="decimal" aria-label="Porcentagem do potencial que estimo receber">% <small>de ' + brl(rec.pot) + ' = ' + brl(rec.estMens) + '</small></div>' +
-          '<div class="cls-info dp-rpct-nota">' + (rec.pctPadrao ? 'Padrão: ' + esc(rec.pctFonte) + '. ' : 'Definida por você. ') + 'Apague o campo para voltar ao padrão. Se o recebido passar da estimativa, vale o recebido.</div>' : '') +
+        (rec.fonte === 'app' ? '<div class="dp-rpct">Estimo receber <input type="number" id="dp-rpct" min="0" max="100" step="0.5" value="' + rec.pct + '" inputmode="decimal" aria-label="Porcentagem do potencial que estimo receber">% <small>do potencial de ' + brl(rec.pot) + '</small></div>' +
+          '<div class="cls-info dp-rpct-nota">' + (rec.pctPadrao ? 'Padrão: ' + esc(rec.pctFonte) + '. ' : 'Definida por você. ') + 'Apague o campo para voltar ao padrão.</div>' : '') +
         (rec.fonte === 'nenhuma' ? '<div class="cls-info" style="margin:0">' + (despMesSel > mesAtualKey() ? 'Este mês ainda não começou: ainda não há mensalidades para somar. Lance aqui as despesas e receitas que já conhece.' : 'Sem dados de mensalidades para este mês (elas entram quando a foto do mês é salva).') + '</div>' :
-          '<div class="l"><span>Mensalidades recebidas</span><b>' + brl(rec.recebido) + '</b></div>' +
-          (rec.fonte === 'app' ? '<div class="l"><span>A receber (estimativa)</span><b>' + brl(rec.falta) + '</b></div>' : '')) +
+          '<div class="l"><span>' + (rec.fonte === 'app' ? 'Mensalidades (estimativa)' : 'Mensalidades recebidas') + '</span><b>' + brl(rec.mens) + '</b></div>') +
         (rec.avulso ? '<div class="l"><span>PIX avulsos recebidos</span><b>' + brl(rec.avulso) + '</b></div>' : '') +
         '<div class="l"><span>Receitas variáveis</span><b>' + brl(rec.variaveis) + '</b></div>' +
         (atual && CLS && CLS.resumo && CLS.resumo.avulso ? '<label class="dp-chk"><input type="checkbox" id="dp-avulsos"' + (DESP.incluirAvulsos ? ' checked' : '') + '> Somar os PIX avulsos recebidos (' + brl(CLS.resumo.avulso.recebido) + ')</label>' : '') +
@@ -1218,7 +1218,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="5" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
       '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
-    h += '<div class="cls-info">Estimativa: mensalidades recebidas + o que ainda falta para chegar à porcentagem estimada do potencial (campo no card de receita; se já passou dela, vale o recebido) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
+    h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
     h += '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>💰 Receitas variáveis (empresa)</h3><div class="dp-tot"><span>Total <b>' + brl(rec.variaveis) + '</b></span><span>Recebido <b class="ok">' + brl(rec.variaveisRec) + '</b></span><span>A receber <b class="ab">' + brl(rec.variaveis - rec.variaveisRec) + '</b></span></div></div>' +
