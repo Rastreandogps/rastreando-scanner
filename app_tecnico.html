@@ -1414,7 +1414,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-30-v97-retirada-gestao';
+const BUILD_VERSION = '2026-09-30-v99-agendamentos-pelo-firebase';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7686,35 +7686,105 @@ async function _indConciliar() {
   } finally { _indConciliando = false; }
 }
 
+var _agCargaSeq = 0;       // numera cada carga da lista (descarta respostas antigas)
+var AG_LIMITE_MS = 45000;  // máximo de espera por consultas à Planilha (as que ainda existirem)
+var _agListaAtual = [];    // pedidos do formulário que estão na tela agora (para confirmar/ignorar)
+// Espera a resposta, mas no máximo "ms": se a Planilha travar, a tela não fica carregando para sempre
+function _gasComLimite(payload, ms) {
+  return Promise.race([
+    gasRequest(payload),
+    new Promise(function(resolve) { setTimeout(function() { resolve({ ok: false, error: 'tempo esgotado', tempoEsgotado: true }); }, ms); })
+  ]);
+}
+
+// Agendamentos do formulário do cliente: o próprio formulário já grava o pedido completo no Firebase,
+// então a lista vem de lá — sem depender da Planilha. (A Planilha continua recebendo a cópia do formulário.)
+async function _buscarAgendamentosFirestore() {
+  const db = getFirestoreDb();
+  if (!db) return { ok: false, lista: [], erro: 'Firebase indisponível' };
+  try {
+    const snap = await Promise.race([
+      db.collection('agendamentos_pendentes').get(),
+      new Promise(function(_, rej) { setTimeout(function() { rej(new Error('demorou demais para responder')); }, 25000); })
+    ]);
+    const lista = [];
+    snap.forEach(function(doc) {
+      const d = doc.data() || {};
+      if (!d.nomeCompleto) return; // avisos de remoção e outros não são agendamentos do formulário
+      if (d.lido === true || d.lido === 'true' || d.lido === 'ignorado') return;
+      lista.push({
+        id: String(d.idPedido || doc.id), docId: doc.id, key: String(doc.id).replace(/[^A-Za-z0-9_-]/g, ''),
+        enviadoEm: String(d.enviadoEm || ''), nome: String(d.nomeCompleto || ''), telefone: String(d.telefone || ''),
+        cep: String(d.cep || ''), endereco: String(d.endereco || ''), pontoReferencia: String(d.pontoReferencia || ''),
+        quantidadeVeiculos: Number(d.quantidadeVeiculos) || (Array.isArray(d.veiculos) ? d.veiculos.length : 0) || 1,
+        veiculos: Array.isArray(d.veiculos) ? d.veiculos : [],
+        dataDesejada: String(d.dataDesejada || ''), horaDesejada: String(d.horaDesejada || '')
+      });
+    });
+    lista.sort(function(a, b) { return a.enviadoEm < b.enviadoEm ? -1 : a.enviadoEm > b.enviadoEm ? 1 : 0; });
+    return { ok: true, lista: lista };
+  } catch (e) {
+    console.warn('[Agendamentos] Não foi possível carregar do Firebase:', e);
+    return { ok: false, lista: [], erro: (e && e.message) || 'Erro' };
+  }
+}
+
+// Pedido tratado (OS criada ou ignorado): sai da fila do Firebase. Se não conseguir apagar, marca como lido.
+async function _agMarcarLido(ag, valor) {
+  const db = getFirestoreDb();
+  if (!db || !ag) return false;
+  const ref = db.collection('agendamentos_pendentes').doc(String(ag.docId || ag.id));
+  try { await ref.delete(); return true; }
+  catch (e) {
+    console.warn('[Agendamentos] Não conseguiu apagar o pedido, marcando como lido:', e);
+    try { await ref.update({ lido: valor === 'ignorado' ? 'ignorado' : true }); return true; } catch (e2) { return false; }
+  }
+}
+
 async function carregarAgendamentos() {
   loadTitularidades(true); // atualiza o contador da aba Titularidade
   const list = document.getElementById('agendamentos-list');
   if (!list) return;
-  list.innerHTML = getDinoHTML('ag-dino-loading', 'Buscando agendamentos...');
+  const vez = ++_agCargaSeq; // se a lista for recarregada de novo, a resposta antiga é descartada
+  list.innerHTML = '<div id="ag-bloco-rem">' + getDinoHTML('ag-dino-loading', 'Buscando agendamentos...') + '</div><div id="ag-bloco-plan"></div>';
 
-  // Remoções (formulário de cancelamento) vêm do Firebase — busca junto com a Planilha
+  // Duas buscas independentes, as duas no Firebase: remoções/manutenções e agendamentos do formulário.
+  // Cada uma aparece assim que chega.
   const _promRemocoes = _buscarRemocoesSeguro();
-  const result = await gasRequest({ action: 'getPendingAgendamentos' });
+  const _promAg = _buscarAgendamentosFirestore();
+
   const _rem = await _promRemocoes;
-  const _htmlRem = _htmlBlocoRemocoes(_rem);
-  if (!result.ok || !result.data) {
+  if (vez !== _agCargaSeq) return;
+  const blocoRem = document.getElementById('ag-bloco-rem'), blocoPlan = document.getElementById('ag-bloco-plan');
+  if (!blocoRem || !blocoPlan) return;
+  blocoRem.innerHTML = _htmlBlocoRemocoes(_rem);
+  _atualizarBadgeAgendamentos(0, _rem.lista.length + _rem.manut.length);
+  blocoPlan.innerHTML = '<div id="ag-plan-espera" style="text-align:center;padding:18px 8px;color:var(--muted);font-size:13px;">⏳ Buscando os agendamentos do formulário...</div>';
+
+  const resAg = await _promAg;
+  if (vez !== _agCargaSeq) return;
+  if (!resAg.ok) {
     _atualizarBadgeAgendamentos(0, _rem.lista.length + _rem.manut.length);
-    list.innerHTML = _htmlRem + '<div class="empty-state"><p>Erro ao carregar.</p></div>';
+    const painelErro = document.getElementById('ag-bloco-plan');
+    if (painelErro) painelErro.innerHTML = '<div class="empty-state"><p>Erro ao carregar os agendamentos do formulário.</p>' +
+      '<button onclick="carregarAgendamentos()" style="margin-top:8px;padding:9px 16px;background:#f0f4ff;border:none;border-radius:10px;font-size:13px;font-weight:700;color:var(--admin);cursor:pointer;">🔄 Tentar de novo</button></div>';
     return;
   }
 
-  const pendentes = result.data;
-  await _completarDataHoraViaFirestore(pendentes);
+  const pendentes = resAg.lista;
+  _agListaAtual = pendentes;
+  const painelPlan = document.getElementById('ag-bloco-plan');
+  if (!painelPlan) return;
 
   // Atualiza badge (formulário + remoções)
   _atualizarBadgeAgendamentos(pendentes.length, _rem.lista.length + _rem.manut.length);
 
   if (pendentes.length === 0) {
-    list.innerHTML = _htmlRem + '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhum agendamento pendente.</p></div>';
+    painelPlan.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Nenhum agendamento pendente.</p></div>';
     return;
   }
 
-  list.innerHTML = _htmlRem + pendentes.map(function(ag) {
+  painelPlan.innerHTML = pendentes.map(function(ag) {
     const veiculos = ag.veiculos || [];
     const veiculosHtml = veiculos.length === 0
       ? '<span style="color:var(--muted);font-size:12px;">Não informado</span>'
@@ -7729,7 +7799,7 @@ async function carregarAgendamentos() {
       return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
     }).join('');
 
-    return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.06);" id="ag-card-' + ag.rowIndex + '">' +
+    return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.06);" id="ag-card-' + ag.key + '">' +
 
       // Cabeçalho
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
@@ -7748,25 +7818,25 @@ async function carregarAgendamentos() {
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
         '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Técnico</label>' +
-          '<select id="ag-tec-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;">' + optsTec + '</select>' +
+          '<select id="ag-tec-' + ag.key + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;">' + optsTec + '</select>' +
         '</div>' +
         '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Data</label>' +
-          '<input type="date" id="ag-data-' + ag.rowIndex + '" value="' + esc(ag.dataDesejada || '') + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
+          '<input type="date" id="ag-data-' + ag.key + '" value="' + esc(ag.dataDesejada || '') + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
         '</div>' +
         '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Horário</label>' +
-          '<input type="time" id="ag-hora-' + ag.rowIndex + '" value="' + esc(_horaValida(ag.horaDesejada)) + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
+          '<input type="time" id="ag-hora-' + ag.key + '" value="' + esc(_horaValida(ag.horaDesejada)) + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
         '</div>' +
         '<div style="min-width:0;">' +
           '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Período</label>' +
-          _selPeriodoHTML('ag-periodo-' + ag.rowIndex, _periodoDeTexto(ag.horaDesejada), 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;') +
+          _selPeriodoHTML('ag-periodo-' + ag.key, _periodoDeTexto(ag.horaDesejada), 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;') +
         '</div>' +
       '</div>' +
       (ag.dataDesejada ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(ag.dataDesejada) + (_horaValida(ag.horaDesejada) ? ' às ' + esc(ag.horaDesejada) : _periodoDeTexto(ag.horaDesejada) ? ', no período da ' + (_periodoDeTexto(ag.horaDesejada) === 'manha' ? 'manhã (8h–12h)' : 'tarde (13h–18h)') : (ag.horaDesejada ? ' — ' + esc(ag.horaDesejada) : '')) + ' — já preenchido nos campos acima, confira antes de criar a OS.</div>' : '') +
       '<div style="margin-bottom:10px;">' +
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">TIPO DE SERVIÇO</label>' +
-        '<select id="ag-tipo-' + ag.rowIndex + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px;">' +
+        '<select id="ag-tipo-' + ag.key + '" style="width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;outline:none;margin-bottom:10px;">' +
           '<option value="Instalação">🔧 Instalação</option>' +
           '<option value="Manutenção">🔨 Manutenção</option>' +
           '<option value="Remoção">📤 Remoção</option>' +
@@ -7775,24 +7845,24 @@ async function carregarAgendamentos() {
         '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">💰 Valor da instalação</label>' +
         '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
           '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
-          '<input type="number" id="ag-valor-' + ag.rowIndex + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
+          '<input type="number" id="ag-valor-' + ag.key + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
         '</div>' +
       '</div>' +
 
       // Botões
       '<div style="display:flex;gap:8px;">' +
-        '<button onclick="confirmarAgendamentoAba(' + ag.rowIndex + ')" style="flex:1;padding:10px;background:var(--admin);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS</button>' +
-        '<button onclick="ignorarAgendamentoAba(' + ag.rowIndex + ',\'' + esc(ag.id||'') + '\')" style="padding:10px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
+        '<button onclick="confirmarAgendamentoAba(\'' + ag.key + '\')" style="flex:1;padding:10px;background:var(--admin);color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS</button>' +
+        '<button onclick="ignorarAgendamentoAba(\'' + ag.key + '\')" style="padding:10px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
       '</div>' +
 
     '</div>';
   }).join('');
 }
 
-async function confirmarAgendamentoAba(rowIndex) {
-  const result = await gasRequest({ action: 'getPendingAgendamentos' });
-  const ag = (result.data || []).find(a => a.rowIndex === rowIndex);
-  if (!ag) { showToast('Agendamento não encontrado.', 'error'); return; }
+async function confirmarAgendamentoAba(key) {
+  const ag = _agListaAtual.find(function(a) { return a.key === key; });
+  if (!ag) { showToast('Agendamento não encontrado. Atualize a lista.', 'error'); return; }
+  const rowIndex = ag.key; // identifica os campos do cartão (ag-tec-..., ag-data-..., etc.)
 
   const tecnico = document.getElementById('ag-tec-' + rowIndex)?.value || '';
   const _agDataVal = document.getElementById('ag-data-' + rowIndex)?.value || '';
@@ -7848,7 +7918,7 @@ async function confirmarAgendamentoAba(rowIndex) {
   if (resultSave.ok) {
     { const _cInd = _indDe(ag.pontoReferencia); if (_cInd) _indRegistrar(_cInd, novoId, ag.nome, ag.telefone); }
     if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
-    await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'true', idPedido: ag.id });
+    await _agMarcarLido(ag, 'true');
     showToast('OS criada para ' + tecnico + '! ✅', 'success');
     marcarMapaDesatualizado();
     await loadAllOrders();
@@ -7864,10 +7934,12 @@ async function confirmarAgendamentoAba(rowIndex) {
   }
 }
 
-async function ignorarAgendamentoAba(rowIndex, idPedido) {
+async function ignorarAgendamentoAba(key) {
+  const ag = _agListaAtual.find(function(a) { return a.key === key; });
+  if (!ag) { showToast('Agendamento não encontrado. Atualize a lista.', 'error'); return; }
   const confirmar = confirm('Tem certeza que deseja ignorar este agendamento? Ele não aparecerá mais na lista.');
   if (!confirmar) return;
-  await gasRequest({ action: 'marcarAgendamentoLido', rowIndex: rowIndex, lido: 'ignorado', idPedido: idPedido });
+  await _agMarcarLido(ag, 'ignorado');
   showToast('Agendamento ignorado.', '');
   carregarAgendamentos();
 }
@@ -7915,7 +7987,10 @@ async function _chamarRemocoes(dados) {
 
 async function _buscarRemocoesSeguro() {
   try {
-    const res = await _chamarRemocoes({ acao: 'listar' });
+    const res = await Promise.race([
+      _chamarRemocoes({ acao: 'listar' }),
+      new Promise(function(_, rej) { setTimeout(function() { rej(new Error('demorou demais para responder')); }, 25000); })
+    ]);
     _remocoesLista = (res.remocoes || []).filter(function(r) { return /^CAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
     _manutLista = (res.manutencoes || []).filter(function(r) { return /^MAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
     _remocoesCache = { em: Date.now(), n: _remocoesLista.length + _manutLista.length };
@@ -8278,10 +8353,9 @@ async function pollCompleto() {
 }
 
 async function checkNovasOSFormulario() {
-  const result = await gasRequest({ action: 'getPendingAgendamentos' });
-  const pendentes = (result.ok && result.data) ? result.data : [];
+  const resAg = await _buscarAgendamentosFirestore();
   const nRem = await _contarRemocoesComCache();
-  _atualizarBadgeAgendamentos(pendentes.length, nRem);
+  _atualizarBadgeAgendamentos(resAg.lista.length, nRem);
   loadTitularidades(true); // pedidos de troca de titularidade: atualiza o contador da aba e avisa se chegou novo
 }
 
