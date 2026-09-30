@@ -1414,7 +1414,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-28-v96-numero-da-aba';
+const BUILD_VERSION = '2026-09-30-v97-retirada-gestao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -8100,7 +8100,10 @@ function _cardRemocao(r) {
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + '</span>';
   }).join('') || '<span style="color:var(--muted);font-size:12px;">Não informado</span>';
   const qtdLista = (r.veiculos || []).length;
-  const tipoTxt = r.veiculosTipo === 'todos'
+  const daGestao = r.origem === 'gestao';
+  const tipoTxt = daGestao
+    ? qtdLista + (qtdLista === 1 ? ' veículo informado pela Gestão' : ' veículos informados pela Gestão')
+    : r.veiculosTipo === 'todos'
     ? 'Todos os veículos da assinatura (' + qtdLista + ')'
     : r.veiculosTipo === 'alguns'
       ? 'Parte dos veículos: ' + qtdLista + ' de ' + r.totalVeiculosAssinatura + ' da assinatura'
@@ -8119,9 +8122,11 @@ function _cardRemocao(r) {
       '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">📤 Remoção</span>' +
     '</div>' +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
+    (daGestao ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 9px;margin-bottom:8px;">🧾 Criado pela Gestão · inadimplência</div>' : '') +
     (telCad ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(telCad) + ' <span style="font-size:11px;">(cadastro)</span></div>' : '') +
     (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
-    '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(r.enderecoTexto || '') + '</div>' +
+    '<div style="margin:4px 0 8px;"><label style="' + lbl + '">📍 Endereço ou link de localização</label>' +
+      '<input type="text" id="rm-end-' + id + '" value="' + esc(r.enderecoTexto || '') + '" placeholder="Rua, número, bairro, cidade — ou cole um link de localização" style="' + inp + '"></div>' +
     (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:#b91c1c;margin:8px 0 2px;">' + esc(tipoTxt) + '</div>' +
     '<div style="margin-bottom:8px;">' + veiculosHtml + '</div>' +
@@ -8178,7 +8183,9 @@ async function criarOSRemocao(id) {
   const data = document.getElementById('rm-data-' + id)?.value || '';
   const hora = document.getElementById('rm-hora-' + id)?.value || '';
   const valor = document.getElementById('rm-valor-' + id)?.value || '';
+  const enderecoOS = (document.getElementById('rm-end-' + id)?.value || '').trim();
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
+  if (!enderecoOS) { showToast('Informe o endereço ou cole o link de localização', 'error'); document.getElementById('rm-end-' + id)?.focus(); return; }
 
   const telContato = String(r.telefoneContato || r.telefone || '').replace(/\D/g, '');
   if (telContato) {
@@ -8204,7 +8211,7 @@ async function criarOSRemocao(id) {
   const resultSave = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
-    endereco: r.enderecoTexto || '', tipo: 'Remoção', data: data,
+    endereco: enderecoOS, tipo: 'Remoção', data: data,
     veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id))
   });
 
