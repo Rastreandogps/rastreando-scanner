@@ -192,7 +192,20 @@ body{background:var(--bg,#F5F7FA)}
 .form-retorno textarea{min-height:60px}
 .cc-retorno{margin:0 16px 12px;padding:10px 12px;background:rgba(36,81,160,.06);border:1px solid rgba(36,81,160,.18);border-radius:10px;font-size:.84rem;color:var(--text-2)}
 .cc-retorno b{color:var(--navy)}
-.linha-limpar{display:flex;justify-content:flex-end;margin:-4px 0 8px}
+.linha-limpar{display:flex;justify-content:flex-end;gap:18px;flex-wrap:wrap;margin:-4px 0 8px}
+#resumo-clientes{display:grid;grid-template-columns:repeat(2,1fr)}
+#resumo-clientes .card small{display:block;font-size:.7rem;color:var(--text-3);margin-top:2px}
+.cliente-card.com-retorno{border-color:#F59E0B;border-left-color:#F59E0B;border-left-width:8px;background:#FFF6E0;box-shadow:0 4px 18px rgba(245,158,11,.32)}
+.cliente-card.com-retorno:hover{box-shadow:0 6px 22px rgba(245,158,11,.42)}
+.cliente-card.com-retorno .cc-avatar{background:#F59E0B}
+.cliente-card.com-retorno .cc-avatar.med{box-shadow:0 0 0 2px #F59E0B}
+.cliente-card.com-retorno .cc-retorno{background:#FEF3C7;border-color:#F59E0B;color:#78350F}
+.cliente-card.com-retorno .cc-retorno b{color:#92400E}
+.cliente-card.com-retorno .selo-retorno{background:#F59E0B;color:#fff}
+.cc-limpar{display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px 12px;border-top:1px dashed var(--border);background:var(--bg,#F5F7FA)}
+.cc-limpar .btn-link{padding:2px 0}
+.rv-ret{background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:12px;padding:10px 12px;color:#78350F;font-size:.9rem;line-height:1.45;margin:6px 0 10px}
+.rv-msg{background:var(--bg,#F5F7FA);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:.85rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-height:200px;overflow:auto;color:var(--text-2)}
 .cal{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal-head b{font-family:var(--font-display);color:var(--navy);text-transform:capitalize}
@@ -445,6 +458,8 @@ body.modal-aberto{overflow:hidden}
   <div class="resumo" id="resumo-clientes">
     <div class="card"><b id="res-qtd">0</b><span>clientes</span></div>
     <div class="card"><b id="res-valor">R$ 0</b><span>em aberto</span></div>
+    <div class="card"><b id="res-env">0</b><span>✉️ enviadas</span></div>
+    <div class="card"><b id="res-falta">0</b><span>⏳ faltam enviar</span><small id="res-falta-ret"></small></div>
   </div>
 
   <details class="msg-editor" id="editor-dois">
@@ -494,11 +509,22 @@ body.modal-aberto{overflow:hidden}
       <option value="20">Vence dia 20</option>
       <option value="outro">Outros dias</option>
     </select>
+    <select id="f-envio" aria-label="Filtrar por mensagem enviada">
+      <option value="">Envio: todos</option>
+      <option value="enviadas">✉️ Mensagem já enviada</option>
+      <option value="faltam">⏳ Ainda não enviada</option>
+    </select>
+    <select id="f-retorno" aria-label="Filtrar por retorno">
+      <option value="">Retorno: todos</option>
+      <option value="com">📅 Com retorno</option>
+      <option value="sem">Sem retorno</option>
+    </select>
     <button type="button" class="btn btn-sec" id="btn-atualizar" style="flex:0 0 auto">🔄 Atualizar</button>
   </div>
 
   <div class="linha-limpar" id="linha-limpar">
     <button type="button" class="btn-link" id="btn-limpar">🧹 Limpar marcações de envio</button>
+    <button type="button" class="btn-link" id="btn-limpar-retornos">🧹 Limpar todos os retornos</button>
   </div>
 
   <div id="lista-clientes"></div>
@@ -569,6 +595,16 @@ body.modal-aberto{overflow:hidden}
     <input type="number" id="mt-valor" step="0.01" min="0" inputmode="decimal">
     <div class="cls-info" id="mt-nota" style="margin-top:8px"></div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="mt-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="mt-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="rv-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="rv-titulo">
+    <h3 id="rv-titulo">📅 Este cliente tem um retorno</h3>
+    <div class="rt-cli" id="rv-cli"></div>
+    <div class="rv-ret" id="rv-ret"></div>
+    <label>Mensagem que será enviada</label>
+    <div class="rv-msg" id="rv-msg"></div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="rv-continuar" style="width:auto">Continuar o envio</button><button type="button" class="btn-link" id="rv-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div class="modal-fundo" id="rt-fundo" hidden>
@@ -766,6 +802,8 @@ body.modal-aberto{overflow:hidden}
   $('ordenar').addEventListener('change', renderLista);
   $('f-classe').addEventListener('change', renderLista);
   $('f-venc').addEventListener('change', renderLista);
+  $('f-envio').addEventListener('change', renderLista);
+  $('f-retorno').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -775,6 +813,10 @@ body.modal-aberto{overflow:hidden}
 
   // ---------- RENDER ----------
   function semAcento(t) { return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } // "joao" acha "João"
+  function retornoDe(c) {
+    return DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); })
+      .sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); })[0];
+  }
   function renderLista() {
     $('cnt-dois').textContent = '(' + DADOS.dois.length + ')';
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
@@ -791,6 +833,18 @@ body.modal-aberto{overflow:hidden}
       if (fVen === 'outro') return dias.some(function (d) { return d !== 15 && d !== 20; });
       return dias.indexOf(Number(fVen)) >= 0;
     });
+    var envRet = lista.slice(); // base dos contadores: respeita busca, medalha e vencimento
+    var nEnv = envRet.filter(function (c) { return c.ultimoEnvio; }).length;
+    var nFalta = envRet.length - nEnv;
+    var nFaltaRet = envRet.filter(function (c) { return !c.ultimoEnvio && retornoDe(c); }).length;
+    $('res-env').textContent = nEnv;
+    $('res-falta').textContent = nFalta;
+    $('res-falta-ret').textContent = nFaltaRet ? '(' + nFaltaRet + ' com retorno)' : '';
+    var fEnv = $('f-envio').value, fRet = $('f-retorno').value;
+    if (fEnv === 'enviadas') lista = lista.filter(function (c) { return c.ultimoEnvio; });
+    else if (fEnv === 'faltam') lista = lista.filter(function (c) { return !c.ultimoEnvio; });
+    if (fRet === 'com') lista = lista.filter(function (c) { return retornoDe(c); });
+    else if (fRet === 'sem') lista = lista.filter(function (c) { return !retornoDe(c); });
     var ord = $('ordenar').value;
     if (ord === 'valor') lista.sort(function (a, b) { return b.valorTotal - a.valorTotal; });
     else if (ord === 'dias') lista.sort(function (a, b) { return b.diasAtrasoMax - a.diasAtrasoMax; });
@@ -813,8 +867,7 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + '</span><span>' + brl(f.valor) + ' · ' + f.dias + 'd</span></div>';
       }).join('');
-      var retornoCliente = DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); })
-        .sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); })[0];
+      var retornoCliente = retornoDe(c);
       var iniciais = String(c.nome || '?').trim().split(/\s+/).filter(Boolean);
       iniciais = ((iniciais[0] || '?')[0] + (iniciais.length > 1 ? iniciais[iniciais.length - 1][0] : '')).toUpperCase();
       var selos = '<span class="cc-dias' + (c.diasAtrasoMax >= 15 ? ' grave' : '') + '">⏱ ' + c.diasAtrasoMax + ' dias de atraso</span>';
@@ -826,7 +879,7 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + ' · ' + f.dias + (f.dias === 1 ? ' dia' : ' dias') + '</span><b>' + brl(f.valor) + '</b></div>';
       }).join('');
-      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + '" id="cli-' + i + '">' +
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + '" id="cli-' + i + '">' +
         '<div class="cc-head">' +
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
@@ -853,6 +906,10 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
         '</div>' +
+        (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
+          (c.ultimoEnvio ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-envio">🧹 Limpar marcação de envio</button>' : '') +
+          (retornoCliente ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-retorno">🧹 Limpar retorno</button>' : '') +
+        '</div>' : '') +
       '</div>';
     }).join('');
 
@@ -871,6 +928,12 @@ body.modal-aberto{overflow:hidden}
         form.hidden = !form.hidden;
         if (!form.hidden) { $('ret-data-' + i).value = ''; $('ret-texto-' + i).value = ''; }
       });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="limpar-envio"]').forEach(function (b) {
+      b.addEventListener('click', function () { limparEnvioCliente(lista[Number(b.getAttribute('data-idx'))], b); });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="limpar-retorno"]').forEach(function (b) {
+      b.addEventListener('click', function () { limparRetornoCliente(lista[Number(b.getAttribute('data-idx'))], b); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="retirada"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalRetirada(lista[Number(b.getAttribute('data-idx'))]); });
@@ -1005,6 +1068,42 @@ body.modal-aberto{overflow:hidden}
       ['dois', 'um'].forEach(function (k) { (DADOS[k] || []).forEach(function (c) { c.ultimoEnvio = null; }); });
       renderLista();
       toast('Marcações de envio limpas.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); }
+    b.disabled = false; b.textContent = txtOrig;
+  });
+
+  // ---------- LIMPAR ENVIO / RETORNO DE UM CLIENTE ----------
+  async function limparEnvioCliente(c, btn) {
+    if (!c) return;
+    btn.disabled = true;
+    try {
+      await chamar('limparEnvio', { cpf: c.cpf });
+      c.ultimoEnvio = null;
+      renderLista();
+      toast('Marcação de envio de ' + primeiroNome(c.nome) + ' limpa.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); btn.disabled = false; }
+  }
+  async function limparRetornoCliente(c, btn) {
+    if (!c) return;
+    if (!confirm('Apagar o retorno anotado de ' + c.nome + '?')) return;
+    btn.disabled = true;
+    try {
+      await chamar('limparRetornosCliente', { cpf: c.cpf });
+      DADOS.retornos = DADOS.retornos.filter(function (r) { return soDig(r.cpf) !== soDig(c.cpf); });
+      renderLista();
+      toast('Retorno de ' + primeiroNome(c.nome) + ' apagado.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); btn.disabled = false; }
+  }
+  $('btn-limpar-retornos').addEventListener('click', async function () {
+    if (!DADOS.retornos.length) { toast('Não há retornos anotados.', ''); return; }
+    if (!confirm('Apagar TODOS os retornos anotados (' + DADOS.retornos.length + ') de todos os clientes?\n\nIsso não dá para desfazer. As marcações de envio continuam.')) return;
+    var b = this, txtOrig = b.textContent;
+    b.disabled = true; b.textContent = 'Limpando...';
+    try {
+      await chamar('limparRetornos');
+      DADOS.retornos = [];
+      renderLista();
+      toast('Todos os retornos apagados.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); }
     b.disabled = false; b.textContent = txtOrig;
   });
@@ -1786,7 +1885,7 @@ body.modal-aberto{overflow:hidden}
     }).join('') : '<div class="vazio">' + (CLS.avulsos ? 'Nenhum PIX avulso neste mês.' : 'Toque em 🔄 Atualizar para ver os avulsos do mês.') + '</div>';
   }
 
-  function enviarMensagem(c) {
+  function montarMensagem(c) {
     var tpl = (abaAtual === 'dois' ? $('tpl-dois').value : $('tpl-um').value) || '';
     var diasMax = c.diasAtrasoMax;
     var msg = tpl
@@ -1798,6 +1897,9 @@ body.modal-aberto{overflow:hidden}
       .replace(/\{vencimento\}/g, listaVencimentos(c))
       .replace(/\{link_regularizar\}/g, LINK_REGULARIZAR)
       .replace(/\{link_boleto\}/g, LINK_BOLETO);
+    return msg;
+  }
+  function executarEnvio(c, msg) {
     var tel = soDig(c.telefone);
     if (tel && tel.length <= 11) tel = '55' + tel;
     var url = tel ? ('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg)) : ('https://wa.me/?text=' + encodeURIComponent(msg));
@@ -1807,6 +1909,31 @@ body.modal-aberto{overflow:hidden}
       renderLista();
     }).catch(function () {});
   }
+
+  // Cliente com retorno anotado: mostra o aviso (e a mensagem) antes de enviar
+  var rvCtx = null;
+  function enviarMensagem(c) {
+    var msg = montarMensagem(c), ret = retornoDe(c);
+    if (!ret) { executarEnvio(c, msg); return; }
+    var hojeD = new Date(isoLocal(new Date()) + 'T00:00:00'), promD = new Date(ret.dataPromessa + 'T00:00:00');
+    var dif = Math.round((promD - hojeD) / 86400000);
+    var quando = dif > 1 ? 'daqui a ' + dif + ' dias' : dif === 1 ? 'amanhã' : dif === 0 ? 'hoje' : 'essa data já passou (há ' + (-dif) + (dif === -1 ? ' dia)' : ' dias)');
+    var qtd = DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); }).length;
+    rvCtx = { c: c, msg: msg };
+    $('rv-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + brl(c.valorTotal) + ' em aberto';
+    $('rv-ret').innerHTML = '📅 Retorno para <b>' + dataBR(ret.dataPromessa) + '</b> (' + quando + ')<br>' + esc(ret.texto) + (qtd > 1 ? '<br><small>Há ' + qtd + ' retornos anotados para este cliente; este é o mais recente.</small>' : '');
+    $('rv-msg').textContent = msg;
+    $('rv-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+  }
+  function fecharModalRetorno() { $('rv-fundo').hidden = true; document.body.classList.remove('modal-aberto'); rvCtx = null; }
+  $('rv-cancelar').addEventListener('click', fecharModalRetorno);
+  $('rv-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetorno(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('rv-fundo').hidden) fecharModalRetorno(); });
+  $('rv-continuar').addEventListener('click', function () {
+    var ctx = rvCtx; fecharModalRetorno();
+    if (ctx) executarEnvio(ctx.c, ctx.msg);
+  });
 })();
 </script>
 </body>
