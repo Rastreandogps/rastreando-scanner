@@ -1414,7 +1414,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-09-30-v99-agendamentos-pelo-firebase';
+const BUILD_VERSION = '2026-09-30-v101-pago-pelo-cliente';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4531,13 +4531,20 @@ function extrairInd(obs) {
   const m = String(obs || '').match(/\[IND:([A-Z2-9]{6})\]/);
   return m ? m[1] : '';
 }
-function limparObs(obs) {
-  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s*\[IND:[A-Z2-9]{6}\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+// Pago pelo cliente: guardado em Observações como [PC:1] (o cliente pagou direto ao técnico: não entra no resumo)
+// ou [PC:0] (eu pago). Sem marcação vale o padrão de pagoPeloCliente().
+function extrairPC(obs) {
+  const m = String(obs || '').match(/\[PC:([01])\]/);
+  return m ? m[1] : '';
 }
-function embutirHora(obs, hora, periodo, ind) {
+function limparObs(obs) {
+  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s*\[IND:[A-Z2-9]{6}\]\s*/g, ' ').replace(/\s*\[PC:[01]\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+function embutirHora(obs, hora, periodo, ind, pc) {
   let base = limparObs(obs);
   if (periodo === 'manha' || periodo === 'tarde') base = base ? base + ' [P:' + periodo + ']' : '[P:' + periodo + ']';
   if (ind) base = base ? base + ' [IND:' + ind + ']' : '[IND:' + ind + ']';
+  if (pc === '1' || pc === '0') base = base ? base + ' [PC:' + pc + ']' : '[PC:' + pc + ']';
   if (!hora) return base;
   return base ? base + ' [H:' + hora + ']' : '[H:' + hora + ']';
 }
@@ -4546,11 +4553,77 @@ function normalizarHoraOS(o) {
   const h = extrairHora(o.obs);
   const p = extrairPeriodo(o.obs);
   const ind = extrairInd(o.obs);
+  const pc = extrairPC(o.obs);
   if (h) o.hora = h; else if (!('hora' in o)) o.hora = '';
   if (p) o.periodo = p; else if (!('periodo' in o)) o.periodo = '';
   if (ind) o.ind = ind; else if (!('ind' in o)) o.ind = '';
-  if (h || p || ind) o.obs = limparObs(o.obs);
+  if (pc) o.pc = pc; else if (!('pc' in o)) o.pc = '';
+  if (h || p || ind || pc) o.obs = limparObs(o.obs);
   return o;
+}
+
+// ── PAGO PELO CLIENTE ──────────────────────────────────────────────
+// Quando o cliente paga direto ao técnico, o valor não entra no que eu pago (resumo do dia).
+// Padrão: INSTALAÇÃO já vem marcada (a partir de PC_DESDE, para não mexer no histórico);
+// MANUTENÇÃO e RETIRADA vêm desmarcadas. O toque no botão do card troca (fica gravado em [PC:1]/[PC:0]).
+const PC_DESDE = '2026-09-30'; // dias anteriores continuam como eram (você paga); daqui para frente a instalação já vem marcada
+function pagoPeloCliente(o) {
+  if (!o) return false;
+  if (o.pc === '1') return true;
+  if (o.pc === '0') return false;
+  const t = String(o.tipo || 'Instalação').toLowerCase();
+  if (t.includes('manut') || t.includes('retir') || t.includes('remo')) return false;
+  const d = (o.data && String(o.data).trim() && o.data !== 'undefined') ? parseDate(o.data) : null;
+  const iso = d ? d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') : '';
+  return !iso || iso >= PC_DESDE;
+}
+// Botão do card (só para o administrador)
+function _pcChipHTML(o, tech) {
+  const on = pagoPeloCliente(o);
+  const estilo = on
+    ? 'background:#d1fae5;color:#065f46;border:1.5px solid #6ee7b7;'
+    : 'background:#f1f5f9;color:#64748b;border:1.5px solid #cbd5e1;';
+  return '<button type="button" data-pc-id="' + esc(o.id) + '" title="' + (on ? 'O cliente paga direto ao técnico: não entra no resumo do dia. Toque para desmarcar.' : 'Toque se o cliente pagou direto ao técnico (não entra no resumo do dia).') + '" ' +
+    'onclick="event.stopPropagation();alternarPagoCliente(\'' + esc(o.id) + '\',\'' + esc(tech || o._tech || '') + '\')" ' +
+    'style="display:inline-flex;align-items:center;gap:5px;' + estilo + 'padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;margin:0 0 6px 6px;">' +
+    (on ? '☑ Pago pelo cliente' : '☐ Pago pelo cliente') + '</button>';
+}
+function _acharOSEmMemoria(id, tech) {
+  const listas = [allOrders && allOrders[tech], _adminOrdersCache, _doneAdminCache && _doneAdminCache[tech], allDoneOrders && allDoneOrders[tech]];
+  for (let i = 0; i < listas.length; i++) {
+    const o = (listas[i] || []).find(function(x) { return x.id === id; });
+    if (o) return o;
+  }
+  return null;
+}
+async function alternarPagoCliente(id, tech) {
+  const os = _acharOSEmMemoria(id, tech);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+  const antes = os.pc;
+  const novo = pagoPeloCliente(os) ? '0' : '1';
+  const aplicar = function(v) {
+    [allOrders && allOrders[tech], _adminOrdersCache, _doneAdminCache && _doneAdminCache[tech], allDoneOrders && allDoneOrders[tech]].forEach(function(l) {
+      (l || []).forEach(function(o) { if (o.id === id) o.pc = v; });
+    });
+    document.querySelectorAll('[data-pc-id="' + id + '"]').forEach(function(b) { b.outerHTML = _pcChipHTML(os, tech); });
+    if (typeof _atualizarTotaisAdminTech === 'function' && _doneAdminCache && _doneAdminCache[tech] && adminTechSelecionado === tech) _atualizarTotaisAdminTech(_doneAdminCache[tech]);
+  };
+  aplicar(novo);
+  showToast(novo === '1' ? '☑ Pago pelo cliente: não entra no resumo' : '☐ Voltou a entrar no resumo do dia', 'success');
+  let dataISO = '';
+  if (os.data && String(os.data).trim() && os.data !== 'undefined') {
+    const d = parseDate(os.data);
+    if (d) dataISO = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  const r = await gasRequest({
+    action: 'editOrder', id: id, tech: tech, nome: os.nome, telefone: os.telefone, endereco: os.endereco,
+    veiculo: os.veiculo || '', tipo: os.tipo || 'Instalação', data: dataISO,
+    obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', novo)
+  });
+  if (!r || !r.ok) {
+    aplicar(antes);
+    showToast('Não foi possível salvar. Tente de novo.', 'error');
+  }
 }
 function getPeriodoOS(o) { return (o && o.periodo) ? o.periodo : ''; }
 function _periodoLabel(p, curto) {
@@ -4911,6 +4984,7 @@ function renderAdminDoneList() {
             (o.endereco ? '<a href="' + _mapsLinkPara(o.endereco||'') + '" target="_blank" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:3px 8px;background:#4285F4;color:white;border-radius:6px;font-size:10px;font-weight:700;text-decoration:none;"><svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>' + _rotuloMapa(o.endereco||'') + '</a>' : '') +
           '</div>' +
           (o.veiculo ? '<div class="admin-os-meta">🔑 ' + esc(o.veiculo) + '</div>' : '') +
+          '<div style="margin-top:4px;">' + (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0 ? '<span style="display:inline-flex;align-items:center;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</span>' : '') + _pcChipHTML(o, o._tech) + '</div>' +
         '</div>' +
         '<span class="tech-badge tech-' + o._tech.toLowerCase() + '">' + o._tech + '</span>' +
       '</div>' +
@@ -5235,7 +5309,7 @@ async function adminReatribuirDireto(id, techOld, techNew) {
     action: 'saveOrder', tech: techNew, id: os.id,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
     tipo: os.tipo || 'Instalação', data: dataISO,
-    veiculo: os.veiculo || '', obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '')
+    veiculo: os.veiculo || '', obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || '')
   });
   if (!r1.ok) {
     showToast('Erro ao mover OS: ' + (r1.error || ''), 'error');
@@ -6346,11 +6420,12 @@ async function enviarResumoDia(tech) {
   }
 
   // Montar linhas por cliente
-  let totalGeral = 0;
+  let totalGeral = 0, totalCliente = 0;
   const linhas = deHoje.map(o => {
     const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
-    totalGeral += valor;
-    const valorStr = valor > 0 ? ' — *R$' + valor.toFixed(2).replace('.',',') + '*' : '';
+    const _pc = pagoPeloCliente(o);
+    if (_pc) totalCliente += valor; else totalGeral += valor;
+    const valorStr = (valor > 0 ? ' — *R$' + valor.toFixed(2).replace('.',',') + '*' : '') + (_pc ? ' _(pago pelo cliente)_' : '');
 
     // Montar veículos
     let veiculos = [];
@@ -6370,7 +6445,8 @@ async function enviarResumoDia(tech) {
     return '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
   }).join('\n\n');
 
-  const totalStr = totalGeral > 0 ? '\n\n*Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '';
+  const clienteStr = totalCliente > 0 ? '\n\n✅ _Pago direto pelo cliente: R$' + totalCliente.toFixed(2).replace('.',',') + ' (não entra no total)_' : '';
+  const totalStr = clienteStr + ((totalGeral > 0 || totalCliente > 0) ? '\n\n*Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '');
   const dataStr  = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
   const msg =
@@ -6452,6 +6528,34 @@ function _modeloPrincipalVeiculo(veiculo) {
 }
 
 // Card compacto: nome, horário (se houver), endereço e modelo do veículo (toque abre os detalhes/edição)
+// Totais "Hoje" e "Mês" do técnico na visão do administrador. Não conta o que o cliente pagou direto ao técnico.
+function _atualizarTotaisAdminTech(doneAdmin) {
+  const hoje = new Date();
+  let totalMes = 0, totalDia = 0;
+  (doneAdmin || []).forEach(o => {
+    if (!o.valorInstalacao || pagoPeloCliente(o)) return;
+    const v = parseFloat(o.valorInstalacao);
+    if (isNaN(v)) return;
+    if (o.data && o.data.trim() && o.data !== 'undefined') {
+      const d = parseDate(o.data);
+      if (d && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()) {
+        totalMes += v;
+        if (d.getDate() === hoje.getDate()) totalDia += v;
+      }
+    }
+  });
+  const elDia = document.getElementById('admin-view-tech-total-dia');
+  const elMes = document.getElementById('admin-view-tech-total-mes');
+  if (elDia) {
+    if (totalDia > 0) { elDia.textContent = '📅 Hoje: R$' + totalDia.toFixed(2).replace('.',','); elDia.style.display = 'block'; }
+    else elDia.style.display = 'none';
+  }
+  if (elMes) {
+    if (totalMes > 0) { elMes.textContent = '💰 Mês: R$' + totalMes.toFixed(2).replace('.',','); elMes.style.display = 'block'; }
+    else elMes.style.display = 'none';
+  }
+}
+
 function _renderCardOSCompacto(o) {
   const tech = adminTechSelecionado;
   const tipoAdmin = (o.tipo || '').toLowerCase();
@@ -6466,6 +6570,7 @@ function _renderCardOSCompacto(o) {
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
     _badgeTipoLed(o, true) +
+    (pagoPeloCliente(o) ? '<div title="Pago pelo cliente: não entra no resumo" style="display:inline-block;background:#d1fae5;color:#065f46;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:10px;margin-bottom:3px;">☑ cliente paga</div>' : '') +
     (getPeriodoOS(o) ? '<div style="margin-bottom:3px;max-width:100%;">' + _periodoPill(o) + '</div>' : '') +
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
@@ -6543,6 +6648,7 @@ function _renderCardOSDetalhado(o) {
         (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0
           ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
           : '') +
+        _pcChipHTML(o, tech) +
 
         // ── Linha 3: endereço (linha inteira só dele) e, embaixo, telefone + Maps
         // Antes os três dividiam a MESMA linha, e o endereço ficava espremido
@@ -6734,32 +6840,8 @@ async function adminVerTecnico(tech) {
 
   // Mostrar área (já exibida acima)
   document.getElementById('admin-view-tech-name').textContent = tech;
-  // Calcular total do mês e do dia
-  const hoje = new Date();
-  let totalMes = 0, totalDia = 0;
-  doneAdmin.forEach(o => {
-    if (!o.valorInstalacao) return;
-    const v = parseFloat(o.valorInstalacao);
-    if (isNaN(v)) return;
-    // Filtrar pelo mês atual
-    if (o.data && o.data.trim() && o.data !== 'undefined') {
-      const d = parseDate(o.data);
-      if (d && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()) {
-        totalMes += v;
-        if (d.getDate() === hoje.getDate()) totalDia += v;
-      }
-    }
-  });
-  const elDia = document.getElementById('admin-view-tech-total-dia');
-  const elMes = document.getElementById('admin-view-tech-total-mes');
-  if (elDia) {
-    if (totalDia > 0) { elDia.textContent = '📅 Hoje: R$' + totalDia.toFixed(2).replace('.',','); elDia.style.display = 'block'; }
-    else elDia.style.display = 'none';
-  }
-  if (elMes) {
-    if (totalMes > 0) { elMes.textContent = '💰 Mês: R$' + totalMes.toFixed(2).replace('.',','); elMes.style.display = 'block'; }
-    else elMes.style.display = 'none';
-  }
+  // Calcular total do mês e do dia (sem os serviços que o cliente pagou direto)
+  _atualizarTotaisAdminTech(doneAdmin);
   document.getElementById('admin-cal-month').textContent = 'Ordens de ' + MONTHS[_adminCalMes] + ' de ' + _adminCalAno + ' — ' + tech;
   // Botão resumo do dia
   const resumoDiaEl = document.getElementById('admin-resumo-dia-btn');
@@ -7015,8 +7097,10 @@ function abrirResumoUnicaOS(id, tech) {
   const o = (allDoneOrders[tech] || []).find(o => o.id === id);
   if (!o) { showToast('OS não encontrada', 'error'); return; }
 
-  const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
-  const valorStr = valor > 0 ? ' — *R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+  const valorBruto = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
+  const _pc = pagoPeloCliente(o);
+  const valor = _pc ? 0 : valorBruto; // o que o cliente já pagou não entra no total
+  const valorStr = (valorBruto > 0 ? ' — *R$' + valorBruto.toFixed(2).replace('.', ',') + '*' : '') + (_pc ? ' _(pago pelo cliente)_' : '');
 
   // Montar veículos
   let veiculos = [];
@@ -7038,7 +7122,7 @@ function abrirResumoUnicaOS(id, tech) {
   const hoje   = new Date();
   const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
 
-  const totalStr = valor > 0 ? '\n\n*Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
+  const totalStr = (valor > 0 || _pc) ? '\n\n*Total: R$' + valor.toFixed(2).replace('.', ',') + '*' : '';
 
   const msg =
     '*' + tech + ', segue o serviço avulso — ' + dataStr + ' 📋*\n\n' +
@@ -7243,7 +7327,7 @@ async function confirmarEdit() {
 
   fecharModalEdit();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo'), (document.getElementById('edit-os-ind') || {}).value || '') });
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo'), (document.getElementById('edit-os-ind') || {}).value || '', (function() { const _o = _acharOSEmMemoria(id, tech); return _o ? (_o.pc || '') : ''; })()) });
   // Salvar valor separadamente se preenchido
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id, tech, valor });
   if (result.ok) {
@@ -7280,7 +7364,7 @@ async function adminReatribuir(btn) {
   // 2. Salvar na nova aba
   const r1 = await gasRequest({ action: 'saveOrder', tech: techNew,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
-    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || ''), id: os.id });
+    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || ''), id: os.id });
   if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
   if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
