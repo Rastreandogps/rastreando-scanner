@@ -127,6 +127,12 @@ body{background:var(--bg,#F5F7FA)}
 .tabs{display:flex;gap:8px;margin-bottom:16px}
 .tabs button{flex:1;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:#fff;font-weight:700;font-size:.9rem;color:var(--text-2);cursor:pointer}
 .tabs button.ativo{background:var(--navy);border-color:var(--navy);color:#fff}
+.tabs button{position:relative}
+.fav-estrela{position:absolute;top:1px;right:2px;padding:5px 6px;font-size:.8rem;line-height:1;color:#94A3B8;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.fav-estrela.on{color:#F59E0B}
+.tabs button.ativo .fav-estrela{color:#CBD5E1}
+.tabs button.ativo .fav-estrela.on{color:#FBBF24}
+@media(max-width:560px){.tabs button{padding-left:20px;padding-right:20px}}
 .resumo{display:flex;gap:12px;margin-bottom:16px}
 .resumo .card{flex:1;padding:14px 16px;text-align:center}
 .resumo .card b{display:block;font-family:var(--font-display);font-size:1.3rem;color:var(--navy)}
@@ -729,7 +735,7 @@ body.modal-aberto{overflow:hidden}
   auth.onAuthStateChanged(function (u) {
     $('btn-sair').hidden = !u;
     if (u) { entrar(); }
-    else { $('tela-lista').hidden = true; $('tela-pin').hidden = false; }
+    else { $('tela-lista').hidden = true; $('tela-pin').hidden = false; abaInicialAplicada = false; }
   });
 
   async function fazerLogin() {
@@ -756,6 +762,7 @@ body.modal-aberto{overflow:hidden}
       carregarTemplates();
       renderLista();
       atualizarContadorIndicacoes();
+      aplicarAbaInicial();
     } catch (e) {
       $('tela-lista').hidden = true; $('tela-pin').hidden = false;
       $('pin-erro').textContent = (e && e.message) || 'Não foi possível carregar a lista.';
@@ -816,6 +823,52 @@ body.modal-aberto{overflow:hidden}
     });
   });
   $('editor-um').style.display = 'none';
+
+  // ---------- ABA FAVORITA (abre sempre nela) ----------
+  var ABAS_GESTAO = ['gestao', 'dois', 'um', 'pagos', 'retornos', 'classif', 'despesas', 'metas', 'indicacoes'];
+  var abaInicialAplicada = false;
+  function favAba() {
+    try { var f = localStorage.getItem('gestaoFavAba') || ''; return ABAS_GESTAO.indexOf(f) >= 0 ? f : ''; } catch (e) { return ''; }
+  }
+  function atualizarEstrelasAbas() {
+    var f = favAba();
+    document.querySelectorAll('.fav-estrela').forEach(function (st) {
+      var on = st.getAttribute('data-fav') === f;
+      st.textContent = on ? '★' : '☆';
+      st.classList.toggle('on', on);
+      st.title = on ? 'Aba inicial: toque para desfixar' : 'Fixar como aba inicial';
+      st.setAttribute('aria-label', on ? 'Aba inicial (toque para desfixar)' : 'Fixar esta aba como inicial');
+    });
+  }
+  function alternarFavAba(id) {
+    var novo = favAba() === id ? '' : id;
+    try { if (novo) localStorage.setItem('gestaoFavAba', novo); else localStorage.removeItem('gestaoFavAba'); }
+    catch (e) { toast('Não foi possível guardar neste aparelho.', 'erro'); return; }
+    atualizarEstrelasAbas();
+    toast(novo ? '★ Esta aba vai abrir primeiro.' : 'Aba inicial removida.', novo ? 'ok' : '');
+  }
+  document.querySelectorAll('.tabs button').forEach(function (b) {
+    var st = document.createElement('span');
+    st.className = 'fav-estrela';
+    st.setAttribute('data-fav', b.getAttribute('data-tab'));
+    st.setAttribute('role', 'button');
+    st.setAttribute('tabindex', '0');
+    st.addEventListener('click', function (ev) { ev.stopPropagation(); ev.preventDefault(); alternarFavAba(st.getAttribute('data-fav')); });
+    st.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.stopPropagation(); ev.preventDefault(); alternarFavAba(st.getAttribute('data-fav')); }
+    });
+    b.appendChild(st);
+  });
+  atualizarEstrelasAbas();
+  // ao entrar (uma vez por acesso), abre a aba favorita, se houver
+  function aplicarAbaInicial() {
+    if (abaInicialAplicada) return;
+    abaInicialAplicada = true;
+    var f = favAba();
+    if (!f || f === abaAtual) return;
+    var bt = document.querySelector('.tabs button[data-tab="' + f + '"]');
+    if (bt) bt.click();
+  }
 
   $('busca').addEventListener('input', renderLista);
   $('ordenar').addEventListener('change', renderLista);
