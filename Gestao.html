@@ -190,6 +190,11 @@ body{background:var(--bg,#F5F7FA)}
 #rt-enviar{flex:1}
 .cliente-card .form-retorno{margin:0;border-radius:0;border-top:1px solid var(--border)}
 @media(max-width:480px){.cc-contato{grid-template-columns:1fr}.cc-acoes{flex-direction:column}}
+.cc-led{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 16px 10px;padding:9px 12px;border-radius:12px;background:#ECFDF5;border:1.5px solid #34D399;color:#047857;font-weight:800;font-size:.86rem;letter-spacing:.02em;text-align:center}
+.cc-led small{display:block;font-weight:600;color:#059669;font-size:.78rem;letter-spacing:0;margin-top:1px}
+.cc-led .led{flex:none;width:14px;height:14px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.25),0 0 12px 3px rgba(34,197,94,.75);animation:led-pisca 1s ease-in-out infinite}
+@keyframes led-pisca{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 3px rgba(34,197,94,.25),0 0 14px 4px rgba(34,197,94,.85)}50%{opacity:.25;transform:scale(.8);box-shadow:0 0 0 0 rgba(34,197,94,0),0 0 0 0 rgba(34,197,94,0)}}
+@media (prefers-reduced-motion:reduce){.cc-led .led{animation:none}}
 .selo-enviado{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);color:var(--green);font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px}
 .selo-retorno{display:inline-flex;align-items:center;gap:5px;background:rgba(36,81,160,.1);color:var(--navy-light);font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px}
 .btn-retorno{background:none;border:1.5px dashed var(--border);color:var(--text-2);border-radius:8px;padding:9px;font-size:.82rem;cursor:pointer;width:100%;margin-top:8px}
@@ -951,9 +956,10 @@ body.modal-aberto{overflow:hidden}
       var iniciais = String(c.nome || '?').trim().split(/\s+/).filter(Boolean);
       iniciais = ((iniciais[0] || '?')[0] + (iniciais.length > 1 ? iniciais[iniciais.length - 1][0] : '')).toUpperCase();
       var selos = '<span class="cc-dias' + (c.diasAtrasoMax >= 15 ? ' grave' : '') + '">⏱ ' + c.diasAtrasoMax + ' dias de atraso</span>';
+      var ledEnviado = '';
       if (c.ultimoEnvio) {
         var dt = new Date(c.ultimoEnvio);
-        selos += '<span class="selo-enviado">✓ Enviado ' + dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+        ledEnviado = '<div class="cc-led" role="status"><span class="led" aria-hidden="true"></span><span>MENSAGEM JÁ ENVIADA <small>em ' + dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</small></span></div>';
       }
       if (retornoCliente) selos += '<span class="selo-retorno">📅 Retorno: ' + dataBR(retornoCliente.dataPromessa) + '</span>';
       var fats = c.faturas.map(function (f) {
@@ -967,6 +973,7 @@ body.modal-aberto{overflow:hidden}
           '<div class="cc-titulo"><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
+        ledEnviado +
         '<div class="cc-selos">' + selos + '</div>' +
         '<div class="cc-contato">' +
           '<div><span style="min-width:0"><small>Telefone</small><b>' + esc(c.telefone || '—') + '</b></span>' + (c.telefone ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.telefone) + '">copiar</button>' : '') + '</div>' +
