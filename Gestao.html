@@ -192,9 +192,22 @@ body{background:var(--bg,#F5F7FA)}
 .form-retorno textarea{min-height:60px}
 .cc-retorno{margin:0 16px 12px;padding:10px 12px;background:rgba(36,81,160,.06);border:1px solid rgba(36,81,160,.18);border-radius:10px;font-size:.84rem;color:var(--text-2)}
 .cc-retorno b{color:var(--navy)}
-.linha-limpar{display:flex;justify-content:flex-end;gap:18px;flex-wrap:wrap;margin:-4px 0 8px}
+.linha-limpar{display:flex;justify-content:space-between;gap:12px;margin:0 0 12px}
+.linha-limpar .btn-link{padding:4px 0;min-height:0;font-size:.85rem}
+#toolbar-clientes{margin-bottom:10px}
+#toolbar-clientes #busca{flex:1 1 150px}
+#toolbar-clientes #ordenar{flex:0 0 auto}
+#toolbar-clientes .btn-linha{flex:1 1 40%;padding:10px 12px}
+.btn-sec.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
+.painel-filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:14px}
+.painel-filtros[hidden]{display:none}
+.painel-filtros select{width:100%;min-width:0;font-size:.9rem;padding:10px 8px}
+.painel-filtros .btn-link{grid-column:1/-1;text-align:center;padding:2px 0}
+@media(min-width:720px){#btn-filtros{display:none}.painel-filtros{display:grid!important;grid-template-columns:repeat(4,1fr);background:transparent;border:none;padding:0;margin:-4px 0 12px}.painel-filtros .btn-link{grid-column:auto;text-align:left}}
+@media(max-width:480px){#resumo-clientes{gap:8px}#resumo-clientes .card{padding:10px 8px}#resumo-clientes .card b{font-size:1.15rem}}
 #resumo-clientes{display:grid;grid-template-columns:repeat(2,1fr)}
 #resumo-clientes .card small{display:block;font-size:.7rem;color:var(--text-3);margin-top:2px}
+#resumo-clientes .card{margin-bottom:0}
 .cliente-card.com-retorno{border-color:#F59E0B;border-left-color:#F59E0B;border-left-width:8px;background:#FFF6E0;box-shadow:0 4px 18px rgba(245,158,11,.32)}
 .cliente-card.com-retorno:hover{box-shadow:0 6px 22px rgba(245,158,11,.42)}
 .cliente-card.com-retorno .cc-avatar{background:#F59E0B}
@@ -490,21 +503,25 @@ body.modal-aberto{overflow:hidden}
   </details>
 
   <div class="toolbar" id="toolbar-clientes">
-    <input type="text" id="busca" placeholder="Buscar por nome ou CPF...">
+    <input type="text" id="busca" placeholder="Nome ou CPF">
     <select id="ordenar">
       <option value="valor">Maior valor</option>
       <option value="dias">Mais atrasado</option>
       <option value="nome">Nome (A-Z)</option>
     </select>
+    <button type="button" class="btn btn-sec btn-linha" id="btn-filtros">🎚️ Filtros</button>
+    <button type="button" class="btn btn-sec btn-linha" id="btn-atualizar">🔄 Atualizar</button>
+  </div>
+  <div class="painel-filtros" id="painel-filtros" hidden>
     <select id="f-classe" aria-label="Filtrar por classificação">
-      <option value="">Todas as medalhas</option>
+      <option value="">Medalha: todas</option>
       <option value="ouro">🥇 Ouro</option>
       <option value="prata">🥈 Prata</option>
       <option value="latao">🚩 Latão</option>
       <option value="sem">Sem classificação</option>
     </select>
     <select id="f-venc" aria-label="Filtrar por dia de vencimento">
-      <option value="">Todos os vencimentos</option>
+      <option value="">Vence: todos</option>
       <option value="15">Vence dia 15</option>
       <option value="20">Vence dia 20</option>
       <option value="outro">Outros dias</option>
@@ -519,12 +536,12 @@ body.modal-aberto{overflow:hidden}
       <option value="com">📅 Com retorno</option>
       <option value="sem">Sem retorno</option>
     </select>
-    <button type="button" class="btn btn-sec" id="btn-atualizar" style="flex:0 0 auto">🔄 Atualizar</button>
+    <button type="button" class="btn-link" id="btn-limpar-filtros">Limpar filtros</button>
   </div>
 
   <div class="linha-limpar" id="linha-limpar">
-    <button type="button" class="btn-link" id="btn-limpar">🧹 Limpar marcações de envio</button>
-    <button type="button" class="btn-link" id="btn-limpar-retornos">🧹 Limpar todos os retornos</button>
+    <button type="button" class="btn-link" id="btn-limpar">🧹 Limpar envios</button>
+    <button type="button" class="btn-link" id="btn-limpar-retornos">🧹 Limpar retornos</button>
   </div>
 
   <div id="lista-clientes"></div>
@@ -803,6 +820,11 @@ body.modal-aberto{overflow:hidden}
   $('f-classe').addEventListener('change', renderLista);
   $('f-venc').addEventListener('change', renderLista);
   $('f-envio').addEventListener('change', renderLista);
+  $('btn-filtros').addEventListener('click', function () { $('painel-filtros').hidden = !$('painel-filtros').hidden; });
+  $('btn-limpar-filtros').addEventListener('click', function () {
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].forEach(function (id) { $(id).value = ''; });
+    renderLista();
+  });
   $('f-retorno').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
@@ -822,6 +844,9 @@ body.modal-aberto{overflow:hidden}
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
+    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].filter(function (id) { return $(id).value; }).length;
+    $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
+    $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
     var termoTxt = semAcento($('busca').value.trim()), termoDig = soDig($('busca').value);
     var casaBusca = function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termoTxt) >= 0; };
