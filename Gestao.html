@@ -589,6 +589,7 @@ body.modal-aberto{overflow:hidden}
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 (function () {
   'use strict';
@@ -644,6 +645,31 @@ body.modal-aberto{overflow:hidden}
   });
   var auth = firebase.auth();
   try { localStorage.removeItem('inad_pin'); } catch (e) {}
+
+  // Aviso em tempo real para o APP Técnico. O APP e os formulários usam o Firestore do projeto "rastreando-gps"
+  // (outro projeto, diferente do da Gestão). O aviso leva só o protocolo — nenhum dado pessoal.
+  // Se falhar, o APP vê o pedido na conferência automática normal.
+  var dbAviso = null;
+  try {
+    var appAviso = firebase.initializeApp({
+      apiKey: 'AIzaSyCnWCqWOBgk5D4d3KmDM-XiIxEoMojRyd8',
+      authDomain: 'rastreando-gps.firebaseapp.com',
+      projectId: 'rastreando-gps',
+      storageBucket: 'rastreando-gps.firebasestorage.app',
+      messagingSenderId: '481162335739',
+      appId: '1:481162335739:web:fe3d91aaa33749a9f3e75e'
+    }, 'aviso');
+    dbAviso = appAviso.firestore();
+  } catch (e) { dbAviso = null; }
+  function avisarAppTecnico(protocolo) {
+    try {
+      if (!dbAviso || !protocolo) return;
+      dbAviso.collection('agendamentos_pendentes').doc(protocolo).set({
+        idPedido: protocolo, tipo: 'remocao', lido: false,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function () {});
+    } catch (e) {}
+  }
 
   auth.onAuthStateChanged(function (u) {
     $('btn-sair').hidden = !u;
@@ -895,6 +921,7 @@ body.modal-aberto{overflow:hidden}
     try {
       var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, confirmarDuplicado: confirmado });
       fecharModalRetirada();
+      avisarAppTecnico(r.protocolo);
       toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
