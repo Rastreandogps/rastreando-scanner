@@ -227,7 +227,9 @@ body{background:var(--bg,#F5F7FA)}
 .cliente-card .cc-avatar.med,.cliente-card.enviado .cc-avatar.med,.cliente-card.com-retorno .cc-avatar.med{background:#fff}
 .cliente-card.com-retorno .cc-retorno{background:#FEF3C7;border-color:#F59E0B;color:#78350F}
 .cliente-card.com-retorno .cc-retorno b{color:#92400E}
-.cliente-card.com-retorno .selo-retorno{background:#F59E0B;color:#fff}
+.cliente-card.com-retorno .selo-retorno{background:#F59E0B;color:#fff;animation:ret-pisca 1.8s ease-in-out infinite}
+@keyframes ret-pisca{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(245,158,11,0)}50%{opacity:.55;box-shadow:0 0 0 4px rgba(245,158,11,.28)}}
+@media (prefers-reduced-motion:reduce){.cliente-card.com-retorno .selo-retorno{animation:none}}
 .cc-limpar{display:flex;gap:16px;flex-wrap:wrap;padding:8px 16px 12px;border-top:1px dashed var(--border);background:var(--bg,#F5F7FA)}
 .cc-limpar .btn-link{padding:2px 0}
 .rv-ret{background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:12px;padding:10px 12px;color:#78350F;font-size:.9rem;line-height:1.45;margin:6px 0 10px}
