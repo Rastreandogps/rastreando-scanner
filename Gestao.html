@@ -174,6 +174,14 @@ body{background:var(--bg,#F5F7FA)}
 .cc-acoes{display:flex;gap:8px;padding:12px 16px;background:var(--bg,#F5F7FA);border-top:1px solid var(--border)}
 .cc-acoes .btn-wpp-cliente{flex:2}
 .cc-acoes .btn-retorno{flex:1;margin:0;border-style:solid;background:#fff;font-weight:600}
+.cc-acoes .btn-retirada{flex:1.5;margin:0;padding:12px 10px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.9rem;cursor:pointer}
+.cc-acoes .btn-retirada:hover{background:#fef2f2}
+.rt-cli{font-size:.85rem;color:var(--text-2);margin:2px 0 6px;line-height:1.4}
+.rt-veic{display:grid;grid-template-columns:1fr 104px;gap:8px;margin-bottom:8px}
+.rt-veic input{min-width:0}
+.rt-placa{text-transform:uppercase}
+.rt-placa::placeholder{text-transform:none}
+#rt-enviar{flex:1}
 .cliente-card .form-retorno{margin:0;border-radius:0;border-top:1px solid var(--border)}
 @media(max-width:480px){.cc-contato{grid-template-columns:1fr}.cc-acoes{flex-direction:column}}
 .selo-enviado{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);color:var(--green);font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px}
@@ -563,6 +571,19 @@ body.modal-aberto{overflow:hidden}
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="mt-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="mt-cancelar">Cancelar</button></div>
   </div>
 </div>
+<div class="modal-fundo" id="rt-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="rt-titulo">
+    <h3 id="rt-titulo">🔧 Ordem de retirada</h3>
+    <div class="rt-cli" id="rt-cli"></div>
+    <label>Veículo(s) a retirar <span style="font-weight:600;color:var(--text-3)">(a placa é opcional)</span></label>
+    <div id="rt-veics"></div>
+    <button type="button" class="btn-link" id="rt-mais">+ adicionar outro veículo</button>
+    <label for="rt-obs">Observação (opcional)</label>
+    <textarea id="rt-obs" maxlength="300" placeholder="Ex.: cliente não atende, carro fica na garagem"></textarea>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b>: lá você confere o endereço (ou cola o link de localização), escolhe o técnico e a data.</div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="rt-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="rt-cancelar">Cancelar</button></div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
@@ -804,6 +825,7 @@ body.modal-aberto{overflow:hidden}
             '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>' +
             (c.ultimoEnvio ? 'Enviar de novo' : 'Enviar mensagem') + '</button>' +
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
+          '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -824,11 +846,62 @@ body.modal-aberto{overflow:hidden}
         if (!form.hidden) { $('ret-data-' + i).value = ''; $('ret-texto-' + i).value = ''; }
       });
     });
+    $('lista-clientes').querySelectorAll('[data-acao="retirada"]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirModalRetirada(lista[Number(b.getAttribute('data-idx'))]); });
+    });
     $('lista-clientes').querySelectorAll('[data-acao="salvar-retorno"]').forEach(function (b) {
       b.addEventListener('click', function () {
         var i = Number(b.getAttribute('data-idx')); salvarRetorno(lista[i], i, b);
       });
     });
+  }
+
+  // ---------- ORDEM DE RETIRADA (vira pedido PENDENTE no APP Técnico) ----------
+  var rtCliente = null;
+  function rtLinhaVeiculo() {
+    return '<div class="rt-veic"><input type="text" class="rt-modelo" maxlength="60" placeholder="Modelo do veículo" autocomplete="off">' +
+      '<input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div>';
+  }
+  function abrirModalRetirada(c) {
+    if (!c) return;
+    rtCliente = c;
+    $('rt-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + brl(c.valorTotal) + ' em aberto';
+    $('rt-veics').innerHTML = rtLinhaVeiculo();
+    $('rt-obs').value = '';
+    $('rt-enviar').disabled = false;
+    $('rt-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+    setTimeout(function () { var m = document.querySelector('#rt-veics .rt-modelo'); if (m) m.focus(); }, 30);
+  }
+  function fecharModalRetirada() { $('rt-fundo').hidden = true; document.body.classList.remove('modal-aberto'); rtCliente = null; }
+  $('rt-cancelar').addEventListener('click', fecharModalRetirada);
+  $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetirada(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('rt-fundo').hidden) fecharModalRetirada(); });
+  $('rt-mais').addEventListener('click', function () {
+    if (document.querySelectorAll('#rt-veics .rt-veic').length >= 5) { toast('Até 5 veículos por pedido.', 'erro'); return; }
+    $('rt-veics').insertAdjacentHTML('beforeend', rtLinhaVeiculo());
+    var m = document.querySelectorAll('#rt-veics .rt-modelo'); m[m.length - 1].focus();
+  });
+  $('rt-enviar').addEventListener('click', function () { enviarRetirada(false); });
+  async function enviarRetirada(confirmado) {
+    if (!rtCliente) return;
+    var c = rtCliente;
+    var veiculos = Array.prototype.map.call(document.querySelectorAll('#rt-veics .rt-veic'), function (el) {
+      return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim() };
+    }).filter(function (v) { return v.modelo || v.placa; });
+    if (!veiculos.length || veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo do veículo.', 'erro'); return; }
+    var motivo = c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
+    var btn = $('rt-enviar'); btn.disabled = true;
+    try {
+      var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, confirmarDuplicado: confirmado });
+      fecharModalRetirada();
+      toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+    } catch (e) {
+      var msg = (e && e.message) || 'Erro ao enviar.';
+      btn.disabled = false;
+      if (/Já existe um pedido de retirada pendente/.test(msg)) { if (confirm(msg + '\n\nCriar outro mesmo assim?')) enviarRetirada(true); return; }
+      toast(msg, 'erro');
+    }
   }
 
   async function salvarRetorno(c, i, btn) {
