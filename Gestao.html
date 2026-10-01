@@ -681,6 +681,21 @@ body.modal-aberto{overflow:hidden}
   </div>
 
   <div id="aba-classif" hidden>
+    <div class="toolbar">
+      <input type="text" id="cl-busca" placeholder="Buscar por nome ou CPF...">
+      <select id="cl-classe" aria-label="Filtrar por medalha">
+        <option value="">Todas as medalhas</option>
+        <option value="ouro">🥇 Ouro</option>
+        <option value="prata">🥈 Prata</option>
+        <option value="latao">🚩 Latão</option>
+      </select>
+      <select id="cl-venc" aria-label="Filtrar por dia de vencimento">
+        <option value="">Todos os vencimentos</option>
+        <option value="15">Vence dia 15</option>
+        <option value="20">Vence dia 20</option>
+        <option value="outro">Outros dias</option>
+      </select>
+    </div>
     <div id="classif-conteudo"></div>
   </div>
 </section>
@@ -2289,6 +2304,10 @@ body.modal-aberto{overflow:hidden}
   $('pg-classe').addEventListener('change', renderPagos);
   $('pg-venc').addEventListener('change', renderPagos);
 
+  $('cl-busca').addEventListener('input', function () { if (CLS) renderClassificacao(); });
+  $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
+  $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
+
   function renderClassificacao() {
     var R = CLS.resumo;
     var cards = ['ouro', 'prata', 'latao'].map(function (k) {
@@ -2301,8 +2320,15 @@ body.modal-aberto{overflow:hidden}
         '<div class="l"><span>Total do mês</span><b>' + brl(r.total) + '</b></div>' +
       '</button>';
     }).join('');
+    $('cl-classe').value = clsFiltro.classe || ''; // mantém o filtro de medalha igual ao dos cartões
+    var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
     var lista = CLS.clientes.filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
+      if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
+      if (fVen) {
+        var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
+        if (fVen === 'outro' ? !dias.some(function (d) { return d !== 15 && d !== 20; }) : dias.indexOf(Number(fVen)) < 0) return false;
+      }
       if (clsFiltro.status === 'receber') return c.aReceber > 0;
       if (clsFiltro.status === 'pagos') return c.aReceber === 0;
       return true;
@@ -2324,7 +2350,7 @@ body.modal-aberto{overflow:hidden}
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
       '</div>';
-    }).join('') : '<div class="vazio">Nenhum cliente neste filtro.</div>';
+    }).join('') : '<div class="vazio">Nenhum cliente neste filtro.' + ((termo || fVen) && clsFiltro.status !== 'todos' ? '<br><small>Está filtrando só por "' + (clsFiltro.status === 'pagos' ? 'Já pagos' : 'A receber') + '". Toque em <b>Todos</b> para buscar entre todos os clientes.</small>' : '') + '</div>';
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
     var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     var agora = new Date(), mesAgora = String(agora.getMonth() + 1).padStart(2, '0') + '/' + agora.getFullYear();
