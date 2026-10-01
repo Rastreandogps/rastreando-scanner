@@ -337,6 +337,21 @@ body{background:var(--bg,#F5F7FA)}
 .dp-mes b{font-family:var(--font-display);font-size:1.15rem;color:var(--navy);min-width:120px;text-align:center;text-transform:capitalize}
 .dp-mes button{width:42px;height:42px;border-radius:50%;border:2px solid var(--border);background:#fff;font-size:1rem;color:var(--navy);cursor:pointer}
 .dp-mes button:disabled{opacity:.35;cursor:default}
+.dp-rapido{display:block;width:100%;margin:0 0 12px;padding:13px 16px;border:none;border-radius:14px;background:var(--green);color:#fff;font-family:var(--font-display);font-weight:800;font-size:1rem;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.30)}
+.dp-rapido:active{transform:scale(.99)}
+.dr-atalhos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}
+.dr-atalho{border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:10px 8px;cursor:pointer;text-align:center;font-family:var(--font-body)}
+.dr-atalho b{display:block;font-size:.9rem;color:var(--text)}
+.dr-atalho span{display:block;font-family:var(--font-display);font-weight:800;color:var(--navy);font-size:.95rem;margin-top:2px}
+.dr-atalho small{display:block;font-size:.7rem;color:var(--text-3)}
+.dr-atalho.sel{border-color:var(--green);background:#ECFDF5}
+.dr-grupo{display:flex;gap:8px;margin-top:10px}
+.dr-grupo label{flex:1;display:flex!important;align-items:center;justify-content:center;gap:6px;margin:0!important;border:1.5px solid var(--border);border-radius:12px;padding:10px;font-size:.9rem!important;font-weight:700;color:var(--text)!important;cursor:pointer}
+.dr-grupo label:has(input:checked){border-color:var(--navy);background:#EEF2FF}
+.dr-pago{display:flex!important;align-items:center;gap:8px;margin-top:10px!important;font-size:.9rem!important;color:var(--text)!important}
+.dr-ed{display:grid;grid-template-columns:1fr 92px;gap:6px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed var(--border)}
+.dr-ed .dr-ed-grupo{grid-column:1 / -1}
+.dr-ed input,.dr-ed select{width:100%;min-width:0;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:.9rem}
 .dp-resumo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 @media (max-width:640px){.dp-resumo{grid-template-columns:1fr}}
 .dp-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px}
@@ -441,6 +456,16 @@ body.modal-aberto{overflow:hidden}
 .g-meta-fut{color:var(--text-3)}
 .g-meta-bt{padding:6px 12px!important;font-size:.8rem!important;width:auto!important}
 .g-topo{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
+.g-conc{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.g-conc .e{flex:none;font-size:1.8rem;line-height:1}
+.g-conc .t{flex:1;min-width:0}
+.g-conc .t b{display:block;font-family:var(--font-display);font-size:1.05rem;color:var(--text)}
+.g-conc .t small{display:block;font-size:.74rem;color:var(--text-3);margin-top:2px;line-height:1.35}
+.g-conc-cfg{flex:none;border:none;background:none;font-size:1rem;opacity:.45;cursor:pointer;padding:6px}
+.g-conc-cfg:hover{opacity:.9}
+.cc-lin{display:flex;gap:8px}
+.cc-lin input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:.95rem}
+.cc-it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--border);font-size:.88rem}
 .g-topo .g-saldo{margin-bottom:0}
 .g-topo .g-saldo:not(.azul){display:flex;flex-direction:column;justify-content:center}
 .g-saldo.azul{background:linear-gradient(135deg,#1B3A6B,#2451A0)}
@@ -637,6 +662,46 @@ body.modal-aberto{overflow:hidden}
   </div>
 </section>
 
+<div class="modal-fundo" id="cc-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="cc-titulo">
+    <h3 id="cc-titulo">⚙️ Conciliação do mês</h3>
+    <label for="cc-saldo">Saldo do Asaas no início do mês (R$)</label>
+    <div class="cc-lin"><input type="number" id="cc-saldo" step="0.01" min="0" inputmode="decimal"><button type="button" class="btn btn-sec" id="cc-saldo-salvar" style="width:auto">Salvar</button></div>
+    <div class="cls-info" id="cc-saldo-origem"></div>
+    <label style="margin-top:14px">Dinheiro de outra fonte / pago por meio externo</label>
+    <div class="cls-info" style="margin-bottom:6px">Use quando pagar alguma despesa sem ser pelo saldo do Asaas (ex.: R$ 1.000 da poupança).</div>
+    <div class="cc-lin"><input type="number" id="cc-valor" step="0.01" min="0" inputmode="decimal" placeholder="Valor"><input type="text" id="cc-desc" maxlength="80" placeholder="De onde veio (opcional)"></div>
+    <button type="button" class="btn btn-ok" id="cc-add" style="width:auto;margin-top:8px">Registrar</button>
+    <div id="cc-lista" style="margin-top:10px"></div>
+    <div class="cls-info" id="cc-resto" style="margin-top:6px"></div>
+    <div class="modal-bt"><button type="button" class="btn-link" id="cc-fechar">Fechar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="dr-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="dr-titulo">
+    <div id="dr-uso">
+      <h3 id="dr-titulo">⚡ Despesa rápida</h3>
+      <div class="dr-atalhos" id="dr-atalhos"></div>
+      <label for="dr-nome">Nome</label>
+      <input type="text" id="dr-nome" maxlength="80" autocomplete="off" placeholder="Toque num atalho ou escreva">
+      <label for="dr-valor">Valor (R$)</label>
+      <input type="number" id="dr-valor" step="0.01" min="0" inputmode="decimal">
+      <div class="dr-grupo" role="radiogroup" aria-label="De quem é a despesa">
+        <label><input type="radio" name="dr-grupo" value="pessoal" checked> 🏠 Pessoal</label>
+        <label><input type="radio" name="dr-grupo" value="empresa"> 🏢 Empresa</label>
+      </div>
+      <label class="dr-pago"><input type="checkbox" id="dr-pago" checked> Já paguei</label>
+      <div class="cls-info" id="dr-info" style="margin-top:6px"></div>
+      <div class="modal-bt"><button type="button" class="btn btn-ok" id="dr-adicionar" style="width:auto">Adicionar</button><button type="button" class="btn-link" id="dr-cancelar">Cancelar</button><button type="button" class="btn-link" id="dr-editar" style="margin-left:auto">✏️ Editar atalhos</button></div>
+    </div>
+    <div id="dr-edicao" hidden>
+      <h3>✏️ Editar atalhos</h3>
+      <div class="cls-info" style="margin-bottom:6px">Nome, valor de sempre e de quem é. Sempre entram como despesa variável.</div>
+      <div id="dr-ed-lista"></div>
+      <div class="modal-bt"><button type="button" class="btn btn-ok" id="dr-ed-salvar" style="width:auto">Salvar atalhos</button><button type="button" class="btn-link" id="dr-ed-voltar">Voltar</button></div>
+    </div>
+  </div>
+</div>
 <div class="modal-fundo" id="dpm-fundo" hidden>
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="dpm-titulo">
     <h3 id="dpm-titulo">Editar</h3>
@@ -1306,6 +1371,65 @@ body.modal-aberto{overflow:hidden}
       : '<div class="falta sup"><small>✅ Superávit da estimativa</small><b>+' + brl(-dif) + '</b></div>';
   }
   var SALDO = null;
+  // ---------- CONCILIAÇÃO (uma mensagem só) ----------
+  var CONC = null;
+  var CONC_TXT = {
+    fonte: ['🤑', function (v) { return '+' + brl(v) + ' de outra fonte'; }, 'Valor identificado além dos recebimentos registrados.'],
+    semexp: ['👀', function (v) { return brl(v) + ' sem explicação'; }, 'Valor que não foi identificado nos recebimentos, despesas ou outras fontes.'],
+    superavit: ['🚀', function (v) { return 'Superávit de ' + brl(v); }, 'Valor que excedeu o necessário após a conciliação.'],
+    ok: ['😎', function () { return 'Tudo certo'; }, 'Todos os valores foram conciliados.']
+  };
+  function htmlConc() {
+    var cfg = '<button type="button" class="g-conc-cfg" id="g-conc-cfg" title="Saldo do início do mês e dinheiro de outras fontes" aria-label="Ajustes da conciliação">⚙️</button>';
+    if (!CONC) return '<span class="e">⏳</span><div class="t"><b>Conciliando…</b></div>' + cfg;
+    if (CONC.erro) return '<span class="e">⚠️</span><div class="t"><b>Não foi possível conciliar agora</b><small>' + esc(CONC.erro) + '</small></div>' + cfg;
+    var m = CONC_TXT[CONC.tipo] || CONC_TXT.ok;
+    return '<span class="e">' + m[0] + '</span><div class="t"><b>' + m[1](CONC.valor) + '</b><small>' + m[2] + '</small></div>' + cfg;
+  }
+  function pintarConc() { var el = $('g-conc'); if (el) el.innerHTML = htmlConc(); if (!$('cc-fundo').hidden) desenharCC(); }
+  async function carregarConc() {
+    try { CONC = await chamar('conc'); } catch (e) { CONC = { erro: (e && e.message) || 'Tente de novo em instantes.' }; }
+    pintarConc();
+  }
+  // janelinha de ajustes: saldo do início do mês + dinheiro de outras fontes
+  function desenharCC() {
+    if (!CONC || CONC.erro) return;
+    $('cc-saldo').value = CONC.saldoInicial;
+    $('cc-saldo-origem').textContent = CONC.saldoInicialOrigem ? 'Guardado: ' + CONC.saldoInicialOrigem + '.' : '';
+    var l = CONC.fontes || [];
+    $('cc-lista').innerHTML = l.length ? l.map(function (f) {
+      return '<div class="cc-it"><span><b>' + brl(f.valor) + '</b> · ' + esc(f.desc) + '</span><button type="button" class="btn-link" data-cc-del="' + esc(f.id) + '">remover</button></div>';
+    }).join('') : '<div class="cls-info">Nenhum registro neste mês.</div>';
+    $('cc-resto').textContent = CONC.restoFontes > 0.004 ? 'Guardado de outras fontes para os próximos meses: ' + brl(CONC.restoFontes) + '.' : '';
+  }
+  document.addEventListener('click', function (ev) {
+    if (ev.target && ev.target.id === 'g-conc-cfg') { desenharCC(); $('cc-fundo').hidden = false; document.body.classList.add('modal-aberto'); }
+  });
+  function fecharCC() { $('cc-fundo').hidden = true; document.body.classList.remove('modal-aberto'); }
+  $('cc-fechar').addEventListener('click', fecharCC);
+  $('cc-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharCC(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('cc-fundo').hidden) fecharCC(); });
+  async function ccAcao(dados, msg, btn) {
+    if (btn) btn.disabled = true;
+    try { CONC = await chamar(dados.acao, dados); pintarConc(); toast(msg, 'ok'); return true; }
+    catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); return false; }
+    finally { if (btn) btn.disabled = false; }
+  }
+  $('cc-saldo-salvar').addEventListener('click', function () {
+    var v = Number(String($('cc-saldo').value).replace(',', '.'));
+    if (!(v >= 0)) { toast('Informe o saldo.', 'erro'); return; }
+    ccAcao({ acao: 'conc_saldo_inicial', valor: v }, 'Saldo do início do mês salvo.', this);
+  });
+  $('cc-add').addEventListener('click', async function () {
+    var v = Number(String($('cc-valor').value).replace(',', '.'));
+    if (!(v > 0)) { toast('Informe o valor.', 'erro'); $('cc-valor').focus(); return; }
+    if (await ccAcao({ acao: 'conc_fonte_add', valor: v, desc: $('cc-desc').value.trim() }, 'Registrado.', this)) { $('cc-valor').value = ''; $('cc-desc').value = ''; }
+  });
+  $('cc-lista').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-cc-del]'); if (!b) return;
+    if (!confirm('Remover este registro de outra fonte?')) return;
+    ccAcao({ acao: 'conc_fonte_del', id: b.getAttribute('data-cc-del') }, 'Removido.', b);
+  });
   async function carregarSaldo() {
     try { SALDO = await chamar('saldo'); } catch (e) { SALDO = { erro: (e && e.message) || 'Não foi possível ler o saldo.' }; }
     var box = $('g-saldo'); if (box) box.innerHTML = htmlSaldo();
@@ -1403,6 +1527,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' · atualizado em ' + gerado + '</span>' +
         '<button type="button" id="g-recalcular" style="margin-left:auto">🔄 Atualizar</button></div>' +
       '<div class="g-topo"><div class="g-saldo" id="g-saldo">' + htmlSaldo() + '</div><div class="g-saldo azul" id="g-base">' + htmlBase() + '</div></div>' +
+      '<div class="g-conc" id="g-conc">' + htmlConc() + '</div>' +
       '<div class="g-quad" id="g-quad">' + quadrantes(GPCT) + '</div>' +
       '<div class="g-titulo">Inadimplência do mês</div>' +
       '<div class="g-cards">' +
@@ -1437,7 +1562,8 @@ body.modal-aberto{overflow:hidden}
       $('g-quad').innerHTML = quadrantes(pctTela);
     }
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
-    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); atualizarTudo(this); });
+    $('g-recalcular').addEventListener('click', function () { carregarSaldo(); atualizarTudo(this); }); // a conciliação recarrega junto com a aba
+    carregarConc();
     carregarBase();
     renderHistorico();
     $('g-salvar-pct').addEventListener('click', async function () {
@@ -1585,7 +1711,8 @@ body.modal-aberto{overflow:hidden}
     var atual = despMesSel === mesAtualKey();
     var pct = DESP.poupancaPct, guardar = Math.max(0, liq * pct / 100);
     var h = '<div class="dp-mes"><button type="button" data-d-mes="-1"' + (despMesSel <= MES_MIN ? ' disabled' : '') + ' aria-label="Mês anterior">◀</button><b>' + esc(mesTxt(despMesSel)) + '</b>' +
-      '<button type="button" data-d-mes="1"' + (despMesSel >= somaMes(mesAtualKey(), 2) ? ' disabled' : '') + ' aria-label="Próximo mês">▶</button></div>';
+      '<button type="button" data-d-mes="1"' + (despMesSel >= somaMes(mesAtualKey(), 2) ? ' disabled' : '') + ' aria-label="Próximo mês">▶</button></div>' +
+      '<button type="button" class="dp-rapido" data-d-rapido>＋ Adicionar despesa</button>';
     // ---- resumo
     h += '<div class="dp-resumo">' +
       '<div class="dp-card"><div class="t">💰 Receita estimada</div><div class="v">' + brl(rec.total) + '</div>' +
@@ -1624,6 +1751,72 @@ body.modal-aberto{overflow:hidden}
     h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
     $('despesas-conteudo').innerHTML = h;
   }
+  // ---------- DESPESA RÁPIDA (atalhos; sempre variável) ----------
+  function despAtalhos() { return (DESP && Array.isArray(DESP.atalhos) && DESP.atalhos.length) ? DESP.atalhos : []; }
+  function drGrupo(g) { var r = document.querySelector('input[name="dr-grupo"][value="' + (g === 'empresa' ? 'empresa' : 'pessoal') + '"]'); if (r) r.checked = true; }
+  function drDesenharAtalhos() {
+    $('dr-atalhos').innerHTML = despAtalhos().map(function (a, k) {
+      return '<button type="button" class="dr-atalho" data-dr-k="' + k + '"><b>' + esc(a.nome) + '</b><span>' + brl(a.valor) + '</span><small>' + (a.grupo === 'empresa' ? '🏢 empresa' : '🏠 pessoal') + '</small></button>';
+    }).join('');
+  }
+  function abrirDespRapida() {
+    if (!DESP) return;
+    $('dr-uso').hidden = false; $('dr-edicao').hidden = true;
+    drDesenharAtalhos();
+    $('dr-nome').value = ''; $('dr-valor').value = ''; drGrupo('pessoal'); $('dr-pago').checked = true;
+    $('dr-info').textContent = 'Entra como despesa variável de ' + mesTxt(despMesSel) + '.';
+    $('dr-adicionar').disabled = false;
+    $('dr-fundo').hidden = false; document.body.classList.add('modal-aberto');
+  }
+  function fecharDespRapida() { $('dr-fundo').hidden = true; document.body.classList.remove('modal-aberto'); }
+  $('dr-atalhos').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-dr-k]'); if (!b) return;
+    var a = despAtalhos()[Number(b.getAttribute('data-dr-k'))]; if (!a) return;
+    $('dr-nome').value = a.nome; $('dr-valor').value = a.valor; drGrupo(a.grupo);
+    document.querySelectorAll('.dr-atalho').forEach(function (x) { x.classList.toggle('sel', x === b); });
+    $('dr-valor').focus(); $('dr-valor').select();
+  });
+  $('dr-adicionar').addEventListener('click', async function () {
+    var nome = $('dr-nome').value.trim(), valor = Number(String($('dr-valor').value).replace(',', '.'));
+    if (nome.length < 2) { toast('Toque num atalho ou escreva o nome.', 'erro'); $('dr-nome').focus(); return; }
+    if (!(valor > 0)) { toast('Informe um valor maior que zero.', 'erro'); $('dr-valor').focus(); return; }
+    var g = document.querySelector('input[name="dr-grupo"]:checked');
+    var b = this; b.disabled = true;
+    var ok = await despOp({ op: 'add', grupo: g ? g.value : 'pessoal', nome: nome, valor: valor, recorrente: false, pago: $('dr-pago').checked }, '✓ ' + nome + ' (' + brl(valor) + ') adicionado.');
+    b.disabled = false;
+    if (ok) fecharDespRapida();
+  });
+  $('dr-valor').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('dr-adicionar').click(); } });
+  $('dr-cancelar').addEventListener('click', fecharDespRapida);
+  $('dr-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharDespRapida(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('dr-fundo').hidden) fecharDespRapida(); });
+  // edição dos atalhos (4 linhas)
+  $('dr-editar').addEventListener('click', function () {
+    var l = despAtalhos().slice(0, 4); while (l.length < 4) l.push({ nome: '', valor: '', grupo: 'pessoal' });
+    $('dr-ed-lista').innerHTML = l.map(function (a, k) {
+      return '<div class="dr-ed"><input type="text" class="dr-ed-nome" maxlength="40" placeholder="Nome do atalho ' + (k + 1) + '" value="' + esc(a.nome) + '">' +
+        '<input type="number" class="dr-ed-valor" step="0.01" min="0" inputmode="decimal" placeholder="Valor" value="' + (a.valor === '' ? '' : a.valor) + '">' +
+        '<select class="dr-ed-grupo"><option value="pessoal"' + (a.grupo !== 'empresa' ? ' selected' : '') + '>🏠 Pessoal</option><option value="empresa"' + (a.grupo === 'empresa' ? ' selected' : '') + '>🏢 Empresa</option></select></div>';
+    }).join('');
+    $('dr-uso').hidden = true; $('dr-edicao').hidden = false;
+  });
+  $('dr-ed-voltar').addEventListener('click', function () { $('dr-edicao').hidden = true; $('dr-uso').hidden = false; });
+  $('dr-ed-salvar').addEventListener('click', async function () {
+    var lista = [], erro = '';
+    document.querySelectorAll('#dr-ed-lista .dr-ed').forEach(function (r, k) {
+      var nome = r.querySelector('.dr-ed-nome').value.trim(), v = String(r.querySelector('.dr-ed-valor').value).trim();
+      if (!nome && !v) return; // linha vazia: sem atalho
+      var valor = Number(v.replace(',', '.'));
+      if (nome.length < 2 || !(valor > 0)) { erro = erro || ('Atalho ' + (k + 1) + ': informe nome e valor.'); return; }
+      lista.push({ nome: nome, valor: valor, grupo: r.querySelector('.dr-ed-grupo').value });
+    });
+    if (erro) { toast(erro, 'erro'); return; }
+    if (!lista.length) { toast('Deixe pelo menos um atalho.', 'erro'); return; }
+    var b = this; b.disabled = true;
+    var ok = await despOp({ op: 'atalhos', atalhos: lista }, 'Atalhos salvos.');
+    b.disabled = false;
+    if (ok) { drDesenharAtalhos(); $('dr-edicao').hidden = true; $('dr-uso').hidden = false; $('dr-fundo').hidden = false; document.body.classList.add('modal-aberto'); }
+  });
   async function despOp(dados, msgOk) {
     try { DESP = await chamar('desp_op', Object.assign({ mes: despMesSel }, dados)); despForm = null; renderDespesas(); if (msgOk) toast(msgOk, 'ok'); return true; }
     catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); return false; }
@@ -1739,6 +1932,7 @@ body.modal-aberto{overflow:hidden}
   });
   $('despesas-conteudo').addEventListener('click', async function (ev) {
     var b = ev.target.closest('button'); if (!b || !DESP) return;
+    if (b.hasAttribute('data-d-rapido')) { abrirDespRapida(); return; }
     if (b.hasAttribute('data-d-mes')) {
       var novo = somaMes(despMesSel, Number(b.getAttribute('data-d-mes')));
       if (novo < MES_MIN || novo > somaMes(mesAtualKey(), 2)) return;
