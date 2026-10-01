@@ -253,6 +253,13 @@ body{background:var(--bg,#F5F7FA)}
 .cal-titulo-dia{font-weight:700;color:var(--navy);margin:4px 0 10px}
 .tabs{flex-wrap:wrap}
 @media (max-width:560px){.tabs button{flex:1 1 calc(50% - 4px)}}
+/* abas modernas: pílulas numa fileira que rola de lado (no celular); no computador quebram de linha */
+.tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;margin:0 -16px 6px;padding:4px 16px 14px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto!important;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:10px 16px!important;border-radius:999px;border:1.5px solid var(--border);background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:.88rem;scroll-snap-align:center;transition:background .15s,color .15s,box-shadow .15s}
+.tabs button.ativo{background:linear-gradient(135deg,var(--navy),var(--navy-light));border-color:var(--navy);box-shadow:0 4px 12px rgba(27,58,107,.30)}
+.tabs .fav-estrela{position:static;margin:-6px -10px -6px 4px;padding:8px 10px}
+@media (min-width:900px){.tabs{flex-wrap:wrap;overflow:visible;margin:0 0 14px;padding:0}}
 .cls-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 @media (max-width:560px){.cls-cards{grid-template-columns:1fr}}
 .cls-card{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit}
@@ -806,6 +813,7 @@ body.modal-aberto{overflow:hidden}
     b.addEventListener('click', function () {
       abaAtual = b.getAttribute('data-tab');
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
+      try { b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) { /* navegador antigo */ }
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
       var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'despesas' || abaAtual === 'metas' || abaAtual === 'indicacoes';
