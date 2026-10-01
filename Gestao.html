@@ -456,6 +456,11 @@ body.modal-aberto{overflow:hidden}
 .g-meta-fut{color:var(--text-3)}
 .g-meta-bt{padding:6px 12px!important;font-size:.8rem!important;width:auto!important}
 .g-topo{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
+.g-av-warn{color:#B45309;font-weight:800}
+.cls-item.av-marcado{border-color:#F59E0B;background:#FFFBEB}
+.av-alerta{margin:8px 0 2px;padding:8px 10px;border-radius:10px;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E}
+.av-alerta b{display:block;font-size:.88rem}
+.av-alerta small{display:block;font-size:.76rem;color:#A16207;margin-top:2px}
 .g-conc{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(15,23,42,.05)}
 .g-conc .e{flex:none;font-size:1.8rem;line-height:1}
 .g-conc .t{flex:1;min-width:0}
@@ -1540,9 +1545,9 @@ body.modal-aberto{overflow:hidden}
         if (!rAv) return '<div class="g-titulo">PIX avulsos do mês</div><div class="vazio">Toque em 🔄 Atualizar para ver os avulsos do mês.</div>';
         return '<div class="g-titulo">PIX avulsos do mês</div>' +
           '<div class="g-av">' +
-            '<div class="g-av-cab">🧾 ' + rAv.clientes + (rAv.clientes === 1 ? ' pessoa' : ' pessoas') + ' · ' + rAv.cobrancas + (rAv.cobrancas === 1 ? ' cobrança' : ' cobranças') + '</div>' +
+            '<div class="g-av-cab">🧾 ' + rAv.clientes + (rAv.clientes === 1 ? ' pessoa' : ' pessoas') + ' · ' + rAv.cobrancas + (rAv.cobrancas === 1 ? ' cobrança' : ' cobranças') + '<span id="g-av-alerta">' + htmlAvbAlerta() + '</span></div>' +
             '<div class="g-av-nums"><div><span>Recebido</span><b>' + brl(rAv.recebido) + '</b></div><div><span>A receber</span><b class="rec">' + brl(rAv.aReceber) + '</b></div><div><span>Total do mês</span><b>' + brl(rAv.total) + '</b></div></div>' +
-            '<details class="g-av-lista"><summary>Ver quem fez PIX avulso</summary><div class="cls-info" style="margin-top:8px">Cobranças fora de assinatura (vendas, PIX soltos). Pró-rata e acordos do Regularizar não entram.</div>' + htmlAvulsos() + '</details>' +
+            '<details class="g-av-lista"><summary>Ver quem fez PIX avulso</summary><div class="cls-info" style="margin-top:8px">Cobranças fora de assinatura (vendas, PIX soltos). Pró-rata e acordos do Regularizar não entram.</div><div id="g-av-itens">' + htmlAvulsos() + '</div></details>' +
           '</div>';
       })() +
       '<div class="g-titulo">Ajustar a chance de cada classe</div>' +
@@ -1564,6 +1569,7 @@ body.modal-aberto{overflow:hidden}
     $('gestao-conteudo').querySelectorAll('[data-pct]').forEach(function (i) { i.addEventListener('input', recalcEst); });
     $('g-recalcular').addEventListener('click', function () { carregarSaldo(); atualizarTudo(this); }); // a conciliação recarrega junto com a aba
     carregarConc();
+    carregarAvulsosBoletos();
     carregarBase();
     renderHistorico();
     $('g-salvar-pct').addEventListener('click', async function () {
@@ -2327,16 +2333,47 @@ body.modal-aberto{overflow:hidden}
   }
 
   // Lista de quem fez PIX avulso (mostrada na aba Gestão)
+  // ---------- PIX avulso x boleto em aberto (só identifica; não cancela nada) ----------
+  var AVB = null; // { chave, pares: {cid: [{pix, boleto, vencimento, status}]} }
+  function avbPares(cid) { return AVB && AVB.chave === (CLS && CLS.geradoEm) && AVB.pares[cid] ? AVB.pares[cid] : null; }
+  function htmlAvbAlerta() {
+    if (!CLS || !AVB || AVB.chave !== CLS.geradoEm) return '';
+    var n = Object.keys(AVB.pares).length;
+    return n ? ' <span class="g-av-warn">· ⚠️ ' + n + (n === 1 ? ' com boleto em aberto' : ' com boleto em aberto') + '</span>' : '';
+  }
+  function htmlAvbCliente(cid) {
+    var l = avbPares(cid); if (!l) return '';
+    return '<div class="av-alerta"><b>⚠️ Boleto em aberto</b>' + l.map(function (p) {
+      return '<small>Pix ' + brl(p.pix) + ' ↔ Boleto ' + brl(p.boleto) + ' · ' + (p.status === 'vencido' ? 'venceu ' : 'vence ') + dataBR(p.vencimento) + '</small>';
+    }).join('') + '</div>';
+  }
+  async function carregarAvulsosBoletos() {
+    if (!CLS || !CLS.avulsos || !CLS.avulsos.length) return;
+    var chave = CLS.geradoEm;
+    if (AVB && AVB.chave === chave) return;
+    var itens = CLS.avulsos.map(function (c) {
+      return { cid: c.cid, pix: c.cobrancas.filter(function (b) { return b.status === 'pago'; }).map(function (b) { return { valor: b.valor, data: b.vencimento }; }) };
+    }).filter(function (it) { return it.cid && it.pix.length; });
+    if (!itens.length) { AVB = { chave: chave, pares: {} }; return; }
+    AVB = { chave: chave, pares: {}, carregando: true };
+    try { var r = await chamar('avulsos_boletos', { itens: itens }); AVB = { chave: chave, pares: r.pares || {} }; }
+    catch (e) { AVB = null; return; }
+    var a = $('g-av-alerta'); if (a) a.innerHTML = htmlAvbAlerta();
+    var l = $('g-av-itens'); if (l) l.innerHTML = htmlAvulsos();
+  }
   function htmlAvulsos() {
-    var lista = CLS.avulsos || [];
+    var lista = (CLS.avulsos || []).slice();
+    // quem tem boleto em aberto com o mesmo valor aparece primeiro
+    lista.sort(function (a, b) { return (avbPares(b.cid) ? 1 : 0) - (avbPares(a.cid) ? 1 : 0); });
     return lista.length ? lista.map(function (c) {
       var cobs = c.cobrancas.map(function (b) {
         var st = b.status === 'pago' ? 'Pago' : b.status === 'vencido' ? 'Vencido' : 'Em aberto';
         return '<div><span>' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span>' + (b.descricao ? ' · ' + esc(b.descricao) : '') + '</span><b>' + brl(b.valor) + '</b></div>';
       }).join('');
-      return '<div class="cls-item">' +
+      return '<div class="cls-item' + (avbPares(c.cid) ? ' av-marcado' : '') + '">' +
         '<div class="topo"><div><div class="nome">' + esc(c.nome || 'Cliente sem cadastro') + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div></div>' +
           '<div style="text-align:right"><b>' + brl(c.total) + '</b><div class="sub">' + (c.aReceber > 0 ? brl(c.aReceber) + ' a receber' : 'tudo pago') + '</div></div></div>' +
+        htmlAvbCliente(c.cid) +
         '<div class="cls-bols">' + cobs + '</div>' +
       '</div>';
     }).join('') : '<div class="vazio">' + (CLS.avulsos ? 'Nenhum PIX avulso neste mês.' : 'Toque em 🔄 Atualizar para ver os avulsos do mês.') + '</div>';
