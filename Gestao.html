@@ -337,17 +337,17 @@ body{background:var(--bg,#F5F7FA)}
 .dp-mes b{font-family:var(--font-display);font-size:1.15rem;color:var(--navy);min-width:120px;text-align:center;text-transform:capitalize}
 .dp-mes button{width:42px;height:42px;border-radius:50%;border:2px solid var(--border);background:#fff;font-size:1rem;color:var(--navy);cursor:pointer}
 .dp-mes button:disabled{opacity:.35;cursor:default}
-.dp-resumo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.dp-resumo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 @media (max-width:640px){.dp-resumo{grid-template-columns:1fr}}
-.dp-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 14px}
+.dp-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px}
 .dp-card .t{font-size:.8rem;color:var(--text-3);font-weight:700}
-.dp-card .v{font-family:var(--font-display);font-weight:800;font-size:1.4rem;color:var(--text);margin:2px 0 6px}
+.dp-card .v{font-family:var(--font-display);font-weight:800;font-size:1.2rem;color:var(--text);margin:1px 0 4px}
 .dp-card .v small{font-size:.75rem;color:var(--text-3);font-weight:600}
 .dp-card .l{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--text-2);padding:2px 0}
 .dp-card .l b{color:var(--text);text-align:right}
 .dp-card b.ok,.dp-tot b.ok{color:var(--green)} .dp-card b.ab,.dp-tot b.ab{color:var(--danger)}
 .dp-liq{grid-column:1/-1;background:linear-gradient(135deg,#1B3A6B,#2451A0);border-color:#1B3A6B}
-.dp-liq .t,.dp-liq .l,.dp-liq .l b{color:rgba(255,255,255,.85)} .dp-liq .v{color:#fff;font-size:1.9rem}
+.dp-liq .t,.dp-liq .l,.dp-liq .l b{color:rgba(255,255,255,.85)} .dp-liq .v{color:#fff;font-size:1.55rem}
 .dp-liq.neg{background:linear-gradient(135deg,#8B1A1A,#C62828);border-color:#8B1A1A}
 .dp-poup{grid-column:1/-1;border-color:var(--green)}
 .dp-poup-lin{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;color:var(--text-2);margin:6px 0}
@@ -355,7 +355,30 @@ body{background:var(--bg,#F5F7FA)}
 .dp-info{margin-top:8px;background:var(--green-dim);color:#046C4E;border-radius:10px;padding:8px 10px;font-size:.84rem;font-weight:600}
 .dp-chk{display:flex;gap:8px;align-items:flex-start;font-size:.78rem;color:var(--text-2);margin-top:8px;cursor:pointer}
 .dp-chk input{margin-top:2px;flex:none}
-.dp-grupo{background:#fff;border:2px solid var(--border);border-radius:14px;padding:12px 14px;margin:12px 0}
+.dp-grupo{background:#fff;border:1.5px solid var(--border);border-radius:12px;margin:10px 0;overflow:hidden}
+.dp-gcab{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:11px 12px;cursor:pointer;text-align:left;font-family:var(--font-body)}
+.dp-gcab h3{flex:1;margin:0!important;font-size:.98rem!important}
+.dp-gcab .seta{flex:none;color:var(--text-3);font-size:.8rem;transition:transform .2s}
+.dp-grupo.fechado .dp-gcab .seta{transform:rotate(-90deg)}
+.dp-gres{flex:none;text-align:right;font-size:.72rem;line-height:1.25;color:var(--text-3)}
+.dp-gres b{display:block;font-family:var(--font-display);font-size:.95rem;color:var(--text)}
+.dp-gres .ab{color:var(--danger);font-weight:700} .dp-gres .ok{color:var(--green);font-weight:700}
+.dp-corpo{padding:0 12px 4px}
+.dp-grupo.fechado .dp-corpo{display:none}
+.dp-lin{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border)}
+.dp-bola{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid #CBD5E1;background:#fff;color:#fff;font-size:.8rem;font-weight:800;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.dp-bola.on{background:var(--green);border-color:var(--green)}
+.dp-abre{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:none;padding:2px 0;cursor:pointer;text-align:left;font-family:var(--font-body);color:inherit}
+.dp-abre .n{flex:1;min-width:0}
+.dp-abre .n b{display:block;font-size:.88rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-abre .n small{display:block;font-size:.7rem;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-abre .vl{flex:none;font-family:var(--font-display);font-weight:800;font-size:.88rem;color:var(--text);white-space:nowrap}
+.dp-lin.ok{opacity:.6} .dp-lin.ok .n b,.dp-lin.ok .vl{text-decoration:line-through;color:var(--text-3)}
+.dp-tag{display:inline-block;background:#EEF2FF;color:#3730A3;border-radius:6px;padding:0 5px;font-weight:800;margin-right:4px}
+.dp-pe{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 6px;border-top:1px solid var(--border)}
+.dp-pe .btn-link{font-size:.8rem;padding:4px 0}
+.dp-parc-box{margin-top:10px;background:var(--bg,#F5F7FA);border-radius:12px;padding:8px 12px 10px}
+.dp-parc-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dp-grupo h3{font-family:var(--font-display);font-size:1rem;color:var(--navy);margin-bottom:6px}
 .dp-tot{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--text-3)} .dp-tot b{color:var(--text)}
 .dp-sub{font-size:.74rem;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
@@ -615,9 +638,18 @@ body.modal-aberto{overflow:hidden}
     <div class="dp-tipos" id="dpm-tipos">
       <label><input type="radio" name="dpm-tipo" value="variavel" checked> Só deste mês (variável)</label>
       <label><input type="radio" name="dpm-tipo" value="fixa"> Fixa (repete todo mês)</label>
+      <label><input type="radio" name="dpm-tipo" value="parcelada"> Parcelada (ex.: moto em 24 vezes)</label>
+    </div>
+    <div class="dp-parc-box" id="dpm-parc" hidden>
+      <label id="dpm-parc-on-lin"><input type="checkbox" id="dpm-parc-on"> É parcelada</label>
+      <div class="dp-parc-campos" id="dpm-parc-campos">
+        <div><label for="dpm-parc-total">Total de parcelas</label><input type="number" id="dpm-parc-total" min="2" max="360" step="1" inputmode="numeric"></div>
+        <div><label for="dpm-parc-atual">Parcela deste mês</label><input type="number" id="dpm-parc-atual" min="1" step="1" inputmode="numeric"></div>
+      </div>
+      <div class="cls-info" id="dpm-parc-dica" style="margin-top:6px"></div>
     </div>
     <div class="cls-info" id="dpm-nota" style="margin-top:8px"></div>
-    <div class="modal-bt"><button type="button" class="btn btn-ok" id="dpm-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="dpm-cancelar">Cancelar</button></div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="dpm-salvar" style="width:auto">Salvar</button><button type="button" class="btn-link" id="dpm-cancelar">Cancelar</button><button type="button" class="btn-link" id="dpm-excluir" style="margin-left:auto;color:var(--danger)">Excluir</button></div>
   </div>
 </div>
 <div class="modal-fundo" id="mt-fundo" hidden>
@@ -1465,21 +1497,42 @@ body.modal-aberto{overflow:hidden}
     if (!HIST) { try { HIST = await chamar('historico'); } catch (e) { } }
     renderDespesas();
   }
-  function htmlDespItem(i, lista) {
-    var rec = lista === 'receitas', ok = rec ? i.recebido : i.pago;
-    return '<div class="dp-item' + (ok ? ' ok' : '') + '"><div class="dp-nome"><b>' + esc(i.nome) + '</b><span>' + brl(i.valor) + '</span></div>' +
-      '<div class="dp-acoes"><button type="button" class="dp-pago' + (ok ? ' on' : '') + '" data-d-pago="' + esc(i.id) + '">' + (ok ? (rec ? '✅ Recebido' : '✅ Pago') : (rec ? '⏳ A receber' : '⏳ Em aberto')) + '</button>' +
-      '<button type="button" class="dp-ic" data-d-edit="' + esc(i.id) + '" aria-label="Editar">✏️</button>' +
-      '<button type="button" class="dp-ic" data-d-del="' + esc(i.id) + '" aria-label="Remover">🗑️</button></div></div>';
+  var despFechados = {}, despVerPagas = {}; // grupos recolhidos e grupos mostrando os itens pagos
+  function despEstaOk(i, lista) { return lista === 'receitas' ? !!i.recebido : !!i.pago; }
+  function despMetaItem(i, lista) {
+    if (lista === 'receitas') return 'receita variável';
+    if (i.parc) {
+      var falta = i.parc.total - i.parc.n;
+      return '<span class="dp-tag">parcela ' + i.parc.n + '/' + i.parc.total + '</span>' + (falta > 0 ? 'faltam ' + falta + ' · última em ' + esc(mesTxt(somaMes(despMesSel, falta))) : 'última parcela');
+    }
+    return lista === 'fixos' ? 'fixa · todo mês' : 'variável · só deste mês';
+  }
+  function htmlDespLinha(i, lista) {
+    var ok = despEstaOk(i, lista), rec = lista === 'receitas';
+    return '<div class="dp-lin' + (ok ? ' ok' : '') + '">' +
+      '<button type="button" class="dp-bola' + (ok ? ' on' : '') + '" data-d-pago="' + esc(i.id) + '" aria-label="' + (ok ? 'Marcar como em aberto' : (rec ? 'Marcar como recebida' : 'Marcar como paga')) + '">' + (ok ? '✓' : '') + '</button>' +
+      '<button type="button" class="dp-abre" data-d-edit="' + esc(i.id) + '"><span class="n"><b>' + esc(i.nome) + '</b><small>' + despMetaItem(i, lista) + '</small></span><span class="vl">' + brl(i.valor) + '</span></button>' +
+    '</div>';
+  }
+  function htmlDespBloco(chave, titulo, itens, total, aberto, rotAberto, addTxt, vazio) {
+    var abertos = itens.filter(function (x) { return !despEstaOk(x.i, x.lista); }), pagos = itens.filter(function (x) { return despEstaOk(x.i, x.lista); });
+    var ver = !!despVerPagas[chave], rec = chave === 'receita';
+    return '<div class="dp-grupo' + (despFechados[chave] ? ' fechado' : '') + '">' +
+      '<button type="button" class="dp-gcab" data-d-grupo="' + chave + '"><span class="seta">▼</span><h3>' + titulo + '</h3>' +
+        '<span class="dp-gres"><b>' + brl(total) + '</b>' + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
+      '<div class="dp-corpo">' +
+        (itens.length ? '' : '<div class="dp-vazio">' + vazio + '</div>') +
+        abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
+        (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '') +
+        '<div class="dp-pe">' + (pagos.length ? '<button type="button" class="btn-link" data-d-pagas="' + chave + '">' + (ver ? 'esconder ' : 'ver ') + (rec ? 'recebidas' : 'pagas') + ' (' + pagos.length + ')</button>' : '<span></span>') +
+          '<button type="button" class="btn-link" data-d-add="' + chave + '">' + addTxt + '</button></div>' +
+      '</div></div>';
   }
   function htmlDespGrupo(grupo, titulo) {
-    var t = somaGrupo(grupo);
-    var doGrupo = function (i) { return i.grupo === grupo; };
-    var fixos = DESP.fixos.filter(doGrupo), vari = DESP.variaveis.filter(doGrupo);
-    return '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>' + titulo + '</h3><div class="dp-tot"><span>Total <b>' + brl(t.total) + '</b></span><span>Pago <b class="ok">' + brl(t.pago) + '</b></span><span>Em aberto <b class="ab">' + brl(t.aberto) + '</b></span></div></div>' +
-      '<div class="dp-sub">Fixas (todo mês)</div>' + (fixos.length ? fixos.map(function (i) { return htmlDespItem(i, 'fixos'); }).join('') : '<div class="dp-vazio">Nenhuma despesa fixa.</div>') +
-      '<div class="dp-sub">Variáveis (só deste mês)</div>' + (vari.length ? vari.map(function (i) { return htmlDespItem(i, 'variaveis'); }).join('') : '<div class="dp-vazio">Nenhuma despesa variável neste mês.</div>') +
-      '<button type="button" class="btn btn-sec dp-add" data-d-add="' + grupo + '">+ Adicionar despesa ' + (grupo === 'empresa' ? 'da empresa' : 'pessoal') + '</button>' + '</div>';
+    var t = somaGrupo(grupo), doGrupo = function (i) { return i.grupo === grupo; };
+    var itens = DESP.fixos.filter(doGrupo).map(function (i) { return { i: i, lista: 'fixos' }; })
+      .concat(DESP.variaveis.filter(doGrupo).map(function (i) { return { i: i, lista: 'variaveis' }; }));
+    return htmlDespBloco(grupo, titulo, itens, t.total, t.aberto, 'falta', '+ Adicionar', 'Nenhuma despesa neste mês.');
   }
   function renderDespesas() {
     var emp = somaGrupo('empresa'), pes = somaGrupo('pessoal'), rec = despReceita();
@@ -1522,9 +1575,7 @@ body.modal-aberto{overflow:hidden}
     h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
-    h += '<div class="dp-grupo"><div class="dp-grupo-cab"><h3>💰 Receitas variáveis (empresa)</h3><div class="dp-tot"><span>Total <b>' + brl(rec.variaveis) + '</b></span><span>Recebido <b class="ok">' + brl(rec.variaveisRec) + '</b></span><span>A receber <b class="ab">' + brl(rec.variaveis - rec.variaveisRec) + '</b></span></div></div>' +
-      (DESP.receitas.length ? DESP.receitas.map(function (i) { return htmlDespItem(i, 'receitas'); }).join('') : '<div class="dp-vazio">Nenhuma receita variável neste mês (ex.: venda de equipamento).</div>') +
-      '<button type="button" class="btn btn-sec dp-add" data-d-add="receita">+ Adicionar receita</button>' + '</div>';
+    h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
     $('despesas-conteudo').innerHTML = h;
   }
   async function despOp(dados, msgOk) {
@@ -1543,11 +1594,52 @@ body.modal-aberto{overflow:hidden}
     $('dpm-tipos').style.display = novo && !rec ? '' : 'none';
     document.querySelector('input[name="dpm-tipo"][value="variavel"]').checked = true;
     $('dpm-nota').textContent = !novo && it && it.lista === 'fixos' ? 'A mudança vale para este mês e para os próximos (itens já pagos não mudam).' : '';
+    var pc = item && item.parc;
+    $('dpm-parc-on').checked = !!pc;
+    $('dpm-parc-total').value = pc ? pc.total : '';
+    $('dpm-parc-atual').value = pc ? pc.n : '';
+    $('dpm-excluir').style.display = novo ? 'none' : '';
+    despParcVisivel();
     $('dpm-salvar').disabled = false;
     $('dpm-fundo').hidden = false;
     document.body.classList.add('modal-aberto');
     setTimeout(function () { $('dpm-nome').focus(); }, 30);
   }
+  // a parte "parcelada" da janelinha: aparece na despesa nova marcada como parcelada e ao editar uma despesa fixa
+  function despParcVisivel() {
+    if (!despForm) return;
+    var on, novoItem = !despForm.id;
+    if (novoItem) {
+      var t = document.querySelector('input[name="dpm-tipo"]:checked');
+      on = !!(t && t.value === 'parcelada');
+      $('dpm-parc').hidden = !on; $('dpm-parc-on-lin').hidden = true;
+    } else {
+      var a = despAchar(despForm.id), fixa = !!(a && a.lista === 'fixos');
+      $('dpm-parc').hidden = !fixa; $('dpm-parc-on-lin').hidden = false;
+      on = fixa && $('dpm-parc-on').checked;
+    }
+    $('dpm-parc-campos').style.display = on ? '' : 'none';
+    despParcDica(on);
+  }
+  function despParcDica(on) {
+    var el = $('dpm-parc-dica');
+    if (!on) { el.textContent = ''; return; }
+    var tot = parseInt($('dpm-parc-total').value, 10), at = parseInt($('dpm-parc-atual').value, 10);
+    if (!(tot >= 2) || !(at >= 1) || at > tot) { el.textContent = 'Informe o total de parcelas e qual é a parcela deste mês.'; return; }
+    var falta = tot - at;
+    el.textContent = falta > 0 ? 'Faltam ' + falta + ' depois desta · a última é em ' + mesTxt(somaMes(despMesSel, falta)) + '. Depois ela some sozinha.' : 'Esta é a última parcela. No mês que vem ela não aparece mais.';
+  }
+  document.querySelectorAll('input[name="dpm-tipo"]').forEach(function (r) { r.addEventListener('change', despParcVisivel); });
+  $('dpm-parc-on').addEventListener('change', despParcVisivel);
+  ['dpm-parc-total', 'dpm-parc-atual'].forEach(function (id) { $(id).addEventListener('input', function () { despParcDica(true); }); });
+  $('dpm-excluir').addEventListener('click', function () {
+    if (!despForm || !despForm.id) return;
+    var d = despAchar(despForm.id); if (!d) return;
+    var msg = d.lista === 'fixos' ? 'Excluir "' + d.item.nome + '" deste mês e dos próximos meses?' : 'Excluir "' + d.item.nome + '"?';
+    if (!confirm(msg)) return;
+    fecharModalDesp();
+    despOp({ op: 'remove', id: d.item.id }, 'Excluído.');
+  });
   function fecharModalDesp() { $('dpm-fundo').hidden = true; document.body.classList.remove('modal-aberto'); despForm = null; }
   $('dpm-cancelar').addEventListener('click', fecharModalDesp);
   $('dpm-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalDesp(); });
@@ -1558,10 +1650,26 @@ body.modal-aberto{overflow:hidden}
     var ctx = despForm, nome = $('dpm-nome').value.trim(), valor = Number(String($('dpm-valor').value).replace(',', '.'));
     if (nome.length < 2) { toast('Informe o nome.', 'erro'); $('dpm-nome').focus(); return; }
     if (!(valor > 0)) { toast('Informe um valor maior que zero.', 'erro'); $('dpm-valor').focus(); return; }
+    var tipoSel = document.querySelector('input[name="dpm-tipo"]:checked'), aEd = ctx.id ? despAchar(ctx.id) : null;
+    var querParc = ctx.id ? !!(aEd && aEd.lista === 'fixos' && $('dpm-parc-on').checked) : !!(ctx.grupo !== 'receita' && tipoSel && tipoSel.value === 'parcelada');
+    var parcelas = null;
+    if (querParc) {
+      var tot = parseInt($('dpm-parc-total').value, 10), at = parseInt($('dpm-parc-atual').value, 10);
+      if (!(tot >= 2 && tot <= 360)) { toast('Informe o total de parcelas (de 2 a 360).', 'erro'); $('dpm-parc-total').focus(); return; }
+      if (!(at >= 1 && at <= tot)) { toast('A parcela deste mês precisa ficar entre 1 e ' + tot + '.', 'erro'); $('dpm-parc-atual').focus(); return; }
+      parcelas = { total: tot, atual: at };
+    }
     var b = this; b.disabled = true;
     var ok;
-    if (ctx.id) ok = await despOp({ op: 'edit', id: ctx.id, nome: nome, valor: valor }, 'Salvo.');
-    else { var tipo = document.querySelector('input[name="dpm-tipo"]:checked'); ok = await despOp({ op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, recorrente: !!(tipo && tipo.value === 'fixa') }, 'Adicionado.'); }
+    if (ctx.id) {
+      var dEd = { op: 'edit', id: ctx.id, nome: nome, valor: valor };
+      if (aEd && aEd.lista === 'fixos') dEd.parcelas = parcelas; // null = não é (mais) parcelada
+      ok = await despOp(dEd, 'Salvo.');
+    } else {
+      var dAdd = { op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, recorrente: !!(tipoSel && (tipoSel.value === 'fixa' || tipoSel.value === 'parcelada')) };
+      if (parcelas) dAdd.parcelas = parcelas;
+      ok = await despOp(dAdd, 'Adicionado.');
+    }
     b.disabled = false;
     if (ok) fecharModalDesp();
   });
@@ -1572,6 +1680,8 @@ body.modal-aberto{overflow:hidden}
       if (novo < MES_MIN || novo > somaMes(mesAtualKey(), 2)) return;
       despMesSel = novo; despForm = null; abrirDespesas(); return;
     }
+    if (b.hasAttribute('data-d-grupo')) { var g = b.getAttribute('data-d-grupo'); despFechados[g] = !despFechados[g]; renderDespesas(); return; }
+    if (b.hasAttribute('data-d-pagas')) { var gp = b.getAttribute('data-d-pagas'); despVerPagas[gp] = !despVerPagas[gp]; renderDespesas(); return; }
     if (b.hasAttribute('data-d-usar-real')) { despOp({ op: 'config', receitaPct: Number(b.getAttribute('data-d-usar-real')) }); return; }
     if (b.hasAttribute('data-d-ir-metas')) { document.querySelector('.tabs button[data-tab="metas"]').click(); return; }
     if (b.hasAttribute('data-d-add')) { abrirModalDesp({ grupo: b.getAttribute('data-d-add'), id: null }); return; }
