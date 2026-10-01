@@ -362,7 +362,7 @@ body{background:var(--bg,#F5F7FA)}
 .dp-grupo.fechado .dp-gcab .seta{transform:rotate(-90deg)}
 .dp-gres{flex:none;text-align:right;font-size:.72rem;line-height:1.25;color:var(--text-3)}
 .dp-gres b{display:block;font-family:var(--font-display);font-size:.95rem;color:var(--text)}
-.dp-gres .ab{color:var(--danger);font-weight:700} .dp-gres .ok{color:var(--green);font-weight:700}
+.dp-gres .ab{color:var(--danger);font-weight:700} .dp-gres .ok{color:var(--green);font-weight:700} .dp-gres span{display:block}
 .dp-corpo{padding:0 12px 4px}
 .dp-grupo.fechado .dp-corpo{display:none}
 .dp-lin{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border)}
@@ -374,6 +374,15 @@ body{background:var(--bg,#F5F7FA)}
 .dp-abre .n small{display:block;font-size:.7rem;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dp-abre .vl{flex:none;font-family:var(--font-display);font-weight:800;font-size:.88rem;color:var(--text);white-space:nowrap}
 .dp-lin.ok{opacity:.6} .dp-lin.ok .n b,.dp-lin.ok .vl{text-decoration:line-through;color:var(--text-3)}
+.dp-venc{font-weight:700;color:var(--text-2)}
+.dp-venc.atr{color:var(--danger)} .dp-venc.hoje,.dp-venc.logo{color:#B45309}
+.dp-lin.atrasada .n b{color:var(--danger)}
+.dpm-obs-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:10px}
+.dpm-obs-cab label{margin:0 0 4px!important}
+.dpm-copiar{flex:none;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:5px 10px;font-size:.8rem;font-weight:700;color:var(--navy);cursor:pointer;margin-bottom:4px}
+.dpm-copiar:disabled{opacity:.45;cursor:default}
+.modal-caixa textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.9rem;color:var(--text);resize:vertical;word-break:break-all}
+.dp-obs-ic{font-size:.75rem;font-weight:400}
 .dp-tag{display:inline-block;background:#EEF2FF;color:#3730A3;border-radius:6px;padding:0 5px;font-weight:800;margin-right:4px}
 .dp-pe{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0 6px;border-top:1px solid var(--border)}
 .dp-pe .btn-link{font-size:.8rem;padding:4px 0}
@@ -635,6 +644,11 @@ body.modal-aberto{overflow:hidden}
     <input type="text" id="dpm-nome" maxlength="80" autocomplete="off">
     <label for="dpm-valor">Valor (R$)</label>
     <input type="number" id="dpm-valor" step="0.01" min="0" inputmode="decimal">
+    <label for="dpm-dia" id="dpm-dia-lbl">Dia do vencimento (opcional)</label>
+    <input type="number" id="dpm-dia" min="1" max="31" step="1" inputmode="numeric" placeholder="Ex.: 10">
+    <div class="dpm-obs-cab"><label for="dpm-obs">Observação / código de barras / PIX</label><button type="button" class="dpm-copiar" id="dpm-copiar" disabled>📋 Copiar</button></div>
+    <textarea id="dpm-obs" rows="3" maxlength="2000" placeholder="Escreva uma observação ou cole o código de barras / PIX copia e cola"></textarea>
+    <div class="cls-info" id="dpm-obs-dica" style="margin-top:4px"></div>
     <div class="dp-tipos" id="dpm-tipos">
       <label><input type="radio" name="dpm-tipo" value="variavel" checked> Só deste mês (variável)</label>
       <label><input type="radio" name="dpm-tipo" value="fixa"> Fixa (repete todo mês)</label>
@@ -1499,6 +1513,34 @@ body.modal-aberto{overflow:hidden}
   }
   var despFechados = {}, despVerPagas = {}; // grupos recolhidos e grupos mostrando os itens pagos
   function despEstaOk(i, lista) { return lista === 'receitas' ? !!i.recebido : !!i.pago; }
+  // Dia efetivo do vencimento no mês (dia 31 em mês de 30 dias vira o último dia)
+  function despDiaReal(i) {
+    if (!i.dia) return null;
+    var p = despMesSel.split('-').map(Number), ult = new Date(p[0], p[1], 0).getDate();
+    return Math.min(i.dia, ult);
+  }
+  // 'atr' = vencida e não paga; 'hoje'; 'logo' = em até 3 dias; '' = normal; null = sem dia
+  function despSituacao(i, lista) {
+    var d = despDiaReal(i); if (d === null) return null;
+    if (despEstaOk(i, lista) || lista === 'receitas') return '';
+    var atual = mesAtualKey();
+    if (despMesSel < atual) return 'atr';
+    if (despMesSel > atual) return '';
+    var dif = d - new Date().getDate();
+    return dif < 0 ? 'atr' : dif === 0 ? 'hoje' : dif <= 3 ? 'logo' : '';
+  }
+  function despVencTxt(i, lista) {
+    var d = despDiaReal(i); if (d === null) return '';
+    var dd = String(d).padStart(2, '0'), sit = despSituacao(i, lista);
+    if (lista === 'receitas') return '<span class="dp-venc">previsto dia ' + dd + '</span> · ';
+    if (sit === 'atr') {
+      var hoje = new Date().getDate(), ha = despMesSel === mesAtualKey() ? hoje - d : 0;
+      return '<span class="dp-venc atr">⚠ venceu dia ' + dd + (ha > 0 ? ' (há ' + ha + (ha === 1 ? ' dia)' : ' dias)') : '') + '</span> · ';
+    }
+    if (sit === 'hoje') return '<span class="dp-venc hoje">⏰ vence hoje</span> · ';
+    if (sit === 'logo') { var f = d - new Date().getDate(); return '<span class="dp-venc logo">vence em ' + f + (f === 1 ? ' dia' : ' dias') + ' (dia ' + dd + ')</span> · '; }
+    return '<span class="dp-venc">vence dia ' + dd + '</span> · ';
+  }
   function despMetaItem(i, lista) {
     if (lista === 'receitas') return 'receita variável';
     if (i.parc) {
@@ -1508,18 +1550,21 @@ body.modal-aberto{overflow:hidden}
     return lista === 'fixos' ? 'fixa · todo mês' : 'variável · só deste mês';
   }
   function htmlDespLinha(i, lista) {
-    var ok = despEstaOk(i, lista), rec = lista === 'receitas';
-    return '<div class="dp-lin' + (ok ? ' ok' : '') + '">' +
+    var ok = despEstaOk(i, lista), rec = lista === 'receitas', sit = despSituacao(i, lista);
+    return '<div class="dp-lin' + (ok ? ' ok' : '') + (sit === 'atr' ? ' atrasada' : '') + '">' +
       '<button type="button" class="dp-bola' + (ok ? ' on' : '') + '" data-d-pago="' + esc(i.id) + '" aria-label="' + (ok ? 'Marcar como em aberto' : (rec ? 'Marcar como recebida' : 'Marcar como paga')) + '">' + (ok ? '✓' : '') + '</button>' +
-      '<button type="button" class="dp-abre" data-d-edit="' + esc(i.id) + '"><span class="n"><b>' + esc(i.nome) + '</b><small>' + despMetaItem(i, lista) + '</small></span><span class="vl">' + brl(i.valor) + '</span></button>' +
+      '<button type="button" class="dp-abre" data-d-edit="' + esc(i.id) + '"><span class="n"><b>' + esc(i.nome) + (i.obs ? ' <span class="dp-obs-ic" title="Tem observação">📝</span>' : '') + '</b><small>' + despVencTxt(i, lista) + despMetaItem(i, lista) + '</small></span><span class="vl">' + brl(i.valor) + '</span></button>' +
     '</div>';
   }
   function htmlDespBloco(chave, titulo, itens, total, aberto, rotAberto, addTxt, vazio) {
     var abertos = itens.filter(function (x) { return !despEstaOk(x.i, x.lista); }), pagos = itens.filter(function (x) { return despEstaOk(x.i, x.lista); });
+    var diaOrd = function (x) { var d = despDiaReal(x.i); return d === null ? 99 : d; };
+    abertos = abertos.map(function (x, k) { return { x: x, k: k }; }).sort(function (a, b) { return diaOrd(a.x) - diaOrd(b.x) || a.k - b.k; }).map(function (o) { return o.x; });
+    var nAtr = abertos.filter(function (x) { return despSituacao(x.i, x.lista) === 'atr'; }).length;
     var ver = !!despVerPagas[chave], rec = chave === 'receita';
     return '<div class="dp-grupo' + (despFechados[chave] ? ' fechado' : '') + '">' +
       '<button type="button" class="dp-gcab" data-d-grupo="' + chave + '"><span class="seta">▼</span><h3>' + titulo + '</h3>' +
-        '<span class="dp-gres"><b>' + brl(total) + '</b>' + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
+        '<span class="dp-gres"><b>' + brl(total) + '</b>' + (nAtr ? '<span class="ab">⚠ ' + nAtr + (nAtr === 1 ? ' vencida' : ' vencidas') + '</span>' : '') + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
       '<div class="dp-corpo">' +
         (itens.length ? '' : '<div class="dp-vazio">' + vazio + '</div>') +
         abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
@@ -1555,7 +1600,8 @@ body.modal-aberto{overflow:hidden}
       '</div>' +
       '<div class="dp-card"><div class="t">💸 Despesas</div><div class="v">' + brl(totalDesp) + '</div>' +
         '<div class="l"><span>🏢 Empresa</span><b>' + brl(emp.total) + '</b></div><div class="l"><span>🏠 Pessoal</span><b>' + brl(pes.total) + '</b></div>' +
-        '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div></div>' +
+        '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div>' +
+        (function () { var v = DESP.fixos.concat(DESP.variaveis).filter(function (i) { return despSituacao(i, 'fixos') === 'atr'; }).reduce(function (t, i) { return t + i.valor; }, 0); return v > 0.004 ? '<div class="l"><span>⚠ Já vencido e não pago</span><b class="ab">' + brl(v) + '</b></div>' : ''; })() + '</div>' +
       '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">Líquido estimado do mês</div><div class="v">' + brl(liq) + '</div><div class="l"><span>Receita estimada − despesas</span><b></b></div></div>';
     // ---- poupança / meta
     var m = META, extra = '';
@@ -1591,6 +1637,11 @@ body.modal-aberto{overflow:hidden}
     $('dpm-nome').value = item ? item.nome : '';
     $('dpm-nome').placeholder = rec ? 'Ex.: Venda de rastreador' : 'Ex.: Compra de rastreadores';
     $('dpm-valor').value = item ? item.valor : '';
+    $('dpm-dia').value = item && item.dia ? item.dia : '';
+    $('dpm-obs').value = item && item.obs ? item.obs : '';
+    $('dpm-obs-dica').textContent = (novo ? !rec : (it && it.lista === 'fixos')) ? 'A observação fica só neste mês (o código de barras muda todo mês).' : '';
+    despCopiarEstado();
+    $('dpm-dia-lbl').textContent = rec ? 'Dia previsto para receber (opcional)' : (it && it.lista === 'variaveis' ? 'Dia do vencimento (opcional)' : 'Dia do vencimento (opcional · repete todo mês nas fixas)');
     $('dpm-tipos').style.display = novo && !rec ? '' : 'none';
     document.querySelector('input[name="dpm-tipo"][value="variavel"]').checked = true;
     $('dpm-nota').textContent = !novo && it && it.lista === 'fixos' ? 'A mudança vale para este mês e para os próximos (itens já pagos não mudam).' : '';
@@ -1641,15 +1692,28 @@ body.modal-aberto{overflow:hidden}
     despOp({ op: 'remove', id: d.item.id }, 'Excluído.');
   });
   function fecharModalDesp() { $('dpm-fundo').hidden = true; document.body.classList.remove('modal-aberto'); despForm = null; }
+  function despCopiarEstado() { $('dpm-copiar').disabled = !String($('dpm-obs').value).trim(); }
+  $('dpm-obs').addEventListener('input', despCopiarEstado);
+  $('dpm-copiar').addEventListener('click', async function () {
+    var txt = String($('dpm-obs').value).trim(); if (!txt) return;
+    var ok = false;
+    try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {
+      try { var ta = $('dpm-obs'); ta.focus(); ta.select(); ok = document.execCommand('copy'); ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e2) { ok = false; }
+    }
+    toast(ok ? '📋 Copiado!' : 'Não consegui copiar. Segure o dedo no texto e copie.', ok ? 'ok' : 'erro');
+  });
   $('dpm-cancelar').addEventListener('click', fecharModalDesp);
   $('dpm-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalDesp(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('dpm-fundo').hidden) fecharModalDesp(); });
-  ['dpm-nome', 'dpm-valor'].forEach(function (id) { $(id).addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('dpm-salvar').click(); } }); });
+  ['dpm-nome', 'dpm-valor', 'dpm-dia'].forEach(function (id) { $(id).addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('dpm-salvar').click(); } }); });
   $('dpm-salvar').addEventListener('click', async function () {
     if (!despForm) return;
     var ctx = despForm, nome = $('dpm-nome').value.trim(), valor = Number(String($('dpm-valor').value).replace(',', '.'));
     if (nome.length < 2) { toast('Informe o nome.', 'erro'); $('dpm-nome').focus(); return; }
     if (!(valor > 0)) { toast('Informe um valor maior que zero.', 'erro'); $('dpm-valor').focus(); return; }
+    var diaTxt = String($('dpm-dia').value).trim(), dia = diaTxt === '' ? null : Math.round(Number(diaTxt));
+    if (dia !== null && !(dia >= 1 && dia <= 31)) { toast('O dia de vencimento precisa ficar entre 1 e 31.', 'erro'); $('dpm-dia').focus(); return; }
+    var obs = String($('dpm-obs').value).trim();
     var tipoSel = document.querySelector('input[name="dpm-tipo"]:checked'), aEd = ctx.id ? despAchar(ctx.id) : null;
     var querParc = ctx.id ? !!(aEd && aEd.lista === 'fixos' && $('dpm-parc-on').checked) : !!(ctx.grupo !== 'receita' && tipoSel && tipoSel.value === 'parcelada');
     var parcelas = null;
@@ -1662,11 +1726,11 @@ body.modal-aberto{overflow:hidden}
     var b = this; b.disabled = true;
     var ok;
     if (ctx.id) {
-      var dEd = { op: 'edit', id: ctx.id, nome: nome, valor: valor };
+      var dEd = { op: 'edit', id: ctx.id, nome: nome, valor: valor, dia: dia, obs: obs };
       if (aEd && aEd.lista === 'fixos') dEd.parcelas = parcelas; // null = não é (mais) parcelada
       ok = await despOp(dEd, 'Salvo.');
     } else {
-      var dAdd = { op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, recorrente: !!(tipoSel && (tipoSel.value === 'fixa' || tipoSel.value === 'parcelada')) };
+      var dAdd = { op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, dia: dia, obs: obs, recorrente: !!(tipoSel && (tipoSel.value === 'fixa' || tipoSel.value === 'parcelada')) };
       if (parcelas) dAdd.parcelas = parcelas;
       ok = await despOp(dAdd, 'Adicionado.');
     }
