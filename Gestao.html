@@ -455,7 +455,7 @@ body.modal-aberto{overflow:hidden}
 .g-meta-pend{color:var(--navy);font-weight:700}
 .g-meta-fut{color:var(--text-3)}
 .g-meta-bt{padding:6px 12px!important;font-size:.8rem!important;width:auto!important}
-.g-topo{display:grid;grid-template-columns:1.25fr 1fr;gap:10px;margin-bottom:10px}
+.g-topo{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-bottom:10px}
 .g-av-warn{color:#B45309;font-weight:800}
 .cls-item.av-marcado{border-color:#F59E0B;background:#FFFBEB}
 .av-alerta{margin:8px 0 2px;padding:8px 10px;border-radius:10px;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E}
@@ -483,6 +483,24 @@ body.modal-aberto{overflow:hidden}
 .g-saldo-lbl{font-size:.82rem;opacity:.9;font-weight:600}
 .g-saldo-v{font-family:var(--font-display);font-size:1.7rem;font-weight:800;margin-top:2px}
 .g-saldo-h{font-size:.72rem;opacity:.8;margin-top:2px}
+/* topo compacto: assinantes com o número de um lado e o crescimento do outro */
+.g-topo{align-items:stretch}
+.g-saldo.azul{display:grid;grid-template-columns:auto 1fr;column-gap:16px;align-items:center}
+.g-saldo.azul .g-saldo-lbl{grid-column:1;grid-row:1}
+.g-saldo.azul .g-saldo-v{grid-column:1;grid-row:2}
+.g-saldo.azul .g-saldo-h{grid-column:1;grid-row:3}
+.g-saldo.azul .g-cres{grid-column:2;grid-row:1 / span 3;margin:0;padding:0 0 0 14px;border-top:none;border-left:1px solid rgba(255,255,255,.28)}
+.g-saldo.azul .g-aviso{grid-column:1 / -1;font-size:.7rem;font-style:italic;opacity:.75;line-height:1.35;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+@media(max-width:560px){
+  .g-topo{grid-template-columns:1fr;gap:8px}
+  .g-topo .g-saldo:not(.azul){display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;padding:12px 14px}
+  .g-topo .g-saldo:not(.azul) .g-saldo-lbl{grid-column:1;grid-row:1}
+  .g-topo .g-saldo:not(.azul) .g-saldo-h{grid-column:1;grid-row:2}
+  .g-topo .g-saldo:not(.azul) .g-saldo-v{grid-column:2;grid-row:1 / span 2;font-size:1.45rem;margin:0}
+  .g-saldo.azul{padding:12px 14px}
+  .g-saldo.azul .g-saldo-v{font-size:1.6rem}
+  .g-cres b{font-size:1.05rem}
+}
 .g-av{background:#fff;border:2px solid var(--border);border-radius:14px;padding:14px}
 .g-av-cab{font-weight:800;color:#0369A1;margin-bottom:8px}
 .g-av-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -1466,7 +1484,7 @@ body.modal-aberto{overflow:hidden}
       var pctTxt = c.pct == null ? '' : (pos ? '+' : '') + pct2(c.pct);
       cres = '<div class="g-cres ' + (pos ? 'up' : 'down') + '"><b>' + (pos ? '▲ ' : '▼ ') + pctTxt + '</b><span>' + (pos ? '+' : '') + c.liquido + ' em relação aos ' + c.doMes + ' do mês</span>' +
         '<span>' + c.entram + ' entram · ' + c.saem + ' saíram</span>' +
-        (new Date().getDate() <= 5 ? '<span class="aviso">Até o dia 5 a diferença aparece maior: os boletos do dia 20 ainda não foram gerados.</span>' : '') + '</div>';
+        '</div>' + (new Date().getDate() <= 5 ? '<div class="g-aviso">Até o dia 5 a diferença aparece maior: os boletos do dia 20 ainda não foram gerados.</div>' : '');
     }
     return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · às ' + new Date(BASE.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</div>' + cres;
   }
