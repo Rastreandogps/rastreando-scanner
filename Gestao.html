@@ -468,6 +468,12 @@ body.modal-aberto{overflow:hidden}
 .g-conc .t small{display:block;font-size:.74rem;color:var(--text-3);margin-top:2px;line-height:1.35}
 .g-conc-cfg{flex:none;border:none;background:none;font-size:1rem;opacity:.45;cursor:pointer;padding:6px}
 .g-conc-cfg:hover{opacity:.9}
+.cc-num{background:var(--bg);border-radius:12px;padding:8px 12px;font-size:.84rem}
+.cc-num div{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+.cc-num div span{color:var(--text-2)}
+.cc-num .sub{padding:0 0 4px;font-size:.74rem}
+.cc-num .sub span{color:var(--text-3)}
+.cc-num .fim{border-top:1px dashed var(--border);margin-top:4px;padding-top:6px;font-size:.9rem}
 .cc-lin{display:flex;gap:8px}
 .cc-lin input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:var(--font-body);font-size:.95rem}
 .cc-it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px dashed var(--border);font-size:.88rem}
@@ -703,9 +709,8 @@ body.modal-aberto{overflow:hidden}
 <div class="modal-fundo" id="cc-fundo" hidden>
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="cc-titulo">
     <h3 id="cc-titulo">⚙️ Conciliação do mês</h3>
-    <label for="cc-saldo">Saldo do Asaas no início do mês (R$)</label>
-    <div class="cc-lin"><input type="number" id="cc-saldo" step="0.01" min="0" inputmode="decimal"><button type="button" class="btn btn-sec" id="cc-saldo-salvar" style="width:auto">Salvar</button></div>
-    <div class="cls-info" id="cc-saldo-origem"></div>
+    <div class="cc-num" id="cc-num"></div>
+    <div class="cls-info" style="margin-top:6px">Esperado na conta = receita já recebida − despesas pagas (+ outras fontes). O saldo do Asaas deve ser pelo menos isso.</div>
     <label style="margin-top:14px">Dinheiro de outra fonte / pago por meio externo</label>
     <div class="cls-info" style="margin-bottom:6px">Use quando pagar alguma despesa sem ser pelo saldo do Asaas (ex.: R$ 1.000 da poupança).</div>
     <div class="cc-lin"><input type="number" id="cc-valor" step="0.01" min="0" inputmode="decimal" placeholder="Valor"><input type="text" id="cc-desc" maxlength="80" placeholder="De onde veio (opcional)"></div>
@@ -1432,8 +1437,15 @@ body.modal-aberto{overflow:hidden}
   // janelinha de ajustes: saldo do início do mês + dinheiro de outras fontes
   function desenharCC() {
     if (!CONC || CONC.erro) return;
-    $('cc-saldo').value = CONC.saldoInicial;
-    $('cc-saldo-origem').textContent = CONC.saldoInicialOrigem ? 'Guardado: ' + CONC.saldoInicialOrigem + '.' : '';
+    var n = CONC.interno, mt = mesTxt(CONC.mes), sinal = n.diferenca > 0 ? '+' : n.diferenca < 0 ? '−' : '';
+    $('cc-num').innerHTML =
+      '<div><span>Receita de ' + esc(mt) + ' já recebida (líquida)</span><b>' + brl(n.receita.total) + '</b></div>' +
+      '<div class="sub"><span>boletos ' + brl(n.receita.boletos) + ' + PIX avulso de assinantes ' + brl(n.receita.avulsos) + '</span></div>' +
+      '<div><span>Despesas pagas</span><b>' + brl(n.despesasPagas) + '</b></div>' +
+      (n.registradoMes > 0 ? '<div><span>Outras fontes registradas no mês</span><b>' + brl(n.registradoMes) + '</b></div>' : '') +
+      '<div><span>Esperado na conta</span><b>' + brl(n.esperado) + '</b></div>' +
+      '<div><span>Saldo atual (Asaas)</span><b>' + brl(n.saldoAtual) + '</b></div>' +
+      '<div class="fim"><span>Diferença</span><b>' + sinal + brl(Math.abs(n.diferenca)) + '</b></div>';
     var l = CONC.fontes || [];
     $('cc-lista').innerHTML = l.length ? l.map(function (f) {
       return '<div class="cc-it"><span><b>' + brl(f.valor) + '</b> · ' + esc(f.desc) + '</span><button type="button" class="btn-link" data-cc-del="' + esc(f.id) + '">remover</button></div>';
@@ -1453,11 +1465,6 @@ body.modal-aberto{overflow:hidden}
     catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); return false; }
     finally { if (btn) btn.disabled = false; }
   }
-  $('cc-saldo-salvar').addEventListener('click', function () {
-    var v = Number(String($('cc-saldo').value).replace(',', '.'));
-    if (!(v >= 0)) { toast('Informe o saldo.', 'erro'); return; }
-    ccAcao({ acao: 'conc_saldo_inicial', valor: v }, 'Saldo do início do mês salvo.', this);
-  });
   $('cc-add').addEventListener('click', async function () {
     var v = Number(String($('cc-valor').value).replace(',', '.'));
     if (!(v > 0)) { toast('Informe o valor.', 'erro'); $('cc-valor').focus(); return; }
