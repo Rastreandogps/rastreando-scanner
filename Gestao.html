@@ -283,6 +283,13 @@ body{background:var(--bg,#F5F7FA)}
 .g-card b{display:block;font-family:var(--font-display);font-size:1.6rem;color:var(--navy)}
 .g-card b.ruim{color:var(--danger)}
 .g-card span{font-size:.8rem;color:var(--text-2)}
+.g-rec{margin-top:10px;padding:8px 6px;border-radius:10px;background:#ECFDF5;border:1.5px solid #34D399}
+.g-rec small{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;color:#047857}
+.g-rec strong{display:block;font-family:var(--font-display);font-size:1.35rem;font-weight:800;color:#047857;margin-top:2px}
+.g-q .rec-liq{margin:6px 0 2px;padding:7px 9px;border-radius:10px;background:#ECFDF5;border:1.5px solid #34D399}
+.g-q .rec-liq small{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;color:#047857}
+.g-q .rec-liq b{display:block;font-family:var(--font-display);font-size:1.15rem;color:#047857}
+.g-q .rec-liq span{display:block;font-size:.68rem;color:#059669;line-height:1.35}
 .g-titulo{font-weight:800;color:var(--navy);margin:16px 0 8px}
 .g-tabela-box{overflow-x:auto;background:#fff;border:2px solid var(--border);border-radius:12px}
 .g-tabela{width:100%;border-collapse:collapse;font-size:.85rem;min-width:520px}
@@ -1365,7 +1372,7 @@ body.modal-aberto{overflow:hidden}
   async function atualizarTudo(btn) {
     var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Atualizando...';
     forcarBase = true;
-    try { aplicarDados(await chamar('listar', { forcar: true })); renderClsAtual(); toast('Atualizado.', 'ok'); }
+    try { aplicarDados(await chamar('listar', { forcar: true })); renderClsAtual(); toast('Atualizado.', 'ok'); atualizarContadorIndicacoes(true); }
     catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); btn.disabled = false; btn.textContent = txt; }
   }
 
@@ -1427,11 +1434,17 @@ body.modal-aberto{overflow:hidden}
     if (!CONC) return '<span class="e">⏳</span><div class="t"><b>Conciliando…</b></div>' + cfg;
     if (CONC.erro) return '<span class="e">⚠️</span><div class="t"><b>Não foi possível conciliar agora</b><small>' + esc(CONC.erro) + '</small></div>' + cfg;
     var m = CONC_TXT[CONC.tipo] || CONC_TXT.ok;
-    return '<span class="e">' + m[0] + '</span><div class="t"><b>' + m[1](CONC.valor) + '</b><small>' + m[2] + '</small></div>' + cfg;
+    return '<span class="e">' + m[0] + '</span><div class="t"><b>' + m[1](CONC.valor) + '</b><small>' + m[2] + (CONC.antigo ? ' · valor da última consulta (' + new Date(CONC.antigo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '), o Asaas está em pausa' : '') + '</small></div>' + cfg;
   }
   function pintarConc() { var el = $('g-conc'); if (el) el.innerHTML = htmlConc(); if (!$('cc-fundo').hidden) desenharCC(); }
   async function carregarConc() {
-    try { CONC = await chamar('conc'); } catch (e) { CONC = { erro: (e && e.message) || 'Tente de novo em instantes.' }; }
+    try {
+      CONC = await chamar('conc');
+      try { localStorage.setItem('gestaoConc', JSON.stringify({ em: Date.now(), v: CONC })); } catch (e2) { /* sem espaço: segue */ }
+    } catch (e) {
+      var ult = null; try { ult = JSON.parse(localStorage.getItem('gestaoConc') || 'null'); } catch (e3) { ult = null; }
+      CONC = ult && ult.v && !ult.v.erro ? Object.assign({}, ult.v, { antigo: ult.em }) : { erro: (e && e.message) || 'Tente de novo em instantes.' };
+    }
     pintarConc();
   }
   // janelinha de ajustes: saldo do início do mês + dinheiro de outras fontes
@@ -1440,7 +1453,7 @@ body.modal-aberto{overflow:hidden}
     var n = CONC.interno, mt = mesTxt(CONC.mes), sinal = n.diferenca > 0 ? '+' : n.diferenca < 0 ? '−' : '';
     $('cc-num').innerHTML =
       '<div><span>Receita de ' + esc(mt) + ' já recebida (líquida)</span><b>' + brl(n.receita.total) + '</b></div>' +
-      '<div class="sub"><span>boletos ' + brl(n.receita.boletos) + ' + PIX avulso de assinantes ' + brl(n.receita.avulsos) + '</span></div>' +
+      '<div class="sub"><span>boletos ' + brl(n.receita.boletos) + ' + PIX avulso de assinantes ' + brl(n.receita.avulsos) + (n.receita.taxas > 0 ? ' · taxas do Asaas (−' + brl(n.receita.taxas) + ') já descontadas' : '') + '</span></div>' +
       '<div><span>Despesas pagas</span><b>' + brl(n.despesasPagas) + '</b></div>' +
       (n.registradoMes > 0 ? '<div><span>Outras fontes registradas no mês</span><b>' + brl(n.registradoMes) + '</b></div>' : '') +
       '<div><span>Esperado na conta</span><b>' + brl(n.esperado) + '</b></div>' +
@@ -1559,7 +1572,8 @@ body.modal-aberto{overflow:hidden}
       }).join('');
       h += '<div class="g-q total"><div class="cab-linha"><div class="cab">📊 Total · ' + t.cli + ' clientes</div>' + seloReal(t.rec, t.pot, null) + '</div>' +
         '<div class="lin"><span>Potencial</span><b>' + brl(t.pot) + '</b></div>' +
-        '<div class="lin"><span>Já recebido</span><b>' + brl(t.rec) + '</b></div>' +
+        '<div class="lin"><span>Já recebido' + (CLS.receitaLiquida ? ' (bruto)' : '') + '</span><b>' + brl(t.rec) + '</b></div>' +
+        (CLS.receitaLiquida ? '<div class="rec-liq"><small>💵 RECEBIDO LÍQUIDO</small><b>' + brl(CLS.receitaLiquida.total) + '</b><span>taxas −' + brl(CLS.receitaLiquida.taxas) + (CLS.receitaLiquida.avulsos > 0 ? ' · PIX avulso de assinantes +' + brl(CLS.receitaLiquida.avulsos) : '') + '</span></div>' : '') +
         '<div class="falta"><small>➜ Ainda em aberto (real)</small><b>' + brl(t.aberto) + '</b></div>' +
         '<div class="g-abertos">' + ['ouro', 'prata', 'latao'].map(function (k) {
           return '<div class="lin"><span>' + NOMES[k] + '</span><b>' + brl(R[k].aReceber) + '</b></div>';
@@ -1577,7 +1591,8 @@ body.modal-aberto{overflow:hidden}
       '<div class="g-titulo">Inadimplência do mês</div>' +
       '<div class="g-cards">' +
         '<div class="g-card"><b class="ruim">' + pctFmt(taxa) + '</b><span>' + naoPagou + ' de ' + total + ' assinantes ainda não pagaram</span></div>' +
-        '<div class="g-card"><b>' + pagos + '</b><span>assinantes já pagaram</span></div>' +
+        '<div class="g-card"><b>' + pagos + '</b><span>assinantes já pagaram</span>' +
+          (CLS.receitaLiquida ? '<div class="g-rec"><small>RECEBIDO NO MÊS · LÍQUIDO</small><strong>' + brl(CLS.receitaLiquida.total) + '</strong></div>' : '') + '</div>' +
         '<div class="g-card"><b class="ruim">' + pctFmt(taxaValor) + '</b><span>do valor em aberto: ' + brl(valorAberto) + ' de ' + brl(valorTotal) + '</span></div>' +
       '</div>' +
       (function () {
@@ -2132,13 +2147,14 @@ body.modal-aberto{overflow:hidden}
   function aguarda(i) { return i.status === 'instalada' && i.emDia === false; } // indicador com fatura vencida
   function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada' && !aguarda(i); }).length : 0; }
   function marcarContador() { var n = contarConceder(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
-  async function atualizarContadorIndicacoes() {
-    try { IND = await chamar('ind_lista'); marcarContador(); } catch (e) { /* segue sem o contador */ }
+  async function atualizarContadorIndicacoes(forcar) {
+    try { IND = await chamar('ind_lista', forcar ? { forcar: true } : undefined); marcarContador(); } catch (e) { /* segue sem o contador */ }
   }
-  async function abrirIndicacoes(forcar) {
+  // forcar = reler a lista; forcarAsaas = também refazer as consultas ao Asaas (só o botão Atualizar faz isso)
+  async function abrirIndicacoes(forcar, forcarAsaas) {
     if (!IND || forcar) {
       $('indicacoes-conteudo').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;border-color:rgba(36,81,160,.25);border-top-color:var(--navy-light)"></span><br><br>Carregando as indicações...</div>';
-      try { IND = await chamar('ind_lista'); }
+      try { IND = await chamar('ind_lista', forcarAsaas ? { forcar: true } : undefined); }
       catch (e) { $('indicacoes-conteudo').innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar.') + '</div>'; return; }
     }
     marcarContador();
@@ -2197,7 +2213,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida". O prêmio é do indicador em dia: quem está devendo fica em "Aguardando regularizar". Prazo para conceder: ' + (IND.prazoDias || 60) + ' dias após a instalação.</div>';
     var box = $('indicacoes-conteudo');
     box.querySelectorAll('[data-indf]').forEach(function (b) { b.addEventListener('click', function () { indFiltro = b.getAttribute('data-indf'); renderIndicacoes(); }); });
-    $('ind-atualizar').addEventListener('click', function () { abrirIndicacoes(true); });
+    $('ind-atualizar').addEventListener('click', function () { abrirIndicacoes(true, true); });
     $('ind-teto-salvar').addEventListener('click', async function () {
       var b = this; b.disabled = true;
       try { var r = await chamar('ind_teto', { teto: Number($('ind-teto-v').value) }); IND.teto = r.teto; toast('Teto salvo: ' + brl(r.teto) + '.', 'ok'); abrirIndicacoes(true); }
@@ -2407,7 +2423,7 @@ body.modal-aberto{overflow:hidden}
     }).filter(function (it) { return it.cid && it.pix.length; });
     if (!itens.length) { AVB = { chave: chave, pares: {} }; return; }
     AVB = { chave: chave, pares: {}, carregando: true };
-    try { var r = await chamar('avulsos_boletos', { itens: itens }); AVB = { chave: chave, pares: r.pares || {} }; }
+    try { var r = await chamar('avulsos_boletos', { itens: itens, chave: chave }); AVB = { chave: chave, pares: r.pares || {} }; }
     catch (e) { AVB = null; return; }
     var a = $('g-av-alerta'); if (a) a.innerHTML = htmlAvbAlerta();
     var l = $('g-av-itens'); if (l) l.innerHTML = htmlAvulsos();
