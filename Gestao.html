@@ -454,6 +454,13 @@ body{background:var(--bg,#F5F7FA)}
 .dp-tot{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--text-3)} .dp-tot b{color:var(--text)}
 .dp-sub{font-size:.74rem;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px}
 .dp-vazio{font-size:.82rem;color:var(--text-3);padding:6px 0}
+.dp-sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;padding:6px 0 4px;border-top:1px solid var(--border);font-size:.72rem;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.dp-sub:first-child{margin-top:0;border-top:none}
+.dp-sub b{color:var(--navy);font-size:.8rem;letter-spacing:0;text-transform:none}
+.dp-sub small{font-weight:600;text-transform:none;letter-spacing:0;margin-left:6px;color:var(--danger)}
+.dp-card .l.dp-det{padding:0 0 4px 22px;font-size:.72rem;color:var(--text-3)}
+.dp-card .l.dp-det b{color:var(--text-2);font-weight:600}
+.dp-card .dp-sep{border-top:1px dashed var(--border);margin:5px 0 3px}
 .dp-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--border)}
 .dp-nome b{display:block;font-size:.92rem;color:var(--text)} .dp-nome span{font-size:.85rem;color:var(--text-2);font-family:var(--font-display);font-weight:700}
 .dp-item.ok .dp-nome b{color:var(--text-3)}
@@ -1774,6 +1781,17 @@ body.modal-aberto{overflow:hidden}
     }
     return null;
   }
+  // tipo da despesa: 'parc' (parcelada), 'fixa' (todo mês) ou 'var' (só deste mês)
+  function despTipo(i, lista) { return i.parc ? 'parc' : (lista === 'fixos' ? 'fixa' : 'var'); }
+  var DESP_TIPOS = [['fixa', '📌 Fixas'], ['parc', '🧾 Parcelas'], ['var', '🔀 Variáveis']];
+  // soma por tipo; grupo opcional ('empresa' ou 'pessoal')
+  function somaTipos(grupo) {
+    var r = { fixa: 0, parc: 0, var: 0 };
+    [['fixos', DESP.fixos], ['variaveis', DESP.variaveis]].forEach(function (par) {
+      par[1].forEach(function (i) { if (!grupo || i.grupo === grupo) r[despTipo(i, par[0])] += i.valor; });
+    });
+    return r;
+  }
   function somaGrupo(grupo) {
     var total = 0, pago = 0;
     DESP.fixos.concat(DESP.variaveis).forEach(function (i) { if (i.grupo === grupo) { total += i.valor; if (i.pago) pago += i.valor; } });
@@ -1880,8 +1898,18 @@ body.modal-aberto{overflow:hidden}
         '<span class="dp-gres"><b>' + brl(total) + '</b>' + (nAtr ? '<span class="ab">⚠ ' + nAtr + (nAtr === 1 ? ' vencida' : ' vencidas') + '</span>' : '') + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
       '<div class="dp-corpo">' +
         (itens.length ? '' : '<div class="dp-vazio">' + vazio + '</div>') +
-        abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
-        (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '') +
+        (rec ? abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
+          (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '')
+        : DESP_TIPOS.map(function (tp) { // despesas: um bloco para cada tipo
+            var ab = abertos.filter(function (x) { return despTipo(x.i, x.lista) === tp[0]; });
+            var pg = pagos.filter(function (x) { return despTipo(x.i, x.lista) === tp[0]; });
+            if (!ab.length && !pg.length) return '';
+            var tot = ab.concat(pg).reduce(function (t, x) { return t + x.i.valor; }, 0);
+            var falta = ab.reduce(function (t, x) { return t + x.i.valor; }, 0);
+            var linhas = ab.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') + (ver ? pg.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '');
+            return '<div class="dp-sub"><span>' + tp[1] + (falta > 0.004 && falta < tot - 0.004 ? '<small>falta ' + brl(falta) + '</small>' : '') + '</span><b>' + brl(tot) + '</b></div>' +
+              (linhas || '<div class="dp-vazio">Todas pagas' + (pg.length ? ' — toque em "ver pagas" para mostrar' : '') + '.</div>');
+          }).join('')) +
         '<div class="dp-pe">' + (pagos.length ? '<button type="button" class="btn-link" data-d-pagas="' + chave + '">' + (ver ? 'esconder ' : 'ver ') + (rec ? 'recebidas' : 'pagas') + ' (' + pagos.length + ')</button>' : '<span></span>') +
           '<button type="button" class="btn-link" data-d-add="' + chave + '">' + addTxt + '</button></div>' +
       '</div></div>';
@@ -1891,6 +1919,14 @@ body.modal-aberto{overflow:hidden}
     var itens = DESP.fixos.filter(doGrupo).map(function (i) { return { i: i, lista: 'fixos' }; })
       .concat(DESP.variaveis.filter(doGrupo).map(function (i) { return { i: i, lista: 'variaveis' }; }));
     return htmlDespBloco(grupo, titulo, itens, t.total, t.aberto, 'falta', '+ Adicionar', 'Nenhuma despesa neste mês.');
+  }
+  // linha pequena com a divisão do grupo: fixas · parcelas · variáveis (só mostra o que tem valor)
+  function htmlDespDet(t) {
+    var p = [];
+    if (t.fixa > 0.004) p.push('<span style="white-space:nowrap">fixas <b>' + brl(t.fixa) + '</b></span>');
+    if (t.parc > 0.004) p.push('<span style="white-space:nowrap">parcelas <b>' + brl(t.parc) + '</b></span>');
+    if (t.var > 0.004) p.push('<span style="white-space:nowrap">variáveis <b>' + brl(t.var) + '</b></span>');
+    return p.length ? '<div class="l dp-det"><span>' + p.join(' · ') + '</span></div>' : '';
   }
   function renderDespesas() {
     var emp = somaGrupo('empresa'), pes = somaGrupo('pessoal'), rec = despReceita();
@@ -1914,7 +1950,9 @@ body.modal-aberto{overflow:hidden}
         (atual && CLS && CLS.resumo && CLS.resumo.avulso ? '<label class="dp-chk"><input type="checkbox" id="dp-avulsos"' + (DESP.incluirAvulsos ? ' checked' : '') + '> Somar os PIX avulsos recebidos (' + brl(CLS.resumo.avulso.recebido) + ')</label>' : '') +
       '</div>' +
       '<div class="dp-card"><div class="t">💸 Despesas</div><div class="v">' + brl(totalDesp) + '</div>' +
-        '<div class="l"><span>🏢 Empresa</span><b>' + brl(emp.total) + '</b></div><div class="l"><span>🏠 Pessoal</span><b>' + brl(pes.total) + '</b></div>' +
+        '<div class="l"><span>🏢 Empresa</span><b>' + brl(emp.total) + '</b></div>' + htmlDespDet(somaTipos('empresa')) +
+        '<div class="l"><span>🏠 Pessoal</span><b>' + brl(pes.total) + '</b></div>' + htmlDespDet(somaTipos('pessoal')) +
+        (function () { var t = somaTipos(); return '<div class="dp-sep"></div>' + DESP_TIPOS.map(function (tp) { return '<div class="l"><span>' + tp[1] + '</span><b>' + brl(t[tp[0]]) + '</b></div>'; }).join('') + '<div class="dp-sep"></div>'; })() +
         '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div>' +
         (function () { var v = DESP.fixos.concat(DESP.variaveis).filter(function (i) { return despSituacao(i, 'fixos') === 'atr'; }).reduce(function (t, i) { return t + i.valor; }, 0); return v > 0.004 ? '<div class="l"><span>⚠ Já vencido e não pago</span><b class="ab">' + brl(v) + '</b></div>' : ''; })() + '</div>' +
       '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">Líquido estimado do mês</div><div class="v">' + brl(liq) + '</div><div class="l"><span>' + (outras > 0 ? 'Receita estimada + outras fontes − despesas' : 'Receita estimada − despesas') + '</span><b></b></div>' + (outras > 0 ? '<div class="l"><span>💰 Outras fontes (da conciliação)</span><b class="ok">+' + brl(outras) + '</b></div>' : '') + '</div>';
