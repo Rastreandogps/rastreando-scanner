@@ -330,6 +330,12 @@ body{background:var(--bg,#F5F7FA)}
 .g-q .cab-linha .cab{margin-bottom:0}
 /* cartões de medalha: cada um com a altura do seu conteúdo (sem esticar um ao outro) */
 .g-quad{align-items:start}
+.pg-dia-card{background:#ECFDF5!important;border:1.5px solid #34D399!important}
+.pg-dia-card small{display:block;font-size:.66rem;font-weight:800;letter-spacing:.06em;color:#047857}
+.pg-dia-card b{color:#047857!important}
+.pg-dia-card span{display:block;font-size:.72rem;color:#059669}
+.cls-bols div.dia-sim{background:#ECFDF5;border-radius:8px;padding:2px 6px;margin:0 -6px}
+.pg-parcial{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:20px;background:#FEF3C7;color:#92400E;font-size:.66rem;font-weight:700;vertical-align:middle}
 /* abaixo de 900px: Ouro e Total ocupam a largura toda (compactos); Prata e Latão ficam lado a lado embaixo */
 @media (max-width:899px){
   .g-quad{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -696,6 +702,9 @@ body.modal-aberto{overflow:hidden}
         <option value="15">Vence dia 15</option>
         <option value="20">Vence dia 20</option>
         <option value="outro">Outros dias</option>
+      </select>
+      <select id="pg-dia" aria-label="Filtrar pelo dia em que o cliente pagou">
+        <option value="">Dia do pagamento: todos</option>
       </select>
     </div>
     <div id="pagos-conteudo"></div>
@@ -2317,7 +2326,24 @@ body.modal-aberto{overflow:hidden}
     var MED = { ouro: '🥇', prata: '🥈', latao: '🚩' };
     var termo = semAcento($('pg-busca').value.trim()), termoDig = soDig($('pg-busca').value);
     var fCls = $('pg-classe').value, fVen = $('pg-venc').value;
-    var lista = (CLS.clientes || []).filter(function (c) { return c.recebido > 0 && c.aReceber === 0; });
+    // dias em que houve pagamento (aparecem sozinhos conforme os boletos vão sendo pagos)
+    var DIAS_SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'], porDia = {};
+    (CLS.clientes || []).forEach(function (c) {
+      c.boletos.forEach(function (b) { if (b.status === 'pago' && b.pagamento) porDia[b.pagamento] = (porDia[b.pagamento] || 0) + 1; });
+    });
+    var diasPagos = Object.keys(porDia).sort().reverse();
+    var selDia = $('pg-dia'), diaAtual = selDia.value;
+    selDia.innerHTML = '<option value="">Dia do pagamento: todos</option>' + diasPagos.map(function (d) {
+      var dd = new Date(d + 'T12:00:00');
+      return '<option value="' + d + '">' + d.slice(8, 10) + '/' + d.slice(5, 7) + ' (' + DIAS_SEM[dd.getDay()] + ') · ' + porDia[d] + (porDia[d] === 1 ? ' boleto' : ' boletos') + '</option>';
+    }).join('');
+    if (diasPagos.indexOf(diaAtual) >= 0) selDia.value = diaAtual;
+    var fDia = selDia.value;
+    // sem dia escolhido: só quem já quitou tudo. Com dia escolhido: todo cliente que teve boleto pago naquele dia
+    var lista = (CLS.clientes || []).filter(function (c) {
+      if (fDia) return c.boletos.some(function (b) { return b.status === 'pago' && b.pagamento === fDia; });
+      return c.recebido > 0 && c.aReceber === 0;
+    });
     if (termo) lista = lista.filter(function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0; });
     if (fCls) lista = lista.filter(function (c) { return c.classe === fCls; });
     if (fVen) lista = lista.filter(function (c) {
@@ -2327,6 +2353,15 @@ body.modal-aberto{overflow:hidden}
     });
     lista.sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || ''); });
     var soma = lista.reduce(function (t, c) { return t + c.recebido; }, 0);
+    // soma do dia escolhido (respeita a busca, a medalha e o vencimento)
+    var dia = { n: 0, bruto: 0, liq: 0, temLiq: true };
+    if (fDia) lista.forEach(function (c) {
+      c.boletos.forEach(function (b) {
+        if (b.status !== 'pago' || b.pagamento !== fDia) return;
+        dia.n++; dia.bruto += b.valor;
+        if (b.liquido == null) dia.temLiq = false; else dia.liq += b.liquido;
+      });
+    });
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
     var gerado = dg ? dg.toLocaleDateString('pt-BR') + ' às ' + dg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
     var itens = lista.length ? lista.map(function (c) {
@@ -2336,16 +2371,25 @@ body.modal-aberto{overflow:hidden}
           var atraso = Math.round((new Date(b.pagamento + 'T12:00:00') - new Date(b.vencimento + 'T12:00:00')) / 86400000);
           info = ' · pago ' + dataBR(b.pagamento) + (atraso > 0 ? ' <span class="st-vencido">(+' + atraso + 'd)</span>' : ' <span class="st-pago">(em dia)</span>');
         }
-        return '<div><span>Venceu ' + dataBR(b.vencimento) + info + (b.prorata ? ' · Pró-rata' : '') + '</span><b>' + brl(b.valor) + '</b></div>';
+        return '<div' + (fDia && b.status === 'pago' && b.pagamento === fDia ? ' class="dia-sim"' : '') + '><span>Venceu ' + dataBR(b.vencimento) + info + (b.prorata ? ' · Pró-rata' : '') + '</span><b>' + brl(b.valor) + '</b></div>';
       }).join('');
+      var doDia = 0;
+      if (fDia) c.boletos.forEach(function (b) { if (b.status === 'pago' && b.pagamento === fDia) doDia += b.valor; });
       return '<div class="cls-item">' +
-        '<div class="topo"><div><div class="nome">' + MED[c.classe] + ' ' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div></div>' +
-          '<div style="text-align:right"><b>' + brl(c.recebido) + '</b><div class="sub">recebido</div></div></div>' +
+        '<div class="topo"><div><div class="nome">' + MED[c.classe] + ' ' + esc(c.nome) + (fDia && c.aReceber > 0 ? ' <span class="pg-parcial">ainda deve ' + brl(c.aReceber) + '</span>' : '') + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div></div>' +
+          '<div style="text-align:right"><b>' + brl(fDia ? doDia : c.recebido) + '</b><div class="sub">' + (fDia ? 'pago neste dia' : 'recebido') + '</div></div></div>' +
         '<div class="cls-bols">' + bols + '</div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.</div>';
+    var diaTxt = fDia ? fDia.slice(8, 10) + '/' + fDia.slice(5, 7) + '/' + fDia.slice(0, 4) : '';
+    var resumoHtml = fDia
+      ? '<div class="resumo"><div class="card"><b>' + dia.n + '</b><span>' + (dia.n === 1 ? 'boleto pago' : 'boletos pagos') + ' em ' + diaTxt.slice(0, 5) + ' · ' + lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + '</span></div>' +
+        '<div class="card pg-dia-card"><small>RECEBIDO EM ' + diaTxt.slice(0, 5) + (dia.temLiq ? ' · LÍQUIDO' : ' · BRUTO') + '</small><b>' + brl(dia.temLiq ? dia.liq : dia.bruto) + '</b>' +
+        '<span>' + (dia.temLiq ? 'bruto ' + brl(dia.bruto) + ' · taxas −' + brl(Math.max(0, dia.bruto - dia.liq)) : 'toque em Atualizar para ver o líquido') + '</span></div></div>' +
+        '<div class="cls-info" style="margin:-6px 0 10px">Soma só das mensalidades de ' + esc(CLS.mes) + ' (atrasados de meses anteriores e PIX avulsos não entram aqui).</div>'
+      : '<div class="resumo"><div class="card"><b>' + lista.length + '</b><span>clientes pagos</span></div><div class="card"><b>' + brl(soma) + '</b><span>recebido</span></div></div>';
     $('pagos-conteudo').innerHTML =
-      '<div class="resumo"><div class="card"><b>' + lista.length + '</b><span>clientes pagos</span></div><div class="card"><b>' + brl(soma) + '</b><span>recebido</span></div></div>' +
+      resumoHtml +
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Mensalidades de ' + esc(CLS.mes) + ' já quitadas · atualizado em ' + gerado + '</span>' +
         '<button type="button" id="pg-recalcular" style="margin-left:auto">🔄 Atualizar</button></div>' + itens;
     $('pg-recalcular').addEventListener('click', function () { atualizarTudo(this); });
@@ -2353,6 +2397,7 @@ body.modal-aberto{overflow:hidden}
   $('pg-busca').addEventListener('input', renderPagos);
   $('pg-classe').addEventListener('change', renderPagos);
   $('pg-venc').addEventListener('change', renderPagos);
+  $('pg-dia').addEventListener('change', renderPagos);
 
   $('cl-busca').addEventListener('input', function () { if (CLS) renderClassificacao(); });
   $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
