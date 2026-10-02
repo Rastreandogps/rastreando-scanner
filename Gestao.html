@@ -461,6 +461,12 @@ body{background:var(--bg,#F5F7FA)}
 .dp-card .l.dp-det{padding:0 0 4px 22px;font-size:.72rem;color:var(--text-3)}
 .dp-card .l.dp-det b{color:var(--text-2);font-weight:600}
 .dp-card .dp-sep{border-top:1px dashed var(--border);margin:5px 0 3px}
+.dp-tipos{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:.74rem;color:var(--text-3);padding:2px 0 8px;line-height:1.5}
+.dp-tipos span{display:inline!important}
+.dp-tipos b{color:var(--navy)}
+.dp-tipo{display:inline-block;border-radius:6px;padding:0 5px;font-weight:800;margin-right:4px}
+.dp-tipo.fixa{background:#E0F2FE;color:#075985}
+.dp-tipo.var{background:#FEF3C7;color:#92400E}
 .dp-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--border)}
 .dp-nome b{display:block;font-size:.92rem;color:var(--text)} .dp-nome span{font-size:.85rem;color:var(--text-2);font-family:var(--font-display);font-weight:700}
 .dp-item.ok .dp-nome b{color:var(--text-3)}
@@ -1878,7 +1884,7 @@ body.modal-aberto{overflow:hidden}
       var falta = i.parc.total - i.parc.n;
       return '<span class="dp-tag">parcela ' + i.parc.n + '/' + i.parc.total + '</span>' + (falta > 0 ? 'faltam ' + falta + ' · última em ' + esc(mesTxt(somaMes(despMesSel, falta))) : 'última parcela');
     }
-    return lista === 'fixos' ? 'fixa · todo mês' : 'variável · só deste mês';
+    return lista === 'fixos' ? '<span class="dp-tipo fixa">fixa</span>todo mês' : '<span class="dp-tipo var">variável</span>só deste mês';
   }
   function htmlDespLinha(i, lista) {
     var ok = despEstaOk(i, lista), rec = lista === 'receitas', sit = despSituacao(i, lista);
@@ -1890,7 +1896,13 @@ body.modal-aberto{overflow:hidden}
   function htmlDespBloco(chave, titulo, itens, total, aberto, rotAberto, addTxt, vazio) {
     var abertos = itens.filter(function (x) { return !despEstaOk(x.i, x.lista); }), pagos = itens.filter(function (x) { return despEstaOk(x.i, x.lista); });
     var diaOrd = function (x) { var d = despDiaReal(x.i); return d === null ? 99 : d; };
-    abertos = abertos.map(function (x, k) { return { x: x, k: k }; }).sort(function (a, b) { return diaOrd(a.x) - diaOrd(b.x) || a.k - b.k; }).map(function (o) { return o.x; });
+    var ordena = function (lista) {
+      return lista.map(function (x, k) { return { x: x, k: k }; }).sort(function (a, b) {
+        var va = despSituacao(a.x.i, a.x.lista) === 'atr' ? 0 : 1, vb = despSituacao(b.x.i, b.x.lista) === 'atr' ? 0 : 1;
+        return va - vb || diaOrd(a.x) - diaOrd(b.x) || a.k - b.k;
+      }).map(function (o) { return o.x; });
+    };
+    abertos = ordena(abertos); pagos = ordena(pagos);
     var nAtr = abertos.filter(function (x) { return despSituacao(x.i, x.lista) === 'atr'; }).length;
     var ver = !!despVerPagas[chave], rec = chave === 'receita';
     return '<div class="dp-grupo' + (despFechados[chave] ? ' fechado' : '') + '">' +
@@ -1898,21 +1910,19 @@ body.modal-aberto{overflow:hidden}
         '<span class="dp-gres"><b>' + brl(total) + '</b>' + (nAtr ? '<span class="ab">⚠ ' + nAtr + (nAtr === 1 ? ' vencida' : ' vencidas') + '</span>' : '') + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
       '<div class="dp-corpo">' +
         (itens.length ? '' : '<div class="dp-vazio">' + vazio + '</div>') +
-        (rec ? abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
-          (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '')
-        : DESP_TIPOS.map(function (tp) { // despesas: um bloco para cada tipo
-            var ab = abertos.filter(function (x) { return despTipo(x.i, x.lista) === tp[0]; });
-            var pg = pagos.filter(function (x) { return despTipo(x.i, x.lista) === tp[0]; });
-            if (!ab.length && !pg.length) return '';
-            var tot = ab.concat(pg).reduce(function (t, x) { return t + x.i.valor; }, 0);
-            var falta = ab.reduce(function (t, x) { return t + x.i.valor; }, 0);
-            var linhas = ab.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') + (ver ? pg.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '');
-            return '<div class="dp-sub"><span>' + tp[1] + (falta > 0.004 && falta < tot - 0.004 ? '<small>falta ' + brl(falta) + '</small>' : '') + '</span><b>' + brl(tot) + '</b></div>' +
-              (linhas || '<div class="dp-vazio">Todas pagas' + (pg.length ? ' — toque em "ver pagas" para mostrar' : '') + '.</div>');
-          }).join('')) +
+        (!rec && itens.length ? htmlDespTiposLinha(itens) : '') +
+        abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
+        (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '') +
         '<div class="dp-pe">' + (pagos.length ? '<button type="button" class="btn-link" data-d-pagas="' + chave + '">' + (ver ? 'esconder ' : 'ver ') + (rec ? 'recebidas' : 'pagas') + ' (' + pagos.length + ')</button>' : '<span></span>') +
           '<button type="button" class="btn-link" data-d-add="' + chave + '">' + addTxt + '</button></div>' +
       '</div></div>';
+  }
+  // topo da lista de despesas: total de cada tipo (só os que têm valor)
+  function htmlDespTiposLinha(itens) {
+    var t = { fixa: 0, parc: 0, var: 0 };
+    itens.forEach(function (x) { t[despTipo(x.i, x.lista)] += x.i.valor; });
+    var p = DESP_TIPOS.filter(function (tp) { return t[tp[0]] > 0.004; }).map(function (tp) { return '<span style="white-space:nowrap">' + tp[1] + ' <b>' + brl(t[tp[0]]) + '</b></span>'; });
+    return p.length ? '<div class="dp-tipos">' + p.join('') + '</div>' : '';
   }
   function htmlDespGrupo(grupo, titulo) {
     var t = somaGrupo(grupo), doGrupo = function (i) { return i.grupo === grupo; };
