@@ -503,6 +503,7 @@ body.modal-aberto{overflow:hidden}
 .g-conc .e{flex:none;font-size:1.8rem;line-height:1}
 .g-conc .t{flex:1;min-width:0}
 .g-conc .t b{display:block;font-family:var(--font-display);font-size:1.05rem;color:var(--text)}
+.g-conc .t small.obs{color:#047857;font-weight:700;margin-top:4px}
 .g-conc .t small{display:block;font-size:.74rem;color:var(--text-3);margin-top:2px;line-height:1.35}
 .g-conc-cfg{flex:none;border:none;background:none;font-size:1rem;opacity:.45;cursor:pointer;padding:6px}
 .g-conc-cfg:hover{opacity:.9}
@@ -751,9 +752,9 @@ body.modal-aberto{overflow:hidden}
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="cc-titulo">
     <h3 id="cc-titulo">⚙️ Conciliação do mês</h3>
     <div class="cc-num" id="cc-num"></div>
-    <div class="cls-info" style="margin-top:6px">Esperado na conta = receita já recebida − despesas pagas (+ outras fontes). O saldo do Asaas deve ser pelo menos isso.</div>
+    <div class="cls-info" style="margin-top:6px">Diferença = saldo do Asaas + outras fontes − esperado (receita já recebida − despesas pagas). Se for positiva, é superávit.</div>
     <label style="margin-top:14px">Dinheiro de outra fonte / pago por meio externo</label>
-    <div class="cls-info" style="margin-bottom:6px">Use quando pagar uma despesa com dinheiro de outra conta (banco, cheque especial, poupança). Registre o valor que foi usado.</div>
+    <div class="cls-info" style="margin-bottom:6px">Use para dinheiro de outra conta (banco, poupança, cheque especial). O valor soma ao superávit e aparece como observação na mensagem. Se ele já pagou uma despesa marcada como paga, não registre: esse valor já está no superávit.</div>
     <div class="cc-lin"><input type="number" id="cc-valor" step="0.01" min="0" inputmode="decimal" placeholder="Valor"><input type="text" id="cc-desc" maxlength="80" placeholder="De onde veio (opcional)"></div>
     <button type="button" class="btn btn-ok" id="cc-add" style="width:auto;margin-top:8px">Registrar</button>
     <div id="cc-lista" style="margin-top:10px"></div>
@@ -1472,7 +1473,8 @@ body.modal-aberto{overflow:hidden}
     if (!CONC) return '<span class="e">⏳</span><div class="t"><b>Conciliando…</b></div>' + cfg;
     if (CONC.erro) return '<span class="e">⚠️</span><div class="t"><b>Não foi possível conciliar agora</b><small>' + esc(CONC.erro) + '</small></div>' + cfg;
     var m = CONC_TXT[CONC.tipo] || CONC_TXT.ok;
-    return '<span class="e">' + m[0] + '</span><div class="t"><b>' + m[1](CONC.valor) + '</b><small>' + m[2] + (CONC.antigo ? ' · valor da última consulta (' + new Date(CONC.antigo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '), o Asaas está em pausa' : '') + '</small></div>' + cfg;
+    return '<span class="e">' + m[0] + '</span><div class="t"><b>' + m[1](CONC.valor) + '</b><small>' + m[2] + (CONC.antigo ? ' · valor da última consulta (' + new Date(CONC.antigo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '), o Asaas está em pausa' : '') + '</small>' +
+      (CONC.outraFonte > 0 ? '<small class="obs">💰 ' + brl(CONC.outraFonte) + ' vindo de outra fonte</small>' : '') + '</div>' + cfg;
   }
   function pintarConc() { var el = $('g-conc'); if (el) el.innerHTML = htmlConc(); if (!$('cc-fundo').hidden) desenharCC(); }
   async function carregarConc() {
@@ -1493,10 +1495,10 @@ body.modal-aberto{overflow:hidden}
       '<div><span>Receita de ' + esc(mt) + ' já recebida (líquida)</span><b>' + brl(n.receita.total) + '</b></div>' +
       '<div class="sub"><span>boletos ' + brl(n.receita.boletos) + ' + PIX avulso de assinantes ' + brl(n.receita.avulsos) + (n.receita.taxas > 0 ? ' · taxas do Asaas (−' + brl(n.receita.taxas) + ') já descontadas' : '') + '</span></div>' +
       '<div><span>Despesas pagas</span><b>' + brl(n.despesasPagas) + '</b></div>' +
-      (n.registradoMes > 0 ? '<div><span>Outras fontes registradas no mês</span><b>' + brl(n.registradoMes) + '</b></div>' : '') +
-      '<div><span>Esperado na conta</span><b>' + brl(n.esperado) + '</b></div>' +
+      '<div><span>Esperado na conta (receita − despesas)</span><b>' + brl(n.esperado) + '</b></div>' +
       '<div><span>Saldo atual (Asaas)</span><b>' + brl(n.saldoAtual) + '</b></div>' +
-      '<div class="fim"><span>Diferença</span><b>' + sinal + brl(Math.abs(n.diferenca)) + '</b></div>';
+      (n.registradoMes > 0 ? '<div><span>+ Outras fontes registradas</span><b>' + brl(n.registradoMes) + '</b></div>' : '') +
+      '<div class="fim"><span>Diferença (total)</span><b>' + sinal + brl(Math.abs(n.diferenca)) + '</b></div>';
     var l = CONC.fontes || [];
     $('cc-lista').innerHTML = l.length ? l.map(function (f) {
       return '<div class="cc-it"><span><b>' + brl(f.valor) + '</b> · ' + esc(f.desc) + '</span><button type="button" class="btn-link" data-cc-del="' + esc(f.id) + '">remover</button></div>';
