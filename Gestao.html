@@ -212,6 +212,7 @@ body{background:var(--bg,#F5F7FA)}
 .btn-sec.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
 .painel-filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:14px}
 .painel-filtros[hidden]{display:none}
+.painel-filtros.aba-sem-filtro{display:none!important}
 .painel-filtros select{width:100%;min-width:0;font-size:.9rem;padding:10px 8px}
 .painel-filtros .btn-link{grid-column:1/-1;text-align:center;padding:2px 0}
 @media(min-width:720px){#btn-filtros{display:none}.painel-filtros{display:grid!important;grid-template-columns:repeat(4,1fr);background:transparent;border:none;padding:0;margin:-4px 0 12px}.painel-filtros .btn-link{grid-column:auto;text-align:left}}
@@ -1004,6 +1005,7 @@ body.modal-aberto{overflow:hidden}
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
       var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'despesas' || abaAtual === 'metas' || abaAtual === 'indicacoes';
       $('toolbar-clientes').style.display = abaExtra ? 'none' : '';
+      $('painel-filtros').classList.toggle('aba-sem-filtro', abaExtra); // os filtros de Medalha/Vence/Envio/Retorno são só da lista de devedores
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
       $('lista-clientes').hidden = abaExtra;
