@@ -575,6 +575,15 @@ body.modal-aberto{overflow:hidden}
 .retorno-item .texto{font-size:.88rem;color:var(--text-2);margin:6px 0}
 .retorno-item .rodape{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;color:var(--text-3)}
 .retorno-item .excluir{background:none;border:none;color:var(--danger);cursor:pointer;font-size:.78rem;text-decoration:underline}
+.retorno-item{cursor:pointer;-webkit-tap-highlight-color:rgba(36,81,160,.12)}
+.retorno-item:active{border-color:var(--navy-light)}
+.retorno-item .ir-dica{margin-top:8px;font-size:.78rem;font-weight:700;color:var(--navy-light)}
+.cliente-card{scroll-margin-top:110px}
+.cliente-card.destacado{animation:cli-destaque 3s ease-in-out 1}
+@keyframes cli-destaque{0%,100%{outline:3px solid transparent;outline-offset:3px}
+  15%,45%,75%{outline:3px solid var(--navy-light);outline-offset:5px}
+  30%,60%{outline:3px solid rgba(36,81,160,.25);outline-offset:3px}}
+@media (prefers-reduced-motion:reduce){.cliente-card.destacado{animation:none;outline:3px solid var(--navy-light);outline-offset:3px}}
 </style>
 
 </head>
@@ -1191,7 +1200,7 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + ' · ' + f.dias + (f.dias === 1 ? ' dia' : ' dias') + '</span><b>' + brl(f.valor) + '</b></div>';
       }).join('');
-      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + '" id="cli-' + i + '">' +
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
         '<div class="cc-head">' +
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
@@ -1323,6 +1332,24 @@ body.modal-aberto{overflow:hidden}
   // ---------- RETORNOS EM CALENDÁRIO ----------
   var calMes = null, calSel = null;
   function isoLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  // Toque no card do retorno -> abre a aba certa, rola até o card de cobrança do cliente e destaca
+  function irParaCobranca(cpf) {
+    var alvo = soDig(cpf), aba = '';
+    ['dois', 'um'].forEach(function (a) {
+      if (!aba && (DADOS[a] || []).some(function (c) { return soDig(c.cpf) === alvo; })) aba = a;
+    });
+    if (!aba) { toast('Esse cliente não está mais na lista de devedores (pode já ter pago).'); return; }
+    // limpa busca e filtros para o card não ficar escondido
+    $('busca').value = '';
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].forEach(function (id) { $(id).value = ''; });
+    document.querySelector('.tabs button[data-tab="' + aba + '"]').click(); // troca a aba e desenha a lista
+    var card = null;
+    $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
+    if (!card) { toast('Não consegui achar o card desse cliente.', 'erro'); return; }
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('destacado'); void card.offsetWidth; card.classList.add('destacado');
+    setTimeout(function () { card.classList.remove('destacado'); }, 3200);
+  }
   function renderRetornos() {
     var hojeIso = isoLocal(new Date());
     if (!calMes) { var h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
@@ -1344,10 +1371,11 @@ body.modal-aberto{overflow:hidden}
     var doDia = (porDia[calSel] || []).slice();
     var lista = doDia.length ? doDia.map(function (r) {
       var criado = r.criadoEm ? new Date(r.criadoEm).toLocaleDateString('pt-BR') : '';
-      return '<div class="retorno-item">' +
+      return '<div class="retorno-item" data-cpf="' + esc(r.cpf) + '">' +
         '<div class="nome">' + esc(r.nome) + '</div>' +
         '<div class="texto">"' + esc(r.texto) + '"</div>' +
         '<div class="rodape"><span>CPF ' + esc(r.cpf) + ' · anotado em ' + criado + '</span><button type="button" class="excluir" data-id="' + esc(r.id) + '">Excluir</button></div>' +
+        '<div class="ir-dica">Toque para abrir a cobrança ›</div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum retorno neste dia.</div>';
     $('lista-retornos').innerHTML =
@@ -1361,6 +1389,12 @@ body.modal-aberto{overflow:hidden}
     $('cal-prox').addEventListener('click', function () { calMes = new Date(ano, mes + 1, 1); renderRetornos(); });
     $('lista-retornos').querySelectorAll('[data-dia]').forEach(function (b) {
       b.addEventListener('click', function () { calSel = b.getAttribute('data-dia'); renderRetornos(); });
+    });
+    $('lista-retornos').querySelectorAll('.retorno-item').forEach(function (it) {
+      it.addEventListener('click', function (ev) {
+        if (ev.target.closest('.excluir')) return; // o Excluir continua só excluindo
+        irParaCobranca(it.getAttribute('data-cpf'));
+      });
     });
     $('lista-retornos').querySelectorAll('.excluir').forEach(function (b) {
       b.addEventListener('click', async function () {
