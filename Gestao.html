@@ -212,6 +212,10 @@ body{background:var(--bg,#F5F7FA)}
 .btn-sec.ativo{background:var(--navy);color:#fff;border-color:var(--navy)}
 .painel-filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:14px}
 .painel-filtros[hidden]{display:none}
+.toolbar-fil{flex-wrap:nowrap}
+.toolbar-fil input[type=text]{flex:1 1 auto;min-width:0}
+.toolbar-fil .btn{flex:0 0 auto;width:auto;white-space:nowrap;padding:10px 16px}
+@media(min-width:720px){#cl-btn-filtros,#pg-btn-filtros{display:none}}
 .painel-filtros.aba-sem-filtro{display:none!important}
 .painel-filtros select{width:100%;min-width:0;font-size:.9rem;padding:10px 8px}
 .painel-filtros .btn-link{grid-column:1/-1;text-align:center;padding:2px 0}
@@ -699,16 +703,19 @@ body.modal-aberto{overflow:hidden}
   </div>
 
   <div id="aba-pagos" hidden>
-    <div class="toolbar">
+    <div class="toolbar toolbar-fil">
       <input type="text" id="pg-busca" placeholder="Buscar por nome ou CPF...">
+      <button type="button" class="btn btn-sec" id="pg-btn-filtros">🎚️ Filtros</button>
+    </div>
+    <div class="painel-filtros" id="pg-painel-filtros" hidden>
       <select id="pg-classe" aria-label="Filtrar por medalha">
-        <option value="">Todas as medalhas</option>
+        <option value="">Medalha: todas</option>
         <option value="ouro">🥇 Ouro</option>
         <option value="prata">🥈 Prata</option>
         <option value="latao">🚩 Latão</option>
       </select>
       <select id="pg-venc" aria-label="Filtrar por dia de vencimento">
-        <option value="">Todos os vencimentos</option>
+        <option value="">Vence: todos</option>
         <option value="15">Vence dia 15</option>
         <option value="20">Vence dia 20</option>
         <option value="outro">Outros dias</option>
@@ -716,6 +723,7 @@ body.modal-aberto{overflow:hidden}
       <select id="pg-dia" aria-label="Filtrar pelo dia em que o cliente pagou">
         <option value="">Dia do pagamento: todos</option>
       </select>
+      <button type="button" class="btn-link" id="pg-limpar-filtros">Limpar filtros</button>
     </div>
     <div id="pagos-conteudo"></div>
   </div>
@@ -737,20 +745,27 @@ body.modal-aberto{overflow:hidden}
   </div>
 
   <div id="aba-classif" hidden>
-    <div class="toolbar">
+    <div class="toolbar toolbar-fil">
       <input type="text" id="cl-busca" placeholder="Buscar por nome ou CPF...">
+      <button type="button" class="btn btn-sec" id="cl-btn-filtros">🎚️ Filtros</button>
+    </div>
+    <div class="painel-filtros" id="cl-painel-filtros" hidden>
       <select id="cl-classe" aria-label="Filtrar por medalha">
-        <option value="">Todas as medalhas</option>
+        <option value="">Medalha: todas</option>
         <option value="ouro">🥇 Ouro</option>
         <option value="prata">🥈 Prata</option>
         <option value="latao">🚩 Latão</option>
       </select>
       <select id="cl-venc" aria-label="Filtrar por dia de vencimento">
-        <option value="">Todos os vencimentos</option>
+        <option value="">Vence: todos</option>
         <option value="15">Vence dia 15</option>
         <option value="20">Vence dia 20</option>
         <option value="outro">Outros dias</option>
       </select>
+      <select id="cl-pontos" aria-label="Filtrar pela pontuação">
+        <option value="">Pontos: todos</option>
+      </select>
+      <button type="button" class="btn-link" id="cl-limpar-filtros">Limpar filtros</button>
     </div>
     <div id="classif-conteudo"></div>
   </div>
@@ -2383,6 +2398,7 @@ body.modal-aberto{overflow:hidden}
     }).join('');
     if (diasPagos.indexOf(diaAtual) >= 0) selDia.value = diaAtual;
     var fDia = selDia.value;
+    marcarBotaoFiltros('pg-btn-filtros', ['pg-classe', 'pg-venc', 'pg-dia']);
     // sem dia escolhido: só quem já quitou tudo. Com dia escolhido: todo cliente que teve boleto pago naquele dia
     var lista = (CLS.clientes || []).filter(function (c) {
       if (fDia) return c.boletos.some(function (b) { return b.status === 'pago' && b.pagamento === fDia; });
@@ -2444,6 +2460,24 @@ body.modal-aberto{overflow:hidden}
   $('pg-venc').addEventListener('change', renderPagos);
   $('pg-dia').addEventListener('change', renderPagos);
 
+  // botão "Filtros" das abas Classificação e Pagos: no celular abre e fecha o painel; no computador o painel fica sempre aberto
+  function marcarBotaoFiltros(btnId, ids) {
+    var n = ids.filter(function (id) { return $(id).value; }).length;
+    $(btnId).textContent = '🎚️ Filtros' + (n ? ' (' + n + ')' : '');
+    $(btnId).classList.toggle('ativo', n > 0);
+  }
+  $('cl-btn-filtros').addEventListener('click', function () { $('cl-painel-filtros').hidden = !$('cl-painel-filtros').hidden; });
+  $('pg-btn-filtros').addEventListener('click', function () { $('pg-painel-filtros').hidden = !$('pg-painel-filtros').hidden; });
+  $('cl-limpar-filtros').addEventListener('click', function () {
+    ['cl-classe', 'cl-venc', 'cl-pontos'].forEach(function (id) { $(id).value = ''; });
+    clsFiltro.classe = '';
+    if (CLS) renderClassificacao();
+  });
+  $('pg-limpar-filtros').addEventListener('click', function () {
+    ['pg-classe', 'pg-venc', 'pg-dia'].forEach(function (id) { $(id).value = ''; });
+    if (CLS) renderPagos();
+  });
+  $('cl-pontos').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-busca').addEventListener('input', function () { if (CLS) renderClassificacao(); });
   $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
   $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
@@ -2461,9 +2495,20 @@ body.modal-aberto{overflow:hidden}
       '</button>';
     }).join('');
     $('cl-classe').value = clsFiltro.classe || ''; // mantém o filtro de medalha igual ao dos cartões
+    // pontuação: só aparecem as pontuações que existem hoje, da maior para a menor, com a quantidade de clientes
+    var porPts = {};
+    (CLS.clientes || []).forEach(function (c) { if (c.pontos != null) porPts[c.pontos] = (porPts[c.pontos] || 0) + 1; });
+    var selPts = $('cl-pontos'), ptsAtual = selPts.value;
+    selPts.innerHTML = '<option value="">Pontos: todos</option>' + Object.keys(porPts).map(Number).sort(function (a, b) { return b - a; }).map(function (v) {
+      return '<option value="' + v + '">' + v + (v === 1 ? ' ponto' : ' pontos') + ' · ' + porPts[v] + (porPts[v] === 1 ? ' cliente' : ' clientes') + '</option>';
+    }).join('');
+    if (ptsAtual !== '' && porPts[ptsAtual] != null) selPts.value = ptsAtual;
+    var fPts = selPts.value;
+    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos']);
     var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
     var lista = CLS.clientes.filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
+      if (fPts !== '' && String(c.pontos) !== fPts) return false;
       if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
       if (fVen) {
         var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
