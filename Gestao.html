@@ -778,7 +778,7 @@ body.modal-aberto{overflow:hidden}
     <div class="cc-conciliar" id="cc-conciliar"></div>
     <div class="cls-info" style="margin-top:6px">Diferença = saldo do Asaas + outras fontes − esperado (receita já recebida + atrasados recebidos − despesas pagas). Se for positiva, é superávit.</div>
     <label style="margin-top:14px">Dinheiro de outra fonte / pago por meio externo</label>
-    <div class="cls-info" style="margin-bottom:6px">Use para dinheiro de outra conta (banco, poupança, cheque especial). O valor soma ao superávit e aparece como observação na mensagem. Se ele já pagou uma despesa marcada como paga, não registre: esse valor já está no superávit.</div>
+    <div class="cls-info" style="margin-bottom:6px">Use para dinheiro de outra conta (banco, poupança, cheque especial). O valor soma ao superávit, ao líquido estimado da aba Despesas e aparece como observação na mensagem. Se ele já pagou uma despesa marcada como paga, não registre: esse valor já está no superávit.</div>
     <div class="cc-lin"><input type="number" id="cc-valor" step="0.01" min="0" inputmode="decimal" placeholder="Valor"><input type="text" id="cc-desc" maxlength="80" placeholder="De onde veio (opcional)"></div>
     <button type="button" class="btn btn-ok" id="cc-add" style="width:auto;margin-top:8px">Registrar</button>
     <div id="cc-lista" style="margin-top:10px"></div>
@@ -1860,7 +1860,8 @@ body.modal-aberto{overflow:hidden}
   }
   function renderDespesas() {
     var emp = somaGrupo('empresa'), pes = somaGrupo('pessoal'), rec = despReceita();
-    var totalDesp = emp.total + pes.total, liq = rec.total - totalDesp;
+    var outras = Number(DESP.outrasFontes || 0); // dinheiro de outras fontes registrado na conciliação deste mês
+    var totalDesp = emp.total + pes.total, liq = rec.total + outras - totalDesp;
     var atual = despMesSel === mesAtualKey();
     var pct = DESP.poupancaPct, guardar = Math.max(0, liq * pct / 100);
     var h = '<div class="dp-mes"><button type="button" data-d-mes="-1"' + (despMesSel <= MES_MIN ? ' disabled' : '') + ' aria-label="Mês anterior">◀</button><b>' + esc(mesTxt(despMesSel)) + '</b>' +
@@ -1882,7 +1883,7 @@ body.modal-aberto{overflow:hidden}
         '<div class="l"><span>🏢 Empresa</span><b>' + brl(emp.total) + '</b></div><div class="l"><span>🏠 Pessoal</span><b>' + brl(pes.total) + '</b></div>' +
         '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div>' +
         (function () { var v = DESP.fixos.concat(DESP.variaveis).filter(function (i) { return despSituacao(i, 'fixos') === 'atr'; }).reduce(function (t, i) { return t + i.valor; }, 0); return v > 0.004 ? '<div class="l"><span>⚠ Já vencido e não pago</span><b class="ab">' + brl(v) + '</b></div>' : ''; })() + '</div>' +
-      '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">Líquido estimado do mês</div><div class="v">' + brl(liq) + '</div><div class="l"><span>Receita estimada − despesas</span><b></b></div></div>';
+      '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">Líquido estimado do mês</div><div class="v">' + brl(liq) + '</div><div class="l"><span>' + (outras > 0 ? 'Receita estimada + outras fontes − despesas' : 'Receita estimada − despesas') + '</span><b></b></div>' + (outras > 0 ? '<div class="l"><span>💰 Outras fontes (da conciliação)</span><b class="ok">+' + brl(outras) + '</b></div>' : '') + '</div>';
     // ---- poupança / meta
     var m = META, extra = '';
     if (liq <= 0) extra = '<div class="dp-info">Sem sobra neste mês para guardar.</div>';
@@ -1898,7 +1899,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="any" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
       '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
-    h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
+    h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis + dinheiro de outras fontes registrado na conciliação, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
     h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
