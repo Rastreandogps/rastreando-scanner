@@ -252,13 +252,17 @@ body{background:var(--bg,#F5F7FA)}
 .cal-titulo-dia{font-weight:700;color:var(--navy);margin:4px 0 10px}
 .tabs{flex-wrap:wrap}
 @media (max-width:560px){.tabs button{flex:1 1 calc(50% - 4px)}}
-/* abas modernas: pílulas numa fileira que rola de lado (no celular); no computador quebram de linha */
-.tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;margin:0 -16px 6px;padding:4px 16px 14px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:0 0 auto!important;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:10px 16px!important;border-radius:999px;border:1.5px solid var(--border);background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:.88rem;scroll-snap-align:center;transition:background .15s,color .15s,box-shadow .15s}
+/* abas: todas à vista, sem rolar. Celular = grade de 3 colunas; telas maiores = pílulas que quebram de linha */
+.tabs{display:flex;flex-wrap:wrap;overflow:visible;gap:8px;margin:0 0 14px;padding:0}
+.tabs button{flex:0 1 auto!important;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;padding:10px 16px!important;border-radius:999px;border:1.5px solid var(--border);background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:.88rem;transition:background .15s,color .15s,box-shadow .15s}
 .tabs button.ativo{background:linear-gradient(135deg,var(--navy),var(--navy-light));border-color:var(--navy);box-shadow:0 4px 12px rgba(27,58,107,.30)}
+.tabs .tab-txt{display:block;text-align:center}
 .tabs .fav-estrela{position:static;margin:-6px -10px -6px 4px;padding:8px 10px}
-@media (min-width:900px){.tabs{flex-wrap:wrap;overflow:visible;margin:0 0 14px;padding:0}}
+@media (max-width:560px){
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 12px}
+  .tabs button{flex:none!important;min-height:50px;padding:6px 16px 6px 6px!important;border-radius:12px;font-size:.76rem;line-height:1.15;white-space:normal}
+  .tabs .fav-estrela{position:absolute;top:0;right:0;margin:0;padding:5px 6px;font-size:.7rem}
+}
 .cls-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 @media (max-width:560px){.cls-cards{grid-template-columns:1fr}}
 .cls-card{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit}
@@ -326,11 +330,14 @@ body{background:var(--bg,#F5F7FA)}
 .g-q .cab-linha .cab{margin-bottom:0}
 /* cartões de medalha: cada um com a altura do seu conteúdo (sem esticar um ao outro) */
 .g-quad{align-items:start}
-/* abaixo de 900px: Latão e Total ocupam a largura toda, compactos, e não sobra espaço vazio */
+/* abaixo de 900px: Ouro e Total ocupam a largura toda (compactos); Prata e Latão ficam lado a lado embaixo */
 @media (max-width:899px){
-  .g-q.ouro,.g-q.prata{align-self:stretch}
-  .g-q.latao,.g-q.total{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
-  .g-q.latao > .cab-linha,.g-q.total > .cab-linha,.g-q.latao > .falta,.g-q.total > .rec-liq,.g-q.total > .lin{grid-column:1 / -1}
+  .g-quad{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g-q{min-width:0}
+  .g-q .lin{flex-wrap:wrap}
+  .g-q.prata,.g-q.latao{align-self:stretch}
+  .g-q.ouro,.g-q.total{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;align-content:start}
+  .g-q.ouro > .cab-linha,.g-q.total > .cab-linha,.g-q.ouro > .falta,.g-q.total > .rec-liq,.g-q.total > .lin{grid-column:1 / -1}
   .g-q.total > .falta{grid-column:1}
   .g-q.total > .g-abertos{grid-column:2;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
 }
@@ -984,7 +991,6 @@ body.modal-aberto{overflow:hidden}
     b.addEventListener('click', function () {
       abaAtual = b.getAttribute('data-tab');
       document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
-      try { b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); } catch (e) { /* navegador antigo */ }
       $('editor-dois').style.display = abaAtual === 'dois' ? '' : 'none';
       $('editor-um').style.display = abaAtual === 'um' ? '' : 'none';
       var abaExtra = abaAtual === 'retornos' || abaAtual === 'classif' || abaAtual === 'pagos' || abaAtual === 'gestao' || abaAtual === 'despesas' || abaAtual === 'metas' || abaAtual === 'indicacoes';
@@ -1043,6 +1049,9 @@ body.modal-aberto{overflow:hidden}
     st.addEventListener('keydown', function (ev) {
       if (ev.key === 'Enter' || ev.key === ' ') { ev.stopPropagation(); ev.preventDefault(); alternarFavAba(st.getAttribute('data-fav')); }
     });
+    var txt = document.createElement('span'); txt.className = 'tab-txt';
+    while (b.firstChild) txt.appendChild(b.firstChild);
+    b.appendChild(txt);
     b.appendChild(st);
   });
   atualizarEstrelasAbas();
