@@ -592,6 +592,19 @@ body.modal-aberto{overflow:hidden}
 .retorno-item:active{border-color:var(--navy-light)}
 .retorno-item .ir-dica{margin-top:8px;font-size:.78rem;font-weight:700;color:var(--navy-light)}
 .cliente-card{scroll-margin-top:110px}
+/* chip cancelado: card vermelho + chip cortado piscando ao lado do nome */
+.cliente-card.chip-off{background:#FEE2E2;border-color:#DC2626;border-left-color:#B91C1C;box-shadow:0 4px 18px rgba(220,38,38,.3)}
+.cliente-card.chip-off .cc-acoes{background:#FECACA;border-top-color:#FCA5A5}
+.cc-titulo .nome-linha{display:flex;align-items:center;gap:6px;min-width:0}
+.cc-titulo .nome-linha .nome{min-width:0}
+.chip-ico{flex-shrink:0;width:24px;height:24px;display:block;animation:chip-pisca 1s ease-in-out infinite}
+@keyframes chip-pisca{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.88)}}
+.cc-acoes .btn-chip{flex:0 0 auto;margin:0;padding:8px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.cc-acoes .btn-chip svg{width:22px;height:22px;flex-shrink:0}
+.cc-acoes .btn-chip:hover{background:#fef2f2}
+.cc-acoes .btn-chip.ativo{background:#DC2626;border-color:#DC2626;color:#fff}
+.cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
+@media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 .cliente-card.destacado{animation:cli-destaque 3s ease-in-out 1}
 @keyframes cli-destaque{0%,100%{outline:3px solid transparent;outline-offset:3px}
   15%,45%,75%{outline:3px solid var(--navy-light);outline-offset:5px}
@@ -709,6 +722,11 @@ body.modal-aberto{overflow:hidden}
       <option value="">Retorno: todos</option>
       <option value="com">📅 Com retorno</option>
       <option value="sem">Sem retorno</option>
+    </select>
+    <select id="f-chip" aria-label="Filtrar por chip cancelado">
+      <option value="">Chip: todos</option>
+      <option value="cancelado">📵 Chip cancelado</option>
+      <option value="ativo">Chip ativo</option>
     </select>
     <button type="button" class="btn-link" id="btn-limpar-filtros">Limpar filtros</button>
   </div>
@@ -1130,10 +1148,11 @@ body.modal-aberto{overflow:hidden}
   $('f-envio').addEventListener('change', renderLista);
   $('btn-filtros').addEventListener('click', function () { $('painel-filtros').hidden = !$('painel-filtros').hidden; });
   $('btn-limpar-filtros').addEventListener('click', function () {
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].forEach(function (id) { $(id).value = ''; });
     renderLista();
   });
   $('f-retorno').addEventListener('change', renderLista);
+  $('f-chip').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -1152,7 +1171,7 @@ body.modal-aberto{overflow:hidden}
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
-    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].filter(function (id) { return $(id).value; }).length;
+    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].filter(function (id) { return $(id).value; }).length;
     $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
@@ -1178,6 +1197,9 @@ body.modal-aberto{overflow:hidden}
     else if (fEnv === 'faltam') lista = lista.filter(function (c) { return !c.ultimoEnvio; });
     if (fRet === 'com') lista = lista.filter(function (c) { return retornoDe(c); });
     else if (fRet === 'sem') lista = lista.filter(function (c) { return !retornoDe(c); });
+    var fChip = $('f-chip').value;
+    if (fChip === 'cancelado') lista = lista.filter(function (c) { return c.chipCancelado; });
+    else if (fChip === 'ativo') lista = lista.filter(function (c) { return !c.chipCancelado; });
     var ord = $('ordenar').value;
     if (ord === 'valor') lista.sort(function (a, b) { return b.valorTotal - a.valorTotal; });
     else if (ord === 'dias') lista.sort(function (a, b) { return b.diasAtrasoMax - a.diasAtrasoMax; });
@@ -1213,12 +1235,12 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + ' · ' + f.dias + (f.dias === 1 ? ' dia' : ' dias') + '</span><b>' + brl(f.valor) + '</b></div>';
       }).join('');
-      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + (c.chipCancelado ? ' chip-off' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
         '<div class="cc-head">' +
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
             : '<div class="cc-avatar">' + esc(iniciais) + '</div>') +
-          '<div class="cc-titulo"><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + '</div></div>' +
+          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
         ledEnviado +
@@ -1240,6 +1262,7 @@ body.modal-aberto{overflow:hidden}
             (c.ultimoEnvio ? 'Enviar de novo' : 'Enviar mensagem') + '</button>' +
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
+          '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
           (c.ultimoEnvio ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-envio">🧹 Limpar marcação de envio</button>' : '') +
@@ -1269,6 +1292,9 @@ body.modal-aberto{overflow:hidden}
     });
     $('lista-clientes').querySelectorAll('[data-acao="limpar-retorno"]').forEach(function (b) {
       b.addEventListener('click', function () { limparRetornoCliente(lista[Number(b.getAttribute('data-idx'))], b); });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="chip"]').forEach(function (b) {
+      b.addEventListener('click', function () { marcarChip(lista[Number(b.getAttribute('data-idx'))], b); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="retirada"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalRetirada(lista[Number(b.getAttribute('data-idx'))]); });
@@ -1354,7 +1380,7 @@ body.modal-aberto{overflow:hidden}
     if (!aba) { toast('Esse cliente não está mais na lista de devedores (pode já ter pago).'); return; }
     // limpa busca e filtros para o card não ficar escondido
     $('busca').value = '';
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].forEach(function (id) { $(id).value = ''; });
     document.querySelector('.tabs button[data-tab="' + aba + '"]').click(); // troca a aba e desenha a lista
     var card = null;
     $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
@@ -1442,6 +1468,21 @@ body.modal-aberto{overflow:hidden}
       renderLista();
       toast('Marcação de envio de ' + primeiroNome(c.nome) + ' limpa.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao limpar.', 'erro'); btn.disabled = false; }
+  }
+  // Ícone: chip (SIM card) cortado
+  var CHIP_SVG = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 2h7l5 5v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#B91C1C" stroke-width="1.6" stroke-linejoin="round"/><rect x="9" y="10.5" width="8" height="7.5" rx="1.2" fill="#FCD34D" stroke="#B91C1C" stroke-width="1.2"/><path d="M13 10.5v7.5M9 14.2h8" stroke="#B91C1C" stroke-width="1"/><path d="M3.5 3.5l17 17" stroke="#DC2626" stroke-width="2.6" stroke-linecap="round"/><path d="M3.5 3.5l17 17" stroke="#fff" stroke-width=".8" stroke-linecap="round" opacity=".7"/></svg>';
+  // Marca / desmarca o chip cancelado (fica guardado no servidor)
+  async function marcarChip(c, btn) {
+    if (!c) return;
+    var novo = !c.chipCancelado;
+    if (!novo && !confirm('Desmarcar o chip cancelado de ' + c.nome + '?')) return;
+    btn.disabled = true;
+    try {
+      await chamar('chipCancelado', { cpf: c.cpf, nome: c.nome, cancelado: novo });
+      c.chipCancelado = novo;
+      renderLista();
+      toast(novo ? 'Chip de ' + primeiroNome(c.nome) + ' marcado como cancelado.' : 'Marcação de chip cancelado de ' + primeiroNome(c.nome) + ' removida.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
   }
   async function limparRetornoCliente(c, btn) {
     if (!c) return;
