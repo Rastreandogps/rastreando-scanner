@@ -585,6 +585,36 @@
     .screen { padding: 14px; }
     .app-header { padding: 12px 16px; }
   }
+
+/* ===== Seletor de técnico (aba Calendário do admin) ===== */
+.tec-sel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.tec-chip{--c:#3b82f6;--t:#dbeafe;position:relative;display:flex;align-items:center;background:#fff;border:1.5px solid #e5e9f2;border-radius:16px;transition:border-color .18s,box-shadow .18s,background .18s,opacity .18s}
+.tec-chip .tec-main{flex:1;min-width:0;display:flex;align-items:center;gap:9px;padding:11px 26px 11px 10px;background:none;border:0;font:inherit;text-align:left;cursor:pointer;color:#1f2937;border-radius:16px}
+.tec-chip .tec-av{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-shadow:0 0 0 3px var(--t)}
+.tec-chip .tec-txt{min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.tec-chip .tec-nome{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tec-chip .tec-qtd{font-size:11.5px;color:#64748b;margin-top:2px;white-space:nowrap}
+.tec-chip .tec-qtd b{color:var(--c);font-weight:800}
+.tec-chip .tec-fav{position:absolute;top:3px;right:3px;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:#cbd5e1;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tec-chip .tec-fav:hover{background:#f1f5f9;color:#94a3b8}
+.tec-chip .tec-fav.on{color:#f59e0b}
+.tec-chip:hover{border-color:var(--c)}
+.tec-chip.sel{background:var(--t);border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent),0 6px 16px color-mix(in srgb,var(--c) 18%,transparent)}
+.tec-chip.sel .tec-qtd{color:#334155}
+.tec-chip.sel .tec-fav.on{color:#d97706}
+.tec-sel:has(.sel) .tec-chip:not(.sel){opacity:.62}
+.tec-sel:has(.sel) .tec-chip:not(.sel):hover{opacity:1}
+.tec-chip.todos{grid-column:1/-1;--c:#1a2744;--t:#e0e7ff;background:#1a2744;border-color:#1a2744}
+.tec-chip.todos .tec-main{color:#fff;padding:12px 14px}
+.tec-chip.todos .tec-av{background:rgba(255,255,255,.12);box-shadow:none;font-size:17px}
+.tec-chip.todos .tec-qtd{color:rgba(255,255,255,.72)}
+.tec-chip.todos .tec-qtd b{color:#fff}
+.tec-chip.todos .tec-pontos{display:flex;gap:4px;margin-left:auto;padding-right:16px}
+.tec-chip.todos .tec-pontos i{width:9px;height:9px;border-radius:50%;display:block}
+.tec-chip.todos.sel{background:#1a2744;box-shadow:0 0 0 3px rgba(59,130,246,.45),0 6px 18px rgba(26,39,68,.3)}
+.tec-chip .tec-main:focus-visible,.tec-chip .tec-fav:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.tec-chip.todos .tec-main:focus-visible{outline-color:#93c5fd}
+@media (prefers-reduced-motion:reduce){.tec-chip{transition:none}}
 </style>
 </head>
 <body>
@@ -847,6 +877,23 @@
   <!-- AGENDAMENTOS DO FORMULÁRIO -->
   <div id="admin-tab-agendamentos" class="screen">
     <div class="admin-section">
+      <!-- Dia de hoje (bloquear / liberar): botão pequeno que abre os controles -->
+      <style>
+        .hoje-ctl{margin-bottom:14px}
+        .hoje-ctl summary{list-style:none;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+        .hoje-ctl summary::-webkit-details-marker{display:none}
+        .hoje-ctl summary > span:first-child{white-space:nowrap}
+        .hoje-ctl[open] summary{border-color:#7c3aed}
+        .hoje-ctl-res{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#f1f5f9;color:#64748b}
+        .hoje-ctl-res.bloq{background:#fee2e2;color:#b91c1c}
+        .hoje-ctl-res.lib{background:#dcfce7;color:#166534}
+        .hoje-ctl-seta{color:#94a3b8;transition:transform .15s}
+        .hoje-ctl[open] .hoje-ctl-seta{transform:rotate(180deg)}
+        .hoje-ctl-corpo{margin-top:10px}
+      </style>
+      <details id="hoje-ctl" class="hoje-ctl">
+        <summary><span>⚙️ Dia de hoje</span><span id="hoje-ctl-resumo" class="hoje-ctl-res">verificando…</span><span class="hoje-ctl-seta" aria-hidden="true">▾</span></summary>
+        <div class="hoje-ctl-corpo">
       <!-- Bloqueio de agendamentos de hoje -->
       <div style="margin-bottom:16px;padding:14px 16px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div style="flex:1;min-width:180px;">
@@ -864,6 +911,30 @@
           <button id="liberar-retirada-btn" onclick="toggleLiberacaoHoje('retirada')" style="padding:9px 12px;border:1.5px solid #15803d;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;background:#fff;color:#15803d;flex:1;min-width:140px;">Liberar Retirada</button>
         </div>
       </div>
+        </div>
+      </details>
+      <script>
+      (function () {
+        // Mostra no botão pequeno se hoje está bloqueado ou com algo liberado (lê os botões que já existem)
+        function resumo() {
+          var r = document.getElementById('hoje-ctl-resumo'); if (!r) return;
+          var b = document.getElementById('bloqueio-hoje-btn'), m = document.getElementById('liberar-manutencao-btn'), t = document.getElementById('liberar-retirada-btn'), st = document.getElementById('bloqueio-hoje-status');
+          var bloq = !!(b && /^Desbloquear/.test(b.textContent.trim()));
+          var lib = [];
+          if (m && /^✓/.test(m.textContent.trim())) lib.push('manutenção');
+          if (t && /^✓/.test(t.textContent.trim())) lib.push('retirada');
+          var txtLib = lib.length ? '✅ ' + lib.join(' e ') + (lib.length > 1 ? ' liberadas' : ' liberada') : '';
+          if (bloq) { r.textContent = '🚫 bloqueado' + (txtLib ? ' · ' + txtLib : ''); r.className = 'hoje-ctl-res bloq'; }
+          else if (lib.length) { r.textContent = txtLib; r.className = 'hoje-ctl-res lib'; }
+          else { r.textContent = st && /Verificando/.test(st.textContent) ? 'verificando…' : 'normal'; r.className = 'hoje-ctl-res'; }
+        }
+        var obs = new MutationObserver(resumo);
+        ['bloqueio-hoje-btn', 'liberar-manutencao-btn', 'liberar-retirada-btn', 'bloqueio-hoje-status'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) obs.observe(el, { childList: true, characterData: true, subtree: true });
+        });
+        resumo();
+      })();
+      </script>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="font-size:16px;font-weight:700;color:var(--primary);">📋 Agendamentos do formulário</div>
         <button onclick="carregarAgendamentos()" style="padding:8px 14px;background:#f0f4ff;border:none;border-radius:10px;font-size:12px;font-weight:700;color:var(--admin);cursor:pointer;">🔄 Atualizar</button>
@@ -1082,9 +1153,9 @@
             <div id="admin-view-tech-total-mes" style="font-size:12px;font-weight:700;color:#065f46;background:#d1fae5;padding:4px 10px;border-radius:20px;display:none;"></div>
           </div>
         </div>
-          <div style="display:flex;gap:6px;font-size:11px;">
-            <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
-            <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
+          <div style="display:flex;gap:6px;font-size:11px;flex-shrink:0;">
+            <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;white-space:nowrap;">● Agendado</span>
+            <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;white-space:nowrap;">● Pendente</span>
           </div>
         </div>
       </div>
@@ -1928,16 +1999,32 @@ function gerarElementosDinamicos() {
   const btnView = document.getElementById('admin-view-tech-btns');
   if (btnView) {
     const totalGeral = TECH_NAMES.reduce((s,n) => s + (allOrders[n]||[]).length, 0);
+    const CORES_TEC = ['#3b82f6','#ef4444','#10b981','#f59e0b','#7c3aed']; // as mesmas cores do calendário "Todos"
+    const favTech = localStorage.getItem('adminFavTech') || '';
+    const selTec = (typeof adminTechSelecionado === 'string') ? adminTechSelecionado : '';
+    const vendoTodos = (typeof _adminVendoTodos !== 'undefined') && _adminVendoTodos;
+    const qtdTxt = (q) => q > 0 ? '<b>' + q + '</b> ' + (q === 1 ? 'ordem' : 'ordens') : 'sem ordens';
+    btnView.className = 'tec-sel';
+    btnView.removeAttribute('style');
     btnView.innerHTML =
-      '<button class="admin-tech-btn" data-tech="todos" onclick="adminVerTodos()" style="flex:1;padding:12px;background:#1a2744;color:white;border:2px solid #3b82f6;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;min-width:100px;">🗓️ Todos · ' + totalGeral + '</button>' +
+      '<div class="tec-chip todos admin-tech-btn' + (vendoTodos ? ' sel' : '') + '" data-tech="todos">' +
+        '<button type="button" class="tec-main" onclick="adminVerTodos()">' +
+          '<span class="tec-av" aria-hidden="true">🗓️</span>' +
+          '<span class="tec-txt"><span class="tec-nome">Todos os técnicos</span><span class="tec-qtd">' + qtdTxt(totalGeral) + '</span></span>' +
+          '<span class="tec-pontos" aria-hidden="true">' + TECH_NAMES.map((n, i) => '<i style="background:' + (CORES_TEC[i] || CORES_TEC[0]) + '"></i>').join('') + '</span>' +
+        '</button>' +
+      '</div>' +
       TECH_NAMES.map((n, i) => {
-        const [bg, fg, border] = (CORES[i] || CORES[0]).split('|');
+        const tint = (CORES[i] || CORES[0]).split('|')[0];
+        const cor = CORES_TEC[i] || CORES_TEC[0];
         const qtd = (allOrders[n] || []).length;
-        const favTech = localStorage.getItem('adminFavTech') || '';
         const isFav = favTech === n;
-        return '<div style="position:relative;flex:1;min-width:100px;">' +
-          '<button class="admin-tech-btn" data-tech="' + n + '" onclick="adminVerTecnico(&quot;' + n + '&quot;)" style="width:100%;padding:12px;background:' + bg + ';color:' + fg + ';border:2px solid ' + border + ';border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">' + n + (qtd > 0 ? ' · ' + qtd : '') + '</button>' +
-          '<button onclick="event.stopPropagation();toggleFavTech(&quot;' + n + '&quot;)" title="Fixar como favorito" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:2px solid white;background:' + (isFav ? '#f59e0b' : '#e2e8f0') + ';font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2);">' + (isFav ? '★' : '☆') + '</button>' +
+        return '<div class="tec-chip admin-tech-btn' + (selTec === n && !vendoTodos ? ' sel' : '') + '" data-tech="' + n + '" style="--c:' + cor + ';--t:' + tint + '">' +
+          '<button type="button" class="tec-main" onclick="adminVerTecnico(&quot;' + n + '&quot;)">' +
+            '<span class="tec-av" aria-hidden="true">' + String(n).trim().charAt(0).toUpperCase() + '</span>' +
+            '<span class="tec-txt"><span class="tec-nome">' + n + '</span><span class="tec-qtd">' + qtdTxt(qtd) + '</span></span>' +
+          '</button>' +
+          '<button type="button" class="tec-fav' + (isFav ? ' on' : '') + '" onclick="event.stopPropagation();toggleFavTech(&quot;' + n + '&quot;)" title="' + (isFav ? 'Tirar dos favoritos' : 'Fixar como favorito') + '" aria-label="' + (isFav ? 'Tirar ' + n + ' dos favoritos' : 'Fixar ' + n + ' como favorito') + '" aria-pressed="' + (isFav ? 'true' : 'false') + '">' + (isFav ? '★' : '☆') + '</button>' +
         '</div>';
       }).join('');
   }
@@ -6063,8 +6150,7 @@ async function adminVerTodos() {
   // Destacar botão Todos
   document.querySelectorAll('.admin-tech-btn').forEach(b => {
     const isTodos = b.getAttribute('data-tech') === 'todos';
-    b.style.opacity   = isTodos ? '1' : '0.45';
-    b.style.transform = isTodos ? 'scale(1.04)' : 'scale(1)';
+    b.classList.toggle('sel', isTodos);
   });
 
   const resumo = document.getElementById('admin-resumo-geral');
@@ -6786,8 +6872,7 @@ async function adminVerTecnico(tech) {
   if (resumo) resumo.style.display = 'none';
   // Destacar botão selecionado
   document.querySelectorAll('.admin-tech-btn').forEach(b => {
-    b.style.opacity = b.getAttribute('data-tech') === tech ? '1' : '0.45';
-    b.style.transform = b.getAttribute('data-tech') === tech ? 'scale(1.04)' : 'scale(1)';
+    b.classList.toggle('sel', b.getAttribute('data-tech') === tech);
   });
 
   // Buscar ordens do técnico
