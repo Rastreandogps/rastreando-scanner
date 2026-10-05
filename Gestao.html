@@ -262,6 +262,10 @@ body{background:var(--bg,#F5F7FA)}
 .tabs button{flex:0 1 auto!important;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;padding:10px 16px!important;border-radius:999px;border:1.5px solid var(--border);background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:.88rem;transition:background .15s,color .15s,box-shadow .15s}
 .tabs button.ativo{background:linear-gradient(135deg,var(--navy),var(--navy-light));border-color:var(--navy);box-shadow:0 4px 12px rgba(27,58,107,.30)}
 .tabs .tab-txt{display:block;text-align:center}
+.tabs .tab-sub{display:block;font-size:.7rem;font-weight:800;opacity:.8;line-height:1.1;margin-top:2px;white-space:nowrap}
+.tabs .tab-sub:empty{display:none}
+.tabs .tab-sub.mini{font-size:.6rem;font-weight:700;opacity:1;margin-top:1px;color:#059669}
+.tabs button.ativo .tab-sub.mini{color:#a7f3d0}
 .tabs .fav-estrela{position:static;margin:-6px -10px -6px 4px;padding:8px 10px}
 @media (max-width:560px){
   .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 12px}
@@ -645,13 +649,13 @@ body.modal-aberto{overflow:hidden}
 <!-- LISTA -->
 <section id="tela-lista" hidden>
   <div class="tabs">
-    <button type="button" data-tab="gestao">📊 Gestão</button>
+    <button type="button" data-tab="gestao">📊 Gestão<span class="tab-sub" id="sub-gestao"></span></button>
     <button type="button" data-tab="um">1 boleto vencido <span id="cnt-um"></span></button>
     <button type="button" data-tab="dois" class="ativo">2+ meses vencidos <span id="cnt-dois"></span></button>
-    <button type="button" data-tab="pagos">✅ Pagos</button>
+    <button type="button" data-tab="pagos">✅ Pagos <span id="cnt-pagos"></span></button>
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
-    <button type="button" data-tab="despesas">💸 Despesas</button>
+    <button type="button" data-tab="despesas">💸 Despesas<span class="tab-sub" id="sub-desp"></span><span class="tab-sub mini" id="sub-desp-pago"></span></button>
     <button type="button" data-tab="metas">🎯 Metas</button>
     <button type="button" data-tab="indicacoes">🎁 Indicações <span id="cnt-indicacoes"></span></button>
   </div>
@@ -1167,7 +1171,37 @@ body.modal-aberto{overflow:hidden}
     return DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); })
       .sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); })[0];
   }
+  // Numerozinhos nos botões: Gestão = saldo do Asaas · Pagos = boletos do mês já pagos · Despesas = total e já pago
+  var SELO_DESP = null, selosIniciados = false;
+  function brlCurto(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+  function atualizarSelos() {
+    try {
+      if (CLS && CLS.clientes) {
+        var n = 0;
+        CLS.clientes.forEach(function (c) { (c.boletos || []).forEach(function (b) { if (b.status === 'pago') n++; }); });
+        $('cnt-pagos').textContent = '(' + n + ')';
+      }
+      if (SALDO && !SALDO.erro && SALDO.saldo != null) $('sub-gestao').textContent = brl(SALDO.saldo);
+      if (DESP && DESP.mes === mesAtualKey() && DESP.fixos) {
+        var e = somaGrupo('empresa'), p = somaGrupo('pessoal');
+        SELO_DESP = { total: e.total + p.total, pago: e.pago + p.pago };
+      }
+      if (SELO_DESP) { $('sub-desp').textContent = brlCurto(SELO_DESP.total); $('sub-desp-pago').textContent = 'pago ' + brlCurto(SELO_DESP.pago); }
+    } catch (e) { }
+  }
+  // na entrada, busca em segundo plano o que ainda não foi carregado (sem mexer na tela aberta)
+  function carregarSelosFundo() {
+    if (selosIniciados) return;
+    selosIniciados = true;
+    setTimeout(async function () {
+      if (!SALDO) carregarSaldo();
+      if (!CLS) { try { var r = await chamar('classificacao'); if (r && !r.vazio && !CLS) CLS = r; } catch (e) { } }
+      if (!DESP) { try { var d = await chamar('desp_mes', { mes: mesAtualKey() }); if (!DESP && d && d.fixos) DESP = d; } catch (e) { } }
+      atualizarSelos();
+    }, 1500);
+  }
   function renderLista() {
+    carregarSelosFundo();
     $('cnt-dois').textContent = '(' + DADOS.dois.length + ')';
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
@@ -1519,7 +1553,7 @@ body.modal-aberto{overflow:hidden}
   // A lista já traz os números do mês atualizados (Gestão, Pagos, Classificação)
   function aplicarDados(res) {
     DADOS = res;
-    if (res && res.classificacao) CLS = res.classificacao;
+    if (res && res.classificacao) { CLS = res.classificacao; atualizarSelos(); }
   }
   async function atualizarTudo(btn) {
     var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Atualizando...';
@@ -1546,7 +1580,7 @@ body.modal-aberto{overflow:hidden}
         alvoCls().innerHTML = '<div class="vazio">Ainda não há classificação calculada.<br><br><button type="button" class="btn btn-pri" id="cls-primeira" style="width:auto;margin:0 auto">Calcular classificação</button></div>';
         $('cls-primeira').addEventListener('click', function () { abrirClassificacao(true); });
       } else {
-        CLS = res; renderClsAtual();
+        CLS = res; renderClsAtual(); atualizarSelos();
         if (forcar) { // atualiza as medalhas dos cards sem precisar recarregar a lista
           var mapa = {};
           (CLS.clientes || []).forEach(function (c) { mapa[soDig(c.cpf)] = { classe: c.classe, pontos: c.pontos, poucos: !!c.poucos }; });
@@ -1670,6 +1704,7 @@ body.modal-aberto{overflow:hidden}
   });
   async function carregarSaldo() {
     try { SALDO = await chamar('saldo'); } catch (e) { SALDO = { erro: (e && e.message) || 'Não foi possível ler o saldo.' }; }
+    atualizarSelos();
     var box = $('g-saldo'); if (box) box.innerHTML = htmlSaldo();
   }
   function htmlSaldo() {
@@ -2037,6 +2072,7 @@ body.modal-aberto{overflow:hidden}
     h += htmlCartoes();
     h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
     $('despesas-conteudo').innerHTML = h;
+    atualizarSelos();
   }
   // ---------- DESPESA RÁPIDA (atalhos; sempre variável) ----------
   function despAtalhos() { return (DESP && Array.isArray(DESP.atalhos) && DESP.atalhos.length) ? DESP.atalhos : []; }
