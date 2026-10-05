@@ -8263,7 +8263,11 @@ function _cardManutencao(r) {
       '<div style="font-size:11px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Troca de veículo</div>' +
       '<div style="font-size:13px;color:#4c1d95;">🚗 <b>' + esc(atual.modelo || '') + '</b> ' + esc(atual.placa || '') + '</div>' +
       '<div style="font-size:12px;color:#7c3aed;margin:2px 0 2px 4px;">↓ sai deste e vai para</div>' +
-      '<div style="font-size:13px;color:#4c1d95;">🚙 <b>' + esc((r.novoVeiculo && r.novoVeiculo.modelo) || '') + '</b> ' + esc((r.novoVeiculo && r.novoVeiculo.placa) || '') + '</div>' +
+      '<div style="font-size:13px;color:#4c1d95;">🚙 <b>' + esc((r.novoVeiculo && r.novoVeiculo.modelo) || '') + (r.novoVeiculo && r.novoVeiculo.ano ? ' ' + esc(r.novoVeiculo.ano) : '') + '</b> ' + ((r.novoVeiculo && r.novoVeiculo.placa) ? esc(r.novoVeiculo.placa) : '<span style="font-size:11.5px;color:#7c3aed;">(placa: pegar no dia)</span>') + '</div>' +
+      (r.novoVeiculo && r.novoVeiculo.gnv ? '<div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<span style="background:#ede9fe;color:#5b21b6;border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:700;">GNV: ' + (r.novoVeiculo.gnv === 'sim' ? 'Sim' : 'Não') + '</span>' +
+        '<span style="background:' + (r.novoVeiculo.tipoRastreio === 'com' ? '#dbeafe;color:#1d4ed8' : '#d1fae5;color:#065f46') + ';border-radius:8px;padding:2px 8px;font-size:11.5px;font-weight:700;">' + (r.novoVeiculo.tipoRastreio === 'com' ? '🔒 Com bloqueio' : 'Sem bloqueio') + '</span>' +
+      '</div>' : '') +
       (r.descricao ? '<div style="font-size:12.5px;color:#5b21b6;margin-top:5px;">💬 ' + esc(r.descricao) + '</div>' : '') +
       '<div style="font-size:11.5px;color:#7c3aed;margin-top:5px;">Cobrar como nova instalação (valor conforme o bairro). Retirada sem custo.</div>' +
     '</div>' : '';
@@ -8317,11 +8321,14 @@ async function criarOSManutencao(id) {
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
   const sub = _ehSubstituicao(r);
 
+  const nvx = r.novoVeiculo || {};
   const veiculoStr = sub && r.novoVeiculo
-    ? (r.novoVeiculo.modelo || '') + ' | Placa: ' + (r.novoVeiculo.placa || '') // a OS é do veículo novo (onde vai a instalação)
+    ? (nvx.gnv // a OS é do veículo novo (onde vai a instalação), no mesmo formato do agendamento
+        ? (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + ' | GNV: ' + (nvx.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (nvx.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio')
+        : (nvx.modelo || '') + ' | Placa: ' + (nvx.placa || 'a confirmar'))
     : (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
   const partesObs = sub
-    ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + ((r.novoVeiculo && r.novoVeiculo.modelo) || '') + ' (' + ((r.novoVeiculo && r.novoVeiculo.placa) || '') + ')', 'Cobrar como nova instalação; retirada sem custo']
+    ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + (nvx.placa ? ' (' + nvx.placa + ')' : ' (placa a confirmar)'), 'Cobrar como nova instalação; retirada sem custo']
     : ['Motivo: ' + (r.motivoTexto || '')];
   if (r.descricao) partesObs.push((sub ? 'Obs. do cliente: ' : 'Relato do cliente: ') + r.descricao);
   if (!sub && r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
