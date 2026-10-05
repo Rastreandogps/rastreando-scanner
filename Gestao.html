@@ -611,6 +611,9 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 /* IMEI do aparelho */
+.tag-ret{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.tag-ret.agendada{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.cls-item .tag-ret{margin:4px 0 0 6px;vertical-align:middle}
 .rt-link-dica{font-size:.74rem;color:var(--text-3);margin:5px 0 4px;line-height:1.4}
 .cls-acoes{display:flex;justify-content:flex-end;margin-top:10px}
 .cls-acoes .btn-retirada{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer}
@@ -764,6 +767,11 @@ body.modal-aberto{overflow:hidden}
       <option value="sim">⚖️ Protestados</option>
       <option value="nao">Não protestados</option>
     </select>
+    <select id="f-ret" aria-label="Filtrar por retirada solicitada">
+      <option value="">Retirada: todos</option>
+      <option value="sim">🔧 Retirada solicitada</option>
+      <option value="nao">Sem retirada</option>
+    </select>
     <button type="button" class="btn-link" id="btn-limpar-filtros">Limpar filtros</button>
   </div>
 
@@ -840,6 +848,11 @@ body.modal-aberto{overflow:hidden}
       </select>
       <select id="cl-pontos" aria-label="Filtrar pela pontuação">
         <option value="">Pontos: todos</option>
+      </select>
+      <select id="cl-ret" aria-label="Filtrar por retirada solicitada">
+        <option value="">Retirada: todos</option>
+        <option value="sim">🔧 Retirada solicitada</option>
+        <option value="nao">Sem retirada</option>
       </select>
       <button type="button" class="btn-link" id="cl-limpar-filtros">Limpar filtros</button>
     </div>
@@ -1187,12 +1200,13 @@ body.modal-aberto{overflow:hidden}
   $('f-envio').addEventListener('change', renderLista);
   $('btn-filtros').addEventListener('click', function () { $('painel-filtros').hidden = !$('painel-filtros').hidden; });
   $('btn-limpar-filtros').addEventListener('click', function () {
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].forEach(function (id) { $(id).value = ''; });
     renderLista();
   });
   $('f-retorno').addEventListener('change', renderLista);
   $('f-chip').addEventListener('change', renderLista);
   $('f-protesto').addEventListener('change', renderLista);
+  $('f-ret').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -1230,6 +1244,7 @@ body.modal-aberto{overflow:hidden}
     selosIniciados = true;
     setTimeout(async function () {
       if (!SALDO) carregarSaldo();
+      carregarRetiradas();
       if (!CLS) { try { var r = await chamar('classificacao'); if (r && !r.vazio && !CLS) CLS = r; } catch (e) { } }
       if (!DESP) { try { var d = await chamar('desp_mes', { mes: mesAtualKey() }); if (!DESP && d && d.fixos) DESP = d; } catch (e) { } }
       atualizarSelos();
@@ -1241,7 +1256,7 @@ body.modal-aberto{overflow:hidden}
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
-    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].filter(function (id) { return $(id).value; }).length;
+    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].filter(function (id) { return $(id).value; }).length;
     $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
@@ -1273,6 +1288,9 @@ body.modal-aberto{overflow:hidden}
     var fProt = $('f-protesto').value;
     if (fProt === 'sim') lista = lista.filter(function (c) { return !!c.protestadoEm; });
     else if (fProt === 'nao') lista = lista.filter(function (c) { return !c.protestadoEm; });
+    var fRetir = $('f-ret').value;
+    if (fRetir === 'sim') lista = lista.filter(function (c) { return !!retiradaDe(c.cpf); });
+    else if (fRetir === 'nao') lista = lista.filter(function (c) { return !retiradaDe(c.cpf); });
     var ord = $('ordenar').value;
     if (ord === 'valor') lista.sort(function (a, b) { return b.valorTotal - a.valorTotal; });
     else if (ord === 'dias') lista.sort(function (a, b) { return b.diasAtrasoMax - a.diasAtrasoMax; });
@@ -1313,7 +1331,7 @@ body.modal-aberto{overflow:hidden}
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
             : '<div class="cc-avatar">' + esc(iniciais) + '</div>') +
-          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
+          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
         ledEnviado +
@@ -1421,6 +1439,23 @@ body.modal-aberto{overflow:hidden}
       '<input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div>';
   }
   // Classificação: o mesmo botão de ordem de retirada (serve para quem está em dia e só quer cancelar)
+  // "Retirada solicitada": clientes com ordem de retirada pendente ou já agendada no APP Técnico
+  var RETS = null;
+  function retiradaDe(cpf) { return RETS ? RETS[soDig(cpf)] || null : null; }
+  function htmlTagRetirada(cpf) {
+    var r = retiradaDe(cpf);
+    if (!r) return '';
+    return r.status === 'agendado'
+      ? '<span class="tag-ret agendada" title="Protocolo ' + esc(r.protocolo || '') + '">🔧 Retirada agendada</span>'
+      : '<span class="tag-ret" title="Protocolo ' + esc(r.protocolo || '') + '">🔧 Retirada solicitada</span>';
+  }
+  function redesenharAbaAtual() {
+    if ((abaAtual === 'dois' || abaAtual === 'um') && typeof renderLista === 'function') renderLista();
+    else if (CLS && abaAtual === 'classif') renderClassificacao();
+  }
+  async function carregarRetiradas() {
+    try { var r = await chamar('retiradas'); RETS = (r && r.mapa) || {}; redesenharAbaAtual(); } catch (e) { }
+  }
   function clienteParaRetirada(cpf) {
     var d = soDig(cpf), achou = null;
     ['dois', 'um'].forEach(function (k) { if (!achou) achou = ((DADOS && DADOS[k]) || []).find(function (c) { return soDig(c.cpf) === d; }) || null; });
@@ -1472,6 +1507,7 @@ body.modal-aberto{overflow:hidden}
       var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, linkLocalizacao: link, confirmarDuplicado: confirmado });
       fecharModalRetirada();
       avisarAppTecnico(r.protocolo);
+      RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
       toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
@@ -1506,7 +1542,7 @@ body.modal-aberto{overflow:hidden}
     if (!aba) { toast('Esse cliente não está mais na lista de devedores (pode já ter pago).'); return; }
     // limpa busca e filtros para o card não ficar escondido
     $('busca').value = '';
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].forEach(function (id) { $(id).value = ''; });
     document.querySelector('.tabs button[data-tab="' + aba + '"]').click(); // troca a aba e desenha a lista
     var card = null;
     $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
@@ -2770,7 +2806,7 @@ body.modal-aberto{overflow:hidden}
   $('cl-btn-filtros').addEventListener('click', function () { $('cl-painel-filtros').hidden = !$('cl-painel-filtros').hidden; });
   $('pg-btn-filtros').addEventListener('click', function () { $('pg-painel-filtros').hidden = !$('pg-painel-filtros').hidden; });
   $('cl-limpar-filtros').addEventListener('click', function () {
-    ['cl-classe', 'cl-venc', 'cl-pontos'].forEach(function (id) { $(id).value = ''; });
+    ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret'].forEach(function (id) { $(id).value = ''; });
     clsFiltro.classe = '';
     if (CLS) renderClassificacao();
   });
@@ -2779,6 +2815,7 @@ body.modal-aberto{overflow:hidden}
     if (CLS) renderPagos();
   });
   $('cl-pontos').addEventListener('change', function () { if (CLS) renderClassificacao(); });
+  $('cl-ret').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-busca').addEventListener('input', function () { if (CLS) renderClassificacao(); });
   $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
   $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
@@ -2805,11 +2842,14 @@ body.modal-aberto{overflow:hidden}
     }).join('');
     if (ptsAtual !== '' && porPts[ptsAtual] != null) selPts.value = ptsAtual;
     var fPts = selPts.value;
-    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos']);
+    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret']);
+    var fRetCl = $('cl-ret').value;
     var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
     var lista = CLS.clientes.filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
       if (fPts !== '' && String(c.pontos) !== fPts) return false;
+      if (fRetCl === 'sim' && !retiradaDe(c.cpf)) return false;
+      if (fRetCl === 'nao' && retiradaDe(c.cpf)) return false;
       if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
       if (fVen) {
         var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
@@ -2831,7 +2871,7 @@ body.modal-aberto{overflow:hidden}
       }).join('');
       return '<div class="cls-item">' +
         '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
-          '<span class="cls-selo ' + c.classe + '">' + CLS_NOME[c.classe] + ' · ' + c.pontos + ' pts' + (c.poucos ? ' (menos de 5 pagos)' : '') + '</span></div>' +
+          '<span class="cls-selo ' + c.classe + '">' + CLS_NOME[c.classe] + ' · ' + c.pontos + ' pts' + (c.poucos ? ' (menos de 5 pagos)' : '') + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
