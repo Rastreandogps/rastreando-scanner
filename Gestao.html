@@ -467,6 +467,7 @@ body{background:var(--bg,#F5F7FA)}
 .dp-tipo{display:inline-block;border-radius:6px;padding:0 5px;font-weight:800;margin-right:4px}
 .dp-tipo.fixa{background:#E0F2FE;color:#075985}
 .dp-tipo.var{background:#FEF3C7;color:#92400E}
+.dp-tipo.cartao{background:#EDE9FE;color:#5B21B6}
 .dp-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--border)}
 .dp-nome b{display:block;font-size:.92rem;color:var(--text)} .dp-nome span{font-size:.85rem;color:var(--text-2);font-family:var(--font-display);font-weight:700}
 .dp-item.ok .dp-nome b{color:var(--text-3)}
@@ -1821,9 +1822,9 @@ body.modal-aberto{overflow:hidden}
   var DESP = null, despMesSel = null, despForm = null, MES_MIN = '2026-09';
   function mesAtualKey() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function despAchar(id) {
-    var listas = ['fixos', 'variaveis', 'receitas'];
+    var listas = ['fixos', 'variaveis', 'receitas', 'cartoes'];
     for (var a = 0; a < listas.length; a++) {
-      var i = DESP[listas[a]].findIndex(function (x) { return x.id === id; });
+      var i = (DESP[listas[a]] || []).findIndex(function (x) { return x.id === id; });
       if (i >= 0) return { lista: listas[a], i: i, item: DESP[listas[a]][i] };
     }
     return null;
@@ -1921,6 +1922,7 @@ body.modal-aberto{overflow:hidden}
   }
   function despMetaItem(i, lista) {
     if (lista === 'receitas') return 'receita variável';
+    if (lista === 'cartoes') return '<span class="dp-tipo cartao">cartão</span>' + (i.copiado ? 'valor do mês passado · confira' : 'fatura deste mês');
     if (i.parc) {
       var falta = i.parc.total - i.parc.n;
       return '<span class="dp-tag">parcela ' + i.parc.n + '/' + i.parc.total + '</span>' + (falta > 0 ? 'faltam ' + falta + ' · última em ' + esc(mesTxt(somaMes(despMesSel, falta))) : 'última parcela');
@@ -1951,7 +1953,7 @@ body.modal-aberto{overflow:hidden}
         '<span class="dp-gres"><b>' + brl(total) + '</b>' + (nAtr ? '<span class="ab">⚠ ' + nAtr + (nAtr === 1 ? ' vencida' : ' vencidas') + '</span>' : '') + (aberto > 0.004 ? '<span class="ab">' + rotAberto + ' ' + brl(aberto) + '</span>' : (itens.length ? '<span class="ok">' + (rec ? 'tudo recebido' : 'tudo pago') + '</span>' : '')) + '</span></button>' +
       '<div class="dp-corpo">' +
         (itens.length ? '' : '<div class="dp-vazio">' + vazio + '</div>') +
-        (!rec && itens.length ? htmlDespTiposLinha(itens) : '') +
+        (chave === 'cartao' ? '<div class="dp-tipos">Só para acompanhar: os cartões não entram na receita, nas despesas nem no líquido.</div>' : (!rec && itens.length ? htmlDespTiposLinha(itens) : '')) +
         abertos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') +
         (ver ? pagos.map(function (x) { return htmlDespLinha(x.i, x.lista); }).join('') : '') +
         '<div class="dp-pe">' + (pagos.length ? '<button type="button" class="btn-link" data-d-pagas="' + chave + '">' + (ver ? 'esconder ' : 'ver ') + (rec ? 'recebidas' : 'pagas') + ' (' + pagos.length + ')</button>' : '<span></span>') +
@@ -1964,6 +1966,13 @@ body.modal-aberto{overflow:hidden}
     itens.forEach(function (x) { t[despTipo(x.i, x.lista)] += x.i.valor; });
     var p = DESP_TIPOS.filter(function (tp) { return t[tp[0]] > 0.004; }).map(function (tp) { return '<span style="white-space:nowrap">' + tp[1] + ' <b>' + brl(t[tp[0]]) + '</b></span>'; });
     return p.length ? '<div class="dp-tipos">' + p.join('') + '</div>' : '';
+  }
+  // 💳 Cartões: total, vencimentos e o que falta pagar (não mexe em nenhum cálculo)
+  function htmlCartoes() {
+    var lista = DESP.cartoes || [];
+    var total = 0, aberto = 0;
+    lista.forEach(function (c) { total += c.valor; if (!c.pago) aberto += c.valor; });
+    return htmlDespBloco('cartao', '💳 Cartões', lista.map(function (i) { return { i: i, lista: 'cartoes' }; }), total, aberto, 'a pagar', '+ Adicionar cartão', 'Nenhum cartão neste mês. Adicione cada cartão com o valor da fatura e o dia do vencimento.');
   }
   function htmlDespGrupo(grupo, titulo) {
     var t = somaGrupo(grupo), doGrupo = function (i) { return i.grupo === grupo; };
@@ -2025,6 +2034,7 @@ body.modal-aberto{overflow:hidden}
     h += '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis + dinheiro de outras fontes registrado na conciliação, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
+    h += htmlCartoes();
     h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
     $('despesas-conteudo').innerHTML = h;
   }
@@ -2102,19 +2112,19 @@ body.modal-aberto{overflow:hidden}
   function abrirModalDesp(ctx) {
     despForm = ctx;
     var it = ctx.id ? despAchar(ctx.id) : null, item = it ? it.item : null;
-    var novo = !ctx.id, rec = ctx.grupo === 'receita';
-    $('dpm-titulo').textContent = novo ? (rec ? 'Nova receita' : 'Nova despesa ' + (ctx.grupo === 'empresa' ? 'da empresa' : 'pessoal')) : (rec ? 'Editar receita' : 'Editar despesa');
+    var novo = !ctx.id, rec = ctx.grupo === 'receita', cart = ctx.grupo === 'cartao' || !!(it && it.lista === 'cartoes');
+    $('dpm-titulo').textContent = cart ? (novo ? 'Novo cartão' : 'Editar cartão') : novo ? (rec ? 'Nova receita' : 'Nova despesa ' + (ctx.grupo === 'empresa' ? 'da empresa' : 'pessoal')) : (rec ? 'Editar receita' : 'Editar despesa');
     $('dpm-nome').value = item ? item.nome : '';
-    $('dpm-nome').placeholder = rec ? 'Ex.: Venda de rastreador' : 'Ex.: Compra de rastreadores';
+    $('dpm-nome').placeholder = cart ? 'Ex.: Nubank' : rec ? 'Ex.: Venda de rastreador' : 'Ex.: Compra de rastreadores';
     $('dpm-valor').value = item ? item.valor : '';
     $('dpm-dia').value = item && item.dia ? item.dia : '';
     $('dpm-obs').value = item && item.obs ? item.obs : '';
-    $('dpm-obs-dica').textContent = (novo ? !rec : (it && it.lista === 'fixos')) ? 'A observação fica só neste mês (o código de barras muda todo mês).' : '';
+    $('dpm-obs-dica').textContent = cart ? '' : (novo ? !rec : (it && it.lista === 'fixos')) ? 'A observação fica só neste mês (o código de barras muda todo mês).' : '';
     despCopiarEstado();
-    $('dpm-dia-lbl').textContent = rec ? 'Dia previsto para receber (opcional)' : (it && it.lista === 'variaveis' ? 'Dia do vencimento (opcional)' : 'Dia do vencimento (opcional · repete todo mês nas fixas)');
-    $('dpm-tipos').style.display = novo && !rec ? '' : 'none';
+    $('dpm-dia-lbl').textContent = cart ? 'Dia do vencimento da fatura' : rec ? 'Dia previsto para receber (opcional)' : (it && it.lista === 'variaveis' ? 'Dia do vencimento (opcional)' : 'Dia do vencimento (opcional · repete todo mês nas fixas)');
+    $('dpm-tipos').style.display = novo && !rec && !cart ? '' : 'none';
     document.querySelector('input[name="dpm-tipo"][value="variavel"]').checked = true;
-    $('dpm-nota').textContent = !novo && it && it.lista === 'fixos' ? 'A mudança vale para este mês e para os próximos (itens já pagos não mudam).' : '';
+    $('dpm-nota').textContent = cart ? 'Os cartões são só para acompanhar: não entram nos cálculos. No mês que vem eles aparecem de novo com este valor, para você conferir.' : !novo && it && it.lista === 'fixos' ? 'A mudança vale para este mês e para os próximos (itens já pagos não mudam).' : '';
     var pc = item && item.parc;
     $('dpm-parc-on').checked = !!pc;
     $('dpm-parc-total').value = pc ? pc.total : '';
@@ -2185,7 +2195,7 @@ body.modal-aberto{overflow:hidden}
     if (dia !== null && !(dia >= 1 && dia <= 31)) { toast('O dia de vencimento precisa ficar entre 1 e 31.', 'erro'); $('dpm-dia').focus(); return; }
     var obs = String($('dpm-obs').value).trim();
     var tipoSel = document.querySelector('input[name="dpm-tipo"]:checked'), aEd = ctx.id ? despAchar(ctx.id) : null;
-    var querParc = ctx.id ? !!(aEd && aEd.lista === 'fixos' && $('dpm-parc-on').checked) : !!(ctx.grupo !== 'receita' && tipoSel && tipoSel.value === 'parcelada');
+    var querParc = ctx.id ? !!(aEd && aEd.lista === 'fixos' && $('dpm-parc-on').checked) : !!(ctx.grupo !== 'receita' && ctx.grupo !== 'cartao' && tipoSel && tipoSel.value === 'parcelada');
     var parcelas = null;
     if (querParc) {
       var tot = parseInt($('dpm-parc-total').value, 10), at = parseInt($('dpm-parc-atual').value, 10);
@@ -2200,7 +2210,7 @@ body.modal-aberto{overflow:hidden}
       if (aEd && aEd.lista === 'fixos') dEd.parcelas = parcelas; // null = não é (mais) parcelada
       ok = await despOp(dEd, 'Salvo.');
     } else {
-      var dAdd = { op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, dia: dia, obs: obs, recorrente: !!(tipoSel && (tipoSel.value === 'fixa' || tipoSel.value === 'parcelada')) };
+      var dAdd = { op: 'add', grupo: ctx.grupo, nome: nome, valor: valor, dia: dia, obs: obs, recorrente: ctx.grupo !== 'cartao' && !!(tipoSel && (tipoSel.value === 'fixa' || tipoSel.value === 'parcelada')) };
       if (parcelas) dAdd.parcelas = parcelas;
       ok = await despOp(dAdd, 'Adicionado.');
     }
