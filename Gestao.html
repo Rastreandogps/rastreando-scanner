@@ -611,6 +611,7 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 /* IMEI do aparelho */
+.rt-link-dica{font-size:.74rem;color:var(--text-3);margin:5px 0 4px;line-height:1.4}
 .cls-acoes{display:flex;justify-content:flex-end;margin-top:10px}
 .cls-acoes .btn-retirada{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer}
 .cls-acoes .btn-retirada:hover{background:#fef2f2}
@@ -941,9 +942,12 @@ body.modal-aberto{overflow:hidden}
     <label>Veículo(s) a retirar <span style="font-weight:600;color:var(--text-3)">(a placa é opcional)</span></label>
     <div id="rt-veics"></div>
     <button type="button" class="btn-link" id="rt-mais">+ adicionar outro veículo</button>
+    <label for="rt-link">🛰️ Link do monitoramento <span style="font-weight:600;color:var(--text-3)">(opcional)</span></label>
+    <input type="text" id="rt-link" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Cole o link da localização em tempo real">
+    <div class="rt-link-dica">Preenchido: o técnico vai pela localização em tempo real do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
     <label for="rt-obs">Observação (opcional)</label>
     <textarea id="rt-obs" maxlength="300" placeholder="Ex.: cliente não atende, carro fica na garagem"></textarea>
-    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b>: lá você confere o endereço (ou cola o link de localização), escolhe o técnico e a data.</div>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b>: lá você confere o endereço (ou o link), escolhe o técnico e a data.</div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="rt-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="rt-cancelar">Cancelar</button></div>
   </div>
 </div>
@@ -1436,6 +1440,7 @@ body.modal-aberto{overflow:hidden}
     $('rt-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + (c.semDebito ? 'sem fatura vencida' : brl(c.valorTotal) + ' em aberto');
     $('rt-veics').innerHTML = rtLinhaVeiculo();
     $('rt-obs').value = '';
+    $('rt-link').value = '';
     $('rt-enviar').disabled = false;
     $('rt-fundo').hidden = false;
     document.body.classList.add('modal-aberto');
@@ -1460,12 +1465,14 @@ body.modal-aberto{overflow:hidden}
     if (!veiculos.length || veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo do veículo.', 'erro'); return; }
     var motivo = c.semDebito ? 'Retirada / cancelamento pedido pelo cliente (sem fatura vencida)'
       : c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
+    var link = $('rt-link').value.trim();
+    if (link && !/^https?:\/\/\S+$/i.test(link)) { toast('O link do monitoramento precisa começar com http:// ou https://', 'erro'); $('rt-link').focus(); return; }
     var btn = $('rt-enviar'); btn.disabled = true;
     try {
-      var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, confirmarDuplicado: confirmado });
+      var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, linkLocalizacao: link, confirmarDuplicado: confirmado });
       fecharModalRetirada();
       avisarAppTecnico(r.protocolo);
-      toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+      toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
       btn.disabled = false;
