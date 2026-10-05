@@ -616,6 +616,12 @@ body.modal-aberto{overflow:hidden}
 .cc-imei-linha{display:flex;align-items:center;gap:8px}
 .cc-imei input{flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:.85rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#fff;color:var(--text)}
 .cc-imei input:focus{outline:2px solid var(--navy-light);outline-offset:0;border-color:var(--navy-light)}
+.cc-imei input[readonly]{background:transparent;border-color:transparent;cursor:default;padding-left:0}
+.cc-imei input[readonly]:focus{outline:none}
+.imei-cadeado{flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:transparent;color:var(--text-3);cursor:pointer;padding:0}
+.imei-cadeado:hover{background:#e2e8f0;color:var(--navy)}
+.imei-cadeado svg{width:15px;height:15px}
+.imei-cadeado.aberto{color:var(--navy-light)}
 .cc-imei-st{display:block;font-size:.68rem;margin-top:3px;min-height:.9em;color:var(--text-3)}
 .cc-imei-st.ok{color:#059669}.cc-imei-st.erro{color:var(--danger)}
 /* protestado */
@@ -1311,7 +1317,8 @@ body.modal-aberto{overflow:hidden}
         '</div>' +
         '<div class="cc-imei">' +
           '<label for="imei-' + i + '">IMEI do aparelho</label>' +
-          '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '" data-idx="' + i + '" data-acao="imei" value="' + esc(c.imei || '') + '" placeholder="Cole aqui o IMEI" maxlength="120" autocomplete="off" spellcheck="false">' +
+          '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '" data-idx="' + i + '" data-acao="imei" value="' + esc(c.imei || '') + '" placeholder="Cole aqui o IMEI" maxlength="120" autocomplete="off" spellcheck="false"' + (c.imei ? ' readonly' : '') + '>' +
+          '<button type="button" class="imei-cadeado' + (c.imei ? '' : ' aberto') + '" data-acao="cadeado-imei" data-idx="' + i + '" aria-label="' + (c.imei ? 'Destravar o campo do IMEI' : 'Travar o campo do IMEI') + '">' + (c.imei ? CADEADO_FECHADO : CADEADO_ABERTO) + '</button>' +
           '<button type="button" class="copiar-mini" data-acao="copiar-imei" data-idx="' + i + '">copiar</button></div>' +
           '<span class="cc-imei-st" id="imei-st-' + i + '"></span>' +
         '</div>' +
@@ -1363,6 +1370,19 @@ body.modal-aberto{overflow:hidden}
     $('lista-clientes').querySelectorAll('input[data-acao="imei"]').forEach(function (inp) {
       inp.addEventListener('change', function () { salvarImei(lista[Number(inp.getAttribute('data-idx'))], inp); });
       inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
+      // saiu do campo sem mudar nada: se já tinha IMEI salvo, trava de novo
+      inp.addEventListener('blur', function () {
+        var c = lista[Number(inp.getAttribute('data-idx'))];
+        setTimeout(function () { if (c && c.imei && (inp.value || '').trim() === c.imei) travarImei(inp, true); }, 150);
+      });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="cadeado-imei"]').forEach(function (b) {
+      b.addEventListener('mousedown', function (ev) { ev.preventDefault(); }); // não tira o foco do campo antes do clique
+      b.addEventListener('click', function () {
+        var inp = $('imei-' + b.getAttribute('data-idx'));
+        if (inp.readOnly) { travarImei(inp, false); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+        else { inp.blur(); var c = lista[Number(b.getAttribute('data-idx'))]; if ((inp.value || '').trim() && c && (inp.value || '').trim() === (c.imei || '')) travarImei(inp, true); }
+      });
     });
     $('lista-clientes').querySelectorAll('[data-acao="copiar-imei"]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -1565,6 +1585,17 @@ body.modal-aberto{overflow:hidden}
       toast(novo ? 'Chip de ' + primeiroNome(c.nome) + ' marcado como cancelado.' : 'Marcação de chip cancelado de ' + primeiroNome(c.nome) + ' removida.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
   }
+  // Cadeado do IMEI (fechado = campo travado; aberto = dá para escrever)
+  var CADEADO_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  var CADEADO_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg>';
+  function travarImei(inp, travar) {
+    inp.readOnly = travar;
+    var b = document.querySelector('[data-acao="cadeado-imei"][data-idx="' + inp.getAttribute('data-idx') + '"]');
+    if (!b) return;
+    b.innerHTML = travar ? CADEADO_FECHADO : CADEADO_ABERTO;
+    b.classList.toggle('aberto', !travar);
+    b.setAttribute('aria-label', travar ? 'Destravar o campo do IMEI' : 'Travar o campo do IMEI');
+  }
   // IMEI: grava sozinho quando sai do campo (ou aperta Enter)
   async function salvarImei(c, inp) {
     if (!c) return;
@@ -1575,6 +1606,7 @@ body.modal-aberto{overflow:hidden}
       await chamar('imei', { cpf: c.cpf, nome: c.nome, imei: v });
       c.imei = v; inp.value = v;
       st.className = 'cc-imei-st ok'; st.textContent = v ? 'salvo ✓' : 'IMEI apagado';
+      if (v) travarImei(inp, true); // salvou: trava o campo
     } catch (e) { st.className = 'cc-imei-st erro'; st.textContent = (e && e.message) || 'Erro ao salvar.'; }
   }
   // Protesto: marca / desmarca e guarda os dados do cliente para a futura página de protestados
