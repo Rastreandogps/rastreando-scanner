@@ -610,6 +610,22 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip.ativo{background:#DC2626;border-color:#DC2626;color:#fff}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
+/* IMEI do aparelho */
+.cc-imei{margin:0 16px 10px;background:var(--bg,#F5F7FA);border-radius:8px;padding:8px 10px}
+.cc-imei label{display:block;font-size:.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.cc-imei-linha{display:flex;align-items:center;gap:8px}
+.cc-imei input{flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:.85rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#fff;color:var(--text)}
+.cc-imei input:focus{outline:2px solid var(--navy-light);outline-offset:0;border-color:var(--navy-light)}
+.cc-imei-st{display:block;font-size:.68rem;margin-top:3px;min-height:.9em;color:var(--text-3)}
+.cc-imei-st.ok{color:#059669}.cc-imei-st.erro{color:var(--danger)}
+/* protestado */
+.cliente-card.protestado{border-left-color:#0f172a}
+.cc-titulo .nome-linha{flex-wrap:wrap;row-gap:3px}
+.tag-protesto{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:#0f172a;color:#fff;font-size:.66rem;font-weight:800;letter-spacing:.3px;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.cc-acoes .btn-protesto{flex:0 0 auto;margin:0;padding:8px 12px;border:1.5px solid #94a3b8;border-radius:var(--radius-sm);background:#fff;color:#0f172a;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.cc-acoes .btn-protesto:hover{background:#f1f5f9}
+.cc-acoes .btn-protesto.ativo{background:#0f172a;border-color:#0f172a;color:#fff}
+.cc-acoes .btn-protesto:disabled{opacity:.6;cursor:wait}
 .cliente-card.destacado{animation:cli-destaque 3s ease-in-out 1}
 @keyframes cli-destaque{0%,100%{outline:3px solid transparent;outline-offset:3px}
   15%,45%,75%{outline:3px solid var(--navy-light);outline-offset:5px}
@@ -732,6 +748,11 @@ body.modal-aberto{overflow:hidden}
       <option value="">Chip: todos</option>
       <option value="cancelado">📵 Chip cancelado</option>
       <option value="ativo">Chip ativo</option>
+    </select>
+    <select id="f-protesto" aria-label="Filtrar por protesto">
+      <option value="">Protesto: todos</option>
+      <option value="sim">⚖️ Protestados</option>
+      <option value="nao">Não protestados</option>
     </select>
     <button type="button" class="btn-link" id="btn-limpar-filtros">Limpar filtros</button>
   </div>
@@ -1153,11 +1174,12 @@ body.modal-aberto{overflow:hidden}
   $('f-envio').addEventListener('change', renderLista);
   $('btn-filtros').addEventListener('click', function () { $('painel-filtros').hidden = !$('painel-filtros').hidden; });
   $('btn-limpar-filtros').addEventListener('click', function () {
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].forEach(function (id) { $(id).value = ''; });
     renderLista();
   });
   $('f-retorno').addEventListener('change', renderLista);
   $('f-chip').addEventListener('change', renderLista);
+  $('f-protesto').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -1206,7 +1228,7 @@ body.modal-aberto{overflow:hidden}
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
-    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].filter(function (id) { return $(id).value; }).length;
+    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].filter(function (id) { return $(id).value; }).length;
     $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
@@ -1235,6 +1257,9 @@ body.modal-aberto{overflow:hidden}
     var fChip = $('f-chip').value;
     if (fChip === 'cancelado') lista = lista.filter(function (c) { return c.chipCancelado; });
     else if (fChip === 'ativo') lista = lista.filter(function (c) { return !c.chipCancelado; });
+    var fProt = $('f-protesto').value;
+    if (fProt === 'sim') lista = lista.filter(function (c) { return !!c.protestadoEm; });
+    else if (fProt === 'nao') lista = lista.filter(function (c) { return !c.protestadoEm; });
     var ord = $('ordenar').value;
     if (ord === 'valor') lista.sort(function (a, b) { return b.valorTotal - a.valorTotal; });
     else if (ord === 'dias') lista.sort(function (a, b) { return b.diasAtrasoMax - a.diasAtrasoMax; });
@@ -1270,12 +1295,12 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + ' · ' + f.dias + (f.dias === 1 ? ' dia' : ' dias') + '</span><b>' + brl(f.valor) + '</b></div>';
       }).join('');
-      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + (c.chipCancelado ? ' chip-off' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + (c.chipCancelado ? ' chip-off' : '') + (c.protestadoEm ? ' protestado' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
         '<div class="cc-head">' +
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
             : '<div class="cc-avatar">' + esc(iniciais) + '</div>') +
-          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + '</div></div>' +
+          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
         ledEnviado +
@@ -1283,6 +1308,12 @@ body.modal-aberto{overflow:hidden}
         '<div class="cc-contato">' +
           '<div><span style="min-width:0"><small>Telefone</small><b>' + esc(c.telefone || '—') + '</b></span>' + (c.telefone ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.telefone) + '">copiar</button>' : '') + '</div>' +
           '<div><span style="min-width:0"><small>CPF/CNPJ</small><b>' + esc(c.cpf || '—') + '</b></span>' + (c.cpf ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.cpf) + '">copiar</button>' : '') + '</div>' +
+        '</div>' +
+        '<div class="cc-imei">' +
+          '<label for="imei-' + i + '">IMEI do aparelho</label>' +
+          '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '" data-idx="' + i + '" data-acao="imei" value="' + esc(c.imei || '') + '" placeholder="Cole aqui o IMEI" maxlength="120" autocomplete="off" spellcheck="false">' +
+          '<button type="button" class="copiar-mini" data-acao="copiar-imei" data-idx="' + i + '">copiar</button></div>' +
+          '<span class="cc-imei-st" id="imei-st-' + i + '"></span>' +
         '</div>' +
         '<div class="cc-fats">' + fats + '</div>' +
         (retornoCliente ? '<div class="cc-retorno">📅 Retorno para <b>' + dataBR(retornoCliente.dataPromessa) + '</b>: ' + esc(retornoCliente.texto) + '</div>' : '') +
@@ -1298,6 +1329,7 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
           '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
+          '<button type="button" class="btn-protesto' + (c.protestadoEm ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="protesto" title="' + (c.protestadoEm ? 'Desmarcar protesto' : 'Marcar como protestado') + '" aria-pressed="' + (c.protestadoEm ? 'true' : 'false') + '">⚖️ <span>' + (c.protestadoEm ? 'Protestado' : 'Protestar') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
           (c.ultimoEnvio ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-envio">🧹 Limpar marcação de envio</button>' : '') +
@@ -1327,6 +1359,20 @@ body.modal-aberto{overflow:hidden}
     });
     $('lista-clientes').querySelectorAll('[data-acao="limpar-retorno"]').forEach(function (b) {
       b.addEventListener('click', function () { limparRetornoCliente(lista[Number(b.getAttribute('data-idx'))], b); });
+    });
+    $('lista-clientes').querySelectorAll('input[data-acao="imei"]').forEach(function (inp) {
+      inp.addEventListener('change', function () { salvarImei(lista[Number(inp.getAttribute('data-idx'))], inp); });
+      inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="copiar-imei"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var v = ($('imei-' + b.getAttribute('data-idx')).value || '').trim();
+        if (!v) { toast('Nenhum IMEI para copiar.', 'erro'); return; }
+        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function () { toast('IMEI copiado!', 'ok'); });
+      });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="protesto"]').forEach(function (b) {
+      b.addEventListener('click', function () { marcarProtesto(lista[Number(b.getAttribute('data-idx'))], b); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="chip"]').forEach(function (b) {
       b.addEventListener('click', function () { marcarChip(lista[Number(b.getAttribute('data-idx'))], b); });
@@ -1415,7 +1461,7 @@ body.modal-aberto{overflow:hidden}
     if (!aba) { toast('Esse cliente não está mais na lista de devedores (pode já ter pago).'); return; }
     // limpa busca e filtros para o card não ficar escondido
     $('busca').value = '';
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto'].forEach(function (id) { $(id).value = ''; });
     document.querySelector('.tabs button[data-tab="' + aba + '"]').click(); // troca a aba e desenha a lista
     var card = null;
     $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
@@ -1517,6 +1563,34 @@ body.modal-aberto{overflow:hidden}
       c.chipCancelado = novo;
       renderLista();
       toast(novo ? 'Chip de ' + primeiroNome(c.nome) + ' marcado como cancelado.' : 'Marcação de chip cancelado de ' + primeiroNome(c.nome) + ' removida.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
+  }
+  // IMEI: grava sozinho quando sai do campo (ou aperta Enter)
+  async function salvarImei(c, inp) {
+    if (!c) return;
+    var v = (inp.value || '').replace(/\s+/g, ' ').trim(), st = $('imei-st-' + inp.getAttribute('data-idx'));
+    if (v === (c.imei || '')) return;
+    st.className = 'cc-imei-st'; st.textContent = 'salvando…';
+    try {
+      await chamar('imei', { cpf: c.cpf, nome: c.nome, imei: v });
+      c.imei = v; inp.value = v;
+      st.className = 'cc-imei-st ok'; st.textContent = v ? 'salvo ✓' : 'IMEI apagado';
+    } catch (e) { st.className = 'cc-imei-st erro'; st.textContent = (e && e.message) || 'Erro ao salvar.'; }
+  }
+  // Protesto: marca / desmarca e guarda os dados do cliente para a futura página de protestados
+  async function marcarProtesto(c, btn) {
+    if (!c) return;
+    var novo = !c.protestadoEm;
+    if (!confirm(novo ? 'Marcar ' + c.nome + ' como protestado?\n\nOs dados dele ficam guardados para a lista de protestados.' : 'Desmarcar o protesto de ' + c.nome + '?')) return;
+    btn.disabled = true;
+    try {
+      var res = await chamar('protesto', { cpf: c.cpf, nome: c.nome, protestado: novo, dados: novo ? {
+        telefone: c.telefone || '', imei: c.imei || '', valorTotal: c.valorTotal, diasAtrasoMax: c.diasAtrasoMax,
+        faturas: (c.faturas || []).map(function (f) { return { vencimento: f.vencimento, valor: f.valor, dias: f.dias }; })
+      } : null });
+      c.protestadoEm = novo ? ((res && res.protestadoEm) || new Date().toISOString()) : null;
+      renderLista();
+      toast(novo ? primeiroNome(c.nome) + ' marcado como protestado.' : 'Protesto de ' + primeiroNome(c.nome) + ' desmarcado.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
   }
   async function limparRetornoCliente(c, btn) {
