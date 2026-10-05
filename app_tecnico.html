@@ -862,6 +862,7 @@
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></i>Instalação</span>
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></i>Manutenção</span>
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></i>Retirada</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></i>Substituição</span>
       </div>
     </div>
     <div id="map-container-admin" style="position:relative;height:calc(100vh - 190px);">
@@ -8166,7 +8167,7 @@ async function _buscarRemocoesSeguro() {
       new Promise(function(_, rej) { setTimeout(function() { rej(new Error('demorou demais para responder')); }, 25000); })
     ]);
     _remocoesLista = (res.remocoes || []).filter(function(r) { return /^CAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
-    _manutLista = (res.manutencoes || []).filter(function(r) { return /^MAN-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
+    _manutLista = (res.manutencoes || []).filter(function(r) { return /^(MAN|TRC)-\d{6}-[A-Z0-9]{5}$/.test(r.id); });
     _remocoesCache = { em: Date.now(), n: _remocoesLista.length + _manutLista.length };
     return { ok: true, lista: _remocoesLista, manut: _manutLista, erro: '' };
   } catch (e) {
@@ -8218,18 +8219,32 @@ function _htmlBlocoRemocoes(rem) {
     h += '<div style="font-size:15px;font-weight:700;color:#b91c1c;margin:2px 0 10px;">📤 Remoções — pedidos de cancelamento (' + rem.lista.length + ')</div>' +
       rem.lista.map(_cardRemocao).join('');
   }
-  if (!rem.manut.length) {
-    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">🔧 Nenhum pedido de manutenção pendente.</div>';
+  const soManut = rem.manut.filter(function(r) { return !_ehSubstituicao(r); });
+  const soSubst = rem.manut.filter(_ehSubstituicao);
+  if (!soManut.length) {
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">🔧 Nenhum pedido de manutenção pendente.</div>';
   } else {
-    h += '<div style="font-size:15px;font-weight:700;color:#b45309;margin:10px 0 10px;">🔧 Manutenções — pedidos dos clientes (' + rem.manut.length + ')</div>' +
-      rem.manut.map(_cardManutencao).join('');
+    h += '<div style="font-size:15px;font-weight:700;color:#b45309;margin:10px 0 10px;">🔧 Manutenções — pedidos dos clientes (' + soManut.length + ')</div>' +
+      soManut.map(_cardManutencao).join('');
+  }
+  if (!soSubst.length) {
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">🔁 Nenhum pedido de substituição (troca de veículo) pendente.</div>';
+  } else {
+    h += '<div style="font-size:15px;font-weight:700;color:#6d28d9;margin:10px 0 10px;">🔁 Substituição — troca de veículo (' + soSubst.length + ')</div>' +
+      soSubst.map(_cardManutencao).join('');
   }
   return h + '<div style="height:1px;background:var(--border);margin:6px 0 16px;"></div>';
 }
 
-// ─── Card e ações dos pedidos de MANUTENÇÃO (manutencao.html) ───
+// Pedido de troca de veículo (troca.html) ou manutenção antiga com o motivo de troca
+function _ehSubstituicao(r) {
+  return !!r && (r.tipo === 'SUBSTITUIÇÃO' || /^TRC-/.test(r.id || '') || r.motivo === 'troca_veiculo');
+}
+
+// ─── Card e ações dos pedidos de MANUTENÇÃO (manutencao.html) e SUBSTITUIÇÃO (troca.html) ───
 function _cardManutencao(r) {
   const id = r.id;
+  const sub = _ehSubstituicao(r);
   const lbl = 'font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;';
   const inp = 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;';
   const veiculosHtml = (r.veiculos || []).map(function(v, i) {
@@ -8241,24 +8256,36 @@ function _cardManutencao(r) {
   const telCad = _fmtTelRemocao(r.telefone);
   const telOutro = _fmtTelRemocao(r.telefoneContato);
   const enviado = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-  const novo = r.novoVeiculo ? '<div style="font-size:12px;color:#b45309;margin-bottom:6px;">➡️ Transferir para: <b>' + esc(r.novoVeiculo.modelo || '') + ' — ' + esc(r.novoVeiculo.placa || '') + '</b> (cobrar nova taxa de instalação)</div>' : '';
+  const novo = sub ? '' : r.novoVeiculo ? '<div style="font-size:12px;color:#b45309;margin-bottom:6px;">➡️ Transferir para: <b>' + esc(r.novoVeiculo.modelo || '') + ' — ' + esc(r.novoVeiculo.placa || '') + '</b> (cobrar nova taxa de instalação)</div>' : '';
+  // substituição: veículo atual → veículo novo, em destaque
+  const atual = (r.veiculos || [])[0] || {};
+  const trocaHtml = sub ? '<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:9px 11px;margin-bottom:8px;">' +
+      '<div style="font-size:11px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Troca de veículo</div>' +
+      '<div style="font-size:13px;color:#4c1d95;">🚗 <b>' + esc(atual.modelo || '') + '</b> ' + esc(atual.placa || '') + '</div>' +
+      '<div style="font-size:12px;color:#7c3aed;margin:2px 0 2px 4px;">↓ sai deste e vai para</div>' +
+      '<div style="font-size:13px;color:#4c1d95;">🚙 <b>' + esc((r.novoVeiculo && r.novoVeiculo.modelo) || '') + '</b> ' + esc((r.novoVeiculo && r.novoVeiculo.placa) || '') + '</div>' +
+      (r.descricao ? '<div style="font-size:12.5px;color:#5b21b6;margin-top:5px;">💬 ' + esc(r.descricao) + '</div>' : '') +
+      '<div style="font-size:11.5px;color:#7c3aed;margin-top:5px;">Cobrar como nova instalação (valor conforme o bairro). Retirada sem custo.</div>' +
+    '</div>' : '';
 
-  return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #fde68a;border-left:5px solid #f59e0b;box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
+  return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid ' + (sub ? '#ddd6fe' : '#fde68a') + ';border-left:5px solid ' + (sub ? '#8b5cf6' : '#f59e0b') + ';box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
       '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
-      '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔧 Manutenção</span>' +
+      (sub ? '<span style="background:#ede9fe;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔁 Substituição</span>'
+           : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔧 Manutenção</span>') +
     '</div>' +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
+    (sub ? trocaHtml :
     '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px;margin-bottom:8px;">' +
       '<div style="font-size:13px;font-weight:700;color:#92400e;">' + esc(r.motivoTexto || '') + '</div>' +
       (r.descricao ? '<div style="font-size:12.5px;color:#78350f;margin-top:3px;">💬 ' + esc(r.descricao) + '</div>' : '') +
-    '</div>' +
+    '</div>') +
     novo +
     (telCad ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(telCad) + ' <span style="font-size:11px;">(cadastro)</span></div>' : '') +
     (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
     '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(r.enderecoTexto || '') + '</div>' +
     (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
-    '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>' +
+    (sub ? '' : '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>') +
     (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
       '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
@@ -8274,7 +8301,7 @@ function _cardManutencao(r) {
       '</div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
-      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:#f59e0b;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS de manutenção</button>' +
+      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : '✅ Criar OS de manutenção') + '</button>' +
       '<button onclick="ignorarManutencao(\'' + id + '\')" style="padding:10px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
     '</div>' +
   '</div>';
@@ -8288,11 +8315,16 @@ async function criarOSManutencao(id) {
   const hora = document.getElementById('rm-hora-' + id)?.value || '';
   const valor = document.getElementById('rm-valor-' + id)?.value || '';
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
+  const sub = _ehSubstituicao(r);
 
-  const veiculoStr = (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
-  const partesObs = ['Motivo: ' + (r.motivoTexto || '')];
-  if (r.descricao) partesObs.push('Relato do cliente: ' + r.descricao);
-  if (r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
+  const veiculoStr = sub && r.novoVeiculo
+    ? (r.novoVeiculo.modelo || '') + ' | Placa: ' + (r.novoVeiculo.placa || '') // a OS é do veículo novo (onde vai a instalação)
+    : (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
+  const partesObs = sub
+    ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + ((r.novoVeiculo && r.novoVeiculo.modelo) || '') + ' (' + ((r.novoVeiculo && r.novoVeiculo.placa) || '') + ')', 'Cobrar como nova instalação; retirada sem custo']
+    : ['Motivo: ' + (r.motivoTexto || '')];
+  if (r.descricao) partesObs.push((sub ? 'Obs. do cliente: ' : 'Relato do cliente: ') + r.descricao);
+  if (!sub && r.novoVeiculo) partesObs.push('Transferir para: ' + r.novoVeiculo.modelo + ' | Placa: ' + r.novoVeiculo.placa + ' (cobrar nova taxa de instalação)');
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
   if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
 
@@ -8302,7 +8334,7 @@ async function criarOSManutencao(id) {
   const resultSave = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
-    endereco: r.enderecoTexto || '', tipo: 'Manutenção', data: data,
+    endereco: r.enderecoTexto || '', tipo: sub ? 'Substituição' : 'Manutenção', data: data,
     veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id))
   });
   if (!resultSave.ok) {
@@ -8314,7 +8346,7 @@ async function criarOSManutencao(id) {
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
-    showToast('OS de manutenção criada para ' + tecnico + '! ✅', 'success');
+    showToast((sub ? 'OS de substituição' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
     _apagarAvisoRemocao(id);
   } catch (e) {
     showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
@@ -8972,6 +9004,7 @@ function _corTipoOS(tipo) {
   const t = String(tipo || '').toLowerCase();
   if (t.includes('manut')) return '#f59e0b';
   if (t.includes('remo') || t.includes('retir')) return '#ef4444';
+  if (t.includes('substitu')) return '#8b5cf6';
   return '#10b981';
 }
 
