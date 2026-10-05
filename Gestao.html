@@ -611,6 +611,9 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 /* IMEI do aparelho */
+.cls-acoes{display:flex;justify-content:flex-end;margin-top:10px}
+.cls-acoes .btn-retirada{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer}
+.cls-acoes .btn-retirada:hover{background:#fef2f2}
 .cc-imei{margin:0 16px 10px;background:var(--bg,#F5F7FA);border-radius:8px;padding:8px 10px}
 .cc-imei label{display:block;font-size:.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
 .cc-imei-linha{display:flex;align-items:center;gap:8px}
@@ -1413,10 +1416,24 @@ body.modal-aberto{overflow:hidden}
     return '<div class="rt-veic"><input type="text" class="rt-modelo" maxlength="60" placeholder="Modelo do veículo" autocomplete="off">' +
       '<input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div>';
   }
+  // Classificação: o mesmo botão de ordem de retirada (serve para quem está em dia e só quer cancelar)
+  function clienteParaRetirada(cpf) {
+    var d = soDig(cpf), achou = null;
+    ['dois', 'um'].forEach(function (k) { if (!achou) achou = ((DADOS && DADOS[k]) || []).find(function (c) { return soDig(c.cpf) === d; }) || null; });
+    if (achou) return achou; // é devedor: usa o card completo
+    var c = ((CLS && CLS.clientes) || []).find(function (x) { return soDig(x.cpf) === d; });
+    return c ? { nome: c.nome, cpf: c.cpf, telefone: c.telefone || '', faturas: [], valorTotal: 0, diasAtrasoMax: 0, semDebito: true } : null;
+  }
+  $('classif-conteudo').addEventListener('click', function (ev) {
+    var b = ev.target.closest('.cls-ret');
+    if (!b) return;
+    var c = clienteParaRetirada(b.getAttribute('data-cpf'));
+    if (c) abrirModalRetirada(c); else toast('Cliente não encontrado.', 'erro');
+  });
   function abrirModalRetirada(c) {
     if (!c) return;
     rtCliente = c;
-    $('rt-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + brl(c.valorTotal) + ' em aberto';
+    $('rt-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + (c.semDebito ? 'sem fatura vencida' : brl(c.valorTotal) + ' em aberto');
     $('rt-veics').innerHTML = rtLinhaVeiculo();
     $('rt-obs').value = '';
     $('rt-enviar').disabled = false;
@@ -1441,7 +1458,8 @@ body.modal-aberto{overflow:hidden}
       return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim() };
     }).filter(function (v) { return v.modelo || v.placa; });
     if (!veiculos.length || veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo do veículo.', 'erro'); return; }
-    var motivo = c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
+    var motivo = c.semDebito ? 'Retirada / cancelamento pedido pelo cliente (sem fatura vencida)'
+      : c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
     var btn = $('rt-enviar'); btn.disabled = true;
     try {
       var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, confirmarDuplicado: confirmado });
@@ -2810,6 +2828,7 @@ body.modal-aberto{overflow:hidden}
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.' + ((termo || fVen) && clsFiltro.status !== 'todos' ? '<br><small>Está filtrando só por "' + (clsFiltro.status === 'pagos' ? 'Já pagos' : 'A receber') + '". Toque em <b>Todos</b> para buscar entre todos os clientes.</small>' : '') + '</div>';
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
