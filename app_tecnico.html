@@ -1888,6 +1888,8 @@ async function confirmarExclusao() {
     const result = await gasRequest({ action: 'deleteOrder', id: toDelete.id, tech: toDelete.tech });
     if (result.ok) {
       showToast('Ordem excluída!', 'success');
+      // se a OS veio de um pedido de retirada, o pedido deixa de contar como "agendado" (tira o selo na Gestão)
+      try { await _chamarRemocoes({ acao: 'os_excluida', osId: toDelete.id }); } catch (e) { /* só o admin consegue; sem problema */ }
       marcarMapaDesatualizado();
       if (currentRole === 'tech') await loadTechOrders();
       else {
@@ -1904,6 +1906,7 @@ async function confirmarExclusao() {
     const result = await gasRequest({ action: 'deleteAll' });
     if (result.ok) {
       showToast('Todas as ordens excluídas!', 'success');
+      try { await _chamarRemocoes({ acao: 'os_excluida', todas: true }); } catch (e) { }
       marcarMapaDesatualizado();
       await loadAllOrders();
     } else {
