@@ -611,6 +611,20 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 /* IMEI do aparelho */
+.cc-est{display:flex;align-items:center;gap:7px;padding:2px 16px 12px;flex-wrap:wrap}
+.cc-est-tit{font-size:.68rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-right:2px}
+.es-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid #cbd5e1;background:#e2e8f0;color:#64748b;font-family:var(--font-body);font-weight:800;font-size:.8rem;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;transition:background .15s,box-shadow .15s}
+.es-btn:hover{border-color:var(--navy-light);color:var(--navy)}
+.es-btn.on{background:#39FF14;border-color:#16a34a;color:#064e0b;box-shadow:0 0 0 3px rgba(57,255,20,.28),0 0 10px rgba(57,255,20,.75)}
+.es-btn.prox{border-color:var(--navy-light);color:var(--navy);animation:es-pulsa 1.8s ease-in-out infinite}
+@keyframes es-pulsa{0%,100%{box-shadow:0 0 0 0 rgba(36,81,160,.5)}50%{box-shadow:0 0 0 6px rgba(36,81,160,0)}}
+.es-ult{font-size:.68rem;color:var(--text-3);margin-left:2px}
+@media (prefers-reduced-motion:reduce){.es-btn.prox{animation:none;box-shadow:0 0 0 2px rgba(36,81,160,.35)}}
+#es-msg{min-height:230px;font-size:.88rem;line-height:1.45;word-break:normal}
+.es-chk{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:.85rem;color:var(--text-2);font-weight:600}
+.es-chk input{width:auto}
+.es-chk[hidden],.es-aviso[hidden]{display:none}
+.es-aviso{margin:8px 0 6px;font-size:.78rem;line-height:1.4;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 10px}
 .tag-ret{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-family:inherit;font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;cursor:pointer}
 .tag-ret:hover{filter:brightness(.96)}
 .tag-ret:disabled{opacity:.6;cursor:wait}
@@ -773,6 +787,15 @@ body.modal-aberto{overflow:hidden}
       <option value="">Retirada: todos</option>
       <option value="sim">🔧 Retirada solicitada</option>
       <option value="nao">Sem retirada</option>
+    </select>
+    <select id="f-est" aria-label="Filtrar pelo estágio da cobrança">
+      <option value="">Estágio: todos</option>
+      <option value="0">Sem estágio</option>
+      <option value="1">Parou no 1</option>
+      <option value="2">Parou no 2</option>
+      <option value="3">Parou no 3</option>
+      <option value="4">Parou no 4</option>
+      <option value="5">Parou no 5</option>
     </select>
     <button type="button" class="btn-link" id="btn-limpar-filtros">Limpar filtros</button>
   </div>
@@ -948,6 +971,17 @@ body.modal-aberto{overflow:hidden}
     <label>Mensagem que será enviada</label>
     <div class="rv-msg" id="rv-msg"></div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="rv-continuar" style="width:auto">Continuar o envio</button><button type="button" class="btn-link" id="rv-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="es-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="es-titulo">
+    <h3 id="es-titulo">Estágio da cobrança</h3>
+    <div class="rt-cli" id="es-cli"></div>
+    <div class="es-aviso" id="es-aviso" hidden></div>
+    <label for="es-msg">Mensagem <span style="font-weight:600;color:var(--text-3)">(pode editar antes de enviar)</span></label>
+    <textarea id="es-msg"></textarea>
+    <label class="es-chk" id="es-chip-lbl" hidden><input type="checkbox" id="es-chip"> Marcar também como chip cancelado</label>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="es-enviar" style="width:auto">Abrir WhatsApp e marcar</button><button type="button" class="btn-link" id="es-so-marcar">Só marcar (já enviei)</button><button type="button" class="btn-link" id="es-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div class="modal-fundo" id="rt-fundo" hidden>
@@ -1202,13 +1236,14 @@ body.modal-aberto{overflow:hidden}
   $('f-envio').addEventListener('change', renderLista);
   $('btn-filtros').addEventListener('click', function () { $('painel-filtros').hidden = !$('painel-filtros').hidden; });
   $('btn-limpar-filtros').addEventListener('click', function () {
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret', 'f-est'].forEach(function (id) { $(id).value = ''; });
     renderLista();
   });
   $('f-retorno').addEventListener('change', renderLista);
   $('f-chip').addEventListener('change', renderLista);
   $('f-protesto').addEventListener('change', renderLista);
   $('f-ret').addEventListener('change', renderLista);
+  $('f-est').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
     try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
@@ -1258,7 +1293,7 @@ body.modal-aberto{overflow:hidden}
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
     var lista = (DADOS[abaAtual] || []).slice();
-    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].filter(function (id) { return $(id).value; }).length;
+    var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret', 'f-est'].filter(function (id) { return $(id).value; }).length;
     $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
@@ -1290,6 +1325,8 @@ body.modal-aberto{overflow:hidden}
     var fProt = $('f-protesto').value;
     if (fProt === 'sim') lista = lista.filter(function (c) { return !!c.protestadoEm; });
     else if (fProt === 'nao') lista = lista.filter(function (c) { return !c.protestadoEm; });
+    var fEst = $('f-est').value;
+    if (fEst !== '') lista = lista.filter(function (c) { return String(ultimoEstagio(c)) === fEst; });
     var fRetir = $('f-ret').value;
     if (fRetir === 'sim') lista = lista.filter(function (c) { return !!retiradaDe(c.cpf); });
     else if (fRetir === 'nao') lista = lista.filter(function (c) { return !retiradaDe(c.cpf); });
@@ -1356,6 +1393,7 @@ body.modal-aberto{overflow:hidden}
           '<textarea id="ret-texto-' + i + '" placeholder="Ex.: cliente disse que paga na sexta-feira"></textarea>' +
           '<button type="button" class="btn btn-pri" data-idx="' + i + '" data-acao="salvar-retorno" style="width:100%">Salvar</button>' +
         '</div>' +
+        htmlEstagios(c, i) +
         '<div class="cc-acoes">' +
           '<button type="button" class="btn-wpp-cliente" data-idx="' + i + '">' +
             '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>' +
@@ -1417,6 +1455,9 @@ body.modal-aberto{overflow:hidden}
         if (!v) { toast('Nenhum IMEI para copiar.', 'erro'); return; }
         if (navigator.clipboard) navigator.clipboard.writeText(v).then(function () { toast('IMEI copiado!', 'ok'); });
       });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="estagio"]').forEach(function (b) {
+      b.addEventListener('click', function () { cliqueEstagio(lista[Number(b.getAttribute('data-idx'))], Number(b.getAttribute('data-n')), b); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="protesto"]').forEach(function (b) {
       b.addEventListener('click', function () { marcarProtesto(lista[Number(b.getAttribute('data-idx'))], b); });
@@ -1560,7 +1601,7 @@ body.modal-aberto{overflow:hidden}
     if (!aba) { toast('Esse cliente não está mais na lista de devedores (pode já ter pago).'); return; }
     // limpa busca e filtros para o card não ficar escondido
     $('busca').value = '';
-    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret'].forEach(function (id) { $(id).value = ''; });
+    ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret', 'f-est'].forEach(function (id) { $(id).value = ''; });
     document.querySelector('.tabs button[data-tab="' + aba + '"]').click(); // troca a aba e desenha a lista
     var card = null;
     $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
@@ -1664,6 +1705,105 @@ body.modal-aberto{overflow:hidden}
       toast(novo ? 'Chip de ' + primeiroNome(c.nome) + ' marcado como cancelado.' : 'Marcação de chip cancelado de ' + primeiroNome(c.nome) + ' removida.', 'ok');
     } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
   }
+  // ===== Estágios da cobrança (1 a 5) =====
+  var EST_TITULOS = { 1: 'Chip será cancelado em breve', 2: 'Chip cancelado: retirada necessária', 3: 'Reforço: medidas e valor do comodato', 4: 'Aviso formal (extrajudicial)', 5: 'Cobrança do comodato (R$ 300 por aparelho)' };
+  function ultimoEstagio(c) { var m = 0, e = c.estagios || {}; for (var k = 1; k <= 5; k++) if (e[k]) m = k; return m; }
+  function dataHoraEstagio(iso) { try { return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function dataCurtaEstagio(iso) { try { return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }); } catch (e) { return ''; } }
+  function htmlEstagios(c, i) {
+    var e = c.estagios || {}, ult = ultimoEstagio(c), prox = ult < 5 ? ult + 1 : 0, bt = '';
+    for (var k = 1; k <= 5; k++) {
+      var on = !!e[k];
+      bt += '<button type="button" class="es-btn' + (on ? ' on' : '') + (!on && k === prox ? ' prox' : '') + '" data-idx="' + i + '" data-acao="estagio" data-n="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '"' +
+        ' aria-label="Estágio ' + k + ': ' + EST_TITULOS[k] + (on ? ' (feito em ' + dataHoraEstagio(e[k]) + ')' : '') + '"' +
+        ' title="' + k + ' · ' + EST_TITULOS[k] + (on ? ' — feito em ' + dataHoraEstagio(e[k]) + ' (toque para desmarcar)' : '') + '">' + k + '</button>';
+    }
+    return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + (ult ? '<span class="es-ult">último: ' + dataCurtaEstagio(e[ult]) + '</span>' : '') + '</div>';
+  }
+  // Mensagens prontas de cada estágio (o texto pode ser editado antes de enviar)
+  function msgEstagio(n, c) {
+    var pn = primeiroNome(c.nome), valor = brl(c.valorTotal), nf = (c.faturas || []).length;
+    var fat = nf === 1 ? '1 fatura' : nf + ' faturas', dias = c.diasAtrasoMax;
+    if (n === 1) return 'Olá, ' + pn + ', tudo bem? Aqui é da *Rastreando GPS*.\n\n' +
+      'Identificamos ' + fat + ' em aberto do seu rastreamento, no valor de *' + valor + '*, com ' + dias + ' dias de atraso.\n\n' +
+      'Conforme o contrato, o serviço pode ser interrompido por inadimplência e o *chip do seu rastreador será cancelado em breve* caso o pagamento não seja regularizado.\n\n' +
+      'Para regularizar, é só responder esta mensagem que enviamos a fatura atualizada. Se já pagou, por favor envie o comprovante. Se preferir encerrar o serviço, nos avise para combinarmos a retirada do equipamento.';
+    if (n === 2) return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*.\n\n' +
+      'Como não identificamos o pagamento, o *chip do seu rastreador foi cancelado* e o rastreamento foi interrompido.\n\n' +
+      'O equipamento é cedido em comodato e precisa ser retirado do veículo. Por favor, responda esta mensagem para agendarmos a retirada.\n\n' +
+      'Lembramos que, conforme a cláusula 20 do contrato, a mensalidade continua sendo devida até a devolução do equipamento e o encerramento do contrato. Valor em aberto hoje: *' + valor + '*.';
+    if (n === 3) return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*. Retomamos o contato sobre o rastreador instalado no seu veículo, que ainda não foi retirado.\n\n' +
+      'O equipamento é nosso, cedido em comodato, e deve ser devolvido em perfeitas condições (cláusula 4). A não devolução gera indenização de *R$ 300,00 por aparelho*, e as mensalidades seguem em aberto até a devolução (cláusula 20). Valor em aberto hoje: *' + valor + '*.\n\n' +
+      'Caso a retirada não seja combinada, adotaremos as medidas cabíveis previstas no contrato.\n\n' +
+      'Para evitar isso, responda esta mensagem e agendamos a retirada.';
+    if (n === 4) return '*AVISO FORMAL (NOTIFICAÇÃO EXTRAJUDICIAL)*\nRastreando GPS — CNPJ 29.488.621/0001-48\n\n' +
+      'Titular: ' + c.nome + '\n\n' +
+      'Notificamos que o rastreador cedido em comodato continua em seu poder e que há ' + fat + ' em aberto, no valor de *' + valor + '*.\n\n' +
+      'Solicitamos o contato imediato para a retirada do equipamento, a fim de evitar a cobrança da multa de comodato de *R$ 300,00 por aparelho não devolvido* (cláusulas 4 e 4-A), além dos demais encargos previstos no contrato.\n\n' +
+      'Esta comunicação é válida como notificação, nos termos da cláusula 10 do contrato (WhatsApp e e-mail).\n\nRastreando GPS';
+    return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*.\n\n' +
+      'Como o rastreador não foi devolvido, foi gerada a cobrança da indenização de comodato prevista no contrato (cláusulas 4 e 4-A): *R$ 300,00 por aparelho não devolvido*. O boleto está sendo enviado e vence em *5 dias*.\n\n' +
+      'Você ainda pode reverter a situação: se o equipamento for devolvido dentro desse prazo, o boleto é cancelado. Para combinar a retirada, responda esta mensagem.\n\n' +
+      'Após o vencimento sem pagamento ou devolução, o contrato prevê a inclusão do seu nome nos órgãos de proteção ao crédito e o protesto em cartório (cláusula 6). As mensalidades em aberto continuam devidas até a devolução (cláusula 20).';
+  }
+  var ES = { c: null, n: 0 };
+  function cliqueEstagio(c, n, btn) {
+    if (!c) return;
+    if (c.estagios && c.estagios[n]) { desmarcarEstagio(c, n, btn); return; } // verde: toque desfaz (com confirmação)
+    ES.c = c; ES.n = n;
+    $('es-titulo').textContent = 'Estágio ' + n + ' · ' + EST_TITULOS[n];
+    $('es-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
+    $('es-msg').value = msgEstagio(n, c);
+    var av = [];
+    if ((n === 1 || n === 2) && c.diasAtrasoMax < 10) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. O contrato prevê interromper o serviço após 10 dias (cláusula 9).');
+    if (n === 5 && c.diasAtrasoMax < 15) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. A inclusão em órgãos de proteção ao crédito é prevista após 15 dias (cláusula 6).');
+    if (n === 5) av.push('Antes de cobrar os R$ 300,00, confirme que o aparelho ainda está com o cliente. O boleto você gera à parte.');
+    var faltam = []; for (var k = 1; k < n; k++) if (!(c.estagios && c.estagios[k])) faltam.push(k);
+    if (faltam.length) av.push((faltam.length === 1 ? 'O estágio ' + faltam[0] + ' ainda não foi marcado.' : 'Os estágios ' + faltam.join(', ') + ' ainda não foram marcados.') + ' Pode seguir, se for o caso.');
+    $('es-aviso').hidden = !av.length; $('es-aviso').innerHTML = av.map(esc).join('<br>');
+    var mostraChip = n === 2 && !c.chipCancelado;
+    $('es-chip-lbl').hidden = !mostraChip; $('es-chip').checked = mostraChip;
+    $('es-enviar').disabled = false; $('es-so-marcar').disabled = false;
+    $('es-fundo').hidden = false;
+    $('es-msg').focus();
+  }
+  function fecharEstagio() { $('es-fundo').hidden = true; }
+  async function confirmarEstagio(abrirWpp) {
+    var c = ES.c, n = ES.n, msg = $('es-msg').value.trim();
+    if (!c) return;
+    if (abrirWpp && !msg) { toast('Escreva a mensagem.', 'erro'); return; }
+    $('es-enviar').disabled = true; $('es-so-marcar').disabled = true;
+    if (abrirWpp) { // abre o WhatsApp antes de qualquer espera, para o navegador não bloquear
+      var tel = soDig(c.telefone);
+      if (tel && tel.length <= 11) tel = '55' + tel;
+      window.open('https://wa.me/' + (tel || '') + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+    try {
+      await chamar('estagio', { cpf: c.cpf, nome: c.nome, estagio: n, marcado: true });
+      c.estagios = c.estagios || {}; c.estagios[n] = new Date().toISOString();
+      if (n === 2 && $('es-chip').checked && !$('es-chip-lbl').hidden) {
+        await chamar('chipCancelado', { cpf: c.cpf, nome: c.nome, cancelado: true });
+        c.chipCancelado = true;
+      }
+      fecharEstagio(); renderLista();
+      toast('Estágio ' + n + ' marcado para ' + primeiroNome(c.nome) + '.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); $('es-enviar').disabled = false; $('es-so-marcar').disabled = false; }
+  }
+  async function desmarcarEstagio(c, n, btn) {
+    if (!confirm('Desmarcar o estágio ' + n + ' de ' + c.nome + '?')) return;
+    btn.disabled = true;
+    try {
+      await chamar('estagio', { cpf: c.cpf, nome: c.nome, estagio: n, marcado: false });
+      if (c.estagios) delete c.estagios[n];
+      renderLista();
+      toast('Estágio ' + n + ' desmarcado.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao salvar.', 'erro'); btn.disabled = false; }
+  }
+  $('es-enviar').addEventListener('click', function () { confirmarEstagio(true); });
+  $('es-so-marcar').addEventListener('click', function () { confirmarEstagio(false); });
+  $('es-cancelar').addEventListener('click', fecharEstagio);
+  $('es-fundo').addEventListener('click', function (ev) { if (ev.target === $('es-fundo')) fecharEstagio(); });
+
   // Cadeado do IMEI (fechado = campo travado; aberto = dá para escrever)
   var CADEADO_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   var CADEADO_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg>';
@@ -1696,7 +1836,7 @@ body.modal-aberto{overflow:hidden}
     btn.disabled = true;
     try {
       var res = await chamar('protesto', { cpf: c.cpf, nome: c.nome, protestado: novo, dados: novo ? {
-        telefone: c.telefone || '', imei: c.imei || '', valorTotal: c.valorTotal, diasAtrasoMax: c.diasAtrasoMax,
+        telefone: c.telefone || '', imei: c.imei || '', valorTotal: c.valorTotal, diasAtrasoMax: c.diasAtrasoMax, estagios: c.estagios || {},
         faturas: (c.faturas || []).map(function (f) { return { vencimento: f.vencimento, valor: f.valor, dias: f.dias }; })
       } : null });
       c.protestadoEm = novo ? ((res && res.protestadoEm) || new Date().toISOString()) : null;
