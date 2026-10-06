@@ -1763,9 +1763,9 @@ body.modal-aberto{overflow:hidden}
     if (n === 2) return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*.\n\n' +
       'Como não identificamos o pagamento, o *chip do seu rastreador foi cancelado* e o rastreamento foi interrompido.\n\n' +
       'O equipamento é cedido em comodato e precisa ser retirado do veículo. Por favor, responda esta mensagem para agendarmos a retirada.\n\n' +
-      'Lembramos que, conforme a cláusula 20 do contrato, a mensalidade continua sendo devida até a devolução do equipamento e o encerramento do contrato. Valor em aberto hoje: *' + valor + '*.';
+      'Lembramos que, conforme a cláusula 20 do contrato, as mensalidades vencidas continuam devidas e as próximas seguem sendo cobradas até a devolução do equipamento e o encerramento do contrato. Valor em aberto hoje: *' + valor + '*.';
     if (n === 3) return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*. Retomamos o contato sobre o rastreador instalado no seu veículo, que ainda não foi retirado.\n\n' +
-      'O equipamento é nosso, cedido em comodato, e deve ser devolvido em perfeitas condições (cláusula 4). A não devolução gera indenização de *R$ 300,00 por aparelho*, e as mensalidades seguem em aberto até a devolução (cláusula 20). Valor em aberto hoje: *' + valor + '*.\n\n' +
+      'O equipamento é nosso, cedido em comodato, e deve ser devolvido em perfeitas condições (cláusula 4). A não devolução gera indenização de *R$ 300,00 por aparelho*. As mensalidades vencidas continuam devidas, e a devolução com o encerramento do contrato interrompe apenas as mensalidades seguintes (cláusula 20). Valor em aberto hoje: *' + valor + '*.\n\n' +
       'Caso a retirada não seja combinada, adotaremos as medidas cabíveis previstas no contrato.\n\n' +
       'Para evitar isso, responda esta mensagem e agendamos a retirada.';
     if (n === 4) return '*AVISO FORMAL (NOTIFICAÇÃO EXTRAJUDICIAL)*\nRastreando GPS — CNPJ 29.488.621/0001-48\n\n' +
@@ -1775,8 +1775,9 @@ body.modal-aberto{overflow:hidden}
       'Esta comunicação é válida como notificação, nos termos da cláusula 10 do contrato (WhatsApp e e-mail).\n\nRastreando GPS';
     return 'Olá, ' + pn + '. Aqui é da *Rastreando GPS*.\n\n' +
       'Como o rastreador não foi devolvido, foi gerada a cobrança da indenização de comodato prevista no contrato (cláusulas 4 e 4-A): *R$ 300,00 por aparelho não devolvido*. O boleto está sendo enviado e vence em *5 dias*.\n\n' +
-      'Você ainda pode reverter a situação: se o equipamento for devolvido dentro desse prazo, o boleto é cancelado. Para combinar a retirada, responda esta mensagem.\n\n' +
-      'Após o vencimento sem pagamento ou devolução, o contrato prevê a inclusão do seu nome nos órgãos de proteção ao crédito e o protesto em cartório (cláusula 6). As mensalidades em aberto continuam devidas até a devolução (cláusula 20).';
+      'Você ainda pode reverter a situação: se o equipamento for devolvido dentro desse prazo, o *boleto da indenização de R$ 300,00 é cancelado*. Para combinar a retirada, responda esta mensagem.\n\n' +
+      'Após o vencimento sem pagamento ou devolução, o contrato prevê a inclusão do seu nome nos órgãos de proteção ao crédito e o protesto em cartório (cláusula 6).\n\n' +
+      'Atenção: as mensalidades já vencidas continuam devidas, mesmo após a devolução do equipamento. A devolução e o encerramento do contrato interrompem apenas a cobrança das mensalidades seguintes (cláusula 20).';
   }
   var ES = { c: null, n: 0 };
   function cliqueEstagio(c, n, btn) {
