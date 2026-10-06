@@ -611,7 +611,9 @@ body.modal-aberto{overflow:hidden}
 .cc-acoes .btn-chip:disabled{opacity:.6;cursor:wait}
 @media (prefers-reduced-motion:reduce){.chip-ico{animation:none}}
 /* IMEI do aparelho */
-.tag-ret{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.tag-ret{flex-shrink:0;display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-family:inherit;font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;cursor:pointer}
+.tag-ret:hover{filter:brightness(.96)}
+.tag-ret:disabled{opacity:.6;cursor:wait}
 .tag-ret.agendada{background:#fef3c7;color:#92400e;border-color:#fcd34d}
 .cls-item .tag-ret{margin:4px 0 0 6px;vertical-align:middle}
 .rt-link-dica{font-size:.74rem;color:var(--text-3);margin:5px 0 4px;line-height:1.4}
@@ -1446,8 +1448,8 @@ body.modal-aberto{overflow:hidden}
     var r = retiradaDe(cpf);
     if (!r) return '';
     return r.status === 'agendado'
-      ? '<span class="tag-ret agendada" title="Protocolo ' + esc(r.protocolo || '') + '">🔧 Retirada agendada</span>'
-      : '<span class="tag-ret" title="Protocolo ' + esc(r.protocolo || '') + '">🔧 Retirada solicitada</span>';
+      ? '<button type="button" class="tag-ret agendada" data-cpf="' + esc(soDig(cpf)) + '" title="Toque para remover a marcação (protocolo ' + esc(r.protocolo || '') + ')">🔧 Retirada agendada</button>'
+      : '<button type="button" class="tag-ret" data-cpf="' + esc(soDig(cpf)) + '" title="Toque para remover a marcação (protocolo ' + esc(r.protocolo || '') + ')">🔧 Retirada solicitada</button>';
   }
   function redesenharAbaAtual() {
     if ((abaAtual === 'dois' || abaAtual === 'um') && typeof renderLista === 'function') renderLista();
@@ -1456,6 +1458,22 @@ body.modal-aberto{overflow:hidden}
   async function carregarRetiradas() {
     try { var r = await chamar('retiradas'); RETS = (r && r.mapa) || {}; redesenharAbaAtual(); } catch (e) { }
   }
+  // Toque no selo: remove a marcação (o pedido vira "ignorado"; a OS já criada no APP Técnico não é apagada)
+  document.addEventListener('click', async function (ev) {
+    var b = ev.target.closest && ev.target.closest('.tag-ret[data-cpf]');
+    if (!b) return;
+    var cpf = b.getAttribute('data-cpf');
+    var card = b.closest('.cliente-card, .cls-item'), nomeEl = card && card.querySelector('.nome');
+    var nome = nomeEl ? nomeEl.textContent.trim() : 'este cliente';
+    if (!confirm('Remover a marcação de retirada de ' + nome + '?\n\nIsso só tira o selo. Se a OS já foi criada no APP Técnico, ela continua lá.')) return;
+    b.disabled = true;
+    try {
+      await chamar('retirada_remover', { cpf: cpf });
+      if (RETS) delete RETS[cpf];
+      redesenharAbaAtual();
+      toast('Marcação de retirada removida.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Erro ao remover.', 'erro'); b.disabled = false; }
+  });
   function clienteParaRetirada(cpf) {
     var d = soDig(cpf), achou = null;
     ['dois', 'um'].forEach(function (k) { if (!achou) achou = ((DADOS && DADOS[k]) || []).find(function (c) { return soDig(c.cpf) === d; }) || null; });
