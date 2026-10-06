@@ -619,6 +619,11 @@ body.modal-aberto{overflow:hidden}
 .es-btn.prox{border-color:var(--navy-light);color:var(--navy);animation:es-pulsa 1.8s ease-in-out infinite}
 @keyframes es-pulsa{0%,100%{box-shadow:0 0 0 0 rgba(36,81,160,.5)}50%{box-shadow:0 0 0 6px rgba(36,81,160,0)}}
 .es-ult{font-size:.68rem;color:var(--text-3);margin-left:2px}
+.es-ult.atras{color:#b91c1c;font-weight:700}
+.es-btn.lock{color:#94a3b8;background:#eef2f7;border-style:dashed}
+.es-btn.lock svg{width:13px;height:13px;display:block}
+.es-btn.atras{background:#ef4444;border-color:#b91c1c;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
+.es-btn.atras:hover{color:#fff;border-color:#7f1d1d}
 @media (prefers-reduced-motion:reduce){.es-btn.prox{animation:none;box-shadow:0 0 0 2px rgba(36,81,160,.35)}}
 #es-msg{min-height:230px;font-size:.88rem;line-height:1.45;word-break:normal}
 .es-chk{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:.85rem;color:var(--text-2);font-weight:600}
@@ -790,6 +795,8 @@ body.modal-aberto{overflow:hidden}
     </select>
     <select id="f-est" aria-label="Filtrar pelo estágio da cobrança">
       <option value="">Estágio: todos</option>
+      <option value="liberado">🔓 Para enviar agora</option>
+      <option value="atrasado">🔴 Atrasados</option>
       <option value="0">Sem estágio</option>
       <option value="1">Parou no 1</option>
       <option value="2">Parou no 2</option>
@@ -1326,7 +1333,9 @@ body.modal-aberto{overflow:hidden}
     if (fProt === 'sim') lista = lista.filter(function (c) { return !!c.protestadoEm; });
     else if (fProt === 'nao') lista = lista.filter(function (c) { return !c.protestadoEm; });
     var fEst = $('f-est').value;
-    if (fEst !== '') lista = lista.filter(function (c) { return String(ultimoEstagio(c)) === fEst; });
+    if (fEst === 'liberado') lista = lista.filter(function (c) { var q = estadoProximo(c); return !!q && (q.estado === 'liberado' || q.estado === 'atrasado'); });
+    else if (fEst === 'atrasado') lista = lista.filter(function (c) { var q = estadoProximo(c); return !!q && q.estado === 'atrasado'; });
+    else if (fEst !== '') lista = lista.filter(function (c) { return String(ultimoEstagio(c)) === fEst; });
     var fRetir = $('f-ret').value;
     if (fRetir === 'sim') lista = lista.filter(function (c) { return !!retiradaDe(c.cpf); });
     else if (fRetir === 'nao') lista = lista.filter(function (c) { return !retiradaDe(c.cpf); });
@@ -1710,15 +1719,38 @@ body.modal-aberto{overflow:hidden}
   function ultimoEstagio(c) { var m = 0, e = c.estagios || {}; for (var k = 1; k <= 5; k++) if (e[k]) m = k; return m; }
   function dataHoraEstagio(iso) { try { return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
   function dataCurtaEstagio(iso) { try { return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }); } catch (e) { return ''; } }
+  // Prazos: cada estágio libera EST_INTERVALO dias depois do anterior; fica vermelho quando passam EST_ATRASO dias do prazo
+  var EST_INTERVALO = 7, EST_ATRASO = 2;
+  function diaSP(d) { try { return new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); } catch (e) { return ''; } }
+  function somarDias(iso, n) { var p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n)).toISOString().slice(0, 10); }
+  function difDias(a, b) { var pa = a.split('-'), pb = b.split('-'); return Math.round((Date.UTC(+pa[0], +pa[1] - 1, +pa[2]) - Date.UTC(+pb[0], +pb[1] - 1, +pb[2])) / 86400000); }
+  function dataBRcurta(iso) { var p = String(iso).split('-'); return p[2] + '/' + p[1]; }
+  // Situação do PRÓXIMO estágio: livre (o 1) · bloqueado (cadeado) · liberado (chegou o dia) · atrasado (vermelho)
+  function estadoProximo(c) {
+    var u = ultimoEstagio(c);
+    if (u >= 5) return null;
+    if (u === 0) return { k: 1, estado: 'livre' };
+    var due = somarDias(diaSP(c.estagios[u]), EST_INTERVALO), atraso = difDias(diaSP(new Date()), due);
+    return { k: u + 1, ref: u, due: due, atraso: atraso, estado: atraso < 0 ? 'bloqueado' : atraso >= EST_ATRASO ? 'atrasado' : 'liberado' };
+  }
   function htmlEstagios(c, i) {
-    var e = c.estagios || {}, ult = ultimoEstagio(c), prox = ult < 5 ? ult + 1 : 0, bt = '';
+    var e = c.estagios || {}, ult = ultimoEstagio(c), st = estadoProximo(c), bt = '';
     for (var k = 1; k <= 5; k++) {
-      var on = !!e[k];
-      bt += '<button type="button" class="es-btn' + (on ? ' on' : '') + (!on && k === prox ? ' prox' : '') + '" data-idx="' + i + '" data-acao="estagio" data-n="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '"' +
-        ' aria-label="Estágio ' + k + ': ' + EST_TITULOS[k] + (on ? ' (feito em ' + dataHoraEstagio(e[k]) + ')' : '') + '"' +
-        ' title="' + k + ' · ' + EST_TITULOS[k] + (on ? ' — feito em ' + dataHoraEstagio(e[k]) + ' (toque para desmarcar)' : '') + '">' + k + '</button>';
+      var on = !!e[k], cls = 'es-btn', conteudo = String(k), dica = k + ' · ' + EST_TITULOS[k];
+      if (on) { cls += ' on'; dica += ' — feito em ' + dataHoraEstagio(e[k]) + ' (toque para desmarcar)'; }
+      else if (st && k === st.k) {
+        if (st.estado === 'bloqueado') { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera em ' + dataBRcurta(st.due) + ' (toque para enviar antes do prazo)'; }
+        else if (st.estado === 'atrasado') { cls += ' atras'; dica += ' — era para ' + dataBRcurta(st.due) + ' (atrasado ' + st.atraso + ' dias)'; }
+        else { cls += ' prox'; if (st.estado === 'liberado') dica += ' — liberado desde ' + dataBRcurta(st.due); }
+      } else if (st && k > st.k) { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera depois do estágio ' + (k - 1); }
+      bt += '<button type="button" class="' + cls + '" data-idx="' + i + '" data-acao="estagio" data-n="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '" aria-label="Estágio ' + esc(dica) + '" title="' + esc(dica) + '">' + conteudo + '</button>';
     }
-    return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + (ult ? '<span class="es-ult">último: ' + dataCurtaEstagio(e[ult]) + '</span>' : '') + '</div>';
+    var info = '';
+    if (ult) info += 'último: ' + dataCurtaEstagio(e[ult]);
+    if (st && st.estado === 'bloqueado') info += ' · próximo: ' + dataBRcurta(st.due);
+    else if (st && st.estado === 'liberado') info += ' · ' + (st.atraso === 0 ? 'enviar hoje' : 'liberado desde ' + dataBRcurta(st.due));
+    else if (st && st.estado === 'atrasado') info += ' · atrasado ' + st.atraso + ' dias';
+    return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + (info ? '<span class="es-ult' + (st && st.estado === 'atrasado' ? ' atras' : '') + '">' + esc(info) + '</span>' : '') + '</div>';
   }
   // Mensagens prontas de cada estágio (o texto pode ser editado antes de enviar)
   function msgEstagio(n, c) {
@@ -1754,7 +1786,8 @@ body.modal-aberto{overflow:hidden}
     $('es-titulo').textContent = 'Estágio ' + n + ' · ' + EST_TITULOS[n];
     $('es-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
     $('es-msg').value = msgEstagio(n, c);
-    var av = [];
+    var av = [], stp = estadoProximo(c);
+    if (stp && stp.k === n && stp.estado === 'bloqueado') av.push('Ainda não está no prazo: este estágio libera em ' + dataBRcurta(stp.due) + ' (' + EST_INTERVALO + ' dias depois do estágio ' + stp.ref + '). Pode enviar mesmo assim, se for o caso.');
     if ((n === 1 || n === 2) && c.diasAtrasoMax < 10) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. O contrato prevê interromper o serviço após 10 dias (cláusula 9).');
     if (n === 5 && c.diasAtrasoMax < 15) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. A inclusão em órgãos de proteção ao crédito é prevista após 15 dias (cláusula 6).');
     if (n === 5) av.push('Antes de cobrar os R$ 300,00, confirme que o aparelho ainda está com o cliente. O boleto você gera à parte.');
