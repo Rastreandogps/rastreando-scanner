@@ -620,6 +620,16 @@ body.modal-aberto{overflow:hidden}
 @keyframes es-pulsa{0%,100%{box-shadow:0 0 0 0 rgba(36,81,160,.5)}50%{box-shadow:0 0 0 6px rgba(36,81,160,0)}}
 .es-ult{font-size:.68rem;color:var(--text-3);margin-left:2px}
 .es-ult.atras{color:#b91c1c;font-weight:700}
+.es-indice{font-family:var(--font-body);font-size:.68rem;font-weight:700;color:var(--navy-light);background:#fff;border:1px solid var(--border);border-radius:20px;padding:3px 9px;cursor:pointer;line-height:1.2}
+.es-indice:hover{background:#eef2ff;border-color:var(--navy-light)}
+.ix-lista{list-style:none;margin:6px 0 4px;padding:0}
+.ix-lista li{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:.92rem;color:var(--text);border-bottom:1px solid var(--border)}
+.ix-lista li:last-child{border-bottom:none}
+.ix-lista b{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#475569;display:flex;align-items:center;justify-content:center;font-size:.78rem}
+.es-btn.es-prot{border-color:#0f172a;background:#fff;color:#0f172a;font-size:.95rem}
+.es-btn.es-prot:hover{background:#f1f5f9;color:#0f172a}
+.es-btn.es-prot.feito{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.22)}
+.es-btn.es-prot.feito:hover{background:#0f172a;color:#fff}
 .es-btn.lock{color:#94a3b8;background:#eef2f7;border-style:dashed}
 .es-btn.lock svg{width:13px;height:13px;display:block}
 .es-btn.atras{background:#ef4444;border-color:#b91c1c;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
@@ -978,6 +988,20 @@ body.modal-aberto{overflow:hidden}
     <label>Mensagem que será enviada</label>
     <div class="rv-msg" id="rv-msg"></div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="rv-continuar" style="width:auto">Continuar o envio</button><button type="button" class="btn-link" id="rv-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="ix-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="ix-titulo" style="max-width:340px">
+    <h3 id="ix-titulo">Índice da cobrança</h3>
+    <ol class="ix-lista">
+      <li><b>1</b> Cobrança amigável</li>
+      <li><b>2</b> Chip cancelado (informativo)</li>
+      <li><b>3</b> Reforço: medidas e comodato R$&nbsp;300</li>
+      <li><b>4</b> Aviso formal (extrajudicial)</li>
+      <li><b>5</b> Boleto do comodato R$&nbsp;300 (5&nbsp;dias)</li>
+      <li><b>6</b> Protestar (cartório)</li>
+    </ol>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="ix-fechar" style="width:auto">Fechar</button></div>
   </div>
 </div>
 <div class="modal-fundo" id="es-fundo" hidden>
@@ -1410,7 +1434,6 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
           '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
-          '<button type="button" class="btn-protesto' + (c.protestadoEm ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="protesto" title="' + (c.protestadoEm ? 'Desmarcar protesto' : 'Marcar como protestado') + '" aria-pressed="' + (c.protestadoEm ? 'true' : 'false') + '">⚖️ <span>' + (c.protestadoEm ? 'Protestado' : 'Protestar') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
           (c.ultimoEnvio ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-envio">🧹 Limpar marcação de envio</button>' : '') +
@@ -1745,12 +1768,14 @@ body.modal-aberto{overflow:hidden}
       } else if (st && k > st.k) { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera depois do estágio ' + (k - 1); }
       bt += '<button type="button" class="' + cls + '" data-idx="' + i + '" data-acao="estagio" data-n="' + k + '" aria-pressed="' + (on ? 'true' : 'false') + '" aria-label="Estágio ' + esc(dica) + '" title="' + esc(dica) + '">' + conteudo + '</button>';
     }
+    var prot = !!c.protestadoEm, titProt = prot ? 'Protestado em ' + dataCurtaEstagio(c.protestadoEm) + ' — toque para desmarcar' : 'Protestar (6º passo)';
+    bt += '<button type="button" class="es-btn es-prot' + (prot ? ' feito' : '') + '" data-idx="' + i + '" data-acao="protesto" aria-pressed="' + (prot ? 'true' : 'false') + '" aria-label="' + titProt + '" title="' + titProt + '">⚖️</button>';
     var info = '';
     if (ult) info += 'último: ' + dataCurtaEstagio(e[ult]);
     if (st && st.estado === 'bloqueado') info += ' · próximo: ' + dataBRcurta(st.due);
     else if (st && st.estado === 'liberado') info += ' · ' + (st.atraso === 0 ? 'enviar hoje' : 'liberado desde ' + dataBRcurta(st.due));
     else if (st && st.estado === 'atrasado') info += ' · atrasado ' + st.atraso + ' dias';
-    return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + (info ? '<span class="es-ult' + (st && st.estado === 'atrasado' ? ' atras' : '') + '">' + esc(info) + '</span>' : '') + '</div>';
+    return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + '<button type="button" class="es-indice" data-acao="indice-est">Índice</button>' + (info ? '<span class="es-ult' + (st && st.estado === 'atrasado' ? ' atras' : '') + '">' + esc(info) + '</span>' : '') + '</div>';
   }
   // Mensagens prontas de cada estágio (o texto pode ser editado antes de enviar)
   function msgEstagio(n, c) {
@@ -1837,6 +1862,10 @@ body.modal-aberto{overflow:hidden}
   $('es-so-marcar').addEventListener('click', function () { confirmarEstagio(false); });
   $('es-cancelar').addEventListener('click', fecharEstagio);
   $('es-fundo').addEventListener('click', function (ev) { if (ev.target === $('es-fundo')) fecharEstagio(); });
+  // Índice: o que é cada estágio
+  document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-acao="indice-est"]')) $('ix-fundo').hidden = false; });
+  $('ix-fechar').addEventListener('click', function () { $('ix-fundo').hidden = true; });
+  $('ix-fundo').addEventListener('click', function (ev) { if (ev.target === $('ix-fundo')) $('ix-fundo').hidden = true; });
 
   // Cadeado do IMEI (fechado = campo travado; aberto = dá para escrever)
   var CADEADO_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
