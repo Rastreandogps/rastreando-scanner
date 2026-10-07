@@ -1593,13 +1593,16 @@ body.modal-aberto{overflow:hidden}
       : c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
     var link = $('rt-link').value.trim();
     if (link && !/^https?:\/\/\S+$/i.test(link)) { toast('O link do monitoramento precisa começar com http:// ou https://', 'erro'); $('rt-link').focus(); return; }
+    // se o IMEI do aparelho estiver preenchido no card, vai junto na observação da OS (aparece no card do admin e do técnico)
+    var imeiCard = String(c.imei || '').replace(/\s+/g, ' ').trim();
+    var obsFinal = [imeiCard ? 'IMEI do aparelho: ' + imeiCard : '', $('rt-obs').value.trim()].filter(Boolean).join(' · ');
     var btn = $('rt-enviar'); btn.disabled = true;
     try {
-      var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: $('rt-obs').value.trim(), motivo: motivo, linkLocalizacao: link, confirmarDuplicado: confirmado });
+      var r = await chamar('rem_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: obsFinal, motivo: motivo, linkLocalizacao: link, confirmarDuplicado: confirmado });
       fecharModalRetirada();
       avisarAppTecnico(r.protocolo);
       RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
-      toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+      toast('Ordem enviada ao APP Técnico (' + r.protocolo + ').' + (imeiCard ? ' IMEI incluído na observação.' : '') + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
       btn.disabled = false;
