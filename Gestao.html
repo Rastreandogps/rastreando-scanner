@@ -616,6 +616,8 @@ body.modal-aberto{overflow:hidden}
 .cliente-card.chip-off .cc-acoes{background:#FECACA;border-top-color:#FCA5A5}
 .cc-titulo .nome-linha{display:flex;align-items:center;gap:6px;min-width:0}
 .cc-titulo .nome-linha .nome{min-width:0}
+.cc-titulo a.nome-wpp{text-decoration:underline dotted rgba(37,211,102,.7);text-underline-offset:3px;cursor:pointer}
+.cc-titulo a.nome-wpp:hover,.cc-titulo a.nome-wpp:focus-visible{color:#128C3F;text-decoration-style:solid}
 .chip-ico{flex-shrink:0;width:24px;height:24px;display:block;animation:chip-pisca 1s ease-in-out infinite}
 @keyframes chip-pisca{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.25;transform:scale(.88)}}
 .cc-acoes .btn-chip{flex:0 0 auto;margin:0;padding:8px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
@@ -1492,7 +1494,10 @@ body.modal-aberto{overflow:hidden}
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
             : '<div class="cc-avatar">' + esc(iniciais) + '</div>') +
-          '<div class="cc-titulo"><div class="nome-linha"><div class="nome">' + esc(c.nome) + '</div>' + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
+          '<div class="cc-titulo"><div class="nome-linha">' + (function () {
+            var t = soDig(c.telefone); if (t && t.length <= 11) t = '55' + t;
+            return t ? '<a class="nome nome-wpp" href="https://wa.me/' + t + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp (sem mensagem)">' + esc(c.nome) + '</a>' : '<div class="nome">' + esc(c.nome) + '</div>';
+          })() + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
         ledEnviado +
