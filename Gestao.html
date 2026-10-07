@@ -171,6 +171,9 @@ body{background:var(--bg,#F5F7FA)}
 .cc-cob{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#FEF3C7;color:#92400E}
 .cc-cob.ok{background:#DCFCE7;color:#166534}
 .cob-secoes{display:flex;gap:8px;margin:0 0 12px}
+.aviso-atual{margin:0 0 12px;padding:8px 12px;border-radius:10px;background:#EFF6FF;color:#1E40AF;font-size:.8rem;font-weight:600;text-align:center}
+.aviso-atual[hidden]{display:none}
+.aviso-atual.erro{background:#FEF2F2;color:#B91C1C}
 .cob-secoes[hidden]{display:none}
 .cob-secoes button{flex:1;padding:11px 10px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-weight:800;font-size:.88rem;color:var(--text-2);cursor:pointer}
 .cob-secoes button.ativo{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -754,6 +757,7 @@ body.modal-aberto{overflow:hidden}
     <button type="button" data-tab="metas">🎯 Metas</button>
     <button type="button" data-tab="indicacoes">🎁 Indicações <span id="cnt-indicacoes"></span></button>
   </div>
+  <div class="aviso-atual" id="aviso-atualizando" hidden></div>
 
   <div class="resumo" id="resumo-clientes">
     <div class="card"><b id="res-qtd">0</b><span>clientes</span></div>
@@ -1200,18 +1204,42 @@ body.modal-aberto{overflow:hidden}
     btn.dataset.txt = 'Entrar';
     $('pin-erro').textContent = '';
     try {
-      aplicarDados(await chamar('listar'));
+      var primeira = await chamar('listar', { rapido: true }); // abre na hora com a última lista guardada
+      aplicarDados(primeira);
       $('tela-pin').hidden = true; $('tela-lista').hidden = false;
       carregarTemplates();
       renderLista();
       atualizarContadorIndicacoes();
       aplicarAbaInicial();
+      if (primeira && primeira.velho) atualizarEmSegundoPlano(primeira.cacheEm);
     } catch (e) {
       $('tela-lista').hidden = true; $('tela-pin').hidden = false;
       $('pin-erro').textContent = (e && e.message) || 'Não foi possível carregar a lista.';
       if (e && (e.status === 'PERMISSION_DENIED' || e.status === 'UNAUTHENTICATED')) auth.signOut();
     }
     carregando(btn, false);
+  }
+
+  // Lista guardada era antiga: mostra ela na hora e busca a nova sem travar a tela
+  var atualizandoFundo = false;
+  async function atualizarEmSegundoPlano(cacheEm) {
+    if (atualizandoFundo) return;
+    atualizandoFundo = true;
+    var av = $('aviso-atualizando'), hora = '';
+    try { hora = new Date(cacheEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'); } catch (e) { }
+    av.classList.remove('erro');
+    av.textContent = '⟳ Mostrando a lista de ' + hora + ' · atualizando…';
+    av.hidden = false;
+    try {
+      aplicarDados(await chamar('listar'));
+      renderLista();
+      if (abaAtual === 'gestao' || abaAtual === 'pagos' || abaAtual === 'classif') renderClsAtual();
+      av.hidden = true;
+    } catch (e) {
+      av.classList.add('erro');
+      av.textContent = 'Não consegui atualizar a lista agora. Toque em 🔄 Atualizar para tentar de novo.';
+    }
+    atualizandoFundo = false;
   }
 
   // ---------- TEMPLATES ----------
@@ -1335,7 +1363,7 @@ body.modal-aberto{overflow:hidden}
   $('f-est').addEventListener('change', renderLista);
   $('btn-atualizar').addEventListener('click', async function () {
     var btn = this; carregando(btn, true, 'Atualizando...');
-    try { aplicarDados(await chamar('listar', { forcar: true })); renderLista(); toast('Lista atualizada.', 'ok'); }
+    try { aplicarDados(await chamar('listar', { forcar: true })); $('aviso-atualizando').hidden = true; renderLista(); toast('Lista atualizada.', 'ok'); }
     catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); }
     finally { carregando(btn, false, '🔄 Atualizar'); }
   });
@@ -2216,7 +2244,7 @@ body.modal-aberto{overflow:hidden}
   async function atualizarTudo(btn) {
     var txt = btn.textContent; btn.disabled = true; btn.textContent = 'Atualizando...';
     forcarBase = true;
-    try { aplicarDados(await chamar('listar', { forcar: true })); renderClsAtual(); toast('Atualizado.', 'ok'); atualizarContadorIndicacoes(true); }
+    try { aplicarDados(await chamar('listar', { forcar: true })); $('aviso-atualizando').hidden = true; renderClsAtual(); toast('Atualizado.', 'ok'); atualizarContadorIndicacoes(true); }
     catch (e) { toast((e && e.message) || 'Erro ao atualizar.', 'erro'); btn.disabled = false; btn.textContent = txt; }
   }
 
