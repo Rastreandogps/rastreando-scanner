@@ -558,6 +558,8 @@ body.modal-aberto{overflow:hidden}
 .g-saldo-lbl{font-size:.82rem;opacity:.9;font-weight:600}
 .g-saldo-v{font-family:var(--font-display);font-size:1.7rem;font-weight:800;margin-top:2px}
 .g-saldo-h{font-size:.72rem;opacity:.8;margin-top:2px}
+.g-saldo-conf{font-size:.78rem;font-weight:600;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.25)}
+.g-saldo-conf small{font-weight:400;opacity:.8}
 /* topo compacto: assinantes com o número de um lado e o crescimento do outro */
 .g-topo{align-items:stretch}
 .g-saldo.azul{display:grid;grid-template-columns:auto 1fr;column-gap:16px;align-items:center}
@@ -572,6 +574,7 @@ body.modal-aberto{overflow:hidden}
   .g-topo .g-saldo:not(.azul) .g-saldo-lbl{grid-column:1;grid-row:1}
   .g-topo .g-saldo:not(.azul) .g-saldo-h{grid-column:1;grid-row:2}
   .g-topo .g-saldo:not(.azul) .g-saldo-v{grid-column:2;grid-row:1 / span 2;font-size:1.45rem;margin:0}
+  .g-topo .g-saldo:not(.azul) .g-saldo-conf{grid-column:1 / -1;grid-row:3;margin-top:6px}
   .g-saldo.azul{padding:12px 14px}
   .g-saldo.azul .g-saldo-v{font-size:1.6rem}
   .g-cres b{font-size:1.05rem}
@@ -2102,7 +2105,8 @@ body.modal-aberto{overflow:hidden}
     if (!SALDO) return '<div class="g-saldo-lbl">Saldo em conta (Asaas)</div><div class="g-saldo-v" style="font-size:1rem;color:var(--text-3)">Carregando...</div>';
     if (SALDO.erro) return '<div class="g-saldo-lbl">Saldo em conta (Asaas)</div><div class="g-saldo-v" style="font-size:.9rem;color:var(--danger)">' + esc(SALDO.erro) + '</div>';
     var h = new Date(SALDO.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return '<div class="g-saldo-lbl">💰 Saldo em conta (Asaas)</div><div class="g-saldo-v">' + brl(SALDO.saldo) + '</div><div class="g-saldo-h">consultado às ' + h + '</div>';
+    var conf = SALDO.confirmados ? '<div class="g-saldo-conf">⏳ Confirmados: ' + brl(SALDO.confirmados.liquido) + ' <small>líquido · ' + SALDO.confirmados.qtd + (SALDO.confirmados.qtd === 1 ? ' cobrança' : ' cobranças') + ' a cair na conta</small></div>' : '';
+    return '<div class="g-saldo-lbl">💰 Saldo em conta (Asaas)</div><div class="g-saldo-v">' + brl(SALDO.saldo) + '</div><div class="g-saldo-h">consultado às ' + h + '</div>' + conf;
   }
   var BASE = null, forcarBase = false;
   try { BASE = JSON.parse(localStorage.getItem('gestaoBase') || 'null'); } catch (e) { BASE = null; } // último valor conhecido: aparece na hora
