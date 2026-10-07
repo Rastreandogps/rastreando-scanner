@@ -645,6 +645,7 @@ body.modal-aberto{overflow:hidden}
 .es-btn.es-prot.feito{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.22)}
 .es-btn.es-prot.feito:hover{background:#0f172a;color:#fff}
 .es-btn.lock{color:#94a3b8;background:#eef2f7;border-style:dashed}
+.es-btn.prom{background:#FEF3C7;border-color:#F59E0B;color:#92400E;font-size:.85rem}
 .es-btn.lock svg{width:13px;height:13px;display:block}
 .es-btn.atras{background:#ef4444;border-color:#b91c1c;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.25)}
 .es-btn.atras:hover{color:#fff;border-color:#7f1d1d}
@@ -1843,8 +1844,13 @@ body.modal-aberto{overflow:hidden}
   function estadoProximo(c) {
     var u = ultimoEstagio(c);
     if (u >= 5) return null;
+    // Promessa de pagamento (Retorno anotado): enquanto a data não passar, o próximo estágio fica aguardando
+    var ret = DADOS && DADOS.retornos ? retornoDe(c) : null, prom = ret && ret.dataPromessa ? String(ret.dataPromessa).slice(0, 10) : '', hoje = diaSP(new Date());
+    if (prom && prom >= hoje) return { k: u + 1, ref: u, due: somarDias(prom, 1), atraso: difDias(hoje, somarDias(prom, 1)), estado: 'promessa', prom: prom };
     if (u === 0) return { k: 1, estado: 'livre' };
-    var due = somarDias(diaSP(c.estagios[u]), EST_INTERVALO), atraso = difDias(diaSP(new Date()), due);
+    var due = somarDias(diaSP(c.estagios[u]), EST_INTERVALO);
+    if (prom && somarDias(prom, 1) > due) due = somarDias(prom, 1); // promessa quebrada: libera no dia seguinte, sem já nascer atrasado
+    var atraso = difDias(hoje, due);
     return { k: u + 1, ref: u, due: due, atraso: atraso, estado: atraso < 0 ? 'bloqueado' : atraso >= EST_ATRASO ? 'atrasado' : 'liberado' };
   }
   function htmlEstagios(c, i) {
@@ -1853,7 +1859,8 @@ body.modal-aberto{overflow:hidden}
       var on = !!e[k], cls = 'es-btn', conteudo = String(k), dica = k + ' · ' + EST_TITULOS[k];
       if (on) { cls += ' on'; dica += ' — feito em ' + dataHoraEstagio(e[k]) + ' (toque para ver ou anexar prints)'; }
       else if (st && k === st.k) {
-        if (st.estado === 'bloqueado') { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera em ' + dataBRcurta(st.due) + ' (toque para enviar antes do prazo)'; }
+        if (st.estado === 'promessa') { cls += ' prom'; conteudo = '⏳'; dica += ' — aguardando a promessa de pagamento até ' + dataBRcurta(st.prom) + ' (toque para enviar mesmo assim)'; }
+        else if (st.estado === 'bloqueado') { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera em ' + dataBRcurta(st.due) + ' (toque para enviar antes do prazo)'; }
         else if (st.estado === 'atrasado') { cls += ' atras'; dica += ' — era para ' + dataBRcurta(st.due) + ' (atrasado ' + st.atraso + ' dias)'; }
         else { cls += ' prox'; if (st.estado === 'liberado') dica += ' — liberado desde ' + dataBRcurta(st.due); }
       } else if (st && k > st.k) { cls += ' lock'; conteudo = CADEADO_FECHADO; dica += ' — libera depois do estágio ' + (k - 1); }
@@ -1864,7 +1871,8 @@ body.modal-aberto{overflow:hidden}
     bt += '<button type="button" class="es-btn es-prot' + (prot ? ' feito' : '') + '" data-idx="' + i + '" data-acao="protesto" aria-pressed="' + (prot ? 'true' : 'false') + '" aria-label="' + titProt + '" title="' + titProt + '">⚖️</button>';
     var info = '';
     if (ult) info += 'último: ' + dataCurtaEstagio(e[ult]);
-    if (st && st.estado === 'bloqueado') info += ' · próximo: ' + dataBRcurta(st.due);
+    if (st && st.estado === 'promessa') info += (info ? ' · ' : '') + 'aguardando promessa até ' + dataBRcurta(st.prom);
+    else if (st && st.estado === 'bloqueado') info += ' · próximo: ' + dataBRcurta(st.due);
     else if (st && st.estado === 'liberado') info += ' · ' + (st.atraso === 0 ? 'enviar hoje' : 'liberado desde ' + dataBRcurta(st.due));
     else if (st && st.estado === 'atrasado') info += ' · atrasado ' + st.atraso + ' dias';
     return '<div class="cc-est"><span class="cc-est-tit">Cobrança</span>' + bt + '<button type="button" class="es-indice" data-acao="indice-est">Índice</button>' + (info ? '<span class="es-ult' + (st && st.estado === 'atrasado' ? ' atras' : '') + '">' + esc(info) + '</span>' : '') + '</div>';
@@ -1905,6 +1913,7 @@ body.modal-aberto{overflow:hidden}
     $('es-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + brl(c.valorTotal) + ' em aberto · ' + c.diasAtrasoMax + ' dias de atraso';
     $('es-msg').value = msgEstagio(n, c);
     var av = [], stp = estadoProximo(c);
+    if (stp && stp.k === n && stp.estado === 'promessa') av.push('O cliente prometeu pagar até ' + dataBRcurta(stp.prom) + ' (Retorno anotado). O normal é esperar essa data. Pode enviar mesmo assim, se for o caso.');
     if (stp && stp.k === n && stp.estado === 'bloqueado') av.push('Ainda não está no prazo: este estágio libera em ' + dataBRcurta(stp.due) + ' (' + EST_INTERVALO + ' dias depois do estágio ' + stp.ref + '). Pode enviar mesmo assim, se for o caso.');
     if ((n === 1 || n === 2) && c.diasAtrasoMax < 10) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. O contrato prevê interromper o serviço após 10 dias (cláusula 9).');
     if (n === 5 && c.diasAtrasoMax < 15) av.push('Este cliente tem ' + c.diasAtrasoMax + ' dias de atraso. A inclusão em órgãos de proteção ao crédito é prevista após 15 dias (cláusula 6).');
