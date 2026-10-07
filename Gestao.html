@@ -171,6 +171,7 @@ body{background:var(--bg,#F5F7FA)}
 .cc-cob{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#FEF3C7;color:#92400E}
 .cc-cob.ok{background:#DCFCE7;color:#166534}
 .cob-secoes{display:flex;gap:8px;margin:0 0 12px}
+body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;transition:filter .15s}
 .aviso-atual{margin:0 0 12px;padding:8px 12px;border-radius:10px;background:#EFF6FF;color:#1E40AF;font-size:.8rem;font-weight:600;text-align:center}
 .aviso-atual[hidden]{display:none}
 .aviso-atual.erro{background:#FEF2F2;color:#B91C1C}
@@ -724,7 +725,8 @@ body.modal-aberto{overflow:hidden}
     <div class="header-brand">Rastreando GPS</div>
     <div class="header-sub">Gestão · uso interno</div>
   </div>
-  <button type="button" id="btn-sair" hidden style="margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer">Sair</button>
+  <button type="button" id="btn-olho" hidden aria-pressed="false" title="Esconder valores" aria-label="Esconder valores" style="margin-left:auto;background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:8px 12px;font:inherit;font-size:1.05rem;line-height:1;cursor:pointer">👁️</button>
+  <button type="button" id="btn-sair" hidden style="margin-left:8px;background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer">Sair</button>
 </header>
 
 <!-- LOGIN -->
@@ -1180,7 +1182,7 @@ body.modal-aberto{overflow:hidden}
   }
 
   auth.onAuthStateChanged(function (u) {
-    $('btn-sair').hidden = !u;
+    $('btn-sair').hidden = !u; $('btn-olho').hidden = !u;
     if (u) { entrar(); }
     else { $('tela-lista').hidden = true; $('tela-pin').hidden = false; abaInicialAplicada = false; }
   });
@@ -1219,6 +1221,53 @@ body.modal-aberto{overflow:hidden}
     }
     carregando(btn, false);
   }
+
+  // ===== Olhinho de privacidade: desfoca todos os valores em R$ da tela (só a tela; mensagens e cálculos não mudam) =====
+  var RE_VALOR = /-?\s?R\$\s?-?[\d.]+(?:,\d+)?(?:\s?(?:mil|mi)\b)?/g;
+  var PULAR_TAGS = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, OPTION: 1, SELECT: 1, INPUT: 1 };
+  function marcarValores(raiz) {
+    if (!raiz) return;
+    if (raiz.nodeType === 3) raiz = raiz.parentNode;
+    if (!raiz || raiz.nodeType !== 1) return;
+    var w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, null), nos = [], n;
+    while ((n = w.nextNode())) {
+      var pai = n.parentNode;
+      if (!pai || PULAR_TAGS[pai.nodeName] || pai.closest('.vp, svg')) continue;
+      RE_VALOR.lastIndex = 0;
+      if (RE_VALOR.test(n.nodeValue)) nos.push(n);
+    }
+    nos.forEach(function (t) {
+      var txt = t.nodeValue, frag = document.createDocumentFragment(), ult = 0, m;
+      RE_VALOR.lastIndex = 0;
+      while ((m = RE_VALOR.exec(txt))) {
+        if (m.index > ult) frag.appendChild(document.createTextNode(txt.slice(ult, m.index)));
+        var sp = document.createElement('span'); sp.className = 'vp'; sp.textContent = m[0]; frag.appendChild(sp);
+        ult = m.index + m[0].length;
+      }
+      if (ult < txt.length) frag.appendChild(document.createTextNode(txt.slice(ult)));
+      if (t.parentNode) t.parentNode.replaceChild(frag, t);
+    });
+  }
+  var obsValores = new MutationObserver(function (lista) {
+    lista.forEach(function (mu) {
+      if (mu.type === 'characterData') marcarValores(mu.target);
+      else mu.addedNodes.forEach(function (no) { marcarValores(no); });
+    });
+  });
+  obsValores.observe(document.body, { childList: true, subtree: true, characterData: true });
+  marcarValores(document.body);
+  function aplicarPrivado(on) {
+    document.body.classList.toggle('privado', on);
+    var b = $('btn-olho');
+    b.textContent = on ? '🙈' : '👁️';
+    b.title = on ? 'Mostrar valores' : 'Esconder valores';
+    b.setAttribute('aria-label', b.title);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('gestao_privado', on ? '1' : '0'); } catch (e) { }
+  }
+  var privIni = false; try { privIni = localStorage.getItem('gestao_privado') === '1'; } catch (e) { }
+  aplicarPrivado(privIni); // abre do jeito que você deixou da última vez
+  $('btn-olho').addEventListener('click', function () { aplicarPrivado(!document.body.classList.contains('privado')); });
 
   // Lista guardada era antiga: mostra ela na hora e busca a nova sem travar a tela
   var atualizandoFundo = false;
