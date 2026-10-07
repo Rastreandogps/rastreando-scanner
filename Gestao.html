@@ -168,6 +168,12 @@ body{background:var(--bg,#F5F7FA)}
 .cc-valor span{font-size:.72rem;color:var(--text-3)}
 .cc-selos{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 8px}
 .cc-dias{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--amber-dim);color:var(--amber)}
+.cc-cob{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#FEF3C7;color:#92400E}
+.cc-cob.ok{background:#DCFCE7;color:#166534}
+.cob-secoes{display:flex;gap:8px;margin:0 0 12px}
+.cob-secoes[hidden]{display:none}
+.cob-secoes button{flex:1;padding:11px 10px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-weight:800;font-size:.88rem;color:var(--text-2);cursor:pointer}
+.cob-secoes button.ativo{background:var(--navy);border-color:var(--navy);color:#fff}
 .cc-dias.grave{background:var(--danger-dim);color:var(--danger)}
 .cc-contato{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 10px}
 .cc-contato div{background:var(--bg,#F5F7FA);border-radius:8px;padding:8px 10px;font-size:.8rem;display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0}
@@ -737,6 +743,7 @@ body.modal-aberto{overflow:hidden}
     <button type="button" data-tab="gestao">📊 Gestão<span class="tab-sub" id="sub-gestao"></span></button>
     <button type="button" data-tab="um">1 boleto vencido <span id="cnt-um"></span></button>
     <button type="button" data-tab="dois" class="ativo">2+ meses vencidos <span id="cnt-dois"></span></button>
+    <button type="button" data-tab="cobranca">⚖️ Protestados <span id="cnt-cobranca"></span></button>
     <button type="button" data-tab="pagos">✅ Pagos <span id="cnt-pagos"></span></button>
     <button type="button" data-tab="retornos">📅 Retornos <span id="cnt-retornos"></span></button>
     <button type="button" data-tab="classif">🏅 Classificação</button>
@@ -847,6 +854,10 @@ body.modal-aberto{overflow:hidden}
     <button type="button" class="btn-link" id="btn-limpar-retornos">🧹 Limpar retornos</button>
   </div>
 
+  <div class="cob-secoes" id="cob-secoes" hidden>
+    <button type="button" data-sec="andamento" class="ativo">⏳ Em andamento <span id="cnt-cob-and"></span></button>
+    <button type="button" data-sec="protestados">⚖️ Protestados <span id="cnt-cob-prot"></span></button>
+  </div>
   <div id="lista-clientes"></div>
 
   <div id="aba-retornos" hidden>
@@ -1236,6 +1247,7 @@ body.modal-aberto{overflow:hidden}
       $('linha-limpar').style.display = abaExtra ? 'none' : '';
       $('resumo-clientes').style.display = abaExtra ? 'none' : '';
       $('lista-clientes').hidden = abaExtra;
+      $('cob-secoes').hidden = abaAtual !== 'cobranca';
       $('aba-retornos').hidden = abaAtual !== 'retornos';
       $('aba-classif').hidden = abaAtual !== 'classif';
       $('aba-pagos').hidden = abaAtual !== 'pagos';
@@ -1255,7 +1267,7 @@ body.modal-aberto{overflow:hidden}
   $('editor-um').style.display = 'none';
 
   // ---------- ABA FAVORITA (abre sempre nela) ----------
-  var ABAS_GESTAO = ['gestao', 'dois', 'um', 'pagos', 'retornos', 'classif', 'despesas', 'metas', 'indicacoes'];
+  var ABAS_GESTAO = ['gestao', 'dois', 'um', 'cobranca', 'pagos', 'retornos', 'classif', 'despesas', 'metas', 'indicacoes'];
   var abaInicialAplicada = false;
   function favAba() {
     try { var f = localStorage.getItem('gestaoFavAba') || ''; return ABAS_GESTAO.indexOf(f) >= 0 ? f : ''; } catch (e) { return ''; }
@@ -1368,12 +1380,34 @@ body.modal-aberto{overflow:hidden}
       atualizarSelos();
     }, 1500);
   }
+  // ===== Aba Protestados: quem já começou a cobrança (estágio 1+) ou está com o ⚖️ =====
+  // Usa os MESMOS cards das abas "1 boleto"/"2+" (é uma cópia: o cliente continua lá também) + os que só o servidor conhece.
+  var cobSecao = 'andamento';
+  function emCobranca(c) { return !!c.protestadoEm || ultimoEstagio(c) > 0; }
+  function listaCobranca() {
+    if (!DADOS) return [];
+    var vistos = {}, out = [];
+    (DADOS.dois || []).concat(DADOS.um || []).forEach(function (c) { var k = soDig(c.cpf); if (!vistos[k] && emCobranca(c)) { vistos[k] = 1; out.push(c); } });
+    (DADOS.cobranca || []).forEach(function (c) { var k = soDig(c.cpf); if (!vistos[k] && emCobranca(c)) { vistos[k] = 1; out.push(c); } });
+    return out;
+  }
+  document.querySelectorAll('#cob-secoes button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cobSecao = b.getAttribute('data-sec');
+      document.querySelectorAll('#cob-secoes button').forEach(function (x) { x.classList.toggle('ativo', x === b); });
+      renderLista();
+    });
+  });
   function renderLista() {
     carregarSelosFundo();
     $('cnt-dois').textContent = '(' + DADOS.dois.length + ')';
     $('cnt-um').textContent = '(' + DADOS.um.length + ')';
     $('cnt-retornos').textContent = DADOS.retornos.length ? '(' + DADOS.retornos.length + ')' : '';
-    var lista = (DADOS[abaAtual] || []).slice();
+    var cob = listaCobranca(), cobAnd = cob.filter(function (c) { return !c.protestadoEm; }), cobProt = cob.filter(function (c) { return !!c.protestadoEm; });
+    $('cnt-cobranca').textContent = cob.length ? '(' + cobAnd.length + ' · ' + cobProt.length + ')' : '';
+    $('cnt-cob-and').textContent = '(' + cobAnd.length + ')';
+    $('cnt-cob-prot').textContent = '(' + cobProt.length + ')';
+    var lista = (abaAtual === 'cobranca' ? (cobSecao === 'protestados' ? cobProt : cobAnd) : (DADOS[abaAtual] || [])).slice();
     var nFiltros = ['f-classe', 'f-venc', 'f-envio', 'f-retorno', 'f-chip', 'f-protesto', 'f-ret', 'f-est'].filter(function (id) { return $(id).value; }).length;
     $('btn-filtros').textContent = '🎚️ Filtros' + (nFiltros ? ' (' + nFiltros + ')' : '');
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
@@ -1423,7 +1457,7 @@ body.modal-aberto{overflow:hidden}
     $('res-valor').textContent = brl(valorSoma);
 
     if (!lista.length) {
-      var msg = 'Nenhum cliente encontrado.', outra = abaAtual === 'dois' ? 'um' : 'dois', achou = 0;
+      var msg = abaAtual === 'cobranca' && !termoTxt ? (cobSecao === 'protestados' ? 'Nenhum cliente protestado.' : 'Nenhum cliente em cobrança. Quem tiver o estágio 1 marcado aparece aqui.') : 'Nenhum cliente encontrado.', outra = abaAtual === 'dois' ? 'um' : 'dois', achou = 0;
       if (termoTxt && (abaAtual === 'dois' || abaAtual === 'um')) achou = (DADOS[outra] || []).filter(casaBusca).length;
       if (achou) msg += '<br><br><button type="button" class="btn btn-sec" id="ir-outra-aba" style="width:auto">Ver na aba "' + (outra === 'dois' ? '2+ meses vencidos' : '1 boleto vencido') + '" (' + achou + ')</button>';
       $('lista-clientes').innerHTML = '<div class="vazio">' + msg + '</div>';
@@ -1438,7 +1472,11 @@ body.modal-aberto{overflow:hidden}
       var retornoCliente = retornoDe(c);
       var iniciais = String(c.nome || '?').trim().split(/\s+/).filter(Boolean);
       iniciais = ((iniciais[0] || '?')[0] + (iniciais.length > 1 ? iniciais[iniciais.length - 1][0] : '')).toUpperCase();
-      var selos = '<span class="cc-dias' + (c.diasAtrasoMax >= 15 ? ' grave' : '') + '">⏱ ' + c.diasAtrasoMax + ' dias de atraso</span>';
+      var selos = c.diasAtrasoMax > 0 ? '<span class="cc-dias' + (c.diasAtrasoMax >= 15 ? ' grave' : '') + '">⏱ ' + c.diasAtrasoMax + ' dias de atraso</span>' : '';
+      if (c.protestadoEm && c.pagoAposProtesto) selos += '<span class="cc-cob ok">✅ Pagou — dar baixa no protesto</span>';
+      if (c.semBoletos) selos += '<span class="cc-cob">Boletos excluídos no Asaas · último valor guardado</span>';
+      if (c.semAssinatura) selos += '<span class="cc-cob">Assinatura apagada no Asaas</span>';
+      if (c.consultaFalhou) selos += '<span class="cc-cob">Não consegui consultar o Asaas agora</span>';
       var ledEnviado = '';
       if (c.ultimoEnvio) {
         var dt = new Date(c.ultimoEnvio);
@@ -1892,7 +1930,10 @@ body.modal-aberto{overflow:hidden}
       window.open('https://wa.me/' + (tel || '') + '?text=' + encodeURIComponent(msg), '_blank');
     }
     try {
-      await chamar('estagio', { cpf: c.cpf, nome: c.nome, estagio: n, marcado: true });
+      await chamar('estagio', { cpf: c.cpf, nome: c.nome, estagio: n, marcado: true, dados: (c.faturas || []).length ? {
+        telefone: c.telefone || '', imei: c.imei || '', valorTotal: c.valorTotal, diasAtrasoMax: c.diasAtrasoMax,
+        faturas: (c.faturas || []).map(function (f) { return { vencimento: f.vencimento, valor: f.valor, dias: f.dias }; })
+      } : null });
       c.estagios = c.estagios || {}; c.estagios[n] = new Date().toISOString();
       if (n === 2 && $('es-chip').checked && !$('es-chip-lbl').hidden) {
         await chamar('chipCancelado', { cpf: c.cpf, nome: c.nome, cancelado: true });
@@ -2110,7 +2151,7 @@ body.modal-aberto{overflow:hidden}
   async function marcarProtesto(c, btn) {
     if (!c) return;
     var novo = !c.protestadoEm;
-    if (!confirm(novo ? 'Marcar ' + c.nome + ' como protestado?\n\nOs dados dele ficam guardados para a lista de protestados.' : 'Desmarcar o protesto de ' + c.nome + '?')) return;
+    if (!confirm(novo ? 'Marcar ' + c.nome + ' como protestado?\n\nOs dados dele ficam guardados na aba Protestados e nunca são apagados sozinhos.' : 'Desmarcar o protesto de ' + c.nome + '?' + (c.pagoAposProtesto ? '\n\nEle já pagou: depois de desmarcar, os estágios e os prints dele serão apagados na próxima verificação.' : ''))) return;
     btn.disabled = true;
     try {
       var res = await chamar('protesto', { cpf: c.cpf, nome: c.nome, protestado: novo, dados: novo ? {
