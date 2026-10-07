@@ -266,6 +266,10 @@ body{background:var(--bg,#F5F7FA)}
 .tabs .tab-sub:empty{display:none}
 .tabs .tab-sub.mini{font-size:.6rem;font-weight:700;opacity:1;margin-top:1px;color:#059669}
 .tabs button.ativo .tab-sub.mini{color:#a7f3d0}
+.tabs button.desp-atrasada{background:#FEE2E2;border-color:#DC2626;color:#B91C1C}
+.tabs button.desp-atrasada .tab-sub.mini{color:#B91C1C}
+.tabs button.desp-atrasada.ativo{background:linear-gradient(135deg,#B91C1C,#DC2626);border-color:#B91C1C;color:#fff;box-shadow:0 4px 12px rgba(185,28,28,.35)}
+.tabs button.desp-atrasada.ativo .tab-sub.mini{color:#FECACA}
 .tabs .fav-estrela{position:static;margin:-6px -10px -6px 4px;padding:8px 10px}
 @media (max-width:560px){
   .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 12px}
@@ -1291,7 +1295,7 @@ body.modal-aberto{overflow:hidden}
     return DADOS.retornos.filter(function (r) { return soDig(r.cpf) === soDig(c.cpf); })
       .sort(function (a, b) { return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')); })[0];
   }
-  // Numerozinhos nos botões: Gestão = saldo do Asaas · Pagos = boletos do mês já pagos · Despesas = total e já pago
+  // Numerozinhos nos botões: Gestão = saldo do Asaas · Pagos = boletos do mês já pagos · Despesas = o que falta pagar (vermelho se houver vencida)
   var SELO_DESP = null, selosIniciados = false;
   function brlCurto(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
   function atualizarSelos() {
@@ -1304,9 +1308,16 @@ body.modal-aberto{overflow:hidden}
       if (SALDO && !SALDO.erro && SALDO.saldo != null) $('sub-gestao').textContent = brl(SALDO.saldo);
       if (DESP && DESP.mes === mesAtualKey() && DESP.fixos) {
         var e = somaGrupo('empresa'), p = somaGrupo('pessoal');
-        SELO_DESP = { total: e.total + p.total, pago: e.pago + p.pago };
+        var atr = 0; // despesas do mês atual que já venceram e ainda não foram pagas
+        DESP.fixos.concat(DESP.variaveis).forEach(function (i) { if ((i.grupo === 'empresa' || i.grupo === 'pessoal') && despAtrasadaAgora(i)) atr += i.valor; });
+        SELO_DESP = { total: e.total + p.total, pago: e.pago + p.pago, aberto: e.aberto + p.aberto, atrasado: atr };
       }
-      if (SELO_DESP) { $('sub-desp').textContent = brlCurto(SELO_DESP.total); $('sub-desp-pago').textContent = 'pago ' + brlCurto(SELO_DESP.pago); }
+      if (SELO_DESP) {
+        var temAtr = SELO_DESP.atrasado > 0.004, btnDesp = document.querySelector('.tabs button[data-tab="despesas"]');
+        $('sub-desp').textContent = brlCurto(SELO_DESP.aberto);
+        $('sub-desp-pago').textContent = temAtr ? 'vencido ' + brlCurto(SELO_DESP.atrasado) : 'falta pagar';
+        if (btnDesp) btnDesp.classList.toggle('desp-atrasada', temAtr);
+      }
     } catch (e) { }
   }
   // na entrada, busca em segundo plano o que ainda não foi carregado (sem mexer na tela aberta)
@@ -2322,6 +2333,12 @@ body.modal-aberto{overflow:hidden}
   }
   var despFechados = {}, despVerPagas = {}; // grupos recolhidos e grupos mostrando os itens pagos
   function despEstaOk(i, lista) { return lista === 'receitas' ? !!i.recebido : !!i.pago; }
+  // vencida e não paga NO MÊS ATUAL (usada no botão da aba; não depende do mês escolhido na tela)
+  function despAtrasadaAgora(i) {
+    if (i.pago || !i.dia) return false;
+    var h = new Date(), ult = new Date(h.getFullYear(), h.getMonth() + 1, 0).getDate();
+    return Math.min(i.dia, ult) < h.getDate();
+  }
   // Dia efetivo do vencimento no mês (dia 31 em mês de 30 dias vira o último dia)
   function despDiaReal(i) {
     if (!i.dia) return null;
