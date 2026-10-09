@@ -3244,7 +3244,8 @@ body.modal-aberto{overflow:hidden}
     concedida: { txt: '🎁 Concedida', cor: '#6d28d9', bg: '#ede9fe' },
     duplicada: { txt: '⚠️ Duplicada', cor: '#b45309', bg: '#fef3c7' },
     cancelada: { txt: '❌ Cancelada', cor: '#b91c1c', bg: '#fee2e2' },
-    aplicando: { txt: '⏳ Aplicando desconto', cor: '#b45309', bg: '#fef3c7' }
+    aplicando: { txt: '⏳ Aplicando desconto', cor: '#b45309', bg: '#fef3c7' },
+    credito:   { txt: '⏳ Crédito na fila', cor: '#0e7490', bg: '#cffafe' }
   };
   function capNome(x) { x = String(x || '').trim().split(/\s+/)[0] || ''; return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : ''; }
   function quandoAviso(iso) { try { return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'); } catch (e) { return ''; } }
@@ -3262,7 +3263,7 @@ body.modal-aberto{overflow:hidden}
   function quandoInd(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('pt-BR'); }
   function aguarda(i) { return i.status === 'instalada' && i.emDia === false; } // indicador com fatura vencida
   function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada' && !aguarda(i); }).length : 0; }
-  function contarAbertas() { return IND ? IND.itens.filter(function (i) { return i.status === 'agendou' || i.status === 'instalada' || i.status === 'aplicando'; }).length : 0; }
+  function contarAbertas() { return IND ? IND.itens.filter(function (i) { return i.status === 'agendou' || i.status === 'instalada' || i.status === 'aplicando' || (i.status === 'credito' && i.alerta); }).length : 0; }
   function marcarContador() { var n = contarAbertas(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
   async function atualizarContadorIndicacoes(forcar) {
     try { IND = await chamar('ind_lista', forcar ? { forcar: true } : undefined); marcarContador(); } catch (e) { /* segue sem o contador */ }
@@ -3280,11 +3281,11 @@ body.modal-aberto{overflow:hidden}
   function renderIndicacoes() {
     var todos = IND.itens;
     var cont = { conceder: 0, regularizar: 0, andamento: 0, concedidas: 0 };
-    todos.forEach(function (i) { if (aguarda(i)) cont.regularizar++; else if (i.status === 'instalada') cont.conceder++; else if (i.status === 'agendou') cont.andamento++; else if (i.status === 'concedida') cont.concedidas++; });
+    todos.forEach(function (i) { if (aguarda(i)) cont.regularizar++; else if (i.status === 'instalada') cont.conceder++; else if (i.status === 'agendou' || i.status === 'credito') cont.andamento++; else if (i.status === 'concedida') cont.concedidas++; });
     var lista = todos.filter(function (i) {
       if (indFiltro === 'conceder') return i.status === 'instalada' && !aguarda(i);
       if (indFiltro === 'regularizar') return aguarda(i);
-      if (indFiltro === 'andamento') return i.status === 'agendou';
+      if (indFiltro === 'andamento') return i.status === 'agendou' || i.status === 'credito';
       if (indFiltro === 'concedidas') return i.status === 'concedida';
       return true;
     });
@@ -3299,7 +3300,7 @@ body.modal-aberto{overflow:hidden}
         extra = '<div class="ind-conceder">' +
           '<div><span>Mensalidade do indicador</span><b>' + (i.mensalidade != null ? brl(i.mensalidade) : '—') + '</b></div>' +
           '<div><span>Desconto a dar (teto ' + brl(IND.teto) + ')</span><b class="dest">' + (i.desconto != null ? brl(i.desconto) : '—') + '</b></div>' +
-          '<div><span>Próxima fatura dele</span><b>' + (i.proximaFatura ? dataBR(i.proximaFatura.vencimento) + ' · ' + brl(i.proximaFatura.valor) : '—') + '</b></div>' +
+          '<div><span>Próxima mensalidade dele</span><b>' + (i.proximaFatura ? dataBR(i.proximaFatura.vencimento) + ' · ' + brl(i.proximaFatura.valor) : '—') + '</b></div>' +
         '</div>' + (i.alertas || []).map(function (a) { return '<div class="ind-alerta">⚠️ ' + esc(a) + '</div>'; }).join('') +
           (i.prazoAte ? (i.prazoVencido
             ? '<div class="ind-alerta">⏰ O prazo de ' + (IND.prazoDias || 60) + ' dias após a instalação passou (venceu em ' + esc(dataBR(i.prazoAte)) + ').</div>'
@@ -3322,13 +3323,20 @@ body.modal-aberto{overflow:hidden}
       } else if (i.status === 'concedida') {
         var da = i.descontoAplicado;
         extra = '<div class="cls-info" style="margin:8px 0 0">Concedida em ' + esc(quandoInd(i.concedidaEm)) + (i.valorConcedido != null ? ' · ' + brl(i.valorConcedido) : '') +
-          (da ? ' · boleto de ' + esc(dataBR(da.vencimento)) + (da.acao === 'excluir' ? ' excluído (não paga este mês)' : ': de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois)) : '') + '</div>';
+          (da ? ' · boleto de ' + esc(dataBR(da.vencimento)) + (da.acao === 'excluir' ? ' excluído (não paga este mês)' : ': de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois)) + (da.auto ? ' · aplicado sozinho pela fila de créditos' : '') : '') + '</div>';
         if (da) {
           var pnA = capNome(i.amigo.nome) || 'seu indicado';
           botoes = linkWppInd(i, 'Olá, ' + (capNome(i.indicador.nome) || 'tudo bem') + '! A instalação do ' + pnA + ' foi concluída e o seu prêmio do Indique e ganhe já foi aplicado: ' +
             (da.acao === 'excluir' ? 'o boleto de ' + dataBR(da.vencimento) + ' foi cancelado, você não paga este mês. 🎁' : 'o boleto de ' + dataBR(da.vencimento) + ' passou de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois) + '. 🎁') +
             '\n\nObrigado pela indicação!\nRastreando GPS', 'concedida');
         }
+      } else if (i.status === 'credito') {
+        var pz = i.creditoPrevisao;
+        extra = '<div class="cls-info" style="margin:8px 0 0">Crédito de ' + (i.creditoValor != null ? brl(i.creditoValor) : 'uma mensalidade') + ' guardado em ' + esc(quandoInd(i.creditoEm)) +
+          '. Entra sozinho no próximo boleto de mensalidade' + (pz && pz.vencimento ? ' (vencimento ' + esc(dataBR(pz.vencimento)) + ', gerado por volta de ' + esc(dataBR(pz.geracao)) + ')' : '') +
+          '. A conferência é feita todo dia às 7h.</div>' + (i.alerta ? '<div class="ind-alerta">⚠️ ' + esc(i.alerta) + '</div>' : '');
+        botoes = '<button type="button" class="btn-link" data-ind-conceder="' + esc(i.id) + '">já dei no Asaas (registrar)</button>' +
+                 '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'duplicada') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Este amigo (mesmo telefone) já tinha sido indicado antes. Só vale 1 indicação por pessoa.</div>';
       }
@@ -3343,7 +3351,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="cls-filtros"><span class="cls-info" style="margin:0">Indique e ganhe · mensalidade grátis de 1 veículo por pessoa indicada</span><button type="button" id="ind-atualizar" style="margin-left:auto">🔄 Atualizar</button></div>' +
       '<div class="cls-filtros">' + filtros + '</div>' + itens +
       '<div class="ind-teto"><label for="ind-teto-v">Teto da mensalidade grátis de 1 veículo (R$)</label><input type="number" id="ind-teto-v" min="0" step="0.10" value="' + IND.teto + '"><button type="button" class="btn btn-sec" id="ind-teto-salvar" style="width:auto">Salvar teto</button></div>' +
-      '<div class="cls-info" style="margin-top:8px">O desconto é dado por você no Asaas (na próxima fatura do indicador). Depois, toque em "Mensalidade concedida". O prêmio é do indicador em dia: quem está devendo fica em "Aguardando regularizar". Prazo para conceder: ' + (IND.prazoDias || 60) + ' dias após a instalação.</div>';
+      '<div class="cls-info" style="margin-top:8px">Toque em 🎁 Conceder desconto: o desconto entra no próximo boleto de MENSALIDADE de quem indicou (nunca na pró-rata). Sem boleto em aberto, o crédito fica na fila e entra sozinho quando o boleto for gerado (um mês por indicação). O prêmio é do indicador em dia: quem está devendo fica em "Aguardando regularizar". Prazo para conceder: ' + (IND.prazoDias || 60) + ' dias após a instalação.</div>';
     var box = $('indicacoes-conteudo');
     box.querySelectorAll('[data-indf]').forEach(function (b) { b.addEventListener('click', function () { indFiltro = b.getAttribute('data-indf'); renderIndicacoes(); }); });
     $('ind-atualizar').addEventListener('click', function () { abrirIndicacoes(true, true); });
@@ -3408,6 +3416,18 @@ body.modal-aberto{overflow:hidden}
         try {
           var pv = await chamar('ind_desc_previa', { id: id });
           if (pv.semBoleto) { toast('Ainda não há boleto em aberto de ' + nome + '. Tente de novo quando o próximo boleto for gerado.', 'erro'); return; }
+          if (pv.fila) {
+            var pz = pv.previsao;
+            var avisoF = pv.vencidas ? '\n\n⚠️ ' + nome + ' está com fatura vencida.' : '';
+            if (!confirm('Não há boleto de mensalidade em aberto de ' + nome + ' agora.\n\nO crédito de ' + brl(pv.premio) + ' fica guardado na fila e entra sozinho no próximo boleto' +
+              (pz && pz.vencimento ? ' (vencimento ' + dataBR(pz.vencimento) + ', gerado por volta de ' + dataBR(pz.geracao) + ')' : '') + '.' + avisoF + '\n\nGuardar o crédito?')) return;
+            b.textContent = 'Guardando...';
+            await chamar('ind_desc_aplicar', { id: id, fila: true, confirmar: !!pv.vencidas });
+            toast('Crédito guardado. Ele entra sozinho no próximo boleto de ' + nome + '. 🎁', 'ok');
+            indFiltro = 'andamento';
+            abrirIndicacoes(true);
+            return;
+          }
           if (pv.cartao) { toast('O próximo boleto de ' + nome + ' (' + dataBR(pv.boleto.vencimento) + ') é no cartão de crédito. Dê o desconto manualmente no Asaas e use "já dei no Asaas".', 'erro'); return; }
           var o = pv.acao === 'excluir'
             ? 'O boleto de ' + dataBR(pv.boleto.vencimento) + ' (' + brl(pv.boleto.valor) + ') será EXCLUÍDO: ' + nome + ' não paga este mês.'
