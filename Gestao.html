@@ -3312,8 +3312,10 @@ body.modal-aberto{overflow:hidden}
         extra = '<div class="cls-info" style="margin:8px 0 0">Aguardando a instalação. Ela é marcada sozinha quando o técnico conclui a OS (com o APP Técnico aberto).</div>';
         var pnInd = String(i.indicador.nome || '').trim().split(/\s+/)[0] || '', pnAmigo = String(i.amigo.nome || '').trim().split(/\s+/)[0] || 'seu indicado';
         var cap = function (x) { return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; };
-        var msgInd = 'Obrigado' + (pnInd ? ', ' + cap(pnInd) : '') + '! Recebemos aqui o agendamento do ' + cap(pnAmigo) + (tel ? ' (' + fmtTel(tel) + ')' : '') + '. ' +
-          'Assim que a instalação dele for concluída, você ganha a mensalidade grátis de 1 veículo. 🎁\n\nRastreando GPS';
+        var nomeAmigo = String(i.amigo.nome || '').trim().split(/\s+/).slice(0, 2).map(cap).join(' ') || 'Seu indicado';
+        var msgInd = 'Obrigado' + (pnInd ? ', ' + cap(pnInd) : '') + '! Recebemos o agendamento da sua indicação:\n\n' +
+          '*' + nomeAmigo + '*' + (tel ? '\n' + fmtTel(tel) : '') + '\n\n' +
+          'Assim que a instalação for concluída, você ganha a mensalidade grátis de 1 veículo. 🎁\n\nRastreando GPS';
         botoes = linkWppInd(i, msgInd, 'agendou') +
                  '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
