@@ -689,6 +689,9 @@ body.modal-aberto{overflow:hidden}
 .btn-manut:hover{background:#fef3c7}
 .cc-acoes .btn-manut{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
 .cls-acoes .btn-manut{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+#mn-veics .rt-veic{grid-template-columns:1fr 90px 132px}
+#mn-veics select{min-width:0;padding:10px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.9rem;background:#fff;color:var(--text)}
+@media(max-width:420px){#mn-veics .rt-veic{grid-template-columns:1fr 1fr}#mn-veics select{grid-column:1/-1}}
 #mn-motivo{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:1rem;background:#fff;color:var(--text)}
 .cls-acoes .btn-retirada{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer}
 .cls-acoes .btn-retirada:hover{background:#fef2f2}
@@ -1103,7 +1106,7 @@ body.modal-aberto{overflow:hidden}
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="mn-titulo">
     <h3 id="mn-titulo">🛠️ Ordem de manutenção</h3>
     <div class="rt-cli" id="mn-cli"></div>
-    <label>Veículo(s) <span style="font-weight:600;color:var(--text-3)">(a placa é opcional)</span></label>
+    <label>Veículo(s) <span style="font-weight:600;color:var(--text-3)">(a placa é opcional; com ou sem bloqueio é obrigatório)</span></label>
     <div id="mn-veics"></div>
     <button type="button" class="btn-link" id="mn-mais">+ adicionar outro veículo</button>
     <label for="mn-motivo">Motivo</label>
@@ -1784,11 +1787,16 @@ body.modal-aberto{overflow:hidden}
   $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetirada(); });
   // ---------- ORDEM DE MANUTENÇÃO (vira pedido PENDENTE de manutenção no APP Técnico) ----------
   var mnCliente = null;
+  function mnLinhaVeiculo() {
+    return '<div class="rt-veic"><input type="text" class="rt-modelo" maxlength="45" placeholder="Modelo do veículo" autocomplete="off">' +
+      '<input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off">' +
+      '<select class="mn-bloq" aria-label="Com ou sem bloqueio"><option value="">Bloqueio?</option><option value="com">Com bloqueio</option><option value="sem">Sem bloqueio</option></select></div>';
+  }
   function abrirModalManut(c) {
     if (!c) return;
     mnCliente = c;
     $('mn-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + (c.telefone ? ' · ' + esc(c.telefone) : '');
-    $('mn-veics').innerHTML = rtLinhaVeiculo();
+    $('mn-veics').innerHTML = mnLinhaVeiculo();
     $('mn-motivo').value = ''; $('mn-desc').value = ''; $('mn-link').value = '';
     $('mn-enviar').disabled = false;
     $('mn-fundo').hidden = false;
@@ -1801,7 +1809,7 @@ body.modal-aberto{overflow:hidden}
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('mn-fundo').hidden) fecharModalManut(); });
   $('mn-mais').addEventListener('click', function () {
     if (document.querySelectorAll('#mn-veics .rt-veic').length >= 5) { toast('Até 5 veículos por pedido.', 'erro'); return; }
-    $('mn-veics').insertAdjacentHTML('beforeend', rtLinhaVeiculo());
+    $('mn-veics').insertAdjacentHTML('beforeend', mnLinhaVeiculo());
     var m = document.querySelectorAll('#mn-veics .rt-modelo'); m[m.length - 1].focus();
   });
   $('mn-enviar').addEventListener('click', function () { enviarManut(false); });
@@ -1809,9 +1817,10 @@ body.modal-aberto{overflow:hidden}
     if (!mnCliente) return;
     var c = mnCliente;
     var veiculos = Array.prototype.map.call(document.querySelectorAll('#mn-veics .rt-veic'), function (el) {
-      return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim() };
+      return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim(), bloqueio: el.querySelector('.mn-bloq').value };
     }).filter(function (v) { return v.modelo || v.placa; });
     if (!veiculos.length || veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo do veículo.', 'erro'); return; }
+    if (veiculos.some(function (v) { return !v.bloqueio; })) { toast('Escolha se cada veículo é com ou sem bloqueio.', 'erro'); return; }
     var motivo = $('mn-motivo').value;
     if (!motivo) { toast('Escolha o motivo da manutenção.', 'erro'); $('mn-motivo').focus(); return; }
     var link = $('mn-link').value.trim();
