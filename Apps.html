@@ -423,9 +423,9 @@
             <span class="app-desc">Página que ensina o cliente a instalar o app no Android e no iPhone</span><span class="app-file" title="Repositório rastreando-app no GitHub">📄 instalar.html · app</span>
           </div>
         </a>
-        <a class="btn-wpp" href="https://wa.me/?text=Instale%20o%20app%20Rastreando%20GPS%20no%20seu%20celular%3A%0Ahttps%3A%2F%2Frastreandogps.github.io%2Frastreando-app%2Finstalar.html" target="_blank" rel="noopener" aria-label="Enviar o link de instalação do app pelo WhatsApp">
+        <button type="button" class="btn-wpp" id="btn-wpp-instalar" aria-label="Enviar o link de instalação do app pelo WhatsApp">
           <i class="ti ti-brand-whatsapp" aria-hidden="true"></i>
-        </a>
+        </button>
       </div>
       <a class="app-btn wide" href="https://api.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
         <div class="icon ic-indigo"><i class="ti ti-server" aria-hidden="true"></i></div>
@@ -645,7 +645,7 @@
 <div class="modal-tut-fundo" id="modal-tut" hidden>
   <div class="modal-tut-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-tut-titulo">
     <h2 id="modal-tut-titulo">Enviar acesso pelo WhatsApp</h2>
-    <p>Digite o login do cliente, se quiser. A senha e o link do tutorial já vêm prontos. Sem login, vai só a mensagem com o link do tutorial.</p>
+    <p id="modal-tut-texto">Digite o login do cliente, se quiser. A senha e o link do tutorial já vêm prontos. Sem login, vai só a mensagem com o link do tutorial.</p>
     <input class="modal-tut-campo" id="modal-tut-login" type="text" placeholder="Login (opcional) — ex.: LuizCastilho" autocomplete="off" autocorrect="off" autocapitalize="none">
     <div class="modal-tut-btns">
       <button class="modal-tut-cancel" id="modal-tut-fechar">Cancelar</button>
@@ -661,8 +661,21 @@
   var btnOk = document.getElementById('modal-tut-ok');
   var btnFechar = document.getElementById('modal-tut-fechar');
 
+  var modo = 'tutorial';
+  var texto = document.getElementById('modal-tut-texto');
+  var TXT_TUT = texto.textContent;
+  var TXT_INST = 'Digite o login do cliente, se quiser. A senha (123456) e o link para instalar o app já vêm prontos. Sem login, vai só a mensagem com o link de instalação.';
+
   document.getElementById('btn-wpp-tutorial').addEventListener('click', function(ev){
     ev.preventDefault();
+    modo = 'tutorial'; texto.textContent = TXT_TUT;
+    campo.value = '';
+    modal.hidden = false;
+    setTimeout(function(){ campo.focus(); }, 80);
+  });
+  document.getElementById('btn-wpp-instalar').addEventListener('click', function(ev){
+    ev.preventDefault();
+    modo = 'instalar'; texto.textContent = TXT_INST;
     campo.value = '';
     modal.hidden = false;
     setTimeout(function(){ campo.focus(); }, 80);
@@ -674,8 +687,22 @@
 
   function enviar(){
     var login = campo.value.trim();
+    var msg;
+    if (modo === 'instalar') {
+      msg = '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
+        'Agora você acompanha seu veículo em tempo real, de onde estiver. 📍\n\n' +
+        (login ? '🔐 *Seus dados de acesso*\n' +
+        '👤 *Login:* ' + login + '\n' +
+        '🔑 *Senha:* 123456\n\n' : '') +
+        '📲 *Instale o aplicativo no seu celular:*\n' +
+        'https://rastreandogps.github.io/rastreando-app/instalar.html\n\n' +
+        'Qualquer dúvida, é só chamar aqui. Boa viagem! 🚀';
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+      fechar();
+      return;
+    }
     // Login é opcional: sem login, vai só a mensagem com o link do tutorial
-    var msg = '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
+    msg = '🚗 *Bem-vindo à Rastreando GPS!*\n\n' +
       'Agora você acompanha seu veículo em tempo real, de onde estiver. 📍\n\n' +
       (login ? '🔐 *Seus dados de acesso*\n' +
       '👤 *Login:* ' + login + '\n' +
