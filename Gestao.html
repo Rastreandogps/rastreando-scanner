@@ -3149,14 +3149,20 @@ body.modal-aberto{overflow:hidden}
     instalada: { txt: '✅ Instalada · conceder', cor: '#15803d', bg: '#dcfce7' },
     concedida: { txt: '🎁 Concedida', cor: '#6d28d9', bg: '#ede9fe' },
     duplicada: { txt: '⚠️ Duplicada', cor: '#b45309', bg: '#fef3c7' },
-    cancelada: { txt: '❌ Cancelada', cor: '#b91c1c', bg: '#fee2e2' }
+    cancelada: { txt: '❌ Cancelada', cor: '#b91c1c', bg: '#fee2e2' },
+    aplicando: { txt: '⏳ Aplicando desconto', cor: '#b45309', bg: '#fef3c7' }
   };
+  function capNome(x) { x = String(x || '').trim().split(/\s+/)[0] || ''; return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : ''; }
+  function linkWppInd(i, msg) {
+    var t = soDig(i.telIndicador || ''); if (t && t.length <= 11) t = '55' + t;
+    return '<a class="btn btn-ok" href="https://wa.me/' + t + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener" style="width:auto;text-decoration:none" title="' + (t ? 'Avisar quem indicou pelo WhatsApp' : 'Telefone de quem indicou não encontrado: escolha o contato no WhatsApp') + '">💬 Avisar ' + esc(capNome(i.indicador.nome) || 'quem indicou') + '</a>';
+  }
   function fmtDoc(c) { c = soDig(c); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c.length === 14 ? c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : c; }
   function fmtTel(t) { t = soDig(t); return t.length === 11 ? '(' + t.slice(0,2) + ') ' + t.slice(2,7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0,2) + ') ' + t.slice(2,6) + '-' + t.slice(6) : t; }
   function quandoInd(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('pt-BR'); }
   function aguarda(i) { return i.status === 'instalada' && i.emDia === false; } // indicador com fatura vencida
   function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada' && !aguarda(i); }).length : 0; }
-  function contarAbertas() { return IND ? IND.itens.filter(function (i) { return i.status === 'agendou' || i.status === 'instalada'; }).length : 0; }
+  function contarAbertas() { return IND ? IND.itens.filter(function (i) { return i.status === 'agendou' || i.status === 'instalada' || i.status === 'aplicando'; }).length : 0; }
   function marcarContador() { var n = contarAbertas(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
   async function atualizarContadorIndicacoes(forcar) {
     try { IND = await chamar('ind_lista', forcar ? { forcar: true } : undefined); marcarContador(); } catch (e) { /* segue sem o contador */ }
@@ -3199,7 +3205,8 @@ body.modal-aberto{overflow:hidden}
             ? '<div class="ind-alerta">⏰ O prazo de ' + (IND.prazoDias || 60) + ' dias após a instalação passou (venceu em ' + esc(dataBR(i.prazoAte)) + ').</div>'
             : '<div class="cls-info" style="margin:8px 0 0">Prazo para conceder: até ' + esc(dataBR(i.prazoAte)) + ' (faltam ' + i.diasRestantes + (i.diasRestantes === 1 ? ' dia' : ' dias') + ').</div>') : '');
         var ressalva = aguarda(i) || i.prazoVencido;
-        botoes = '<button type="button" class="btn ' + (ressalva ? 'btn-sec' : 'btn-ok') + '" data-ind-conceder="' + esc(i.id) + '" style="width:auto">' + (ressalva ? 'Conceder mesmo assim' : '✅ Mensalidade concedida') + '</button>' +
+        botoes = '<button type="button" class="btn ' + (ressalva ? 'btn-sec' : 'btn-ok') + '" data-ind-desc="' + esc(i.id) + '" style="width:auto">🎁 ' + (ressalva ? 'Conceder desconto mesmo assim' : 'Conceder desconto') + '</button>' +
+                 '<button type="button" class="btn-link" data-ind-conceder="' + esc(i.id) + '">já dei no Asaas (registrar)</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'agendou') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Aguardando a instalação. Ela é marcada sozinha quando o técnico conclui a OS (com o APP Técnico aberto).</div>';
@@ -3212,7 +3219,15 @@ body.modal-aberto{overflow:hidden}
                  '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'concedida') {
-        extra = '<div class="cls-info" style="margin:8px 0 0">Concedida em ' + esc(quandoInd(i.concedidaEm)) + (i.valorConcedido != null ? ' · ' + brl(i.valorConcedido) : '') + '</div>';
+        var da = i.descontoAplicado;
+        extra = '<div class="cls-info" style="margin:8px 0 0">Concedida em ' + esc(quandoInd(i.concedidaEm)) + (i.valorConcedido != null ? ' · ' + brl(i.valorConcedido) : '') +
+          (da ? ' · boleto de ' + esc(dataBR(da.vencimento)) + (da.acao === 'excluir' ? ' excluído (não paga este mês)' : ': de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois)) : '') + '</div>';
+        if (da) {
+          var pnA = capNome(i.amigo.nome) || 'seu indicado';
+          botoes = linkWppInd(i, 'Olá, ' + (capNome(i.indicador.nome) || 'tudo bem') + '! A instalação do ' + pnA + ' foi concluída e o seu prêmio do Indique e ganhe já foi aplicado: ' +
+            (da.acao === 'excluir' ? 'o boleto de ' + dataBR(da.vencimento) + ' foi cancelado, você não paga este mês. 🎁' : 'o boleto de ' + dataBR(da.vencimento) + ' passou de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois) + '. 🎁') +
+            '\n\nObrigado pela indicação!\nRastreando GPS');
+        }
       } else if (i.status === 'duplicada') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Este amigo (mesmo telefone) já tinha sido indicado antes. Só vale 1 indicação por pessoa.</div>';
       }
@@ -3257,6 +3272,30 @@ body.modal-aberto{overflow:hidden}
         b.disabled = true;
         try { await chamar('ind_conceder', { id: id, valor: valor, confirmar: confirmar }); toast('Mensalidade registrada como concedida. 🎁', 'ok'); abrirIndicacoes(true); }
         catch (e) { toast((e && e.message) || 'Erro ao registrar.', 'erro'); b.disabled = false; }
+      });
+    });
+    box.querySelectorAll('[data-ind-desc]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-ind-desc');
+        var it = IND.itens.find(function (x) { return x.id === id; });
+        var nome = (it && capNome(it.indicador.nome)) || 'o cliente';
+        var txt0 = b.textContent; b.disabled = true; b.textContent = 'Calculando...';
+        try {
+          var pv = await chamar('ind_desc_previa', { id: id });
+          if (pv.semBoleto) { toast('Ainda não há boleto em aberto de ' + nome + '. Tente de novo quando o próximo boleto for gerado.', 'erro'); return; }
+          if (pv.cartao) { toast('O próximo boleto de ' + nome + ' (' + dataBR(pv.boleto.vencimento) + ') é no cartão de crédito. Dê o desconto manualmente no Asaas e use "já dei no Asaas".', 'erro'); return; }
+          var o = pv.acao === 'excluir'
+            ? 'O boleto de ' + dataBR(pv.boleto.vencimento) + ' (' + brl(pv.boleto.valor) + ') será EXCLUÍDO: ' + nome + ' não paga este mês.'
+            : 'O boleto de ' + dataBR(pv.boleto.vencimento) + ' vai de ' + brl(pv.boleto.valor) + ' para ' + brl(pv.novoValor) + (pv.boleto.descontoPontualidade && !pv.novoDescontoPontualidade ? ' (o desconto de pontualidade sai).' : '.');
+          var aviso = pv.vencidas ? '\n\n⚠️ ' + nome + ' está com fatura vencida.' : '';
+          if (!confirm('Conceder o prêmio do Indique e ganhe (' + brl(pv.premio) + ')?\n\n' + o + aviso + '\n\nIsso altera o boleto no Asaas.')) return;
+          b.textContent = 'Aplicando...';
+          await chamar('ind_desc_aplicar', { id: id, boletoId: pv.boleto.id, valorBoleto: pv.boleto.valor, confirmar: !!pv.vencidas });
+          toast('Desconto aplicado no boleto de ' + dataBR(pv.boleto.vencimento) + '. 🎁 Avise ' + nome + ' pelo WhatsApp em "Concedidas".', 'ok');
+          indFiltro = 'concedidas';
+          abrirIndicacoes(true);
+        } catch (e) { toast((e && e.message) || 'Erro ao aplicar o desconto.', 'erro'); }
+        finally { b.disabled = false; b.textContent = txt0; }
       });
     });
     box.querySelectorAll('[data-ind-status]').forEach(function (b) {
