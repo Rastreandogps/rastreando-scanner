@@ -896,7 +896,17 @@
         .hoje-ctl-seta{color:#94a3b8;transition:transform .15s}
         .hoje-ctl[open] .hoje-ctl-seta{transform:rotate(180deg)}
         .hoje-ctl-corpo{margin-top:10px}
+        .gavetas-topo{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-bottom:14px}
+        .gavetas-topo .hoje-ctl{margin-bottom:0}
+        .gavetas-topo .hoje-ctl[open]{flex-basis:100%;order:2}
+        .hoje-ctl-res.ev{background:#ef4444;color:#fff}
+        .ev-card{background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin-bottom:10px;color:#065f46}
+        .ev-card .ev-tit{font-size:13px;font-weight:800}
+        .ev-card .ev-txt{font-size:12.5px;margin-top:4px;line-height:1.45}
+        .ev-card .ev-obs{font-size:11.5px;margin-top:6px;opacity:.85}
+        .ev-card a{display:inline-block;margin-top:9px;padding:7px 12px;background:#059669;color:#fff;border-radius:9px;font-size:12px;font-weight:700;text-decoration:none}
       </style>
+      <div class="gavetas-topo">
       <details id="hoje-ctl" class="hoje-ctl">
         <summary><span>⚙️ Dia de hoje</span><span id="hoje-ctl-resumo" class="hoje-ctl-res">verificando…</span><span class="hoje-ctl-seta" aria-hidden="true">▾</span></summary>
         <div class="hoje-ctl-corpo">
@@ -919,6 +929,12 @@
       </div>
         </div>
       </details>
+      <!-- Eventos: coisas que pedem uma ação sua (ex.: conceder a mensalidade de uma indicação) -->
+      <details id="ev-ctl" class="hoje-ctl">
+        <summary><span>🔔 Eventos</span><span id="ev-ctl-n" class="hoje-ctl-res">…</span><span class="hoje-ctl-seta" aria-hidden="true">▾</span></summary>
+        <div class="hoje-ctl-corpo"><div id="ev-lista"><div style="font-size:12.5px;color:var(--muted);padding:4px 2px;">Carregando…</div></div></div>
+      </details>
+      </div>
       <script>
       (function () {
         // Mostra no botão pequeno se hoje está bloqueado ou com algo liberado (lê os botões que já existem)
@@ -7886,22 +7902,92 @@ async function _indConciliar() {
       for (const it of fila) { const ok = await _indRegistrar(it.codigo, it.osId, it.nome, it.telefone, true); if (!ok) resto.push(it); }
       _indFilaSalvar(resto);
     }
-    // 2) OS com indicação que foram concluídas: avisa o Firebase (1 vez por OS)
+    // 2) OS com indicação concluída: vira EVENTO na gaveta "🔔 Eventos" (aba de agendamentos), que fica lá
+    //    até a mensalidade ser concedida na Gestão. (Antes era um aviso rápido que sumia em 3 segundos.)
     let feitos; try { feitos = JSON.parse(localStorage.getItem('indInstaladas') || '[]'); } catch (e) { feitos = []; }
     const set = new Set(feitos);
     const novos = _firestoreTodasOrdens.filter(o => o.status === 'concluido' && extrairInd(o.obs) && !set.has(o.id));
-    for (const o of novos) {
-      try {
-        const r = await _chamarRemocoes({ acao: 'ind_instalada', osId: o.id });
-        set.add(o.id);
-        if (r && r.mudou) {
-          showToast('🎁 Instalação de indicação concluída! Conceda a mensalidade' + (r.indicador ? ' a ' + String(r.indicador).split(' ')[0] : '') + ' na Gestão → Indicações.', 'success');
-          try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
-        }
-      } catch (e) { break; }
+    if (novos.length) {
+      const antes = _evInd.lista.length;
+      const ok = await _indEventosCarregar(true, true);
+      if (ok !== null) {
+        novos.forEach(o => set.add(o.id));
+        try { localStorage.setItem('indInstaladas', JSON.stringify(Array.from(set).slice(-300))); } catch (e) {}
+        if (_evInd.lista.length > antes) { try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {} }
+      }
     }
-    if (novos.length) { try { localStorage.setItem('indInstaladas', JSON.stringify(Array.from(set).slice(-300))); } catch (e) {} }
   } finally { _indConciliando = false; }
+}
+
+// ── 🔔 GAVETA EVENTOS (aba de agendamentos) ──
+// Mostra o que espera uma ação sua. Hoje: indicações instaladas esperando "🎁 Conceder desconto" na Gestão.
+// O número entra no contador vermelho da aba. O evento só some quando a Gestão concede.
+let _evInd = { em: 0, lista: [] };
+let _evIndCarregando = null;
+// devolve a quantidade de eventos, ou null se não conseguiu falar com o servidor
+async function _indEventosCarregar(forcar, retornarNull) {
+  if (currentRole !== 'admin') return _evInd.lista.length;
+  if (!forcar && _evInd.em && Date.now() - _evInd.em < 60000) return _evInd.lista.length;
+  if (_evIndCarregando) { await _evIndCarregando; if (!forcar) return _evInd.lista.length; }
+  let ok = true;
+  _evIndCarregando = (async function() {
+    let enviadas; try { enviadas = new Set(JSON.parse(localStorage.getItem('indEvEnviadas') || '[]')); } catch (e) { enviadas = new Set(); }
+    // OS de indicação já concluídas que o servidor ainda não conferiu (cada uma vai só uma vez)
+    const concluidas = (_firestoreTodasOrdens || [])
+      .filter(o => o.status === 'concluido' && extrairInd(o.obs) && !enviadas.has(String(o.id)))
+      .slice(0, 80)
+      .map(o => ({ osId: String(o.id), codigo: extrairInd(o.obs), nome: o.nome || '', telefone: o.telefone || '' }));
+    try {
+      const r = await _chamarRemocoes({ acao: 'ind_eventos', concluidas: concluidas });
+      (r.processadas || []).forEach(id => enviadas.add(String(id)));
+      try { localStorage.setItem('indEvEnviadas', JSON.stringify(Array.from(enviadas).slice(-500))); } catch (e) {}
+      _evInd = { em: Date.now(), lista: Array.isArray(r.eventos) ? r.eventos : [] };
+    } catch (e) {
+      ok = false;
+      console.warn('[Eventos] Não consegui buscar os eventos agora:', e);
+    }
+  })();
+  try { await _evIndCarregando; } finally { _evIndCarregando = null; }
+  _evIndRender(!ok);
+  if (!ok && retornarNull) return null;
+  return _evInd.lista.length;
+}
+function _evDataBR(iso) {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? m[3] + '/' + m[2] : '';
+}
+function _evIndRender(falhou) {
+  const n = _evInd.lista.length;
+  const pill = document.getElementById('ev-ctl-n');
+  if (pill) {
+    pill.textContent = (falhou && !_evInd.em) ? '?' : String(n);
+    pill.className = 'hoje-ctl-res' + (n ? ' ev' : '');
+  }
+  _atualizarBadgeAgendamentos(_badgeUlt.f, _badgeUlt.r);
+  const el = document.getElementById('ev-lista');
+  if (!el) return;
+  if (falhou && !_evInd.em) {
+    el.innerHTML = '<div style="font-size:12.5px;color:#b91c1c;padding:4px 2px;">Não consegui buscar os eventos agora. Toque em 🔄 Atualizar para tentar de novo.</div>';
+    return;
+  }
+  if (!n) {
+    el.innerHTML = '<div style="font-size:12.5px;color:var(--muted);padding:4px 2px;">Nenhum evento pendente. ✅</div>';
+    return;
+  }
+  el.innerHTML = _evInd.lista.map(function(e) {
+    const quem = String(e.indicador || '').trim() || 'quem indicou';
+    const amigo = String(e.amigo || '').trim();
+    const dt = _evDataBR(e.instaladaEm);
+    return '<div class="ev-card">' +
+      '<div class="ev-tit">🎁 Conceder mensalidade grátis</div>' +
+      '<div class="ev-txt">Para <b>' + esc(quem) + '</b>, que indicou ' + (amigo ? '<b>' + esc(amigo) + '</b>' : 'um amigo') + '.' +
+        (dt ? '<br>Instalação concluída em ' + dt + '.' : '') + '</div>' +
+      (e.status === 'aplicando'
+        ? '<div class="ev-obs">⏳ O desconto está sendo aplicado na Gestão. Se ficar parado assim, abra a Gestão e confira.</div>'
+        : '<div class="ev-obs">Some daqui quando você tocar em <b>🎁 Conceder desconto</b> na Gestão → Indicações.</div>') +
+      '<a href="https://rastreandogps.github.io/rastreando-scanner/Gestao.html" target="_blank" rel="noopener">Abrir a Gestão</a>' +
+      '</div>';
+  }).join('');
 }
 
 var _agCargaSeq = 0;       // numera cada carga da lista (descarta respostas antigas)
@@ -7961,6 +8047,7 @@ async function _agMarcarLido(ag, valor) {
 
 async function carregarAgendamentos() {
   loadTitularidades(true); // atualiza o contador da aba Titularidade
+  _indEventosCarregar(true); // gaveta Eventos
   const list = document.getElementById('agendamentos-list');
   if (!list) return;
   const vez = ++_agCargaSeq; // se a lista for recarregada de novo, a resposta antiga é descartada
@@ -8228,10 +8315,12 @@ async function _contarRemocoesComCache() {
   return r.lista.length + r.manut.length;
 }
 
+let _badgeUlt = { f: 0, r: 0 };
 function _atualizarBadgeAgendamentos(nForm, nRem) {
+  _badgeUlt = { f: nForm || 0, r: nRem || 0 };
   const badge = document.getElementById('badge-agendamentos');
   if (!badge) return;
-  const total = (nForm || 0) + (nRem || 0);
+  const total = (nForm || 0) + (nRem || 0) + ((typeof _evInd !== 'undefined' && _evInd.lista) ? _evInd.lista.length : 0);
   if (total > 0) {
     badge.style.display = 'block';
     badge.textContent = total > 9 ? '9+' : total;
@@ -8611,6 +8700,7 @@ async function pollCompleto() {
 async function checkNovasOSFormulario() {
   const resAg = await _buscarAgendamentosFirestore();
   const nRem = await _contarRemocoesComCache();
+  await _indEventosCarregar(false); // gaveta Eventos (entra no número da aba)
   _atualizarBadgeAgendamentos(resAg.lista.length, nRem);
   loadTitularidades(true); // pedidos de troca de titularidade: atualiza o contador da aba e avisa se chegou novo
 }
