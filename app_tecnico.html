@@ -7952,12 +7952,14 @@ async function _indEventosCarregar(forcar, retornarNull) {
   if (!ok && retornarNull) return null;
   return _evInd.lista.length;
 }
+// crédito na fila sem problema não pede ação: aparece na gaveta, mas não conta no número
+function _evContar() { return _evInd.lista.filter(function(e) { return e.status !== 'credito' || e.alerta; }).length; }
 function _evDataBR(iso) {
   const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? m[3] + '/' + m[2] : '';
 }
 function _evIndRender(falhou) {
-  const n = _evInd.lista.length;
+  const n = _evContar();
   const pill = document.getElementById('ev-ctl-n');
   if (pill) {
     pill.textContent = (falhou && !_evInd.em) ? '?' : String(n);
@@ -7970,7 +7972,7 @@ function _evIndRender(falhou) {
     el.innerHTML = '<div style="font-size:12.5px;color:#b91c1c;padding:4px 2px;">Não consegui buscar os eventos agora. Toque em 🔄 Atualizar para tentar de novo.</div>';
     return;
   }
-  if (!n) {
+  if (!_evInd.lista.length) {
     el.innerHTML = '<div style="font-size:12.5px;color:var(--muted);padding:4px 2px;">Nenhum evento pendente. ✅</div>';
     return;
   }
@@ -7978,6 +7980,24 @@ function _evIndRender(falhou) {
     const quem = String(e.indicador || '').trim() || 'quem indicou';
     const amigo = String(e.amigo || '').trim();
     const dt = _evDataBR(e.instaladaEm);
+    const linkG = '<a href="https://rastreandogps.github.io/rastreando-scanner/Gestao.html" target="_blank" rel="noopener">Abrir a Gestão</a>';
+    if (e.status === 'concedida') {
+      const da = e.descontoAplicado || {};
+      return '<div class="ev-card">' +
+        '<div class="ev-tit">💬 Avisar ' + esc(quem) + '</div>' +
+        '<div class="ev-txt">O prêmio da indicação ' + (amigo ? 'de <b>' + esc(amigo) + '</b> ' : '') + 'foi aplicado sozinho: boleto de ' + _evDataBR(da.vencimento) +
+          (da.acao === 'excluir' ? ' excluído.' : ' reduzido.') + '</div>' +
+        '<div class="ev-obs">Some daqui quando você tocar em <b>💬 Avisar</b> na Gestão → Indicações → Concedidas.</div>' + linkG + '</div>';
+    }
+    if (e.status === 'credito') {
+      const pz = e.creditoPrevisao || {};
+      return '<div class="ev-card" style="background:#ecfeff;border-color:#67e8f9;color:#155e75">' +
+        '<div class="ev-tit">⏳ Crédito na fila: ' + esc(quem) + '</div>' +
+        '<div class="ev-txt">Indicou ' + (amigo ? '<b>' + esc(amigo) + '</b>' : 'um amigo') + '. Entra sozinho no próximo boleto' +
+          (pz.vencimento ? ' (vencimento ' + _evDataBR(pz.vencimento) + ', gerado por volta de ' + _evDataBR(pz.geracao) + ')' : '') + '.</div>' +
+        (e.alerta ? '<div class="ev-obs" style="color:#b91c1c;opacity:1">⚠️ ' + esc(e.alerta) + '</div>' : '<div class="ev-obs">Não precisa fazer nada. Não conta no número da aba.</div>') +
+        (e.alerta ? linkG : '') + '</div>';
+    }
     return '<div class="ev-card">' +
       '<div class="ev-tit">🎁 Conceder mensalidade grátis</div>' +
       '<div class="ev-txt">Para <b>' + esc(quem) + '</b>, que indicou ' + (amigo ? '<b>' + esc(amigo) + '</b>' : 'um amigo') + '.' +
@@ -8320,7 +8340,7 @@ function _atualizarBadgeAgendamentos(nForm, nRem) {
   _badgeUlt = { f: nForm || 0, r: nRem || 0 };
   const badge = document.getElementById('badge-agendamentos');
   if (!badge) return;
-  const total = (nForm || 0) + (nRem || 0) + ((typeof _evInd !== 'undefined' && _evInd.lista) ? _evInd.lista.length : 0);
+  const total = (nForm || 0) + (nRem || 0) + ((typeof _evInd !== 'undefined' && _evInd.lista) ? _evContar() : 0);
   if (total > 0) {
     badge.style.display = 'block';
     badge.textContent = total > 9 ? '9+' : total;
