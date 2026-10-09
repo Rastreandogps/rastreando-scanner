@@ -2682,8 +2682,22 @@ async function sincronizarTudoParaFirestore() {
       });
       return lista;
     };
-    const todas = listar(resAtivas, true).concat(listar(resConcluidas, false));
-    if (todas.length === 0) return;
+    const todasPlanilha = listar(resAtivas, true).concat(listar(resConcluidas, false));
+    if (todasPlanilha.length === 0) return;
+
+    // ⚠️ Só COPIA as ordens que ainda NÃO existem no Firebase. As que já
+    // existem não são tocadas: o Firebase é a fonte certa. Antes, quando uma
+    // edição (data, valor etc.) ainda não tinha chegado na Planilha, esta
+    // sincronização gravava por cima a versão velha da Planilha e a edição
+    // "voltava sozinha" (ex: data pulando para o dia antigo e valor zerado).
+    let existentes = null;
+    for (let t = 0; t < 60 && !existentes; t++) {
+      if (_firestoreTodasOrdens) existentes = new Set(_firestoreTodasOrdens.map(function(x) { return String(x.id); }));
+      else await new Promise(function(r) { setTimeout(r, 500); });
+    }
+    if (!existentes) return; // tempo real do Firebase não ligou: não arrisca sobrescrever nada
+    const todas = todasPlanilha.filter(function(it) { return !existentes.has(String(it.o.id)); });
+    if (todas.length === 0) { console.log('[Firestore] Sincronização inicial: nenhuma ordem nova para copiar.'); return; }
 
     let lote = db.batch();
     let pendentesNoLote = 0;
