@@ -3326,8 +3326,13 @@ body.modal-aberto{overflow:hidden}
           (da ? ' · boleto de ' + esc(dataBR(da.vencimento)) + (da.acao === 'excluir' ? ' excluído (não paga este mês)' : ': de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois)) + (da.auto ? ' · aplicado sozinho pela fila de créditos' : '') : '') + '</div>';
         if (da) {
           var pnA = capNome(i.amigo.nome) || 'seu indicado';
-          botoes = linkWppInd(i, 'Olá, ' + (capNome(i.indicador.nome) || 'tudo bem') + '! A instalação do ' + pnA + ' foi concluída e o seu prêmio do Indique e ganhe já foi aplicado: ' +
-            (da.acao === 'excluir' ? 'o boleto de ' + dataBR(da.vencimento) + ' foi cancelado, você não paga este mês. 🎁' : 'o boleto de ' + dataBR(da.vencimento) + ' passou de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois) + '. 🎁') +
+          var capA = function (x) { return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; };
+          var nomeAm = String(i.amigo.nome || '').trim().split(/\s+/).slice(0, 2).map(capA).join(' ') || pnA;
+          botoes = linkWppInd(i, 'Olá, ' + (capNome(i.indicador.nome) || 'tudo bem') + '! 🎁\n\n' +
+            'A instalação do *' + nomeAm + '* foi concluída e o seu prêmio do *Indique e ganhe* já foi aplicado:\n\n' +
+            (da.acao === 'excluir'
+              ? '✅ Boleto de *' + dataBR(da.vencimento) + '* cancelado\nVocê não paga a mensalidade deste mês.'
+              : '✅ Boleto de *' + dataBR(da.vencimento) + '*\nDe ' + brl(da.valorAntes) + ' por *' + brl(da.valorDepois) + '*') +
             '\n\nObrigado pela indicação!\nRastreando GPS', 'concedida');
         }
       } else if (i.status === 'credito') {
