@@ -3247,9 +3247,15 @@ body.modal-aberto{overflow:hidden}
     aplicando: { txt: '⏳ Aplicando desconto', cor: '#b45309', bg: '#fef3c7' }
   };
   function capNome(x) { x = String(x || '').trim().split(/\s+/)[0] || ''; return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : ''; }
-  function linkWppInd(i, msg) {
+  function quandoAviso(iso) { try { return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'); } catch (e) { return ''; } }
+  // Botão de aviso por WhatsApp para quem indicou. etapa: 'agendou' ou 'concedida'. Ao tocar, abre o WhatsApp e já marca como avisado.
+  function linkWppInd(i, msg, etapa) {
     var t = soDig(i.telIndicador || ''); if (t && t.length <= 11) t = '55' + t;
-    return '<a class="btn btn-ok" href="https://wa.me/' + t + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener" style="width:auto;text-decoration:none" title="' + (t ? 'Avisar quem indicou pelo WhatsApp' : 'Telefone de quem indicou não encontrado: escolha o contato no WhatsApp') + '">💬 Avisar ' + esc(capNome(i.indicador.nome) || 'quem indicou') + '</a>';
+    var av = i.avisos && i.avisos[etapa], nome = esc(capNome(i.indicador.nome) || 'quem indicou');
+    var href = 'https://wa.me/' + t + '?text=' + encodeURIComponent(msg);
+    if (av) return '<a class="btn btn-sec" href="' + href + '" target="_blank" rel="noopener" data-ind-aviso="' + esc(i.id) + '" data-etapa="' + etapa + '" data-ja="' + esc(quandoAviso(av.em)) + '" style="width:auto;text-decoration:none" title="Já avisado. Toque para enviar de novo">✅ Avisado em ' + esc(quandoAviso(av.em)) + '</a>' +
+      '<button type="button" class="btn-link" data-ind-desaviso="' + esc(i.id) + '" data-etapa="' + etapa + '">desmarcar</button>';
+    return '<a class="btn btn-ok" href="' + href + '" target="_blank" rel="noopener" data-ind-aviso="' + esc(i.id) + '" data-etapa="' + etapa + '" style="width:auto;text-decoration:none" title="' + (t ? 'Avisar quem indicou pelo WhatsApp' : 'Telefone de quem indicou não encontrado: escolha o contato no WhatsApp') + '">💬 Avisar ' + nome + '</a>';
   }
   function fmtDoc(c) { c = soDig(c); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c.length === 14 ? c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : c; }
   function fmtTel(t) { t = soDig(t); return t.length === 11 ? '(' + t.slice(0,2) + ') ' + t.slice(2,7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0,2) + ') ' + t.slice(2,6) + '-' + t.slice(6) : t; }
@@ -3308,8 +3314,7 @@ body.modal-aberto{overflow:hidden}
         var cap = function (x) { return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; };
         var msgInd = 'Obrigado' + (pnInd ? ', ' + cap(pnInd) : '') + '! Recebemos aqui o agendamento do ' + cap(pnAmigo) + (tel ? ' (' + fmtTel(tel) + ')' : '') + '. ' +
           'Assim que a instalação dele for concluída, você ganha a mensalidade grátis de 1 veículo. 🎁\n\nRastreando GPS';
-        var telInd = soDig(i.telIndicador || ''); if (telInd && telInd.length <= 11) telInd = '55' + telInd;
-        botoes = '<a class="btn btn-ok" href="https://wa.me/' + telInd + '?text=' + encodeURIComponent(msgInd) + '" target="_blank" rel="noopener" style="width:auto;text-decoration:none" title="' + (telInd ? 'Avisar quem indicou pelo WhatsApp' : 'Telefone de quem indicou não encontrado: escolha o contato no WhatsApp') + '">💬 Avisar ' + esc(cap(pnInd) || 'quem indicou') + '</a>' +
+        botoes = linkWppInd(i, msgInd, 'agendou') +
                  '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'concedida') {
@@ -3320,7 +3325,7 @@ body.modal-aberto{overflow:hidden}
           var pnA = capNome(i.amigo.nome) || 'seu indicado';
           botoes = linkWppInd(i, 'Olá, ' + (capNome(i.indicador.nome) || 'tudo bem') + '! A instalação do ' + pnA + ' foi concluída e o seu prêmio do Indique e ganhe já foi aplicado: ' +
             (da.acao === 'excluir' ? 'o boleto de ' + dataBR(da.vencimento) + ' foi cancelado, você não paga este mês. 🎁' : 'o boleto de ' + dataBR(da.vencimento) + ' passou de ' + brl(da.valorAntes) + ' para ' + brl(da.valorDepois) + '. 🎁') +
-            '\n\nObrigado pela indicação!\nRastreando GPS');
+            '\n\nObrigado pela indicação!\nRastreando GPS', 'concedida');
         }
       } else if (i.status === 'duplicada') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Este amigo (mesmo telefone) já tinha sido indicado antes. Só vale 1 indicação por pessoa.</div>';
@@ -3366,6 +3371,30 @@ body.modal-aberto{overflow:hidden}
         b.disabled = true;
         try { await chamar('ind_conceder', { id: id, valor: valor, confirmar: confirmar }); toast('Mensalidade registrada como concedida. 🎁', 'ok'); abrirIndicacoes(true); }
         catch (e) { toast((e && e.message) || 'Erro ao registrar.', 'erro'); b.disabled = false; }
+      });
+    });
+    box.querySelectorAll('[data-ind-aviso]').forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        var id = a.getAttribute('data-ind-aviso'), etapa = a.getAttribute('data-etapa'), ja = a.getAttribute('data-ja');
+        if (ja && !confirm('Você já avisou em ' + ja + '.\n\nEnviar a mensagem de novo?')) { ev.preventDefault(); return; }
+        var it = IND.itens.find(function (x) { return x.id === id; });
+        chamar('ind_aviso', { id: id, etapa: etapa, marcado: true }).then(function () {
+          if (it) { it.avisos = it.avisos || {}; it.avisos[etapa] = { em: new Date().toISOString() }; }
+          renderIndicacoes();
+        }).catch(function (e) { toast((e && e.message) || 'Não consegui marcar como avisado.', 'erro'); });
+      });
+    });
+    box.querySelectorAll('[data-ind-desaviso]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        var id = b.getAttribute('data-ind-desaviso'), etapa = b.getAttribute('data-etapa');
+        if (!confirm('Desmarcar o aviso? O botão volta a ficar verde.')) return;
+        b.disabled = true;
+        try {
+          await chamar('ind_aviso', { id: id, etapa: etapa, marcado: false });
+          var it = IND.itens.find(function (x) { return x.id === id; });
+          if (it && it.avisos) delete it.avisos[etapa];
+          renderIndicacoes();
+        } catch (e) { toast((e && e.message) || 'Erro ao desmarcar.', 'erro'); b.disabled = false; }
       });
     });
     box.querySelectorAll('[data-ind-desc]').forEach(function (b) {
