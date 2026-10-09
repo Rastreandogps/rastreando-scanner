@@ -684,7 +684,12 @@ body.modal-aberto{overflow:hidden}
 .tag-ret.agendada{background:#fef3c7;color:#92400e;border-color:#fcd34d}
 .cls-item .tag-ret{margin:4px 0 0 6px;vertical-align:middle}
 .rt-link-dica{font-size:.74rem;color:var(--text-3);margin:5px 0 4px;line-height:1.4}
-.cls-acoes{display:flex;justify-content:flex-end;margin-top:10px}
+.cls-acoes{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn-manut{border:1.5px solid #fcd34d;border-radius:var(--radius-sm);background:#fffbeb;color:#92400e;font-family:var(--font-body);font-weight:700;cursor:pointer}
+.btn-manut:hover{background:#fef3c7}
+.cc-acoes .btn-manut{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
+.cls-acoes .btn-manut{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+#mn-motivo{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:1rem;background:#fff;color:var(--text)}
 .cls-acoes .btn-retirada{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fff;color:#b91c1c;font-family:var(--font-body);font-weight:700;font-size:.82rem;cursor:pointer}
 .cls-acoes .btn-retirada:hover{background:#fef2f2}
 .cc-imei{margin:0 16px 10px;background:var(--bg,#F5F7FA);border-radius:8px;padding:8px 10px}
@@ -1092,6 +1097,31 @@ body.modal-aberto{overflow:hidden}
     <textarea id="rt-obs" maxlength="300" placeholder="Ex.: cliente não atende, carro fica na garagem"></textarea>
     <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b>: lá você confere o endereço (ou o link), escolhe o técnico e a data.</div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="rt-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="rt-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="mn-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="mn-titulo">
+    <h3 id="mn-titulo">🛠️ Ordem de manutenção</h3>
+    <div class="rt-cli" id="mn-cli"></div>
+    <label>Veículo(s) <span style="font-weight:600;color:var(--text-3)">(a placa é opcional)</span></label>
+    <div id="mn-veics"></div>
+    <button type="button" class="btn-link" id="mn-mais">+ adicionar outro veículo</button>
+    <label for="mn-motivo">Motivo</label>
+    <select id="mn-motivo">
+      <option value="">Escolha o motivo</option>
+      <option value="sem_sinal">Veículo não aparece no aplicativo / sem sinal</option>
+      <option value="localizacao">Localização errada ou atrasada</option>
+      <option value="bloqueio">Bloqueio não funciona</option>
+      <option value="solto">Equipamento solto ou danificado</option>
+      <option value="outro">Outro</option>
+    </select>
+    <label for="mn-desc">O que está acontecendo (opcional)</label>
+    <textarea id="mn-desc" maxlength="500" placeholder="Ex.: sem sinal desde segunda, cliente disse que mexeu na bateria"></textarea>
+    <label for="mn-link">🛰️ Link do monitoramento <span style="font-weight:600;color:var(--text-3)">(opcional)</span></label>
+    <input type="text" id="mn-link" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Cole o link da localização em tempo real">
+    <div class="rt-link-dica">Preenchido: o técnico vai pela localização do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos de manutenção): lá você escolhe o técnico e a data.</div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="mn-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="mn-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1604,6 +1634,7 @@ body.modal-aberto{overflow:hidden}
             (c.ultimoEnvio ? 'Enviar de novo' : 'Enviar mensagem') + '</button>' +
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
+          '<button type="button" class="btn-manut" data-idx="' + i + '" data-acao="manutencao">🛠️ Manutenção</button>' +
           '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
@@ -1668,6 +1699,9 @@ body.modal-aberto{overflow:hidden}
     $('lista-clientes').querySelectorAll('[data-acao="chip"]').forEach(function (b) {
       b.addEventListener('click', function () { marcarChip(lista[Number(b.getAttribute('data-idx'))], b); });
     });
+    $('lista-clientes').querySelectorAll('[data-acao="manutencao"]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirModalManut(lista[Number(b.getAttribute('data-idx'))]); });
+    });
     $('lista-clientes').querySelectorAll('[data-acao="retirada"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalRetirada(lista[Number(b.getAttribute('data-idx'))]); });
     });
@@ -1726,6 +1760,8 @@ body.modal-aberto{overflow:hidden}
     return c ? { nome: c.nome, cpf: c.cpf, telefone: c.telefone || '', faturas: [], valorTotal: 0, diasAtrasoMax: 0, semDebito: true } : null;
   }
   $('classif-conteudo').addEventListener('click', function (ev) {
+    var bm = ev.target.closest('.cls-man');
+    if (bm) { var cm = clienteParaRetirada(bm.getAttribute('data-cpf')); if (cm) abrirModalManut(cm); else toast('Cliente não encontrado.', 'erro'); return; }
     var b = ev.target.closest('.cls-ret');
     if (!b) return;
     var c = clienteParaRetirada(b.getAttribute('data-cpf'));
@@ -1746,6 +1782,55 @@ body.modal-aberto{overflow:hidden}
   function fecharModalRetirada() { $('rt-fundo').hidden = true; document.body.classList.remove('modal-aberto'); rtCliente = null; }
   $('rt-cancelar').addEventListener('click', fecharModalRetirada);
   $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetirada(); });
+  // ---------- ORDEM DE MANUTENÇÃO (vira pedido PENDENTE de manutenção no APP Técnico) ----------
+  var mnCliente = null;
+  function abrirModalManut(c) {
+    if (!c) return;
+    mnCliente = c;
+    $('mn-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + (c.telefone ? ' · ' + esc(c.telefone) : '');
+    $('mn-veics').innerHTML = rtLinhaVeiculo();
+    $('mn-motivo').value = ''; $('mn-desc').value = ''; $('mn-link').value = '';
+    $('mn-enviar').disabled = false;
+    $('mn-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+    setTimeout(function () { var m = document.querySelector('#mn-veics .rt-modelo'); if (m) m.focus(); }, 30);
+  }
+  function fecharModalManut() { $('mn-fundo').hidden = true; document.body.classList.remove('modal-aberto'); mnCliente = null; }
+  $('mn-cancelar').addEventListener('click', fecharModalManut);
+  $('mn-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalManut(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('mn-fundo').hidden) fecharModalManut(); });
+  $('mn-mais').addEventListener('click', function () {
+    if (document.querySelectorAll('#mn-veics .rt-veic').length >= 5) { toast('Até 5 veículos por pedido.', 'erro'); return; }
+    $('mn-veics').insertAdjacentHTML('beforeend', rtLinhaVeiculo());
+    var m = document.querySelectorAll('#mn-veics .rt-modelo'); m[m.length - 1].focus();
+  });
+  $('mn-enviar').addEventListener('click', function () { enviarManut(false); });
+  async function enviarManut(confirmado) {
+    if (!mnCliente) return;
+    var c = mnCliente;
+    var veiculos = Array.prototype.map.call(document.querySelectorAll('#mn-veics .rt-veic'), function (el) {
+      return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim() };
+    }).filter(function (v) { return v.modelo || v.placa; });
+    if (!veiculos.length || veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo do veículo.', 'erro'); return; }
+    var motivo = $('mn-motivo').value;
+    if (!motivo) { toast('Escolha o motivo da manutenção.', 'erro'); $('mn-motivo').focus(); return; }
+    var link = $('mn-link').value.trim();
+    if (link && !/^https?:\/\/\S+$/i.test(link)) { toast('O link do monitoramento precisa começar com http:// ou https://', 'erro'); $('mn-link').focus(); return; }
+    var imeiCard = String(c.imei || '').replace(/\s+/g, ' ').trim();
+    var desc = [imeiCard ? 'IMEI do aparelho: ' + imeiCard : '', $('mn-desc').value.trim()].filter(Boolean).join(' · ');
+    var btn = $('mn-enviar'); btn.disabled = true;
+    try {
+      var r = await chamar('man_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, motivo: motivo, descricao: desc, linkLocalizacao: link, confirmarDuplicado: confirmado });
+      fecharModalManut();
+      avisarAppTecnico(r.protocolo);
+      toast('Ordem de manutenção enviada ao APP Técnico (' + r.protocolo + ').' + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+    } catch (e) {
+      var msg = (e && e.message) || 'Erro ao enviar.';
+      btn.disabled = false;
+      if (/Já existe um pedido de manutenção pendente/.test(msg)) { if (confirm(msg + '\n\nCriar outro mesmo assim?')) enviarManut(true); return; }
+      toast(msg, 'erro');
+    }
+  }
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('rt-fundo').hidden) fecharModalRetirada(); });
   $('rt-mais').addEventListener('click', function () {
     if (document.querySelectorAll('#rt-veics .rt-veic').length >= 5) { toast('Até 5 veículos por pedido.', 'erro'); return; }
@@ -3502,7 +3587,7 @@ body.modal-aberto{overflow:hidden}
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
-        '<div class="cls-acoes"><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.' + ((termo || fVen) && clsFiltro.status !== 'todos' ? '<br><small>Está filtrando só por "' + (clsFiltro.status === 'pagos' ? 'Já pagos' : 'A receber') + '". Toque em <b>Todos</b> para buscar entre todos os clientes.</small>' : '') + '</div>';
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
