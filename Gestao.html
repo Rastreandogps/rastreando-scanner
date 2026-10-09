@@ -3156,7 +3156,8 @@ body.modal-aberto{overflow:hidden}
   function quandoInd(iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleDateString('pt-BR'); }
   function aguarda(i) { return i.status === 'instalada' && i.emDia === false; } // indicador com fatura vencida
   function contarConceder() { return IND ? IND.itens.filter(function (i) { return i.status === 'instalada' && !aguarda(i); }).length : 0; }
-  function marcarContador() { var n = contarConceder(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
+  function contarAbertas() { return IND ? IND.itens.filter(function (i) { return i.status === 'agendou' || i.status === 'instalada'; }).length : 0; }
+  function marcarContador() { var n = contarAbertas(); $('cnt-indicacoes').textContent = n ? '(' + n + ')' : ''; }
   async function atualizarContadorIndicacoes(forcar) {
     try { IND = await chamar('ind_lista', forcar ? { forcar: true } : undefined); marcarContador(); } catch (e) { /* segue sem o contador */ }
   }
@@ -3202,7 +3203,13 @@ body.modal-aberto{overflow:hidden}
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'agendou') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Aguardando a instalação. Ela é marcada sozinha quando o técnico conclui a OS (com o APP Técnico aberto).</div>';
-        botoes = '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
+        var pnInd = String(i.indicador.nome || '').trim().split(/\s+/)[0] || '', pnAmigo = String(i.amigo.nome || '').trim().split(/\s+/)[0] || 'seu indicado';
+        var cap = function (x) { return x ? x.charAt(0).toUpperCase() + x.slice(1).toLowerCase() : x; };
+        var msgInd = 'Obrigado' + (pnInd ? ', ' + cap(pnInd) : '') + '! Recebemos aqui o agendamento do ' + cap(pnAmigo) + (tel ? ' (' + fmtTel(tel) + ')' : '') + '. ' +
+          'Assim que a instalação dele for concluída, você ganha a mensalidade grátis de 1 veículo. 🎁\n\nRastreando GPS';
+        var telInd = soDig(i.telIndicador || ''); if (telInd && telInd.length <= 11) telInd = '55' + telInd;
+        botoes = '<a class="btn btn-ok" href="https://wa.me/' + telInd + '?text=' + encodeURIComponent(msgInd) + '" target="_blank" rel="noopener" style="width:auto;text-decoration:none" title="' + (telInd ? 'Avisar quem indicou pelo WhatsApp' : 'Telefone de quem indicou não encontrado: escolha o contato no WhatsApp') + '">💬 Avisar ' + esc(cap(pnInd) || 'quem indicou') + '</a>' +
+                 '<button type="button" class="btn btn-sec" data-ind-status="' + esc(i.id) + '" data-novo="instalada" style="width:auto">Marcar como instalada</button>' +
                  '<button type="button" class="btn-link" data-ind-status="' + esc(i.id) + '" data-novo="cancelada">cancelar</button>';
       } else if (i.status === 'concedida') {
         extra = '<div class="cls-info" style="margin:8px 0 0">Concedida em ' + esc(quandoInd(i.concedidaEm)) + (i.valorConcedido != null ? ' · ' + brl(i.valorConcedido) : '') + '</div>';
