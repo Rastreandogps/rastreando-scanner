@@ -912,7 +912,7 @@
         .cof-topo{display:flex;align-items:center;gap:12px}
         .cof-porco{position:relative;font-size:40px;line-height:1;flex-shrink:0}
         .cof-porco.caiu{animation:cofPula .6s ease .55s}
-        .cof-foto{width:56px;height:56px;border-radius:50%;object-fit:cover;display:block;border:3px solid #f59e0b;box-shadow:0 2px 8px rgba(0,0,0,.2);background:#fff}
+        .cof-foto{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:50% 15%;display:block;border:3px solid #f59e0b;box-shadow:0 2px 8px rgba(0,0,0,.2);background:#fff}
         .cof.cheio .cof-foto{border-color:#16a34a}
         .cof-porco{display:flex;flex-direction:column;align-items:center}
         .cof-apelido{margin-top:4px;padding:1px 7px;border-radius:999px;background:linear-gradient(90deg,#ec4899,#f43f5e);color:#fff;font-size:9.5px;font-weight:800;white-space:nowrap;letter-spacing:.2px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
@@ -2114,7 +2114,7 @@ function showTechScreen() {
     const av = document.getElementById('tech-avatar');
     av.textContent = currentUser[0];
     const im = new Image();
-    im.onload = function() { av.innerHTML = ''; im.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;'; av.appendChild(im); };
+    im.onload = function() { av.innerHTML = ''; im.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 15%;display:block;'; av.appendChild(im); };
     im.src = _fotoTecnicoURL(currentUser);
   }
   // Registrar login silenciosamente
