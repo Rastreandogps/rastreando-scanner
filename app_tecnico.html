@@ -907,6 +907,29 @@
         .perm-sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
         .perm-sw.on{background:#16a34a}
         .perm-sw.on::after{left:23px}
+        .cof{margin:4px 0 14px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#fff7ed,#fde68a);border:2px solid #f59e0b;box-shadow:0 4px 14px rgba(245,158,11,.25);color:#78350f}
+        .cof.cheio{background:linear-gradient(135deg,#ecfdf5,#bbf7d0);border-color:#16a34a;color:#14532d}
+        .cof-topo{display:flex;align-items:center;gap:12px}
+        .cof-porco{position:relative;font-size:40px;line-height:1;flex-shrink:0}
+        .cof-porco.caiu{animation:cofPula .6s ease .55s}
+        .cof-moeda-cai{position:absolute;left:50%;top:-6px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);border:1px solid #92400e;color:#78350f;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;opacity:0}
+        .cof-porco.caiu .cof-moeda-cai{animation:cofCai .7s ease-in}
+        @keyframes cofCai{0%{opacity:1;transform:translateY(-34px) rotate(0)}80%{opacity:1;transform:translateY(4px) rotate(300deg)}100%{opacity:0;transform:translateY(8px) rotate(360deg)}}
+        @keyframes cofPula{0%,100%{transform:scale(1)}40%{transform:scale(1.18) rotate(-6deg)}70%{transform:scale(.95) rotate(4deg)}}
+        .cof-tit{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
+        .cof-val b{font-size:22px;font-weight:900}
+        .cof-val b{display:block;white-space:nowrap}
+        .cof-val span{display:block;font-size:12.5px;font-weight:700;opacity:.8;white-space:nowrap}
+        .cof-pct{font-size:20px;font-weight:900;flex-shrink:0}
+        .cof-barra{height:12px;border-radius:999px;background:rgba(120,53,15,.15);overflow:hidden;margin-top:10px}
+        .cof-barra div{height:100%;border-radius:999px;background:linear-gradient(90deg,#fbbf24,#f59e0b,#d97706);transition:width .8s ease}
+        .cof.cheio .cof-barra div{background:linear-gradient(90deg,#4ade80,#16a34a)}
+        .cof-rodape{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+        .cof-moedas{display:flex;gap:3px;flex-wrap:wrap}
+        .cof-m{width:16px;height:16px;border-radius:50%;border:1px dashed #d97706;color:transparent;font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
+        .cof-m.on{border:1px solid #92400e;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);color:#78350f}
+        .cof-n{font-size:11.5px;font-weight:700;white-space:nowrap}
+        .cof-frase{font-size:12.5px;font-weight:600;margin-top:8px}
         .ev-card{background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:12px;padding:12px 14px;margin-bottom:10px;color:#065f46}
         .ev-card .ev-tit{font-size:13px;font-weight:800}
         .ev-card .ev-txt{font-size:12.5px;margin-top:4px;line-height:1.45}
@@ -3323,6 +3346,52 @@ function destacarCardsOrdens(ids) {
   }
 }
 
+// ── 🐷 COFRINHO DO DIA (tela do técnico) ──
+// Total que os serviços do dia vão render e quanto já entrou (serviços concluídos).
+// Só aparece com a permissão "Técnico vê o valor da instalação" ligada.
+const _cofUltimo = {}; // dia -> último valor recebido mostrado (para a moedinha cair quando aumenta)
+function _cofrinhoHTML(dia, ehHoje) {
+  if (currentRole === 'admin' || !_podeVerValor()) return '';
+  const doDia = function(o) {
+    if (!o.data || o.data === 'undefined') return false;
+    const d = parseDate(o.data);
+    return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
+  };
+  const ativos = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && doDia(o));
+  const feitos = (doneOrders[currentUser] || []).filter(doDia);
+  const aReceber = ativos.reduce((s, o) => s + _valorNumOS(o), 0);
+  const recebido = feitos.reduce((s, o) => s + _valorNumOS(o), 0);
+  const total = aReceber + recebido;
+  if (total <= 0) return '';
+  const pct = Math.max(0, Math.min(100, Math.round(recebido / total * 100)));
+  const nTot = ativos.length + feitos.length, nFeito = feitos.length;
+  const chave = dia.year + '-' + dia.month + '-' + dia.day;
+  const caiu = _cofUltimo[chave] !== undefined && recebido > _cofUltimo[chave];
+  _cofUltimo[chave] = recebido;
+  const falta = _fmtMoeda(total - recebido);
+  let frase;
+  if (pct >= 100) frase = '🏆 Cofrinho cheio! Dia fechado com chave de ouro!';
+  else if (pct === 0) frase = 'Bora começar! Cada serviço concluído cai aqui no cofrinho 🪙';
+  else if (pct < 50) frase = 'Começou bem! Faltam <b>' + falta + '</b> para encher 💪';
+  else frase = 'Tá quase cheio! Só faltam <b>' + falta + '</b> 🔥';
+  const titulo = ehHoje ? 'Cofrinho de hoje' : 'Cofrinho do dia ' + String(dia.day).padStart(2, '0') + '/' + String(dia.month + 1).padStart(2, '0');
+  const moedas = Array.from({ length: Math.min(nTot, 12) }, (_, i) =>
+    '<span class="cof-m' + (i < nFeito ? ' on' : '') + '">$</span>').join('');
+  return '<div class="cof' + (pct >= 100 ? ' cheio' : '') + '">' +
+    '<div class="cof-topo">' +
+      '<div class="cof-porco' + (caiu ? ' caiu' : '') + '"><span class="cof-moeda-cai">$</span>🐷</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div class="cof-tit">' + titulo + '</div>' +
+        '<div class="cof-val"><b>' + esc(_fmtMoeda(recebido)) + '</b><span>de ' + esc(_fmtMoeda(total)) + ' do dia</span></div>' +
+      '</div>' +
+      '<div class="cof-pct">' + pct + '%</div>' +
+    '</div>' +
+    '<div class="cof-barra"><div style="width:' + pct + '%"></div></div>' +
+    '<div class="cof-rodape"><div class="cof-moedas">' + moedas + '</div><div class="cof-n">' + nFeito + ' de ' + nTot + ' serviço' + (nTot !== 1 ? 's' : '') + '</div></div>' +
+    '<div class="cof-frase">' + frase + '</div>' +
+  '</div>';
+}
+
 function renderCalDayCards(ids, semScroll) {
   const wrap = document.getElementById('cal-day-cards');
   if (!wrap) return;
@@ -3369,26 +3438,29 @@ function renderCalDayCards(ids, semScroll) {
   // Título do bloco
   const hojeStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
   const ehHoje  = !ids;
+  // 🐷 Cofrinho do dia (só técnico, e só com a permissão de ver valores)
+  const _diaCof = (ids && _calDayAtivoDataTech) ? _calDayAtivoDataTech : { day: hoje.getDate(), month: hoje.getMonth(), year: hoje.getFullYear() };
+  const cofrinho = _cofrinhoHTML(_diaCof, ehHoje);
 
   if (selecionadas.length === 0) {
-    wrap.innerHTML = ehHoje
+    wrap.innerHTML = cofrinho + (ehHoje
       ? '<div style="margin:16px 0;padding:16px;background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center;">' +
           '<div style="font-size:28px;margin-bottom:8px;">✅</div>' +
           '<div style="font-size:14px;font-weight:700;color:var(--primary);">Nenhuma OS para hoje</div>' +
           '<div style="font-size:12px;color:var(--muted);margin-top:4px;">' + hojeStr + '</div>' +
         '</div>'
-      : '';
+      : '');
     return;
   }
 
   const titulo = ids ? 'Ordens do dia selecionado' : 'Hoje · ' + hojeStr;
   const cabecalho = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-top:4px;">' + titulo + '</div>';
   if (_adminModoVisualizacao === 'grade') {
-    wrap.innerHTML = cabecalho + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
+    wrap.innerHTML = cofrinho + cabecalho + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">' +
       _ordenarParaGrade(selecionadas).map(o => _renderCardTecnicoCompacto(o)).join('') +
     '</div>';
   } else {
-    wrap.innerHTML = cabecalho + selecionadas.map(o => renderCardInline(o)).join('');
+    wrap.innerHTML = cofrinho + cabecalho + selecionadas.map(o => renderCardInline(o)).join('');
   }
 
   // Só rola a tela quando foi o usuário que clicou num dia. Nas
