@@ -1595,6 +1595,7 @@ let adminFilter   = 'all';
 let adminMesFiltro = ''; // 'YYYY-MM' ou '' para todos
 let pollInterval = null;
 let _unsubOSTecnico = null; // liga/desliga o "ao vivo" do Firestore pro técnico logado
+let _techFirestoreOk = false; // true = o tempo real do técnico está funcionando (aí a Planilha não é mais lida)
 let _unsubOSAdmin = null;   // liga/desliga o "ao vivo" do Firestore pro admin
 let _debounceAdminRefresh = null;
 let _unsubAgendamentos = null; // liga/desliga o "ao vivo" dos agendamentos novos do formulário do cliente
@@ -2424,6 +2425,8 @@ async function espelharNoFirestore(payload) {
         const snap = await ref.get();
         if (snap.exists && (!payload.tech || snap.data().tecnico === payload.tech)) {
           await ref.delete();
+          // marca de "excluída": a sincronização com a Planilha nunca traz esta OS de volta
+          await db.collection('os_excluidas').doc(String(payload.id)).set({ tech: payload.tech || '', em: agora }).catch(function(){});
         }
       }
       await _syncHorarioOcupado(payload.id);
@@ -2567,6 +2570,7 @@ function getDinoHTML(id, label) {
 // falhar por qualquer motivo, o app segue 100% como sempre funcionou)
 // ════════════════════════════════════════
 function pararListenerOSTecnico() {
+  _techFirestoreOk = false;
   if (_unsubOSTecnico) {
     try { _unsubOSTecnico(); } catch(e) {}
     _unsubOSTecnico = null;
@@ -2604,6 +2608,7 @@ function iniciarListenerOSTecnico(nomeTecnico) {
     .onSnapshot(function(snapshot) {
       // Só aplica se ainda for esse o técnico logado (evita cruzar dados numa troca rápida de sessão)
       if (currentUser !== nomeTecnico) return;
+      _techFirestoreOk = true; // daqui em diante a tela do técnico segue só o Firebase
       const ativos = [];
       const concluidos = [];
       snapshot.forEach(function(doc) {
@@ -2619,6 +2624,7 @@ function iniciarListenerOSTecnico(nomeTecnico) {
       _destacarDiaTecnico(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, false);
       renderDoneList();
     }, function(err) {
+      _techFirestoreOk = false; // volta a ler a Planilha a cada 30s
       console.warn('[Firestore] Tempo real das OS caiu, seguindo só com a atualização a cada 30s:', err);
     });
 }
@@ -2732,6 +2738,8 @@ async function sincronizarTudoParaFirestore() {
       else await new Promise(function(r) { setTimeout(r, 500); });
     }
     if (!existentes) return; // tempo real do Firebase não ligou: não arrisca sobrescrever nada
+    // OS excluídas no app também não voltam (a Planilha pode ainda ter a linha)
+    try { (await db.collection('os_excluidas').get()).forEach(function(d) { existentes.add(String(d.id)); }); } catch (e) {}
     const todas = todasPlanilha.filter(function(it) { return !existentes.has(String(it.o.id)); });
     if (todas.length === 0) { console.log('[Firestore] Sincronização inicial: nenhuma ordem nova para copiar.'); return; }
 
@@ -2843,6 +2851,16 @@ function iniciarListenerAgendamentos() {
 
 async function loadTechOrders() {
   const diaSelecionadoAntesData = _calDayAtivoDataTech; // preserva o dia selecionado, se houver
+  // Com o tempo real do Firebase funcionando, a tela do técnico segue SÓ o Firebase.
+  // Antes, a cada 30s a Planilha era lida por cima: quando ela estava atrasada, uma OS concluída
+  // ou excluída "voltava" na tela do técnico e sumia de novo (piscando).
+  if (_techFirestoreOk) {
+    renderTechCalendar();
+    _destacarDiaTecnico(diaSelecionadoAntesData ? _idsDoDiaTecnico(diaSelecionadoAntesData) : null, false);
+    renderDoneList();
+    setSyncStatus('ok');
+    return;
+  }
   setSyncStatus('syncing');
   // Busca ordens ativas
   const result = await gasRequest({ action: 'getOrders', tech: currentUser });
