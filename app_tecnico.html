@@ -1343,6 +1343,7 @@
     <input type="hidden" id="edit-os-ind">
     <input type="hidden" id="edit-os-tech">
     <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+      <div class="form-field"><label>Técnico responsável</label><select id="edit-tecnico"></select></div>
       <div class="form-field"><label>Nome do Cliente *</label><input type="text" id="edit-nome"></div>
       <div class="form-field"><label>Telefone *</label><input type="tel" id="edit-tel"></div>
       <div class="form-field"><label>Endereço *</label><input type="text" id="edit-end" placeholder="Rua, número, bairro, cidade — ou cole um link de localização"><div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;">Pode colar aqui o link de localização do veículo no lugar do endereço. O card passa a mostrar um botão "Rastrear veículo" no lugar do Maps.</div></div>
@@ -1567,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-11-v102-tecnico-a-caminho';
+const BUILD_VERSION = '2026-10-11-v103-tecnico-no-editar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7564,6 +7565,8 @@ async function abrirModalEdit(id, tech) {
 
   document.getElementById('edit-os-id').value    = id;
   document.getElementById('edit-os-tech').value  = tech;
+  { const _et = document.getElementById('edit-tecnico'); // técnico responsável (trocar aqui move a OS para o outro técnico)
+    if (_et) _et.innerHTML = TECH_NAMES.map(n => '<option value="' + esc(n) + '"' + (n === tech ? ' selected' : '') + '>' + esc(n) + '</option>').join(''); }
   document.getElementById('edit-nome').value     = o.nome    || '';
   document.getElementById('edit-tel').value      = o.telefone|| '';
   document.getElementById('edit-end').value      = o.endereco|| '';
@@ -7643,6 +7646,9 @@ async function confirmarEdit() {
     }
     showToast('OS atualizada!', 'success');
     await loadAllOrders();
+    // Técnico trocado no Editar: move a OS (já com as edições) para o novo técnico
+    const _novoTec = (document.getElementById('edit-tecnico') || {}).value || tech;
+    if (_novoTec && _novoTec !== tech && TECH_NAMES.includes(_novoTec)) { await adminReatribuirDireto(id, tech, _novoTec); return; }
     // Se o admin está com a agenda desse técnico aberta na tela, atualiza ela também
     // (sem isso, só aparecia depois de um F5)
     if (adminTechSelecionado === tech) await adminVerTecnico(tech);
