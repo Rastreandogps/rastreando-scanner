@@ -8219,6 +8219,12 @@ function _gasComLimite(payload, ms) {
 
 // Agendamentos do formulário do cliente: o próprio formulário já grava o pedido completo no Firebase,
 // então a lista vem de lá — sem depender da Planilha. (A Planilha continua recebendo a cópia do formulário.)
+// Texto do veículo vindo do formulário de agendamento (com a PLACA que o cliente preencheu)
+function _veicTxtAgendamento(v) {
+  const ano = v.ano ? ' ' + v.ano : '';
+  const placa = String(v.placa || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return (v.modelo || '') + ano + (placa ? ' | Placa: ' + placa : '') + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
+}
 async function _buscarAgendamentosFirestore() {
   const db = getFirestoreDb();
   if (!db) return { ok: false, lista: [], erro: 'Firebase indisponível' };
@@ -8313,7 +8319,7 @@ async function carregarAgendamentos() {
           const ano      = v.ano ? ' ' + v.ano : '';
           const gnv      = v.gnv === 'sim' ? ' · GNV' : '';
           const rastreio = v.tipoRastreio === 'com' ? ' · Com bloqueio' : v.tipoRastreio === 'sem' ? ' · Sem bloqueio' : '';
-          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + esc(ano) + '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + esc(ano) + (v.placa ? ' — ' + esc(String(v.placa).toUpperCase()) : '') + '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
         }).join('');
 
     const optsTec = TECH_NAMES.map(function(n) {
@@ -8404,16 +8410,7 @@ async function confirmarAgendamentoAba(key) {
 
   const veiculos = ag.veiculos || [];
   let veiculoStr = '';
-  if (veiculos.length === 1) {
-    const v = veiculos[0];
-    const ano = v.ano ? ' ' + v.ano : '';
-    veiculoStr = (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
-  } else if (veiculos.length > 1) {
-    veiculoStr = veiculos.map(function(v) {
-      const ano = v.ano ? ' ' + v.ano : '';
-      return (v.modelo || '') + ano + ' | GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
-    }).join(' || ');
-  }
+  if (veiculos.length) veiculoStr = veiculos.map(_veicTxtAgendamento).join(' || ');
 
   const valor = document.getElementById('ag-valor-' + rowIndex)?.value || '';
 
@@ -8938,7 +8935,7 @@ function mostrarProximaNovaOS() {
     veiculosHtml = veiculos.map(function(v, i) {
       const gnv      = v.gnv === 'sim' ? ' · GNV' : '';
       const rastreio = v.tipoRastreio === 'com' ? ' · Com bloqueio' : v.tipoRastreio === 'sem' ? ' · Sem bloqueio' : '';
-      return '<span class="nova-os-veiculo-chip">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') +
+      return '<span class="nova-os-veiculo-chip">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + (v.placa ? ' — ' + esc(String(v.placa).toUpperCase()) : '') +
              '<span style="opacity:.7">' + gnv + rastreio + '</span></span>';
     }).join('');
   }
@@ -8974,16 +8971,7 @@ async function confirmarNovaOS() {
   if (!tecnico) { showToast('Selecione o técnico', 'error'); return; }
   const veiculos = _novaOSAtual.veiculos || [];
   let veiculoStr = '';
-  if (veiculos.length === 1) {
-    const v = veiculos[0];
-    const obs = 'GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
-    veiculoStr = (v.modelo || '') + ' | ' + obs;
-  } else if (veiculos.length > 1) {
-    veiculoStr = veiculos.map(function(v) {
-      const obs = 'GNV: ' + (v.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (v.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio');
-      return (v.modelo || '') + ' | ' + obs;
-    }).join(' || ');
-  }
+  if (veiculos.length) veiculoStr = veiculos.map(_veicTxtAgendamento).join(' || ');
   setAdminSyncStatus('syncing');
   const novaId = genId();
   const _agValor = (document.getElementById('modal-nova-os-valor')||{}).value || '';
