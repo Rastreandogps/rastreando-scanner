@@ -7835,7 +7835,7 @@ async function _tlEscolherVeiculo() {
     _tl.veiculos = j.veiculos || [];
     _tl.atual = (j.vinculos || {})[_tl.tech] || 0;
     _tlCorpo('<div class="modal-title">🚗 Qual é o veículo do ' + esc(_tl.tech) + '?</div>' +
-      '<div class="modal-sub">Escolha o rastreador instalado no veículo que o ' + esc(_tl.tech) + ' usa. Fica salvo para as próximas vezes.</div>' +
+      '<div class="modal-sub">Escolha o rastreador instalado no veículo que o ' + esc(_tl.tech) + ' usa. Aparecem só os rastreadores do cliente <b>tecnicos</b>. Fica salvo para as próximas vezes.</div>' +
       '<input type="text" id="tl-busca" placeholder="Buscar por nome ou placa" autocomplete="off" oninput="_tlListar()" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;width:100%;outline:none;margin-top:4px;">' +
       '<div id="tl-lista" class="tl-lista"></div>' +
       '<div class="modal-btns"><button type="button" class="btn-cancel" style="flex:1" onclick="fecharTecLocal()">Cancelar</button></div>');
@@ -7852,7 +7852,7 @@ function _tlListar() {
       '<span style="flex:1;min-width:0;text-align:left;"><b>' + esc(v.nome) + '</b>' + (v.placa ? '<small>' + esc(v.placa) + '</small>' : '') + '</span>' +
       (v.id === _tl.atual ? '<span style="font-size:11px;font-weight:700;color:#4f46e5;">atual</span>' : '') +
     '</button>').join('')
-    : '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;">Nenhum veículo encontrado.</div>';
+    : '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;">Nenhum veículo encontrado. Vincule o rastreador do técnico ao cliente <b>tecnicos</b> no painel Admin.</div>';
 }
 async function _tlVincular(id) {
   if (!_tl) return;
