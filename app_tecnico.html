@@ -6944,6 +6944,10 @@ function _renderCardOSDetalhado(o) {
             (wppLink ? '<a href="' + wppLink + '" target="_blank" onclick="event.stopPropagation()" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:#25D366;border-radius:50%;text-decoration:none;box-shadow:0 2px 6px rgba(37,211,102,.35);flex-shrink:0;">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.845L.057 23.887a.5.5 0 00.611.61l6.001-1.458A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.6a9.557 9.557 0 01-4.91-1.354l-.351-.208-3.642.885.912-3.54-.229-.364A9.558 9.558 0 012.4 12C2.4 6.698 6.698 2.4 12 2.4c5.303 0 9.6 4.298 9.6 9.6 0 5.303-4.297 9.6-9.6 9.6z"/></svg>' +
             '</a>' : '') +
+            // ícone "criar cliente no rastreamento" (12/10/2026): abre o Tempo Real com nome, WhatsApp e veículo já preenchidos
+            '<button onclick="event.stopPropagation();criarClienteNoRastreio(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" title="Criar cliente no rastreamento" aria-label="Criar cliente no rastreamento" style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;background:#2563eb;border:none;border-radius:50%;cursor:pointer;box-shadow:0 2px 6px rgba(37,99,235,.35);flex-shrink:0;">' +
+              '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 14 0"/><path d="M19 8v6M16 11h6"/></svg>' +
+            '</button>' +
 
             '<span style="background:' + dataBg + ';color:' + dataFg + ';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">' + dataLabel + '</span>' +
             _horaPill(o) +
@@ -7034,11 +7038,6 @@ function _renderCardOSDetalhado(o) {
         // ── Botão compartilhar localização do técnico (link de 1 hora para o cliente)
         '<button class="admin-tec-local-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#4f46e5;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
           '📍 Compartilhar localização do técnico' +
-        '</button>' +
-
-        // ── Botão criar o cliente no rastreamento (12/10/2026): abre o Tempo Real com nome, WhatsApp e veículo já preenchidos
-        '<button class="admin-criar-cli-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
-          '👤 Criar cliente no rastreamento' +
         '</button>' +
 
         // ── Botões: Editar + Concluir + Excluir
