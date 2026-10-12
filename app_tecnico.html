@@ -1568,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-11-v103-tecnico-no-editar';
+const BUILD_VERSION = '2026-10-12-v104-cliente-do-card';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4051,6 +4051,13 @@ document.addEventListener('click', function(e) {
     const id   = tecLocalBtn.getAttribute('data-id');
     const tech = tecLocalBtn.getAttribute('data-tech');
     if (id && tech) abrirTecLocal(id, tech);
+  }
+  // Listener para botão criar cliente no rastreamento
+  const criarCliBtn = e.target.closest('.admin-criar-cli-btn');
+  if (criarCliBtn) {
+    const id   = criarCliBtn.getAttribute('data-id');
+    const tech = criarCliBtn.getAttribute('data-tech');
+    if (id && tech) criarClienteNoRastreio(id, tech);
   }
   // Listener para botão link de remarcar ao cliente
   const remarcarLinkBtn = e.target.closest('.admin-remarcar-link-btn');
@@ -7029,6 +7036,11 @@ function _renderCardOSDetalhado(o) {
           '📍 Compartilhar localização do técnico' +
         '</button>' +
 
+        // ── Botão criar o cliente no rastreamento (12/10/2026): abre o Tempo Real com nome, WhatsApp e veículo já preenchidos
+        '<button class="admin-criar-cli-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="width:100%;padding:8px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '👤 Criar cliente no rastreamento' +
+        '</button>' +
+
         // ── Botões: Editar + Concluir + Excluir
         '<div style="display:flex;gap:6px;margin-bottom:6px;">' +
           '<button onclick="abrirModalEnvioTecnico(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:8px;background:#25D366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
@@ -7803,6 +7815,20 @@ async function _tlDestino(o) {
     return g;
   })();
   return Promise.race([busca, limite]);
+}
+
+/* ── Criar cliente no rastreamento (12/10/2026): manda os dados da OS para o app Tempo Real pelo próprio link.
+   Lá o administrador vê "1 cliente vindo do APP Técnico" e o cadastro abre preenchido (nome, login sugerido,
+   senha 123456, WhatsApp). CPF e aparelho ficam para digitar. Nada passa por servidor. */
+const URL_TEMPO_REAL = 'https://rastreandogps.github.io/rastreando-app/tempo-real.html';
+function criarClienteNoRastreio(id, tech) {
+  const os = _acharOSEmMemoria(id, tech);
+  if (!os) { showToast('OS não encontrada', 'error'); return; }
+  const dados = { os: String(os.id || ''), nome: String(os.nome || '').trim(), tel: String(os.telefone || '').replace(/\D/g, ''),
+    veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech, em: Date.now() };
+  if (!dados.nome) { showToast('Esta OS não tem o nome do cliente', 'error'); return; }
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(dados)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  window.open(URL_TEMPO_REAL + '#novocli=' + b64, '_blank');
 }
 
 function abrirTecLocal(id, tech) {
