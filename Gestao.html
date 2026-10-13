@@ -615,6 +615,13 @@ body.modal-aberto{overflow:hidden}
 .retorno-item:active{border-color:var(--navy-light)}
 .retorno-item .ir-dica{margin-top:8px;font-size:.78rem;font-weight:700;color:var(--navy-light)}
 .cliente-card{scroll-margin-top:110px}
+/* 13/10/2026 (pedido do dono): card do devedor fechado mostra só nome, valor, dias de atraso, telefone e CPF; toque abre o resto */
+.cliente-card .cc-mais{display:none}
+.cliente-card.aberto .cc-mais{display:block}
+.cliente-card .cc-head,.cliente-card .cc-selos,.cliente-card .cc-contato{cursor:pointer}
+.cc-abrir{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 0 9px;background:none;border:0;border-top:1px dashed var(--border);color:#64748b;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.cc-abrir .seta{display:inline-block;transition:transform .2s}
+.cliente-card.aberto .cc-abrir .seta{transform:rotate(180deg)}
 /* chip cancelado: card vermelho + chip cortado piscando ao lado do nome */
 .cliente-card.chip-off{background:#FEE2E2;border-color:#DC2626;border-left-color:#B91C1C;box-shadow:0 4px 18px rgba(220,38,38,.3)}
 .cliente-card.chip-off .cc-acoes{background:#FECACA;border-top-color:#FCA5A5}
@@ -1511,6 +1518,7 @@ body.modal-aberto{overflow:hidden}
       renderLista();
     });
   });
+  var CARDS_ABERTOS = {}; // 13/10/2026: cards de devedor abertos (por CPF), para continuarem abertos quando a lista é redesenhada
   function renderLista() {
     carregarSelosFundo();
     $('cnt-dois').textContent = '(' + DADOS.dois.length + ')';
@@ -1599,7 +1607,7 @@ body.modal-aberto{overflow:hidden}
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + ' · ' + f.dias + (f.dias === 1 ? ' dia' : ' dias') + '</span><b>' + brl(f.valor) + '</b></div>';
       }).join('');
-      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + (c.chipCancelado ? ' chip-off' : '') + (c.protestadoEm ? ' protestado' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
+      return '<div class="cliente-card' + (c.ultimoEnvio ? ' enviado' : '') + (retornoCliente ? ' com-retorno' : '') + (c.chipCancelado ? ' chip-off' : '') + (c.protestadoEm ? ' protestado' : '') + (CARDS_ABERTOS[soDig(c.cpf)] ? ' aberto' : '') + '" id="cli-' + i + '" data-cpf="' + esc(soDig(c.cpf)) + '">' +
         '<div class="cc-head">' +
           (c.medalha
             ? '<div class="cc-avatar med med-' + c.medalha.classe + '" title="' + ({ ouro: 'Ouro', prata: 'Prata', latao: 'Latão' })[c.medalha.classe] + ' · ' + c.medalha.pontos + ' pts' + (c.medalha.poucos ? ' (menos de 5 pagos)' : '') + '">' + ({ ouro: '🥇', prata: '🥈', latao: '🚩' })[c.medalha.classe] + '</div>'
@@ -1616,6 +1624,8 @@ body.modal-aberto{overflow:hidden}
           '<div><span style="min-width:0"><small>Telefone</small><b>' + esc(c.telefone || '—') + '</b></span>' + (c.telefone ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.telefone) + '">copiar</button>' : '') + '</div>' +
           '<div><span style="min-width:0"><small>CPF/CNPJ</small><b>' + esc(c.cpf || '—') + '</b></span>' + (c.cpf ? '<button type="button" class="copiar-mini" data-copy="' + esc(c.cpf) + '">copiar</button>' : '') + '</div>' +
         '</div>' +
+        '<button type="button" class="cc-abrir" data-acao="abrir-card" aria-expanded="' + (CARDS_ABERTOS[soDig(c.cpf)] ? 'true' : 'false') + '"><span class="txt">' + (CARDS_ABERTOS[soDig(c.cpf)] ? 'Fechar' : 'Ver mais') + '</span><span class="seta" aria-hidden="true">▾</span></button>' +
+        '<div class="cc-mais">' +
         '<div class="cc-imei">' +
           '<label for="imei-' + i + '">IMEI do aparelho</label>' +
           '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '" data-idx="' + i + '" data-acao="imei" value="' + esc(c.imei || '') + '" placeholder="Cole aqui o IMEI" maxlength="120" autocomplete="off" spellcheck="false"' + (c.imei ? ' readonly' : '') + '>' +
@@ -1644,8 +1654,22 @@ body.modal-aberto{overflow:hidden}
           (c.ultimoEnvio ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-envio">🧹 Limpar marcação de envio</button>' : '') +
           (retornoCliente ? '<button type="button" class="btn-link" data-idx="' + i + '" data-acao="limpar-retorno">🧹 Limpar retorno</button>' : '') +
         '</div>' : '') +
+        '</div>' + // fim .cc-mais
       '</div>';
     }).join('');
+
+    // abrir/fechar o card: toque no topo (nome/valor/selos/contato) ou em "Ver mais"; links e botões de copiar continuam funcionando normal
+    $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (card) {
+      card.addEventListener('click', function (ev) {
+        var t = ev.target;
+        var noBotao = t.closest('[data-acao="abrir-card"]');
+        if (!noBotao) {
+          if (!t.closest('.cc-head, .cc-selos, .cc-contato')) return;
+          if (t.closest('a, button, input, textarea, select, label')) return;
+        }
+        alternarCard(card);
+      });
+    });
 
     $('lista-clientes').querySelectorAll('[data-copy]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -1892,6 +1916,14 @@ body.modal-aberto{overflow:hidden}
   // ---------- RETORNOS EM CALENDÁRIO ----------
   var calMes = null, calSel = null;
   function isoLocal(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function alternarCard(card, forcarAberto) {
+    var abrir = forcarAberto === true ? true : !card.classList.contains('aberto');
+    card.classList.toggle('aberto', abrir);
+    var cpf = card.getAttribute('data-cpf') || '';
+    if (abrir) CARDS_ABERTOS[cpf] = true; else delete CARDS_ABERTOS[cpf];
+    var b = card.querySelector('.cc-abrir');
+    if (b) { b.setAttribute('aria-expanded', abrir ? 'true' : 'false'); var tx = b.querySelector('.txt'); if (tx) tx.textContent = abrir ? 'Fechar' : 'Ver mais'; }
+  }
   // Toque no card do retorno -> abre a aba certa, rola até o card de cobrança do cliente e destaca
   function irParaCobranca(cpf) {
     var alvo = soDig(cpf), aba = '';
@@ -1906,6 +1938,7 @@ body.modal-aberto{overflow:hidden}
     var card = null;
     $('lista-clientes').querySelectorAll('.cliente-card').forEach(function (el) { if (el.getAttribute('data-cpf') === alvo) card = el; });
     if (!card) { toast('Não consegui achar o card desse cliente.', 'erro'); return; }
+    alternarCard(card, true); // chega no card já aberto
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.remove('destacado'); void card.offsetWidth; card.classList.add('destacado');
     setTimeout(function () { card.classList.remove('destacado'); }, 3200);
