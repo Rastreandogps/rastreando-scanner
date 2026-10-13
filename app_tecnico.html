@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v114-mapa-proxima';
+const BUILD_VERSION = '2026-10-13-v115-rota-1os';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10422,6 +10422,8 @@ function _desenharRotas(map, rotasPorTech, modo) {
       if (prox && modo === 'car') inicio = (await _posicaoDoTecnico()) || daBase;          // já na rua: parte de onde está
       else if (prox && _motosMarcadores[tech]) { const ll = _motosMarcadores[tech].getLatLng(); inicio = { lat: ll.lat, lng: ll.lng, nome: 'Moto', moto: true }; }
       else inicio = daBase || (modo === 'car' ? await _posicaoDoTecnico() : null);
+      // 13/10/2026: sem base cadastrada, no mapa do admin a rota parte da moto do técnico (se estiver ligada)
+      if (!inicio && modo !== 'car' && _motosMarcadores[tech]) { const ll = _motosMarcadores[tech].getLatLng(); inicio = { lat: ll.lat, lng: ll.lng, nome: 'Moto', moto: true }; }
       // ponto de partida para ordenar os sem ordem: última OS com ordem > posição do técnico > o mais ao norte
       let partida = comOrdem.length ? comOrdem[comOrdem.length - 1] : (prox || inicio || null);
       let semOrdenados;
