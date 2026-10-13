@@ -9999,6 +9999,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const _rotasPorTech = {}; // acumula coords por técnico para rota
   let _coordUsadas = {}; // rastreia coordenadas duplicadas para offset
   const _semLocal = []; // 13/10/2026: OS cujo endereço não foi localizado (ficam fora do mapa, nunca no centro da cidade)
+  _marcadoresOS = {};
 
   // 1. Buscar coordenadas já salvas no cache (GAS)
   if (labelEl) labelEl.textContent = 'Buscando cache de coordenadas...';
@@ -10186,9 +10187,10 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       _coordUsadas[_chave] = 0;
     }
 
-    L.marker([plotLat, plotLng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0], _valorNumOS(o)) })
+    const _mk = L.marker([plotLat, plotLng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0], _valorNumOS(o)) })
       .addTo(map)
       .bindPopup(popup, { maxWidth: 260 });
+    _marcadoresOS[o.id] = { marker: _mk, cor: cor, ini: ini, modo: modo, tipo: o.tipo || '', nome: (o.nome || '').split(' ')[0], valor: _valorNumOS(o) }; // 13/10/2026: o roteirizador numera dentro da bolinha
 
     bounds.push([plotLat, plotLng]);
 
@@ -10267,6 +10269,7 @@ function _nearestNeighbor(pontos) {
    No celular do técnico a rota sai de onde ele está (GPS, se autorizar). Se o OSRM falhar, cai na linha reta de antes. */
 const OSRM_URL = 'https://router.project-osrm.org';
 let _rotaSugerida = {}; // tech -> [{id, tech, nome}] na ordem sugerida (só o admin aplica)
+let _marcadoresOS = {}; // id da OS -> pino grande no mapa (para o roteirizador escrever o número dentro da bolinha)
 function _osrmCoords(pts) { return pts.map(function(p) { return p.lng.toFixed(6) + ',' + p.lat.toFixed(6); }).join(';'); }
 async function _osrm(servico, pts, extra) {
   const ctl = new AbortController(); const tm = setTimeout(function() { ctl.abort(); }, 12000);
@@ -10352,17 +10355,10 @@ function _desenharRotas(map, rotasPorTech, modo) {
       } else if (inicio) {
         L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid white;box-shadow:0 0 0 4px rgba(37,99,235,.25);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: -50 }).addTo(map).bindPopup('Você está aqui');
       }
-      // Numerinhos de ordem sobre cada ponto
+      // 13/10/2026 (pedido do dono): o número da sequência vai DENTRO da bolinha do pino (no lugar do carrinho)
       sequencia.forEach(function(p, i) {
-        L.marker([p.lat, p.lng], {
-          icon: L.divIcon({
-            className: '',
-            html: '<div style="width:18px;height:18px;border-radius:50%;background:white;border:2px solid ' + cor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:' + cor + ';box-shadow:0 1px 4px rgba(0,0,0,.2);">' + (i + 1) + '</div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-          }),
-          zIndexOffset: -100, // fica abaixo dos pins principais
-        }).addTo(map);
+        const m = _marcadoresOS[p.id];
+        if (m && m.marker) { try { m.marker.setIcon(_pinIcon(m.cor, m.ini, m.modo, i + 1, m.tipo, m.nome, m.valor)); } catch (_) {} }
       });
     } catch (e) { console.error('rota', tech, e && e.message); }
     finally { terminou(); }
