@@ -713,6 +713,9 @@ body.modal-aberto{overflow:hidden}
 .imei-cadeado:hover{background:#e2e8f0;color:var(--navy)}
 .imei-cadeado svg{width:15px;height:15px}
 .imei-cadeado.aberto{color:var(--navy-light)}
+.imei-linhas{display:flex;flex-direction:column;gap:6px}
+.imei-add{margin-top:6px;background:none;border:0;padding:2px 0;color:var(--navy,#1B3A6B);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.imei-del{background:none;border:0;color:#dc2626;font-size:.9rem;font-weight:800;cursor:pointer;padding:2px 4px;line-height:1}
 .cc-imei-st{display:block;font-size:.68rem;margin-top:3px;min-height:.9em;color:var(--text-3)}
 .cc-imei-st.ok{color:#059669}.cc-imei-st.erro{color:var(--danger)}
 /* protestado */
@@ -1627,10 +1630,9 @@ body.modal-aberto{overflow:hidden}
         '<button type="button" class="cc-abrir" data-acao="abrir-card" aria-expanded="' + (CARDS_ABERTOS[soDig(c.cpf)] ? 'true' : 'false') + '"><span class="txt">' + (CARDS_ABERTOS[soDig(c.cpf)] ? 'Fechar' : 'Ver mais') + '</span><span class="seta" aria-hidden="true">▾</span></button>' +
         '<div class="cc-mais">' +
         '<div class="cc-imei">' +
-          '<label for="imei-' + i + '">IMEI do aparelho</label>' +
-          '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '" data-idx="' + i + '" data-acao="imei" value="' + esc(c.imei || '') + '" placeholder="Cole aqui o IMEI" maxlength="120" autocomplete="off" spellcheck="false"' + (c.imei ? ' readonly' : '') + '>' +
-          '<button type="button" class="imei-cadeado' + (c.imei ? '' : ' aberto') + '" data-acao="cadeado-imei" data-idx="' + i + '" aria-label="' + (c.imei ? 'Destravar o campo do IMEI' : 'Travar o campo do IMEI') + '">' + (c.imei ? CADEADO_FECHADO : CADEADO_ABERTO) + '</button>' +
-          '<button type="button" class="copiar-mini" data-acao="copiar-imei" data-idx="' + i + '">copiar</button></div>' +
+          '<label for="imei-' + i + '-0">' + (imeisDe(c).length > 1 ? 'IMEIs dos aparelhos (' + imeisDe(c).length + ')' : 'IMEI do aparelho') + '</label>' +
+          '<div class="imei-linhas">' + (imeisDe(c).length ? imeisDe(c) : ['']).map(function (v, k, arr) { return imeiLinhaHTML(i, k, v, arr.length > 1); }).join('') + '</div>' +
+          '<button type="button" class="imei-add" data-acao="imei-add" data-idx="' + i + '">+ Adicionar outro IMEI</button>' +
           '<span class="cc-imei-st" id="imei-st-' + i + '"></span>' +
         '</div>' +
         '<div class="cc-fats">' + fats + '</div>' +
@@ -1693,28 +1695,47 @@ body.modal-aberto{overflow:hidden}
     $('lista-clientes').querySelectorAll('[data-acao="limpar-retorno"]').forEach(function (b) {
       b.addEventListener('click', function () { limparRetornoCliente(lista[Number(b.getAttribute('data-idx'))], b); });
     });
-    $('lista-clientes').querySelectorAll('input[data-acao="imei"]').forEach(function (inp) {
-      inp.addEventListener('change', function () { salvarImei(lista[Number(inp.getAttribute('data-idx'))], inp); });
-      inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
-      // saiu do campo sem mudar nada: se já tinha IMEI salvo, trava de novo
-      inp.addEventListener('blur', function () {
-        var c = lista[Number(inp.getAttribute('data-idx'))];
-        setTimeout(function () { if (c && c.imei && (inp.value || '').trim() === c.imei) travarImei(inp, true); }, 150);
+    // 13/10/2026 (pedido do dono): vários IMEIs por cliente (um por veículo). Tudo por delegação na caixa do IMEI de cada card.
+    $('lista-clientes').querySelectorAll('.cc-imei').forEach(function (box) {
+      var cOf = function (el) { return lista[Number(el.getAttribute('data-idx'))]; };
+      var salvoTem = function (c, v) { return !!v && imeisDe(c).indexOf(v) >= 0; };
+      box.addEventListener('change', function (ev) { var inp = ev.target.closest('input[data-acao="imei"]'); if (inp) salvarImeis(cOf(inp), inp.getAttribute('data-idx')); });
+      box.addEventListener('keydown', function (ev) { var inp = ev.target.closest('input[data-acao="imei"]'); if (inp && ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
+      // saiu do campo sem mudar nada: se esse IMEI já estava salvo, trava de novo
+      box.addEventListener('focusout', function (ev) {
+        var inp = ev.target.closest('input[data-acao="imei"]'); if (!inp) return;
+        var c = cOf(inp);
+        setTimeout(function () { if (c && salvoTem(c, (inp.value || '').trim())) travarImei(inp, true); }, 150);
       });
-    });
-    $('lista-clientes').querySelectorAll('[data-acao="cadeado-imei"]').forEach(function (b) {
-      b.addEventListener('mousedown', function (ev) { ev.preventDefault(); }); // não tira o foco do campo antes do clique
-      b.addEventListener('click', function () {
-        var inp = $('imei-' + b.getAttribute('data-idx'));
-        if (inp.readOnly) { travarImei(inp, false); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
-        else { inp.blur(); var c = lista[Number(b.getAttribute('data-idx'))]; if ((inp.value || '').trim() && c && (inp.value || '').trim() === (c.imei || '')) travarImei(inp, true); }
-      });
-    });
-    $('lista-clientes').querySelectorAll('[data-acao="copiar-imei"]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var v = ($('imei-' + b.getAttribute('data-idx')).value || '').trim();
-        if (!v) { toast('Nenhum IMEI para copiar.', 'erro'); return; }
-        if (navigator.clipboard) navigator.clipboard.writeText(v).then(function () { toast('IMEI copiado!', 'ok'); });
+      box.addEventListener('mousedown', function (ev) { if (ev.target.closest('[data-acao="cadeado-imei"]')) ev.preventDefault(); }); // não tira o foco do campo antes do clique
+      box.addEventListener('click', function (ev) {
+        var b = ev.target.closest('button'); if (!b) return;
+        var acao = b.getAttribute('data-acao'), i = b.getAttribute('data-idx'), k = b.getAttribute('data-k');
+        var inp = k != null ? $('imei-' + i + '-' + k) : null, c = lista[Number(i)];
+        if (acao === 'cadeado-imei' && inp) {
+          if (inp.readOnly) { travarImei(inp, false); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+          else { inp.blur(); if (salvoTem(c, (inp.value || '').trim())) travarImei(inp, true); }
+        } else if (acao === 'copiar-imei' && inp) {
+          var v = (inp.value || '').trim();
+          if (!v) { toast('Nenhum IMEI para copiar.', 'erro'); return; }
+          if (navigator.clipboard) navigator.clipboard.writeText(v).then(function () { toast('IMEI copiado!', 'ok'); });
+        } else if (acao === 'imei-add') {
+          var linhas = box.querySelector('.imei-linhas'), qtd = linhas.querySelectorAll('input[data-acao="imei"]').length;
+          var vazio = Array.prototype.find.call(linhas.querySelectorAll('input[data-acao="imei"]'), function (x) { return !(x.value || '').trim(); });
+          if (vazio) { travarImei(vazio, false); vazio.focus(); return; }
+          if (qtd >= IMEI_MAX) { toast('Cabem até ' + IMEI_MAX + ' IMEIs por cliente.', 'erro'); return; }
+          var novoK = 0; linhas.querySelectorAll('input[data-acao="imei"]').forEach(function (x) { novoK = Math.max(novoK, Number(x.getAttribute('data-k')) + 1); });
+          linhas.insertAdjacentHTML('beforeend', imeiLinhaHTML(i, novoK, '', true));
+          if (qtd === 1) { var k0 = linhas.querySelector('input[data-acao="imei"]'); var r0 = k0 && k0.closest('.cc-imei-linha'); if (r0 && !r0.querySelector('[data-acao="imei-del"]')) r0.insertAdjacentHTML('beforeend', imeiDelHTML(i, k0.getAttribute('data-k'))); }
+          $('imei-' + i + '-' + novoK).focus();
+        } else if (acao === 'imei-del' && inp) {
+          var v2 = (inp.value || '').trim();
+          if (v2 && !confirm('Tirar o IMEI ' + v2 + ' deste cliente?')) return;
+          var row = inp.closest('.cc-imei-linha'); if (row) row.remove();
+          var resto = box.querySelectorAll('.imei-linhas .cc-imei-linha');
+          if (resto.length === 1) { var d1 = resto[0].querySelector('[data-acao="imei-del"]'); if (d1) d1.remove(); }
+          salvarImeis(c, i);
+        }
       });
     });
     $('lista-clientes').querySelectorAll('[data-acao="estagio"]').forEach(function (b) {
@@ -2344,25 +2365,41 @@ body.modal-aberto{overflow:hidden}
   // Cadeado do IMEI (fechado = campo travado; aberto = dá para escrever)
   var CADEADO_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   var CADEADO_ABERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg>';
+  // 13/10/2026: vários IMEIs ficam no mesmo campo do servidor, separados por vírgula ("111, 222"); o servidor guarda até 120 caracteres
+  var IMEI_MAX = 7;
+  function imeisDe(c) { return String((c && c.imei) || '').split(/\s*[,;]\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
+  function imeiDelHTML(i, k) { return '<button type="button" class="imei-del" data-acao="imei-del" data-idx="' + i + '" data-k="' + k + '" aria-label="Tirar este IMEI" title="Tirar este IMEI">✕</button>'; }
+  function imeiLinhaHTML(i, k, v, comDel) {
+    return '<div class="cc-imei-linha"><input type="text" id="imei-' + i + '-' + k + '" data-idx="' + i + '" data-k="' + k + '" data-acao="imei" value="' + esc(v || '') + '" placeholder="Cole aqui o IMEI" maxlength="40" autocomplete="off" spellcheck="false"' + (v ? ' readonly' : '') + '>' +
+      '<button type="button" class="imei-cadeado' + (v ? '' : ' aberto') + '" data-acao="cadeado-imei" data-idx="' + i + '" data-k="' + k + '" aria-label="' + (v ? 'Destravar o campo do IMEI' : 'Travar o campo do IMEI') + '">' + (v ? CADEADO_FECHADO : CADEADO_ABERTO) + '</button>' +
+      '<button type="button" class="copiar-mini" data-acao="copiar-imei" data-idx="' + i + '" data-k="' + k + '">copiar</button>' +
+      (comDel ? imeiDelHTML(i, k) : '') + '</div>';
+  }
   function travarImei(inp, travar) {
     inp.readOnly = travar;
-    var b = document.querySelector('[data-acao="cadeado-imei"][data-idx="' + inp.getAttribute('data-idx') + '"]');
+    var b = document.querySelector('[data-acao="cadeado-imei"][data-idx="' + inp.getAttribute('data-idx') + '"][data-k="' + inp.getAttribute('data-k') + '"]');
     if (!b) return;
     b.innerHTML = travar ? CADEADO_FECHADO : CADEADO_ABERTO;
     b.classList.toggle('aberto', !travar);
     b.setAttribute('aria-label', travar ? 'Destravar o campo do IMEI' : 'Travar o campo do IMEI');
   }
-  // IMEI: grava sozinho quando sai do campo (ou aperta Enter)
-  async function salvarImei(c, inp) {
+  // IMEI: grava sozinho quando sai do campo (ou aperta Enter). Junta todos os campos do card ("111, 222, 333").
+  async function salvarImeis(c, i) {
     if (!c) return;
-    var v = (inp.value || '').replace(/\s+/g, ' ').trim(), st = $('imei-st-' + inp.getAttribute('data-idx'));
-    if (v === (c.imei || '')) return;
+    var box = $('imei-st-' + i) && $('imei-st-' + i).closest('.cc-imei'), st = $('imei-st-' + i);
+    if (!box) return;
+    var inps = Array.prototype.slice.call(box.querySelectorAll('input[data-acao="imei"]'));
+    var vals = inps.map(function (x) { return (x.value || '').replace(/\s+/g, ' ').replace(/[,;]/g, ' ').trim(); }).filter(Boolean);
+    var v = vals.join(', ');
+    if (v === imeisDe(c).join(', ')) return;
+    if (v.length > 120) { st.className = 'cc-imei-st erro'; st.textContent = 'Muitos IMEIs: o limite é de ' + IMEI_MAX + ' por cliente.'; return; }
     st.className = 'cc-imei-st'; st.textContent = 'salvando…';
     try {
       await chamar('imei', { cpf: c.cpf, nome: c.nome, imei: v });
-      c.imei = v; inp.value = v;
-      st.className = 'cc-imei-st ok'; st.textContent = v ? 'salvo ✓' : 'IMEI apagado';
-      if (v) travarImei(inp, true); // salvou: trava o campo
+      c.imei = v;
+      inps.forEach(function (x) { var t = (x.value || '').replace(/\s+/g, ' ').replace(/[,;]/g, ' ').trim(); x.value = t; if (t) travarImei(x, true); }); // salvou: trava os campos
+      var lb = box.querySelector('label'); if (lb) lb.textContent = vals.length > 1 ? 'IMEIs dos aparelhos (' + vals.length + ')' : 'IMEI do aparelho';
+      st.className = 'cc-imei-st ok'; st.textContent = v ? (vals.length > 1 ? vals.length + ' IMEIs salvos ✓' : 'salvo ✓') : 'IMEI apagado';
     } catch (e) { st.className = 'cc-imei-st erro'; st.textContent = (e && e.message) || 'Erro ao salvar.'; }
   }
   // Protesto: marca / desmarca e guarda os dados do cliente para a futura página de protestados
