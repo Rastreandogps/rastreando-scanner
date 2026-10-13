@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v119-proxima-veiculo';
+const BUILD_VERSION = '2026-10-13-v120-proxima-pelo-card';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7394,13 +7394,28 @@ function _veicProxima(veiculo) {
   const qtd = String(veiculo).split(' || ').filter(function(v) { return v.trim(); }).length;
   return '<span style="font-size:12.5px;font-weight:700;color:#1d4ed8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">🚗 ' + esc(modelo) + (qtd > 1 ? ' +' + (qtd - 1) : '') + '</span>';
 }
+let _proximaDoCard = false;
+/* 13/10/2026: lista das OS que faltam no MESMO dia da concluída (para o "Qual é a próxima?" quando conclui pelo card) */
+function _restantesDoDia(idConcluida, dataRef) {
+  const ref = parseDate(dataRef || '') || new Date();
+  const mesmoDia = function(d) { return d && d.getDate() === ref.getDate() && d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear(); };
+  const lista = (allOrders[currentUser] || []).filter(function(o) { return o.id !== idConcluida && o.status !== 'concluido' && o.data && mesmoDia(parseDate(o.data)); });
+  const pos = {}; (_ultimaSequencia || []).forEach(function(p, i) { pos[p.id] = i + 1; }); // se o mapa já calculou a rota, segue a ordem dela
+  lista.sort(function(a, b) { return ((pos[a.id] || 999) - (pos[b.id] || 999)) || ((a.ordemDia || 99) - (b.ordemDia || 99)) || String(a.hora || '').localeCompare(String(b.hora || '')); });
+  return lista.map(function(o) { return { id: o.id, nome: o.nome || '', veiculo: o.veiculo || '', endereco: o.endereco || '' }; });
+}
 function _proximaFechar() { const el = document.getElementById('proxima-sheet'); if (el) el.remove(); }
-function abrirProximaOS(idConcluida) {
+function abrirProximaOS(idConcluida, listaCard) {
   _proximaFechar();
-  const restantes = (_ultimaSequencia || []).filter(function(p) { return p.id !== idConcluida; });
-  const cont = document.getElementById('map-container-tech'); if (!cont) return;
+  // 13/10/2026: listaCard = concluiu pelo CARD (não pelo mapa): a janela abre por cima da tela e, ao escolher, leva para a aba Mapa
+  const doCard = Array.isArray(listaCard);
+  const restantes = (doCard ? listaCard : (_ultimaSequencia || [])).filter(function(p) { return p.id !== idConcluida; });
+  const cont = doCard ? document.body : document.getElementById('map-container-tech'); if (!cont) return;
   const box = document.createElement('div'); box.id = 'proxima-sheet';
-  box.style.cssText = 'position:absolute;left:8px;right:8px;bottom:10px;z-index:900;background:white;border-radius:14px;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-family:inherit;';
+  box.style.cssText = doCard
+    ? 'position:fixed;left:10px;right:10px;bottom:14px;z-index:9000;max-width:520px;margin:0 auto;background:white;border-radius:14px;padding:12px;box-shadow:0 10px 40px rgba(0,0,0,.4);font-family:inherit;'
+    : 'position:absolute;left:8px;right:8px;bottom:10px;z-index:900;background:white;border-radius:14px;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-family:inherit;';
+  _proximaDoCard = doCard;
   if (!restantes.length) {
     box.innerHTML = '<div style="font-size:14px;font-weight:800;color:#065f46;">🎉 Serviço concluído! Não falta mais nenhuma OS hoje.</div><button onclick="_proximaFechar()" style="margin-top:8px;width:100%;padding:9px;background:#e2e8f0;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Fechar</button>';
   } else {
@@ -7427,7 +7442,8 @@ async function escolherProximaOS(id) {
     if (!r || !r.ok) throw new Error((r && r.error) || 'sem conexão com o Firebase'); // revisão 13/10/2026: antes dizia "definida" mesmo falhando
     const o = lista.find(function(x) { return x.id === id; }); if (o) o.proxima = true;
     showToast('Próxima definida. Refazendo a rota...', 'success');
-    recarregarMapaTecnico();
+    if (_proximaDoCard) { _proximaDoCard = false; _mapaDesatualizado = true; showTechTab('mapa'); } // veio do card: leva para o mapa já com a rota nova
+    else recarregarMapaTecnico();
   } catch (e) { showToast('Não consegui marcar: ' + (e.message || 'erro'), 'error'); }
 }
 /* 13/10/2026: tira a marca de "próxima" na hora (técnico ou admin). Sem marca, a rota volta a sair da base. */
@@ -7446,6 +7462,8 @@ async function confirmarConcluir() {
   if (!pendingConcluir) return;
   const { id, tech } = pendingConcluir;
   const doMapa = _concluirDoMapa; _concluirDoMapa = false;
+  const _osAntes = (allOrders[currentUser] || []).find(function(x) { return x.id === id; }); // data da OS, para a lista do "qual é a próxima?" pelo card
+  const _dataConcluida = _osAntes ? _osAntes.data : '';
   fecharModalConcluir();
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
@@ -7460,6 +7478,7 @@ async function confirmarConcluir() {
     await loadTechOrders();
     renderDoneList();
     if (doMapa) { try { if (_leafletMapTech) _leafletMapTech.closePopup(); } catch (e) {} abrirProximaOS(id); }
+    else if (currentRole !== 'admin') abrirProximaOS(id, _restantesDoDia(id, _dataConcluida)); // 13/10/2026: concluiu pelo card: também pergunta e leva ao mapa
     if (typeof renderAdminOSList === 'function') { try { renderAdminOSList(); } catch(e) {} }
     if (typeof renderAdminDoneList === 'function') { try { renderAdminDoneList(); } catch(e) {} }
   } else {
