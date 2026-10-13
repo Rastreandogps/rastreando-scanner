@@ -1568,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-12-v106-cliente-sem-abrir';
+const BUILD_VERSION = '2026-10-13-v107-endereco-gps';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7751,7 +7751,7 @@ function esc(str) {
 // confere que quem pede é o administrador pelo login do Firebase deste app.
 // ════════════════════════════════════════════════════════════════
 const RG_DESB_URL = 'https://southamerica-east1-rastreando-assinaturas.cloudfunctions.net/rastreamentoDesbloqueio';
-const RG_COMP_URL = 'https://rastreandogps.github.io/rastreando-app/compartilhar.html';
+const RG_COMP_URL = 'https://gps.rastreandogpsbr.com.br/compartilhar.html'; /* 13/10/2026: endereço próprio do app de rastreamento */
 let _tl = null; // { os, tech, codigo, expiraMs, destinoOk, online, veiculos }
 
 async function _tlChamar(acao, extra) {
@@ -7837,27 +7837,16 @@ async function _tlDestino(o) {
 /* ── Criar cliente no rastreamento (12/10/2026): manda os dados da OS para o app Tempo Real pelo próprio link.
    Lá o administrador vê "1 cliente vindo do APP Técnico" e o cadastro abre preenchido (nome, login sugerido,
    senha 123456, WhatsApp). CPF e aparelho ficam para digitar. Nada passa por servidor. */
-const URL_TEMPO_REAL = 'https://rastreandogps.github.io/rastreando-app/tempo-real.html';
+const URL_TEMPO_REAL = 'https://gps.rastreandogpsbr.com.br/tempo-real.html';
 function criarClienteNoRastreio(id, tech) {
   const os = _acharOSEmMemoria(id, tech);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   const dados = { os: String(os.id || ''), nome: String(os.nome || '').trim(), tel: String(os.telefone || '').replace(/\D/g, ''),
     veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech, em: Date.now() };
   if (!dados.nome) { showToast('Esta OS não tem o nome do cliente', 'error'); return; }
-  /* 12/10/2026, 18h59 (pedido do dono): não abre o Tempo Real; só manda para a fila dele. Os dois apps estão no mesmo
-     endereço (rastreandogps.github.io), então dividem a memória do navegador: o cliente aparece no "+" do Tempo Real
-     neste mesmo navegador/aparelho (se o Tempo Real estiver aberto em outra aba, aparece na hora). */
-  try {
-    const k = 'rg_cli_fila';
-    let f = []; try { f = JSON.parse(localStorage.getItem(k) || '[]') || []; } catch (_) { f = []; }
-    if (!Array.isArray(f)) f = [];
-    const ja = f.some(x => x && dados.os && x.os === dados.os);
-    f = f.filter(x => !(x && dados.os && x.os === dados.os));
-    f.push({ os: dados.os, nome: dados.nome.slice(0, 80), tel: dados.tel, veic: dados.veic, data: dados.data, tec: dados.tec, em: Date.now() });
-    localStorage.setItem(k, JSON.stringify(f));
-    showToast((ja ? 'Já estava na fila: ' : 'Enviado para o rastreamento: ') + dados.nome + '. Aparece no + do Tempo Real (' + f.length + ' na fila).', 'success');
-    return;
-  } catch (_) { /* memória do navegador bloqueada: abre o Tempo Real como antes */ }
+  /* 13/10/2026: o Tempo Real mudou para gps.rastreandogpsbr.com.br (endereço diferente deste app), então não dá mais
+     para gravar direto na fila dele. Volta a abrir o Tempo Real com os dados no link: lá o cliente entra na fila
+     (com o "+" e o aviso), e a aba pode ser fechada em seguida. */
   const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(dados)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   window.open(URL_TEMPO_REAL + '#novocli=' + b64, '_blank');
 }
