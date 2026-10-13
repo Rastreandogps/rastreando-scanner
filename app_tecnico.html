@@ -855,7 +855,7 @@
         <input type="date" id="map-data-admin" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
         <button onclick="abrirBases()" title="Endereço de partida de cada técnico" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏠 Bases</button>
-        <button onclick="alternarMotos()" id="btn-motos" title="Ver as motos dos técnicos andando no mapa" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏍 Técnicos</button>
+        <button onclick="abrirMotos()" id="btn-motos" title="Motos dos técnicos: escolher a moto de cada um e ver no mapa" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏍 Técnicos</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
@@ -1555,6 +1555,16 @@
 </div>
 
 <!-- MODAL: COMPARTILHAR LOCALIZAÇÃO DO TÉCNICO -->
+<!-- Motos dos técnicos (13/10/2026): escolher a moto de cada técnico e ligar/desligar no mapa -->
+<div class="modal-overlay" id="modal-motos">
+  <div class="modal-box" style="max-width:440px;max-height:90vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;font-size:17px;">🏍 Motos dos técnicos</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.4;">Escolha qual rastreador é a moto de cada técnico. A lista vem do cliente "tecnicos" do rastreamento. O mesmo vínculo vale para o "técnico a caminho", a moto no mapa e o aviso "técnico chegando".</p>
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:12px;cursor:pointer;font-size:13.5px;font-weight:700;"><input type="checkbox" id="motos-sw" onchange="alternarMotos(this.checked)" style="width:18px;height:18px;"> Mostrar as motos andando no meu mapa</label>
+    <div id="motos-lista" style="font-size:13px;color:var(--muted);">Carregando rastreadores...</div>
+    <div class="modal-btns" style="margin-top:12px;"><button type="button" class="btn-cancel" style="flex:1" onclick="fecharMotos()">Fechar</button></div>
+  </div>
+</div>
 <!-- Base (endereço de partida) de cada técnico (13/10/2026) -->
 <div class="modal-overlay" id="modal-bases">
   <div class="modal-box" style="max-width:440px;max-height:90vh;overflow-y:auto;">
@@ -1580,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v112-valor-confirmacao';
+const BUILD_VERSION = '2026-10-13-v112-motos-escolha';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10406,8 +10416,8 @@ async function _armarChegadas(rotasPorTech) {
    posição em saltos). Sai da aba ou desliga o botão: para de consultar. Custo: zero (lê o nosso servidor). */
 const MOTOS_INTERVALO_MS = 10000;
 let _motosLigado = false, _motosTimer = null, _motosBuscando = false, _motosMarcadores = {}, _motosAnim = {};
-function alternarMotos() {
-  _motosLigado = !_motosLigado;
+function alternarMotos(valor) {
+  _motosLigado = typeof valor === 'boolean' ? valor : !_motosLigado;
   try { localStorage.setItem('motos_mapa', _motosLigado ? '1' : '0'); } catch (_) {}
   _motosPintarBotao();
   if (_motosLigado) { motosIniciar(); showToast('Mostrando as motos dos técnicos. Atualiza a cada 10 s.', ''); }
@@ -10480,6 +10490,47 @@ function _motoDeslizar(k, mk, alvo) {
   _motosAnim[k] = requestAnimationFrame(passo);
 }
 try { _motosLigado = localStorage.getItem('motos_mapa') === '1'; } catch (_) {}
+/* janela: escolher a moto de cada técnico (vínculo tecVincular) + ligar/desligar as motos no mapa */
+let _motosDados = null;
+async function abrirMotos() {
+  const sw = document.getElementById('motos-sw'); if (sw) sw.checked = _motosLigado;
+  document.getElementById('modal-motos').classList.add('open'); lockScroll();
+  const box = document.getElementById('motos-lista');
+  box.innerHTML = 'Carregando rastreadores...';
+  try { _motosDados = await _tlChamar('tecVeiculos'); }
+  catch (e) { box.innerHTML = '<span style="color:#dc2626;font-weight:700;">Não consegui carregar: ' + esc(e.message || 'erro') + '</span>'; return; }
+  _motosDesenharLista();
+}
+function fecharMotos() { document.getElementById('modal-motos').classList.remove('open'); unlockScroll(); }
+function _motosDesenharLista() {
+  const box = document.getElementById('motos-lista'); if (!box || !_motosDados) return;
+  const veics = _motosDados.veiculos || [], vinc = _motosDados.vinculos || {};
+  if (!veics.length) { box.innerHTML = '<span style="color:#b45309;font-weight:700;">Nenhum rastreador no cliente "tecnicos" do rastreamento. Vincule lá o rastreador da moto primeiro.</span>'; return; }
+  const sel = (_mapaAdminFiltro && _mapaAdminFiltro !== 'todos') ? _mapaAdminFiltro : '';
+  const donoDe = function(id) { return Object.keys(vinc).find(function(k) { return Number(vinc[k]) === Number(id); }) || ''; };
+  box.innerHTML = TECNICOS.map(function(tc) {
+    const atual = Number(vinc[tc.nome]) || 0;
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;border-radius:10px;border:1.5px solid ' + (sel === tc.nome ? _corTech(tc.nome) : 'var(--border)') + ';' + (sel === tc.nome ? 'background:#f8fafc;' : '') + '">' +
+      '<b style="min-width:70px;color:' + _corTech(tc.nome) + ';">' + esc(tc.nome) + '</b>' +
+      '<select data-moto="' + esc(tc.nome) + '" onchange="salvarMotoTecnico(this)" style="flex:1;min-width:0;max-width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;">' +
+        '<option value="0"' + (!atual ? ' selected' : '') + '>— sem moto —</option>' +
+        veics.map(function(v) { const dono = donoDe(v.id); return '<option value="' + v.id + '"' + (atual === v.id ? ' selected' : '') + '>' + esc(v.nome) + (v.placa ? ' · ' + esc(v.placa) : '') + (v.online ? ' · online' : '') + (dono && dono !== tc.nome ? ' (hoje: ' + esc(dono) + ')' : '') + '</option>'; }).join('') +
+      '</select></div>';
+  }).join('');
+}
+async function salvarMotoTecnico(selEl) {
+  const tec = selEl.dataset.moto, id = Number(selEl.value) || 0;
+  selEl.disabled = true;
+  try {
+    const r = await _tlChamar('tecVincular', { tecnico: tec, deviceId: id });
+    const vinc = _motosDados.vinculos || (_motosDados.vinculos = {});
+    if (id) { Object.keys(vinc).forEach(function(k) { if (Number(vinc[k]) === id && k !== tec) delete vinc[k]; }); vinc[tec] = id; } else delete vinc[tec]; // um rastreador só pode ser de um técnico
+    showToast(id ? (tec + ' agora usa ' + (r.nome || 'o rastreador escolhido') + ' ✅') : ('Moto de ' + tec + ' removida.'), 'success');
+    _motosDesenharLista();
+    if (_motosLigado) { motosLimpar(); motosBuscar(); }
+  } catch (e) { showToast('Não consegui salvar: ' + (e.message || 'erro'), 'error'); }
+  selEl.disabled = false;
+}
 document.addEventListener('DOMContentLoaded', _motosPintarBotao);
 /* ═══ BASE DOS TÉCNICOS (13/10/2026, pedido do dono): endereço fixo de partida, gravado pelo admin em
    configuracoes/basesTecnicos (Firestore do APP Técnico). O mapa do técnico e a rota do admin partem daqui. ═══ */
