@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v120-proxima-pelo-card';
+const BUILD_VERSION = '2026-10-13-v121-cpf-agendamento';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4861,11 +4861,18 @@ function extrairPC(obs) {
   const m = String(obs || '').match(/\[PC:([01])\]/);
   return m ? m[1] : '';
 }
-function limparObs(obs) {
-  return String(obs || '').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s*\[IND:[A-Z2-9]{6}\]\s*/g, ' ').replace(/\s*\[PC:[01]\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+// 13/10/2026: CPF/CNPJ que o cliente digitou no formulário de agendamento, guardado em Observações como [CPF:números] (não aparece na tela; vai no bonequinho)
+function extrairCpf(obs) {
+  const m = String(obs || '').match(/\[CPF:(\d{11}|\d{14})\]/);
+  return m ? m[1] : '';
 }
-function embutirHora(obs, hora, periodo, ind, pc) {
+function limparObs(obs) {
+  return String(obs || '').replace(/\s*\[CPF:\d{11,14}\]\s*/g, ' ').replace(/\s*\[H:\d{1,2}:\d{2}\]\s*/g, ' ').replace(/\s*\[P:(manha|tarde)\]\s*/g, ' ').replace(/\s*\[IND:[A-Z2-9]{6}\]\s*/g, ' ').replace(/\s*\[PC:[01]\]\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+}
+function embutirHora(obs, hora, periodo, ind, pc, cpf) {
+  cpf = cpf || extrairCpf(obs);
   let base = limparObs(obs);
+  if (cpf) base = base ? base + ' [CPF:' + cpf + ']' : '[CPF:' + cpf + ']';
   if (periodo === 'manha' || periodo === 'tarde') base = base ? base + ' [P:' + periodo + ']' : '[P:' + periodo + ']';
   if (ind) base = base ? base + ' [IND:' + ind + ']' : '[IND:' + ind + ']';
   if (pc === '1' || pc === '0') base = base ? base + ' [PC:' + pc + ']' : '[PC:' + pc + ']';
@@ -4878,11 +4885,13 @@ function normalizarHoraOS(o) {
   const p = extrairPeriodo(o.obs);
   const ind = extrairInd(o.obs);
   const pc = extrairPC(o.obs);
+  const cpf = extrairCpf(o.obs);
+  if (cpf) o.cpf = cpf; else if (!('cpf' in o)) o.cpf = '';
   if (h) o.hora = h; else if (!('hora' in o)) o.hora = '';
   if (p) o.periodo = p; else if (!('periodo' in o)) o.periodo = '';
   if (ind) o.ind = ind; else if (!('ind' in o)) o.ind = '';
   if (pc) o.pc = pc; else if (!('pc' in o)) o.pc = '';
-  if (h || p || ind || pc) o.obs = limparObs(o.obs);
+  if (h || p || ind || pc || cpf) o.obs = limparObs(o.obs);
   return o;
 }
 
@@ -4942,7 +4951,7 @@ async function alternarPagoCliente(id, tech) {
   const r = await gasRequest({
     action: 'editOrder', id: id, tech: tech, nome: os.nome, telefone: os.telefone, endereco: os.endereco,
     veiculo: os.veiculo || '', tipo: os.tipo || 'Instalação', data: dataISO,
-    obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', novo)
+    obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', novo, os.cpf || '')
   });
   if (!r || !r.ok) {
     aplicar(antes);
@@ -5648,7 +5657,7 @@ async function adminReatribuirDireto(id, techOld, techNew) {
     action: 'saveOrder', tech: techNew, id: os.id,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
     tipo: os.tipo || 'Instalação', data: dataISO,
-    veiculo: os.veiculo || '', obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || '')
+    veiculo: os.veiculo || '', obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || '', os.cpf || '')
   });
   if (!r1.ok) {
     showToast('Erro ao mover OS: ' + (r1.error || ''), 'error');
@@ -7793,7 +7802,7 @@ async function confirmarEdit() {
 
   fecharModalEdit();
   setAdminSyncStatus('syncing');
-  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo'), (document.getElementById('edit-os-ind') || {}).value || '', (function() { const _o = _acharOSEmMemoria(id, tech); return _o ? (_o.pc || '') : ''; })()) });
+  const result = await gasRequest({ action: 'editOrder', id, tech, nome, telefone: tel, endereco: end, veiculo, tipo, data, obs: embutirHora(obs, _edHoraVal, _lerPeriodo('edit-periodo'), (document.getElementById('edit-os-ind') || {}).value || '', (function() { const _o = _acharOSEmMemoria(id, tech); return _o ? (_o.pc || '') : ''; })(), (function() { const _o = _acharOSEmMemoria(id, tech); return _o ? (_o.cpf || '') : ''; })()) });
   // Salvar valor separadamente se preenchido
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id, tech, valor });
   if (result.ok) {
@@ -7833,7 +7842,7 @@ async function adminReatribuir(btn) {
   // 2. Salvar na nova aba
   const r1 = await gasRequest({ action: 'saveOrder', tech: techNew,
     nome: os.nome, telefone: os.telefone, endereco: os.endereco,
-    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || ''), id: os.id });
+    tipo: os.tipo, data: os.data, veiculo: os.veiculo, obs: embutirHora(os.obs || '', getHoraOS(os), getPeriodoOS(os), os.ind || '', os.pc || '', os.cpf || ''), id: os.id });
   if (!r1.ok) { showToast('Erro ao mover OS.', 'error'); setAdminSyncStatus('ok'); return; }
   if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
@@ -7992,7 +8001,8 @@ async function criarClienteNoRastreio(id, tech) {
   const os = _acharOSEmMemoria(id, tech);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   const dados = { os: String(os.id || ''), nome: String(os.nome || '').trim(), tel: String(os.telefone || '').replace(/\D/g, ''),
-    veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech };
+    veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech,
+    cpf: String(os.cpf || extrairCpf(os.obs) || '') }; // 13/10/2026: CPF do formulário de agendamento (se o cliente preencheu)
   if (!dados.nome) { showToast('Esta OS não tem o nome do cliente', 'error'); return; }
   if (_cliEnviando) return;
   _cliEnviando = true;
