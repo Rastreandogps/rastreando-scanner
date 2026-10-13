@@ -1580,7 +1580,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v111-motos-e-chegada';
+const BUILD_VERSION = '2026-10-13-v112-valor-confirmacao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5299,9 +5299,19 @@ function renderAdminDoneList() {
   }).join('');
 }
 
+/* 13/10/2026: a OS mais FRESCA para as ações do card. O card da aba Técnico é desenhado pela cópia do Firestore
+   (tempo real), mas as ações liam só allOrders[tech], que podia estar atrasada (ex.: valor salvo e o botão ainda
+   dizendo "informe o valor"). Agora procura na cópia do Firestore primeiro e completa com o que allOrders tiver. */
+function _osFresca(id, tech) {
+  const fs = (_firestoreTodasOrdens || []).find(function(o) { return o.id === id; });
+  const mem = _acharOSEmMemoria(id, tech);
+  if (fs && mem) { Object.keys(fs).forEach(function(k) { if (fs[k] !== '' && fs[k] != null) mem[k] = fs[k]; }); return mem; }
+  if (fs) { fs._tech = fs._tech || fs.tecnico || tech; return fs; }
+  return mem;
+}
 // Confirmar agendamento ao cliente direto do card
 function enviarConfirmacaoAgendamento(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
 
   const tel = (os.telefone || '').replace(/\D/g, '');
@@ -5315,8 +5325,8 @@ function enviarConfirmacaoAgendamento(id, tech) {
   // Valor obrigatório apenas para instalação
   let blocoValores = '';
   if (ehInstalacao) {
-    const valorNum = os.valorInstalacao ? parseFloat(os.valorInstalacao) : 0;
-    if (!os.valorInstalacao || valorNum <= 0) {
+    const valorNum = _valorNumOS(os); // aceita "89,90" e "89.90"
+    if (!valorNum) {
       showToast('⚠️ Informe o valor da instalação antes de enviar!', 'error');
       abrirModalConfirmacaoCliente(id, tech);
       return;
@@ -5412,7 +5422,7 @@ function enviarConfirmacaoAgendamento(id, tech) {
 // pra hoje. O tipo do serviço (instalação/manutenção/retirada) muda sozinho
 // de acordo com a OS.
 function enviarLembreteHoje(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech); /* 13/10/2026: cópia mais fresca (Firestore) */
   if (!os) { showToast('OS não encontrada', 'error'); return; }
 
   const tel = (os.telefone || '').replace(/\D/g, '');
@@ -5564,7 +5574,7 @@ function _marcarLembreteHojeNaTela(osId, selo) {
 // um novo horário (reagendar.html) — o admin só aperta e o WhatsApp já abre
 // pronto pra enviar, igual o botão de lembrete.
 function enviarLinkRemarcar(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech); /* 13/10/2026: cópia mais fresca (Firestore) */
   if (!os) { showToast('OS não encontrada', 'error'); return; }
 
   const tel = (os.telefone || '').replace(/\D/g, '');
@@ -5648,7 +5658,7 @@ async function adminConcluirOS(id, tech) {
 }
 
 function enviarOSParaTecnico(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech); /* 13/10/2026: cópia mais fresca (Firestore) */
   if (!os) { showToast('OS não encontrada', 'error'); return; }
 
   const tel = TECH_TEL[tech];
@@ -6082,7 +6092,7 @@ function montarMsgPrePronta(o, wppLink) {
 let _modalConfirmOS = null;
 
 function abrirModalConfirmacaoCliente(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _modalConfirmOS = os;
 
@@ -6172,8 +6182,8 @@ async function enviarConfirmacaoClienteModal() {
 
   // Valor obrigatório
   const valorInput = document.getElementById('modal-valor-instalacao');
-  const valor = valorInput ? valorInput.value.trim() : '';
-  if (!valor || parseFloat(valor) <= 0) {
+  const valor = valorInput ? valorInput.value.trim().replace(',', '.') : '';
+  if (!valor || !(parseFloat(valor) > 0)) {
     showToast('⚠️ Informe o valor da instalação!', 'error');
     if (valorInput) { valorInput.focus(); valorInput.style.border = '2px solid var(--danger)'; setTimeout(() => { valorInput.style.border = ''; }, 2000); }
     return;
@@ -6184,6 +6194,7 @@ async function enviarConfirmacaoClienteModal() {
   const techKey = adminTechSelecionado || os._tech || '';
   const osLocal = (allOrders[techKey] || []).find(o => o.id === os.id);
   if (osLocal) osLocal.valorInstalacao = valor;
+  os.valorInstalacao = valor; // 13/10/2026: a cópia usada pelo card também
 
   fecharModalConfirmacaoCliente();
   // Abrir modal de desconto antes de enviar
@@ -7480,7 +7491,7 @@ function abrirModalAcessoDone(id, tech) {
 }
 
 function abrirModalAcesso(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech); /* 13/10/2026: cópia mais fresca (Firestore) */
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   _acessoOS = os;
   _prepararChipsAcesso(os.nome || '');
@@ -7872,7 +7883,7 @@ async function criarClienteNoRastreio(id, tech) {
 }
 
 function abrirTecLocal(id, tech) {
-  const os = (allOrders[tech] || []).find(o => o.id === id);
+  const os = _osFresca(id, tech); /* 13/10/2026: cópia mais fresca (Firestore) */
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   if (!auth) { showToast('Sem conexão com o Firebase. Recarregue a página.', 'error'); return; }
   _tl = { os: os, tech: tech };
