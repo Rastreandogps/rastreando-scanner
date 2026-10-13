@@ -1568,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v108-fila-no-servidor';
+const BUILD_VERSION = '2026-10-13-v109-mapa-cores-moeda-endereco';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -8361,10 +8361,11 @@ function _moedaHTML(o) {
     '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);border:1px solid #92400e;color:#78350f;font-size:9px;font-weight:900;">$</span>' +
     esc(_fmtMoeda(v)) + '</span>';
 }
-// moedinha dourada embaixo do pino (mapa)
-function _moedaPinoHTML(valor, topo) {
-  if (!valor || !_podeVerValor()) return '';
-  return '<div style="position:absolute;top:' + topo + 'px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;border-radius:999px;background:linear-gradient(180deg,#fef3c7,#fcd34d);border:1.5px solid #d97706;color:#78350f;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none;">' +
+// moedinha dourada no pino (mapa). 13/10/2026: fica logo EMBAIXO DO NOME, acima do pino (pedido do dono)
+function _temMoedaPino(valor) { return !!(valor && _podeVerValor()); }
+function _moedaPinoHTML(valor, baixo) {
+  if (!_temMoedaPino(valor)) return '';
+  return '<div style="position:absolute;bottom:' + baixo + 'px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;border-radius:999px;background:linear-gradient(180deg,#fef3c7,#fcd34d);border:1.5px solid #d97706;color:#78350f;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none;">' +
     '<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);border:1px solid #92400e;font-size:9px;">$</span>' +
     esc(_fmtMoeda(valor)) + '</div>';
 }
@@ -9661,18 +9662,19 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
     // Bolinha amarela — número dentro se tiver ordem, vazia se não tiver
     const inner = ordemDia
       ? '<span style="font-size:14px;font-weight:900;color:white;line-height:1;">' + ordemDia + '</span>'
-      : '';
+      : (modo === 'car' ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>' : ''); /* 13/10/2026: carrinho também na manutenção/retirada do mapa do técnico */
     const tamanho = ordemDia ? 38 : 34;
-    const nomeAcima = nome ? '<div style="position:absolute;bottom:' + (tamanho+4) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
+    const _mz = _temMoedaPino(valor) ? 24 : 0;
+    const nomeAcima = nome ? '<div style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
     return L.divIcon({
       className: '',
       html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
         nomeAcima + _moedaPinoHTML(valor, tamanho + 3) +
-        '<div style="width:' + tamanho + 'px;height:' + tamanho + 'px;border-radius:50%;background:' + (modo !== 'car' && ehRetir ? '#ef4444' : '#f59e0b') + ';border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">' + inner + '</div>' +
+        '<div style="width:' + tamanho + 'px;height:' + tamanho + 'px;border-radius:50%;background:' + (ehRetir ? '#ef4444' : '#f59e0b') + ';border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;">' + inner + '</div>' +
       '</div>',
       iconSize: [tamanho, tamanho],
       iconAnchor: [tamanho/2, tamanho/2],
-      popupAnchor: [0, -(tamanho + 26)],
+      popupAnchor: [0, -(tamanho + 26 + _mz)],
     });
   }
 
@@ -9687,7 +9689,8 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
     inner = '<span style="font-size:13px;font-weight:700;color:white;">' + inicial + '</span>';
   }
   const tamanho = ordemDia ? 38 : 34;
-  const nomeLabel = nome ? '<div style="position:absolute;bottom:' + (tamanho+4) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
+  const _mz = _temMoedaPino(valor) ? 24 : 0;
+  const nomeLabel = nome ? '<div style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
   return L.divIcon({
     className: '',
     html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
@@ -9696,7 +9699,7 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
     '</div>',
     iconSize: [tamanho, tamanho],
     iconAnchor: [tamanho/2, tamanho/2],
-    popupAnchor: [0, -(tamanho + 26)],
+    popupAnchor: [0, -(tamanho + 26 + _mz)],
   });
 }
 
@@ -9785,24 +9788,83 @@ async function _enderecoReverso(lat, lng) {
   return null;
 }
 
+/* 13/10/2026 (pedido do dono): o pino caía no MEIO do Rio de Janeiro quando o endereço terminava em "Rio de Janeiro".
+   Causa: quando o Nominatim não achava a rua, a cascata caía em "Rio de Janeiro, Brasil" e aceitava o centro da cidade
+   como se fosse o endereço (e ainda guardava no cache). Agora: (1) tenta primeiro a busca estruturada (rua+número /
+   cidade / RJ), (2) resultado que é só cidade/município/estado é RECUSADO, (3) bairro vale como "aproximado" e fica
+   marcado no popup, (4) centro de cidade guardado no cache antigo é ignorado e recalculado. */
+const _NOMINATIM_EXATO = ['house','building','residential','road','street','pedestrian','living_street','primary','secondary','tertiary','unclassified','service','track','footway','path','apartments','yes','commercial','industrial','retail','address','place','amenity','shop','office','leisure','tourism'];
+const _NOMINATIM_BAIRRO = ['suburb','neighbourhood','quarter','city_district','hamlet','village','locality','borough','district','subdistrict'];
+function _nivelNominatim(r) {
+  const at = String((r && r.addresstype) || (r && r.type) || '').toLowerCase();
+  const cls = String((r && r.class) || '').toLowerCase();
+  if (cls === 'boundary' && !_NOMINATIM_BAIRRO.includes(at)) return null; // limite administrativo = cidade/estado: não serve
+  if (['city','town','municipality','state','county','region','country','administrative','province','state_district','island'].includes(at)) return null;
+  if (_NOMINATIM_BAIRRO.includes(at)) return 'bairro';
+  return 'exato';
+}
+async function _consultarNominatim(params) {
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&addressdetails=1&' + params;
+  const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
+  const data = await res.json();
+  if (!data || !data.length) return null;
+  const nivel = _nivelNominatim(data[0]);
+  if (!nivel) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), nivel: nivel };
+}
+/* centros de cidade que o cache antigo pode ter guardado por engano (lat, lng, raio em metros) */
+const _CENTROS_SUSPEITOS = [
+  { nome: 'Rio de Janeiro', lat: -22.9110137, lng: -43.2093727, raio: 400 },
+  { nome: 'Rio de Janeiro (Centro)', lat: -22.9068467, lng: -43.1728965, raio: 300 },
+  { nome: 'Duque de Caxias', lat: -22.7859, lng: -43.3117, raio: 250 },
+];
+function _coordSuspeita(c) {
+  if (!c || !isFinite(c.lat) || !isFinite(c.lng)) return false;
+  const R = 6371000, rad = x => x * Math.PI / 180;
+  return _CENTROS_SUSPEITOS.some(k => {
+    const dLa = rad(c.lat - k.lat), dLo = rad(c.lng - k.lng);
+    const h = Math.sin(dLa/2)**2 + Math.cos(rad(k.lat)) * Math.cos(rad(c.lat)) * Math.sin(dLo/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h)) < k.raio;
+  });
+}
 async function _geocodificar(endereco) {
   // Se for coordenada direta, retorna sem consultar Nominatim
   const coordDireta = _detectarCoordenada(endereco);
-  if (coordDireta) return coordDireta;
+  if (coordDireta) return Object.assign({ nivel: 'exato' }, coordDireta);
 
-  // Monta lista de tentativas em cascata (do mais específico ao mais genérico)
-  const tentativas = _montarTentativas(endereco);
-  for (const q of tentativas) {
+  const tentativas = [];
+  // 0. Busca estruturada (a mais confiável): rua + número separados da cidade
+  const est = _enderecoEstruturado(endereco);
+  if (est) tentativas.push('street=' + encodeURIComponent(est.rua) + '&city=' + encodeURIComponent(est.cidade) + '&state=RJ&country=Brasil');
+  // 1..n. Cascata por texto (do mais específico ao mais genérico)
+  _montarTentativas(endereco).forEach(q => tentativas.push('q=' + encodeURIComponent(q)));
+  let melhor = null;
+  for (const params of tentativas) {
     try {
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'AppTecnicoRastreandoGPS/1.0' } });
-      const data = await res.json();
-      if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      const r = await _consultarNominatim(params);
+      if (r && r.nivel === 'exato') return r;
+      if (r && !melhor) melhor = r; // bairro: guarda como aproximado e continua tentando algo mais exato
     } catch(_) {}
-    // Pequeno intervalo entre tentativas
     await new Promise(r => setTimeout(r, 400));
   }
-  return null;
+  return melhor; // null = não achou nada que preste (fica fora do mapa, nunca no centro da cidade)
+}
+/* separa "Rua X, 123 - Bairro - Cidade" (ou com vírgulas) em rua+número e cidade */
+const _CIDADES_RJ = ['Rio de Janeiro','Duque de Caxias','Nova Iguaçu','São Gonçalo','Niterói','Belford Roxo','São João de Meriti','Queimados','Seropédica','Mesquita','Nilópolis','Magé','Itaboraí','Maricá','Saquarema','Araruama','Cabo Frio','Petrópolis','Teresópolis','Guapimirim','Japeri','Paracambi','Itaguaí','Mangaratiba','Rio Bonito','Tanguá','Cachoeiras de Macacu'];
+function _enderecoEstruturado(endereco) {
+  const end = _corrigirEndereco(String(endereco || '')).replace(/\s{2,}/g, ' ').trim();
+  if (!end) return null;
+  const partes = end.split(/\s*(?:[-–]|,)\s*/).map(x => x.trim()).filter(Boolean);
+  if (partes.length < 2) return null;
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  let cidade = 'Rio de Janeiro';
+  for (const c of _CIDADES_RJ) { if (partes.some(p => norm(p).replace(/\s*[-–\/]\s*rj$/, '') === norm(c))) { cidade = c; break; } }
+  // rua = primeira parte; número = segunda parte se for numérica (ou "s/n")
+  let rua = partes[0];
+  if (/^\d{1,6}[a-z]?$/i.test(partes[1] || '')) rua += ' ' + partes[1];
+  rua = rua.replace(/\b(n[uú]mero|n[º°o]\.?)\s*/gi, '').trim();
+  if (!/[a-z]/i.test(rua) || norm(rua) === norm(cidade)) return null;
+  return { rua: rua, cidade: cidade };
 }
 
 // ── Dicionário de correções de endereço
@@ -9926,6 +9988,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const bounds = [];
   const _rotasPorTech = {}; // acumula coords por técnico para rota
   let _coordUsadas = {}; // rastreia coordenadas duplicadas para offset
+  const _semLocal = []; // 13/10/2026: OS cujo endereço não foi localizado (ficam fora do mapa, nunca no centro da cidade)
 
   // 1. Buscar coordenadas já salvas no cache (GAS)
   if (labelEl) labelEl.textContent = 'Buscando cache de coordenadas...';
@@ -9944,22 +10007,27 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
     if (!o.endereco || o.endereco.trim() === '') continue;
 
-    // 2. Usar cache se disponível — não chama Nominatim
+    // 2. Usar cache se disponível — não chama Nominatim (13/10/2026: centro de cidade guardado por engano é ignorado)
     let coord = cacheCoord[o.endereco] || null;
+    if (coord && _coordSuspeita(coord)) coord = null;
 
     if (!coord) {
       // 3. Geocodificar e salvar no cache para a próxima vez
       coord = await _geocodificar(o.endereco);
-      if (coord) {
+      if (coord && coord.nivel !== 'bairro') { // aproximado (só o bairro) não vai para o cache: na próxima tenta de novo
         gasRequest({ action: 'salvarCoordenadas', endereco: o.endereco, lat: coord.lat, lng: coord.lng });
       }
     }
 
-    if (!coord) continue;
+    if (!coord) { _semLocal.push((o.nome || '').split(' ')[0] || '?'); continue; }
+    const _aprox = coord.nivel === 'bairro';
 
     let cor;
     if (modo === 'car') {
-      // Verde = hoje, Amarelo = sem data (pendente), Vermelho = outros dias
+      // 13/10/2026 (pedido do dono): no mapa do técnico a cor também é pelo TIPO (verde = instalação; vermelho só retirada)
+      cor = _corTipoOS(o.tipo);
+    } else if (false) {
+      // regra antiga (desligada): Verde = hoje, Amarelo = sem data (pendente), Vermelho = outros dias
       const _hoje = new Date();
       const _dp   = o.data && o.data.trim() && o.data !== 'undefined' ? parseDate(o.data) : null;
       if (!_dp) {
@@ -10035,6 +10103,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       veiculoHtml +
       // Endereço
       '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 ' + esc(_endExibir) + '</div>' +
+      (_aprox ? '<div style="font-size:11px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:8px;padding:4px 8px;margin-bottom:6px;">⚠ Localização aproximada (só o bairro foi encontrado). Confira o endereço na OS.</div>' : '') +
       // Observações — destaque com botão X
       (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:6px 10px;margin-bottom:8px;">' +
         '<span style="font-size:14px;flex-shrink:0;">📌</span>' +
@@ -10136,7 +10205,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   if (bounds.length === 0) {
     showToast('Nenhum endereço localizado no mapa.', 'error');
   } else if (naoEncontrados > 0) {
-    showToast(bounds.length + ' de ' + total + ' OS plotadas no mapa.', '');
+    showToast(bounds.length + ' de ' + total + ' OS plotadas no mapa.' + (_semLocal.length ? ' Sem localização: ' + _semLocal.slice(0, 5).join(', ') + (_semLocal.length > 5 ? '…' : '') + ' (confira o endereço).' : ''), '');
   } else {
     showToast('Todas as ' + total + ' OS plotadas! ✅', 'success');
   }
