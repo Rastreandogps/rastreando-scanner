@@ -1568,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v107-endereco-gps';
+const BUILD_VERSION = '2026-10-13-v108-fila-no-servidor';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7834,21 +7834,28 @@ async function _tlDestino(o) {
   return Promise.race([busca, limite]);
 }
 
-/* ── Criar cliente no rastreamento (12/10/2026): manda os dados da OS para o app Tempo Real pelo próprio link.
+/* ── Criar cliente no rastreamento (12/10/2026): manda os dados da OS para o app Tempo Real.
    Lá o administrador vê "1 cliente vindo do APP Técnico" e o cadastro abre preenchido (nome, login sugerido,
-   senha 123456, WhatsApp). CPF e aparelho ficam para digitar. Nada passa por servidor. */
+   senha 123456, WhatsApp). CPF e aparelho ficam para digitar.
+   13/10/2026 (v108): vai para a FILA NO SERVIDOR (Firebase, ação filaCliAdd, só o administrador). Não abre página;
+   o Tempo Real busca a fila em qualquer aparelho (celular ou computador). */
 const URL_TEMPO_REAL = 'https://gps.rastreandogpsbr.com.br/tempo-real.html';
-function criarClienteNoRastreio(id, tech) {
+let _cliEnviando = false;
+async function criarClienteNoRastreio(id, tech) {
   const os = _acharOSEmMemoria(id, tech);
   if (!os) { showToast('OS não encontrada', 'error'); return; }
   const dados = { os: String(os.id || ''), nome: String(os.nome || '').trim(), tel: String(os.telefone || '').replace(/\D/g, ''),
-    veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech, em: Date.now() };
+    veic: String(os.veiculo || '').replace(/\s+/g, ' ').trim().slice(0, 80), data: String(os.data || ''), tec: tech };
   if (!dados.nome) { showToast('Esta OS não tem o nome do cliente', 'error'); return; }
-  /* 13/10/2026: o Tempo Real mudou para gps.rastreandogpsbr.com.br (endereço diferente deste app), então não dá mais
-     para gravar direto na fila dele. Volta a abrir o Tempo Real com os dados no link: lá o cliente entra na fila
-     (com o "+" e o aviso), e a aba pode ser fechada em seguida. */
-  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(dados)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  window.open(URL_TEMPO_REAL + '#novocli=' + b64, '_blank');
+  if (_cliEnviando) return;
+  _cliEnviando = true;
+  try {
+    const j = await _tlChamar('filaCliAdd', { cliente: dados });
+    const n = Number(j.total) || 1;
+    showToast(j.repetido ? 'Já estava na fila do rastreamento (' + n + ' na fila).' : 'Enviado para o rastreamento: ' + dados.nome + ' (' + n + ' na fila).', 'success');
+  } catch (e) {
+    showToast('Não consegui enviar: ' + (e.message || 'erro'), 'error');
+  } finally { _cliEnviando = false; }
 }
 
 function abrirTecLocal(id, tech) {
