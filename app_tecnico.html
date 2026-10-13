@@ -346,6 +346,7 @@
     display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-overlay.open { display: flex; }
+  @keyframes motoPulso { 0% { box-shadow: 0 0 0 0 rgba(37,99,235,.45); } 100% { box-shadow: 0 0 0 14px rgba(37,99,235,0); } }
   /* compartilhar localização do técnico */
   .tl-spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #e2e8f0; border-top-color: #4f46e5; animation: tlgira .8s linear infinite; }
   @keyframes tlgira { to { transform: rotate(360deg); } }
@@ -854,6 +855,7 @@
         <input type="date" id="map-data-admin" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
         <button onclick="abrirBases()" title="Endereço de partida de cada técnico" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏠 Bases</button>
+        <button onclick="alternarMotos()" id="btn-motos" title="Ver as motos dos técnicos andando no mapa" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏍 Técnicos</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
@@ -1578,7 +1580,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v110-rota-e-bases';
+const BUILD_VERSION = '2026-10-13-v111-motos-ao-vivo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2220,6 +2222,7 @@ function showAdminTab(tab) {
   if (tab === 'acessos') { loadTitularidades(); loadAcessos(); }
   if (tab === 'agendamentos') { carregarAgendamentos(); carregarStatusBloqueioHoje(); carregarStatusLiberacaoHoje(); }
   // Mapa admin: auto-carrega na primeira visita ou após 30 min
+  if (tab !== 'mapa') motosParar(); else if (_motosLigado) motosIniciar(); /* 13/10/2026: motos dos técnicos só consultam com o mapa aberto */
   if (tab === 'mapa') {
     const expirado = _mapaAdminCarregadoEm && (Date.now() - _mapaAdminCarregadoEm > MAPA_VALIDADE_MS);
     if (!_leafletMapAdmin || expirado || _mapaDesatualizado) {
@@ -10364,6 +10367,87 @@ function _desenharRotas(map, rotasPorTech, modo) {
     finally { terminou(); }
   });
 }
+/* ═══ MOTOS DOS TÉCNICOS AO VIVO no mapa do administrador (13/10/2026, pedido do dono) ═══
+   Botão "🏍 Técnicos": liga/desliga. Ligado e com a aba do mapa aberta, consulta o servidor a cada 10 s
+   (ação tecPosicoes, só o administrador) e desliza a moto até a posição nova (só estética; o rastreador manda
+   posição em saltos). Sai da aba ou desliga o botão: para de consultar. Custo: zero (lê o nosso servidor). */
+const MOTOS_INTERVALO_MS = 10000;
+let _motosLigado = false, _motosTimer = null, _motosBuscando = false, _motosMarcadores = {}, _motosAnim = {};
+function alternarMotos() {
+  _motosLigado = !_motosLigado;
+  try { localStorage.setItem('motos_mapa', _motosLigado ? '1' : '0'); } catch (_) {}
+  _motosPintarBotao();
+  if (_motosLigado) { motosIniciar(); showToast('Mostrando as motos dos técnicos. Atualiza a cada 10 s.', ''); }
+  else { motosParar(); motosLimpar(); }
+}
+function _motosPintarBotao() {
+  const b = document.getElementById('btn-motos'); if (!b) return;
+  b.style.background = _motosLigado ? '#1a2744' : '#f1f5f9'; b.style.color = _motosLigado ? 'white' : '#1a2744';
+}
+function motosIniciar() {
+  motosParar();
+  _motosPintarBotao();
+  motosBuscar();
+  _motosTimer = setInterval(function() { if (!document.hidden) motosBuscar(); }, MOTOS_INTERVALO_MS);
+}
+function motosParar() { if (_motosTimer) { clearInterval(_motosTimer); _motosTimer = null; } }
+function motosLimpar() {
+  Object.keys(_motosMarcadores).forEach(function(k) { try { _motosMarcadores[k].remove(); } catch (_) {} });
+  Object.keys(_motosAnim).forEach(function(k) { cancelAnimationFrame(_motosAnim[k]); });
+  _motosMarcadores = {}; _motosAnim = {};
+}
+function _motoIcone(tech, t, cor) {
+  const faz = t.ultimoMs ? Math.round((Date.now() - t.ultimoMs) / 60000) : null;
+  const quando = faz == null ? 'sem sinal' : (faz < 1 ? 'agora' : faz < 60 ? 'há ' + faz + ' min' : 'há ' + Math.round(faz / 60) + ' h');
+  const mov = t.pos && t.pos.kmh > 3;
+  return L.divIcon({
+    className: '',
+    html: '<div style="position:relative;width:34px;height:34px;">' +
+      '<div style="position:absolute;bottom:38px;left:50%;transform:translateX(-50%);background:' + cor + ';color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.3);">' + esc(tech) + ' · ' + quando + (mov ? ' · ' + t.pos.kmh + ' km/h' : '') + '</div>' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:white;border:3px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.35)' + (t.online ? ';animation:motoPulso 2s ease-out infinite' : ';opacity:.6') + ';display:flex;align-items:center;justify-content:center;font-size:17px;">🏍</div>' +
+    '</div>',
+    iconSize: [34, 34], iconAnchor: [17, 17],
+  });
+}
+async function motosBuscar() {
+  if (_motosBuscando || !_leafletMapAdmin) return;
+  _motosBuscando = true;
+  try {
+    const j = await _tlChamar('tecPosicoes');
+    const vistos = {};
+    (j.tecnicos || []).forEach(function(t) {
+      if (!t.pos) return;
+      vistos[t.tecnico] = true;
+      const cor = _corTech(t.tecnico), alvo = L.latLng(t.pos.lat, t.pos.lon);
+      let mk = _motosMarcadores[t.tecnico];
+      if (!mk) {
+        mk = L.marker(alvo, { icon: _motoIcone(t.tecnico, t, cor), zIndexOffset: 500 }).addTo(_leafletMapAdmin);
+        mk.bindPopup('<b>' + esc(t.tecnico) + '</b><br>' + esc(t.veiculo || '') + '<br>' + (t.pos.kmh || 0) + ' km/h · ' + (t.online ? 'online' : 'sem conexão'));
+        _motosMarcadores[t.tecnico] = mk;
+      } else {
+        mk.setIcon(_motoIcone(t.tecnico, t, cor));
+        mk.setPopupContent('<b>' + esc(t.tecnico) + '</b><br>' + esc(t.veiculo || '') + '<br>' + (t.pos.kmh || 0) + ' km/h · ' + (t.online ? 'online' : 'sem conexão'));
+        _motoDeslizar(t.tecnico, mk, alvo);
+      }
+    });
+    Object.keys(_motosMarcadores).forEach(function(k) { if (!vistos[k]) { try { _motosMarcadores[k].remove(); } catch (_) {} delete _motosMarcadores[k]; } });
+  } catch (e) { console.warn('[Motos]', e && e.message); }
+  finally { _motosBuscando = false; }
+}
+/* desliza a moto da posição atual até a nova em ~1,2 s (só estética) */
+function _motoDeslizar(k, mk, alvo) {
+  if (_motosAnim[k]) cancelAnimationFrame(_motosAnim[k]);
+  const de = mk.getLatLng(); if (de.equals(alvo)) return;
+  const t0 = performance.now(), dur = 1200;
+  const passo = function(agora) {
+    const f = Math.min(1, (agora - t0) / dur), e = f < .5 ? 2 * f * f : -1 + (4 - 2 * f) * f; // suave
+    mk.setLatLng([de.lat + (alvo.lat - de.lat) * e, de.lng + (alvo.lng - de.lng) * e]);
+    if (f < 1) _motosAnim[k] = requestAnimationFrame(passo); else delete _motosAnim[k];
+  };
+  _motosAnim[k] = requestAnimationFrame(passo);
+}
+try { _motosLigado = localStorage.getItem('motos_mapa') === '1'; } catch (_) {}
+document.addEventListener('DOMContentLoaded', _motosPintarBotao);
 /* ═══ BASE DOS TÉCNICOS (13/10/2026, pedido do dono): endereço fixo de partida, gravado pelo admin em
    configuracoes/basesTecnicos (Firestore do APP Técnico). O mapa do técnico e a rota do admin partem daqui. ═══ */
 let _basesTecnicos = {};
@@ -10644,6 +10728,7 @@ async function iniciarMapaAdmin() {
   }
 
   await carregarBasesTecnicos();
+  motosLimpar();
   const map = _criarMapa('leaflet-map-admin');
   _leafletMapAdmin = map;
   _mapaAdminCarregadoEm = Date.now();
@@ -10670,6 +10755,7 @@ async function iniciarMapaAdmin() {
     document.getElementById('map-loading-admin'),
     'inicial'
   );
+  if (_motosLigado) motosIniciar(); // 13/10/2026: motos dos técnicos ao vivo
 }
 
 function carregarLeaflet() {
