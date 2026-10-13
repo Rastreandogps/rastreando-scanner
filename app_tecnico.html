@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v112-motos-escolha';
+const BUILD_VERSION = '2026-10-13-v113-concluir-mapa-proxima';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2254,7 +2254,7 @@ function showAdminTab(tab) {
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
   'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
-  'logLembreteHoje'
+  'logLembreteHoje', 'marcarProxima'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -2308,7 +2308,7 @@ async function gasRequest(payload) {
   if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
     try {
       await espelharNoFirestore(payload); // grava de verdade, na hora
-      enviarParaPlanilha(payload);         // Planilha recebe a cópia por trás
+      if (payload.action !== 'marcarProxima') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
       return { ok: true };
     } catch (e) {
       console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
@@ -2456,7 +2456,12 @@ async function espelharNoFirestore(payload) {
 
     case 'updateStatus':
       if (!ref) return;
-      await ref.set({ status: payload.status || 'ativo', atualizadoEm: agora }, { merge: true });
+      await ref.set(Object.assign({ status: payload.status || 'ativo', atualizadoEm: agora }, payload.status === 'concluido' ? { proxima: false } : {}), { merge: true });
+      break;
+
+    case 'marcarProxima': // 13/10/2026: "próxima OS" escolhida pelo técnico no mapa (só no Firestore; a Planilha não precisa)
+      if (!ref) return;
+      await ref.set({ proxima: !!payload.proxima, proximaEm: agora, atualizadoEm: agora }, { merge: true });
       break;
 
     case 'updateDate':
@@ -2667,7 +2672,8 @@ function docFirestoreParaOrdem(doc) {
     lembreteHojeEnviado: d.lembreteHojeEnviado || null,
     valorInstalacao: d.valorInstalacao || '',
     ordemDia:        d.ordemDia || 0,
-    notaTecnico:     d.notaTecnico || ''
+    notaTecnico:     d.notaTecnico || '',
+    proxima:         !!d.proxima
   };
 }
 
@@ -7348,11 +7354,63 @@ function fecharModalConcluir() {
   unlockScroll();
   pendingConcluir = null;
 }
+// cancelar pelo X/Cancelar também zera a origem "mapa"
+document.addEventListener('click', function(e) { if (e.target && e.target.closest && e.target.closest('#modal-concluir .btn-cancel')) _concluirDoMapa = false; });
 
+/* ═══ CONCLUIR PELO MAPA + "QUAL É A PRÓXIMA?" (13/10/2026, pedido do dono) ═══
+   O técnico conclui a OS no balão do mapa. Em seguida abre uma faixa embaixo (o mapa continua visível) com as OS
+   que faltam, numeradas; ele toca na próxima. Isso grava "proxima" na OS (Firestore) e a rota é refeita com ela na
+   frente, saindo de onde ele está. O mapa do administrador lê a mesma marca: a moto mostra "→ Paulo" e a rota dele
+   também começa pela próxima. */
+let _concluirDoMapa = false;
+function concluirPeloMapa(id, tech) {
+  const o = _osFresca(id, tech) || (allOrders[currentUser] || []).find(function(x) { return x.id === id; });
+  pendingConcluir = { id: id, tech: tech || currentUser };
+  _concluirDoMapa = true;
+  document.getElementById('concluir-nome').textContent    = o ? o.nome : '';
+  document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
+  document.getElementById('modal-concluir').classList.add('open'); lockScroll();
+}
+function _proximaFechar() { const el = document.getElementById('proxima-sheet'); if (el) el.remove(); }
+function abrirProximaOS(idConcluida) {
+  _proximaFechar();
+  const restantes = (_ultimaSequencia || []).filter(function(p) { return p.id !== idConcluida; });
+  const cont = document.getElementById('map-container-tech'); if (!cont) return;
+  const box = document.createElement('div'); box.id = 'proxima-sheet';
+  box.style.cssText = 'position:absolute;left:8px;right:8px;bottom:10px;z-index:900;background:white;border-radius:14px;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);font-family:inherit;';
+  if (!restantes.length) {
+    box.innerHTML = '<div style="font-size:14px;font-weight:800;color:#065f46;">🎉 Serviço concluído! Não falta mais nenhuma OS hoje.</div><button onclick="_proximaFechar()" style="margin-top:8px;width:100%;padding:9px;background:#e2e8f0;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Fechar</button>';
+  } else {
+    box.innerHTML = '<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:6px;">✅ Concluído! Qual é a próxima?</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;max-height:38vh;overflow-y:auto;">' +
+      restantes.map(function(p, i) {
+        return '<button onclick="escolherProximaOS(\'' + esc(p.id) + '\')" style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;text-align:left;cursor:pointer;">' +
+          '<span style="width:28px;height:28px;border-radius:50%;background:#1a2744;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">' + (i + 1) + '</span>' +
+          '<span style="flex:1;min-width:0;"><b style="display:block;font-size:13.5px;">' + esc(p.nome || '') + '</b><small style="display:block;color:#64748b;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(p.endereco || '') + '</small></span></button>';
+      }).join('') + '</div>' +
+      '<button onclick="_proximaFechar()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1.5px solid #e2e8f0;border-radius:8px;font-weight:700;color:#64748b;cursor:pointer;">Decido depois</button>';
+  }
+  cont.appendChild(box);
+}
+async function escolherProximaOS(id) {
+  const tech = currentUser;
+  const lista = (allOrders[tech] || []);
+  const antes = lista.filter(function(o) { return o.proxima && o.id !== id; });
+  _proximaFechar();
+  showToast('Marcando a próxima...', '');
+  try {
+    for (const o of antes) { await gasRequest({ action: 'marcarProxima', id: o.id, tech: tech, proxima: false }); o.proxima = false; }
+    await gasRequest({ action: 'marcarProxima', id: id, tech: tech, proxima: true });
+    const o = lista.find(function(x) { return x.id === id; }); if (o) o.proxima = true;
+    showToast('Próxima definida. Refazendo a rota...', 'success');
+    recarregarMapaTecnico();
+  } catch (e) { showToast('Não consegui marcar: ' + (e.message || 'erro'), 'error'); }
+}
 // Executa a conclusão após confirmação
 async function confirmarConcluir() {
   if (!pendingConcluir) return;
   const { id, tech } = pendingConcluir;
+  const doMapa = _concluirDoMapa; _concluirDoMapa = false;
   fecharModalConcluir();
   setSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
@@ -7366,6 +7424,7 @@ async function confirmarConcluir() {
     if (typeof map !== 'undefined' && map && map.closePopup) { try { map.closePopup(); } catch(e) {} }
     await loadTechOrders();
     renderDoneList();
+    if (doMapa) { try { if (_leafletMapTech) _leafletMapTech.closePopup(); } catch (e) {} abrirProximaOS(id); }
     if (typeof renderAdminOSList === 'function') { try { renderAdminOSList(); } catch(e) {} }
     if (typeof renderAdminDoneList === 'function') { try { renderAdminDoneList(); } catch(e) {} }
   } else {
@@ -10169,6 +10228,8 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
           '</a>' +
         '</div>' +
       '</div>' +
+      // 13/10/2026: concluir pelo mapa (só o técnico); depois pergunta qual é a próxima
+      (modo === 'car' ? '<button onclick="concluirPeloMapa(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser || '') + '\')" style="width:100%;margin-top:8px;padding:9px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">✅ Concluir este serviço</button>' : '') +
       // Botão Editar (só no mapa do admin)
       (modo === 'inicial' ?
         '<div style="border-top:1px solid #e2e8f0;margin-top:8px;padding-top:8px;">' +
@@ -10221,7 +10282,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
     if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
-    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0, id: o.id, tech: o._tech || '', endereco: o.endereco || '' });
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0, id: o.id, tech: o._tech || '', endereco: o.endereco || '', proxima: !!o.proxima });
 
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
@@ -10294,6 +10355,7 @@ function _nearestNeighbor(pontos) {
    No celular do técnico a rota sai de onde ele está (GPS, se autorizar). Se o OSRM falhar, cai na linha reta de antes. */
 const OSRM_URL = 'https://router.project-osrm.org';
 let _rotaSugerida = {}; // tech -> [{id, tech, nome}] na ordem sugerida (só o admin aplica)
+let _ultimaSequencia = []; // mapa do técnico: sequência desenhada por último (para a janela "qual é a próxima?")
 let _marcadoresOS = {}; // id da OS -> pino grande no mapa (para o roteirizador escrever o número dentro da bolinha)
 function _osrmCoords(pts) { return pts.map(function(p) { return p.lng.toFixed(6) + ',' + p.lat.toFixed(6); }).join(';'); }
 async function _osrm(servico, pts, extra) {
@@ -10349,17 +10411,24 @@ function _desenharRotas(map, rotasPorTech, modo) {
         return d && d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
       });
       if (comData.length < 1) return;
-      const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; }).sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
-      const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
+      /* 13/10/2026: "próxima OS" escolhida pelo técnico vai na frente de tudo; as numeradas pelo admin vêm depois, na ordem */
+      const prox = comData.find(function(p) { return p.proxima; }) || null;
+      const comOrdem = comData.filter(function(p) { return p !== prox && (p.ordemDia || 0) > 0; }).sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
+      const semOrdem = comData.filter(function(p) { return p !== prox && (p.ordemDia || 0) === 0; });
       const nomeTech = modo === 'car' ? currentUser : tech;
       const base = _basesTecnicos[nomeTech];
-      const inicio = (base && isFinite(base.lat) && isFinite(base.lng)) ? { lat: Number(base.lat), lng: Number(base.lng), nome: 'Base', base: true } : (modo === 'car' ? await _posicaoDoTecnico() : null);
+      const daBase = (base && isFinite(base.lat) && isFinite(base.lng)) ? { lat: Number(base.lat), lng: Number(base.lng), nome: 'Base', base: true } : null;
+      let inicio;
+      if (prox && modo === 'car') inicio = (await _posicaoDoTecnico()) || daBase;          // já na rua: parte de onde está
+      else if (prox && _motosMarcadores[tech]) { const ll = _motosMarcadores[tech].getLatLng(); inicio = { lat: ll.lat, lng: ll.lng, nome: 'Moto', moto: true }; }
+      else inicio = daBase || (modo === 'car' ? await _posicaoDoTecnico() : null);
       // ponto de partida para ordenar os sem ordem: última OS com ordem > posição do técnico > o mais ao norte
-      let partida = comOrdem.length ? comOrdem[comOrdem.length - 1] : (inicio || null);
+      let partida = comOrdem.length ? comOrdem[comOrdem.length - 1] : (prox || inicio || null);
       let semOrdenados;
       if (!partida && semOrdem.length >= 2) { const nn = _nearestNeighbor(semOrdem); partida = nn[0]; semOrdenados = [partida].concat(await _melhorOrdem(partida, nn.slice(1))); }
       else semOrdenados = partida ? await _melhorOrdem(partida, semOrdem) : semOrdem;
-      const sequencia = comOrdem.concat(semOrdenados);
+      const sequencia = (prox ? [prox] : []).concat(comOrdem, semOrdenados);
+      if (modo === 'car') _ultimaSequencia = sequencia;
       if (semOrdem.length >= 2 && modo !== 'car') _rotaSugerida[tech] = sequencia.map(function(p) { return { id: p.id, tech: p.tech || tech, nome: (p.nome || '').split(' ')[0], ja: (p.ordemDia || 0) > 0 }; });
       if (sequencia.length + (inicio ? 1 : 0) < 2) return;
       const cor = modo === 'car' ? '#ef4444' : (_corTech(tech === '__tech__' ? '' : tech));
@@ -10370,7 +10439,7 @@ function _desenharRotas(map, rotasPorTech, modo) {
         const latlngs = j.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
         L.polyline(latlngs, { color: '#1d4ed8', weight: 6, opacity: 0.35 }).addTo(map);
         L.polyline(latlngs, { color: '#3b82f6', weight: 3, opacity: 0.95 }).addTo(map);
-        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? (inicio.base ? ' (saindo da base)' : ' (saindo de onde você está)') : ''));
+        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? (inicio.base ? ' (saindo da base)' : inicio.moto ? ' (da posição da moto)' : ' (saindo de onde você está)') : '') + (prox ? ' · próxima: ' + esc((prox.nome || '').split(' ')[0]) : ''));
       } else {
         L.polyline(ptsRota.map(function(p) { return [p.lat, p.lng]; }), { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8, 6' }).addTo(map);
         resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': sem cálculo pelas ruas (linha reta)');
@@ -10443,10 +10512,11 @@ function _motoIcone(tech, t, cor) {
   const faz = t.ultimoMs ? Math.round((Date.now() - t.ultimoMs) / 60000) : null;
   const quando = faz == null ? 'sem sinal' : (faz < 1 ? 'agora' : faz < 60 ? 'há ' + faz + ' min' : 'há ' + Math.round(faz / 60) + ' h');
   const mov = t.pos && t.pos.kmh > 3;
+  const prox = (_firestoreTodasOrdens || []).find(function(o) { return o.proxima && o.tecnico === tech && o.status !== 'concluido'; });
   return L.divIcon({
     className: '',
     html: '<div style="position:relative;width:34px;height:34px;">' +
-      '<div style="position:absolute;bottom:38px;left:50%;transform:translateX(-50%);background:' + cor + ';color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.3);">' + esc(tech) + ' · ' + quando + (mov ? ' · ' + t.pos.kmh + ' km/h' : '') + '</div>' +
+      '<div style="position:absolute;bottom:38px;left:50%;transform:translateX(-50%);background:' + cor + ';color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.3);">' + esc(tech) + ' · ' + quando + (mov ? ' · ' + t.pos.kmh + ' km/h' : '') + (prox ? ' → ' + esc((prox.nome || '').split(' ')[0]) : '') + '</div>' +
       '<div style="width:34px;height:34px;border-radius:50%;background:white;border:3px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.35)' + (t.online ? ';animation:motoPulso 2s ease-out infinite' : ';opacity:.6') + ';display:flex;align-items:center;justify-content:center;font-size:17px;">🏍</div>' +
     '</div>',
     iconSize: [34, 34], iconAnchor: [17, 17],
