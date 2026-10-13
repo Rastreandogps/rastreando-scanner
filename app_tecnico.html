@@ -1580,7 +1580,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v111-motos-ao-vivo';
+const BUILD_VERSION = '2026-10-13-v111-motos-e-chegada';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10200,7 +10200,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
     if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
-    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0, id: o.id, tech: o._tech || '' });
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0, id: o.id, tech: o._tech || '', endereco: o.endereco || '' });
 
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
@@ -10210,6 +10210,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
 
   // Desenhar rotas otimizadas por técnico
   _desenharRotas(map, _rotasPorTech, modo);
+  if (modo !== 'car') _armarChegadas(_rotasPorTech); // 13/10/2026: aviso "técnico chegando" (só o admin arma; só para o dia escolhido)
   if (bounds.length > 0) {
     try { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 }); }
     catch(_) {}
@@ -10366,6 +10367,27 @@ function _desenharRotas(map, rotasPorTech, modo) {
     } catch (e) { console.error('rota', tech, e && e.message); }
     finally { terminou(); }
   });
+}
+/* ═══ AVISO "TÉCNICO CHEGANDO" (13/10/2026, pedido do dono) ═══
+   Ao montar o mapa do administrador, as OS do dia escolhido vão para o servidor (ação tecRotaSalvar). O servidor
+   olha a moto do técnico a cada minuto e, a menos de 500 m de uma OS, manda notificação no celular do administrador
+   do rastreamento (uma vez por OS por dia). Sem abrir o mapa no dia, não arma. */
+async function _armarChegadas(rotasPorTech) {
+  try {
+    const d = _mapaDataFiltro || new Date();
+    const dia = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    let n = 0;
+    for (const tech of Object.keys(rotasPorTech)) {
+      if (!tech || tech === '__tech__') continue;
+      const pontos = rotasPorTech[tech].filter(function(p) {
+        if (!p.id || !p.data) return false;
+        const pd = parseDate(p.data);
+        return pd && pd.getDate() === d.getDate() && pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+      }).map(function(p) { return { id: p.id, nome: (p.nome || '').split(' ').slice(0, 2).join(' '), endereco: (p.endereco || '').slice(0, 120), lat: p.lat, lng: p.lng }; });
+      try { await _tlChamar('tecRotaSalvar', { tecnico: tech, dia: dia, pontos: pontos }); n += pontos.length; } catch (e) { console.warn('[Chegada]', tech, e && e.message); }
+    }
+    if (n) console.log('[Chegada] ' + n + ' OS armadas para ' + dia);
+  } catch (e) { console.warn('[Chegada]', e && e.message); }
 }
 /* ═══ MOTOS DOS TÉCNICOS AO VIVO no mapa do administrador (13/10/2026, pedido do dono) ═══
    Botão "🏍 Técnicos": liga/desliga. Ligado e com a aba do mapa aberta, consulta o servidor a cada 10 s
