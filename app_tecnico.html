@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v115-rota-1os';
+const BUILD_VERSION = '2026-10-13-v116-revisao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5319,7 +5319,10 @@ function renderAdminDoneList() {
    (tempo real), mas as ações liam só allOrders[tech], que podia estar atrasada (ex.: valor salvo e o botão ainda
    dizendo "informe o valor"). Agora procura na cópia do Firestore primeiro e completa com o que allOrders tiver. */
 function _osFresca(id, tech) {
-  const fs = (_firestoreTodasOrdens || []).find(function(o) { return o.id === id; });
+  const fs0 = (_firestoreTodasOrdens || []).find(function(o) { return o.id === id; });
+  // revisão 13/10/2026: a cópia do Firestore vem com o obs cru ([H:..] [P:..] [IND:..] [PC:..]); normaliza numa CÓPIA
+  // antes de misturar, senão o WhatsApp de confirmação e o card mostravam esses marcadores
+  const fs = fs0 ? normalizarHoraOS(Object.assign({}, fs0)) : null;
   const mem = _acharOSEmMemoria(id, tech);
   if (fs && mem) { Object.keys(fs).forEach(function(k) { if (fs[k] !== '' && fs[k] != null) mem[k] = fs[k]; }); return mem; }
   if (fs) { fs._tech = fs._tech || fs.tecnico || tech; return fs; }
@@ -5344,7 +5347,9 @@ function enviarConfirmacaoAgendamento(id, tech) {
     const valorNum = _valorNumOS(os); // aceita "89,90" e "89.90"
     if (!valorNum) {
       showToast('⚠️ Informe o valor da instalação antes de enviar!', 'error');
-      abrirModalConfirmacaoCliente(id, tech);
+      // revisão 13/10/2026: a janela própria (abrirModalConfirmacaoCliente) nunca existiu no HTML e estourava erro;
+      // abre o Editar OS, que já tem o campo de valor
+      if (currentRole === 'admin') abrirModalEdit(id, tech);
       return;
     }
     const valorStr = 'R$' + valorNum.toFixed(2).replace('.',',');
@@ -7399,8 +7404,9 @@ async function escolherProximaOS(id) {
   _proximaFechar();
   showToast('Marcando a próxima...', '');
   try {
-    for (const o of antes) { await gasRequest({ action: 'marcarProxima', id: o.id, tech: tech, proxima: false }); o.proxima = false; }
-    await gasRequest({ action: 'marcarProxima', id: id, tech: tech, proxima: true });
+    for (const o of antes) { const r0 = await gasRequest({ action: 'marcarProxima', id: o.id, tech: tech, proxima: false }); if (!r0 || !r0.ok) throw new Error((r0 && r0.error) || 'sem conexão com o Firebase'); o.proxima = false; }
+    const r = await gasRequest({ action: 'marcarProxima', id: id, tech: tech, proxima: true });
+    if (!r || !r.ok) throw new Error((r && r.error) || 'sem conexão com o Firebase'); // revisão 13/10/2026: antes dizia "definida" mesmo falhando
     const o = lista.find(function(x) { return x.id === id; }); if (o) o.proxima = true;
     showToast('Próxima definida. Refazendo a rota...', 'success');
     recarregarMapaTecnico();
@@ -10690,6 +10696,7 @@ function recarregarMapaTecnico() {
 }
 
 async function iniciarMapaTecnico() {
+  if (typeof _proximaFechar === 'function') _proximaFechar(); // revisão 13/10/2026: não deixa a folha "Qual é a próxima?" velha na tela ao recarregar
   // Destruir mapa anterior se existir
   if (_leafletMapTech) {
     try { _leafletMapTech.remove(); } catch(_) {}
@@ -10911,7 +10918,7 @@ async function iniciarMapaAdmin() {
       const _d = parseDate(o.data);
       return _d && _d.getDate()===_mapaDataFiltro.getDate() && _d.getMonth()===_mapaDataFiltro.getMonth() && _d.getFullYear()===_mapaDataFiltro.getFullYear();
     })).forEach(o => {
-      todas.push({ ...o, _tech: t });
+      todas.push(normalizarHoraOS({ ...o, _tech: t })); // normaliza a cópia (hora/período e obs limpo no popup)
     });
   });
 
