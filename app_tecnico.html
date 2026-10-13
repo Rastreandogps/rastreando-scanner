@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v116-revisao';
+const BUILD_VERSION = '2026-10-13-v117-proxima-dia';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2673,8 +2673,18 @@ function docFirestoreParaOrdem(doc) {
     valorInstalacao: d.valorInstalacao || '',
     ordemDia:        d.ordemDia || 0,
     notaTecnico:     d.notaTecnico || '',
-    proxima:         !!d.proxima
+    proxima:         !!d.proxima && _proximaValeHoje(d.proximaEm)
   };
+}
+/* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
+   ignorada sozinha (some do mapa, da moto do admin e da rota), sem precisar de botão para zerar. */
+function _proximaValeHoje(ts) {
+  if (!ts) return true; // gravação ainda pendente (hora do servidor não chegou): acabou de ser marcada
+  let d = null;
+  try { d = (typeof ts.toDate === 'function') ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts)); } catch (_) { return true; }
+  if (!d || isNaN(d.getTime())) return true;
+  const h = new Date();
+  return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth() && d.getDate() === h.getDate();
 }
 
 function iniciarListenerOSTecnico(nomeTecnico) {
