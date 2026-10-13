@@ -853,6 +853,7 @@
         <span style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 Ver dia:</span>
         <input type="date" id="map-data-admin" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
+        <button onclick="abrirBases()" title="Endereço de partida de cada técnico" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏠 Bases</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button onclick="filtrarMapaAdmin('todos')" id="mf-todos" style="padding:4px 12px;border-radius:20px;border:1.5px solid #1a2744;background:#1a2744;color:white;font-size:12px;font-weight:700;cursor:pointer;">Todos</button>
@@ -1552,6 +1553,15 @@
 </div>
 
 <!-- MODAL: COMPARTILHAR LOCALIZAÇÃO DO TÉCNICO -->
+<!-- Base (endereço de partida) de cada técnico (13/10/2026) -->
+<div class="modal-overlay" id="modal-bases">
+  <div class="modal-box" style="max-width:440px;max-height:90vh;overflow-y:auto;">
+    <h3 style="margin:0 0 4px;font-size:17px;">🏠 Base dos técnicos</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.4;">Endereço de onde cada técnico sai. A rota do mapa dele parte daqui e as OS são numeradas pela ordem mais curta a partir deste ponto. Pode ser endereço ou coordenadas (lat, lng).</p>
+    <div id="bases-lista"></div>
+    <div class="modal-btns" style="margin-top:12px;"><button type="button" class="btn-cancel" style="flex:1" onclick="fecharBases()">Fechar</button><button type="button" class="btn-primary" style="flex:1" id="bases-salvar" onclick="salvarBases()">Salvar</button></div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-tec-local">
   <div class="modal-box" style="max-width:400px;max-height:90vh;overflow-y:auto;" id="tl-corpo"></div>
 </div>
@@ -1568,7 +1578,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v110-rota-pelas-ruas';
+const BUILD_VERSION = '2026-10-13-v110-rota-e-bases';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10313,7 +10323,9 @@ function _desenharRotas(map, rotasPorTech, modo) {
       if (comData.length < 1) return;
       const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; }).sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
       const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
-      const inicio = modo === 'car' ? await _posicaoDoTecnico() : null;
+      const nomeTech = modo === 'car' ? currentUser : tech;
+      const base = _basesTecnicos[nomeTech];
+      const inicio = (base && isFinite(base.lat) && isFinite(base.lng)) ? { lat: Number(base.lat), lng: Number(base.lng), nome: 'Base', base: true } : (modo === 'car' ? await _posicaoDoTecnico() : null);
       // ponto de partida para ordenar os sem ordem: última OS com ordem > posição do técnico > o mais ao norte
       let partida = comOrdem.length ? comOrdem[comOrdem.length - 1] : (inicio || null);
       let semOrdenados;
@@ -10330,12 +10342,14 @@ function _desenharRotas(map, rotasPorTech, modo) {
         const latlngs = j.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
         L.polyline(latlngs, { color: '#1d4ed8', weight: 6, opacity: 0.35 }).addTo(map);
         L.polyline(latlngs, { color: '#3b82f6', weight: 3, opacity: 0.95 }).addTo(map);
-        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? ' (saindo de onde você está)' : ''));
+        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? (inicio.base ? ' (saindo da base)' : ' (saindo de onde você está)') : ''));
       } else {
         L.polyline(ptsRota.map(function(p) { return [p.lat, p.lng]; }), { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8, 6' }).addTo(map);
         resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': sem cálculo pelas ruas (linha reta)');
       }
-      if (inicio) {
+      if (inicio && inicio.base) {
+        L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:30px;height:30px;border-radius:50%;background:#1a2744;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:15px;">🏠</div>', iconSize: [30, 30], iconAnchor: [15, 15] }), zIndexOffset: -50 }).addTo(map).bindPopup('Base de ' + esc(nomeTech) + (base.endereco ? '<br><small>' + esc(base.endereco) + '</small>' : ''));
+      } else if (inicio) {
         L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid white;box-shadow:0 0 0 4px rgba(37,99,235,.25);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: -50 }).addTo(map).bindPopup('Você está aqui');
       }
       // Numerinhos de ordem sobre cada ponto
@@ -10353,6 +10367,54 @@ function _desenharRotas(map, rotasPorTech, modo) {
     } catch (e) { console.error('rota', tech, e && e.message); }
     finally { terminou(); }
   });
+}
+/* ═══ BASE DOS TÉCNICOS (13/10/2026, pedido do dono): endereço fixo de partida, gravado pelo admin em
+   configuracoes/basesTecnicos (Firestore do APP Técnico). O mapa do técnico e a rota do admin partem daqui. ═══ */
+let _basesTecnicos = {};
+async function carregarBasesTecnicos() {
+  const db = getFirestoreDb(); if (!db) return _basesTecnicos;
+  try { const s = await db.collection('configuracoes').doc('basesTecnicos').get(); _basesTecnicos = (s.exists && s.data()) || {}; }
+  catch (e) { console.warn('[Bases] Não consegui ler:', e); }
+  return _basesTecnicos;
+}
+function abrirBases() {
+  const lista = document.getElementById('bases-lista');
+  lista.innerHTML = TECNICOS.map(function(tc) {
+    const b = _basesTecnicos[tc.nome] || {};
+    return '<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:800;color:' + _corTech(tc.nome) + ';margin-bottom:4px;">' + esc(tc.nome) + '</div>' +
+      '<div style="display:flex;gap:6px;"><input type="text" data-base="' + esc(tc.nome) + '" value="' + esc(b.endereco || '') + '" placeholder="Rua, número, bairro, cidade (ou lat, lng)" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;">' +
+      '<button type="button" onclick="limparBase(\'' + esc(tc.nome) + '\')" title="Apagar a base" style="padding:0 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:12px;cursor:pointer;">✕</button></div>' +
+      '<div id="base-st-' + esc(tc.nome) + '" style="font-size:11px;color:#64748b;margin-top:3px;">' + (isFinite(b.lat) ? '✓ localizada (' + Number(b.lat).toFixed(5) + ', ' + Number(b.lng).toFixed(5) + ')' : (b.endereco ? '⚠ sem coordenadas' : 'sem base')) + '</div></div>';
+  }).join('');
+  document.getElementById('modal-bases').classList.add('open'); lockScroll();
+}
+function fecharBases() { document.getElementById('modal-bases').classList.remove('open'); unlockScroll(); }
+function limparBase(nome) { const i = document.querySelector('input[data-base="' + nome + '"]'); if (i) i.value = ''; const st = document.getElementById('base-st-' + nome); if (st) st.textContent = 'sem base (salve para confirmar)'; }
+async function salvarBases() {
+  const db = getFirestoreDb(); if (!db) { alert('Sem conexão com o Firebase agora. Tente de novo em instantes.'); return; }
+  const btn = document.getElementById('bases-salvar'); btn.disabled = true; btn.textContent = 'Localizando...';
+  const novo = {};
+  let falhas = 0;
+  for (const tc of TECNICOS) {
+    const inp = document.querySelector('input[data-base="' + tc.nome + '"]'); if (!inp) continue;
+    const end = inp.value.trim(); const st = document.getElementById('base-st-' + tc.nome);
+    const antes = _basesTecnicos[tc.nome] || {};
+    if (!end) { continue; }
+    if (end === antes.endereco && isFinite(antes.lat)) { novo[tc.nome] = antes; continue; } // não mudou: não consulta de novo
+    if (st) st.textContent = 'Localizando...';
+    let c = null;
+    try { c = await _geocodificar(end); } catch (_) {}
+    if (c && c.nivel !== 'bairro') { novo[tc.nome] = { endereco: end, lat: c.lat, lng: c.lng, em: Date.now() }; if (st) st.textContent = '✓ localizada (' + c.lat.toFixed(5) + ', ' + c.lng.toFixed(5) + ')'; }
+    else { falhas++; if (st) st.innerHTML = '<span style="color:#dc2626;font-weight:700;">✗ não achei este endereço. Tente com número e bairro, ou cole as coordenadas (lat, lng).</span>'; }
+  }
+  if (falhas) { btn.disabled = false; btn.textContent = 'Salvar'; showToast('Corrija o endereço marcado em vermelho.', 'error'); return; }
+  try {
+    await db.collection('configuracoes').doc('basesTecnicos').set(Object.assign({}, novo, { atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }));
+    _basesTecnicos = novo;
+    showToast('Bases salvas ✅', 'success'); fecharBases();
+    _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {}
+  } catch (e) { console.warn('[Bases] Não consegui salvar:', e); alert('Não foi possível salvar agora. Tente de novo.'); }
+  btn.disabled = false; btn.textContent = 'Salvar';
 }
 /* admin: mostra a ordem sugerida e deixa aplicar com um toque (grava ordemDia de cada OS) */
 function _mostrarSugestaoOrdem(modo) {
@@ -10406,6 +10468,7 @@ async function iniciarMapaTecnico() {
     await carregarLeaflet();
   }
 
+  await carregarBasesTecnicos();
   const map = _criarMapa('leaflet-map-tech');
   _leafletMapTech = map;
   _mapaTechCarregadoEm = Date.now();
@@ -10584,6 +10647,7 @@ async function iniciarMapaAdmin() {
     await carregarLeaflet();
   }
 
+  await carregarBasesTecnicos();
   const map = _criarMapa('leaflet-map-admin');
   _leafletMapAdmin = map;
   _mapaAdminCarregadoEm = Date.now();
