@@ -1568,7 +1568,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v109-mapa-cores-moeda-endereco';
+const BUILD_VERSION = '2026-10-13-v110-rota-pelas-ruas';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10185,7 +10185,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     // Acumular por técnico para desenhar rota depois
     const _techKey = o._tech || '__tech__';
     if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
-    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0 });
+    _rotasPorTech[_techKey].push({ lat: coord.lat, lng: coord.lng, nome: o.nome, data: o.data, ordemDia: o.ordemDia || 0, id: o.id, tech: o._tech || '' });
 
     // Respeitar limite do Nominatim: 1 req/segundo
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
@@ -10250,66 +10250,139 @@ function _nearestNeighbor(pontos) {
   return rota;
 }
 
-function _desenharRotas(map, rotasPorTech, modo) {
-  // No modo 'car' (técnico) só tem um técnico — linha vermelha
-  // No modo 'inicial' (admin) cada técnico tem sua cor
-  Object.keys(rotasPorTech).forEach(function(tech) {
-    const pontos = rotasPorTech[tech];
-    if (pontos.length < 2) return; // menos de 2 pontos não forma rota
-
-    // Filtrar só OS com data de hoje ou futura (não plotar rota de OS sem data)
-    const hoje = new Date();
-    const comData = pontos.filter(function(p) {
-      if (!p.data || p.data.trim() === '' || p.data === 'undefined') return false;
-      const d = parseDate(p.data);
-      return d && d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-    });
-    if (comData.length < 2) return;
-
-    // Se há pontos com ordemDia definida, respeitar essa ordem
-    // e inserir os sem ordem otimizados entre eles
-const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; });
-    let rotaOtimizada;
-    if (comOrdem.length >= 1) {
-      // Ordenar pelos números definidos pelo admin (1, 2, 3...)
-      comOrdem.sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
-      const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
-      if (semOrdem.length === 0) {
-        // Todos têm ordem — linha segue exatamente 1→2→3→...
-        rotaOtimizada = comOrdem;
-      } else {
-        // Pontos sem ordem vão ao final, em sequência de proximidade entre si
-        rotaOtimizada = comOrdem.concat(_nearestNeighbor(semOrdem));
-      }
-    } else {
-      rotaOtimizada = _nearestNeighbor(comData);
-    }
-    const latlngs = rotaOtimizada.map(function(p) { return [p.lat, p.lng]; });
-
-    // Cor da linha
-    const cor = modo === 'car' ? '#ef4444' : (_corTech(tech === '__tech__' ? '' : tech));
-
-    // Linha tracejada com setas de direção
-    L.polyline(latlngs, {
-      color: '#3b82f6',
-      weight: 3,
-      opacity: 0.8,
-      dashArray: '8, 6',
-    }).addTo(map);
-
-    // Numerinhos de ordem sobre cada ponto
-    rotaOtimizada.forEach(function(p, i) {
-      L.marker([p.lat, p.lng], {
-        icon: L.divIcon({
-          className: '',
-          html: '<div style="width:18px;height:18px;border-radius:50%;background:white;border:2px solid ' + cor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:' + cor + ';box-shadow:0 1px 4px rgba(0,0,0,.2);">' + (i + 1) + '</div>',
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
-        }),
-        zIndexOffset: -100, // fica abaixo dos pins principais
-      }).addTo(map);
-    });
+/* ═══ ROTA PELAS RUAS + MELHOR ORDEM (13/10/2026, pedido do dono) ═══
+   Usa o OSRM público (gratuito, o mesmo do "técnico a caminho" do rastreamento):
+   - "trip": descobre a melhor sequência de visita das OS SEM ordem definida (as com ordem do admin são respeitadas);
+   - "route": desenha o caminho pelas ruas e informa km e tempo.
+   No celular do técnico a rota sai de onde ele está (GPS, se autorizar). Se o OSRM falhar, cai na linha reta de antes. */
+const OSRM_URL = 'https://router.project-osrm.org';
+let _rotaSugerida = {}; // tech -> [{id, tech, nome}] na ordem sugerida (só o admin aplica)
+function _osrmCoords(pts) { return pts.map(function(p) { return p.lng.toFixed(6) + ',' + p.lat.toFixed(6); }).join(';'); }
+async function _osrm(servico, pts, extra) {
+  const ctl = new AbortController(); const tm = setTimeout(function() { ctl.abort(); }, 12000);
+  try {
+    const r = await fetch(OSRM_URL + '/' + servico + '/v1/driving/' + _osrmCoords(pts) + '?overview=full&geometries=geojson' + (extra || ''), { signal: ctl.signal });
+    const j = await r.json();
+    if (!r.ok || j.code !== 'Ok') return null;
+    return j;
+  } catch (_) { return null; } finally { clearTimeout(tm); }
+}
+function _fmtKm(m) { return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',') + ' km'; }
+function _fmtMin(s) { const m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0'); }
+function _posicaoDoTecnico() {
+  return new Promise(function(res) {
+    if (!navigator.geolocation) return res(null);
+    let done = false;
+    const fim = function(v) { if (!done) { done = true; res(v); } };
+    setTimeout(function() { fim(null); }, 4000);
+    navigator.geolocation.getCurrentPosition(function(p) { fim({ lat: p.coords.latitude, lng: p.coords.longitude, nome: 'Você', inicio: true }); }, function() { fim(null); }, { enableHighAccuracy: false, timeout: 3500, maximumAge: 120000 });
   });
+}
+/* melhor ordem para os pontos sem ordem, partindo de "inicio" (OSRM trip); devolve os pontos reordenados */
+async function _melhorOrdem(inicio, semOrdem) {
+  if (semOrdem.length < 2) return semOrdem;
+  const pts = [inicio].concat(semOrdem);
+  const j = await _osrm('trip', pts, '&roundtrip=false&source=first&destination=any&steps=false');
+  if (!j || !j.waypoints || j.waypoints.length !== pts.length) return _nearestNeighbor(semOrdem);
+  const ordem = j.waypoints.map(function(w, i) { return { i: i, pos: w.waypoint_index }; }).filter(function(x) { return x.i > 0; }).sort(function(a, b) { return a.pos - b.pos; });
+  return ordem.map(function(x) { return pts[x.i]; });
+}
+function _desenharRotas(map, rotasPorTech, modo) {
+  _rotaSugerida = {};
+  const resumo = [];
+  const techs = Object.keys(rotasPorTech);
+  let pendentes = techs.length;
+  if (!pendentes) return;
+  const terminou = function() {
+    pendentes--;
+    if (pendentes > 0) return;
+    const el = document.getElementById(modo === 'car' ? 'map-timestamp-tech' : 'map-timestamp-admin');
+    if (el && resumo.length) el.textContent = el.textContent.replace(/ · Rota.*$/, '') + ' · ' + resumo.join(' · ');
+    _mostrarSugestaoOrdem(modo);
+  };
+  techs.forEach(async function(tech) {
+    try {
+      const pontos = rotasPorTech[tech];
+      // Filtrar só OS com data de hoje ou futura (não plotar rota de OS sem data)
+      const hoje = new Date();
+      const comData = pontos.filter(function(p) {
+        if (!p.data || p.data.trim() === '' || p.data === 'undefined') return false;
+        const d = parseDate(p.data);
+        return d && d >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      });
+      if (comData.length < 1) return;
+      const comOrdem = comData.filter(function(p) { return (p.ordemDia || 0) > 0; }).sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
+      const semOrdem = comData.filter(function(p) { return (p.ordemDia || 0) === 0; });
+      const inicio = modo === 'car' ? await _posicaoDoTecnico() : null;
+      // ponto de partida para ordenar os sem ordem: última OS com ordem > posição do técnico > o mais ao norte
+      let partida = comOrdem.length ? comOrdem[comOrdem.length - 1] : (inicio || null);
+      let semOrdenados;
+      if (!partida && semOrdem.length >= 2) { const nn = _nearestNeighbor(semOrdem); partida = nn[0]; semOrdenados = [partida].concat(await _melhorOrdem(partida, nn.slice(1))); }
+      else semOrdenados = partida ? await _melhorOrdem(partida, semOrdem) : semOrdem;
+      const sequencia = comOrdem.concat(semOrdenados);
+      if (semOrdem.length >= 2 && modo !== 'car') _rotaSugerida[tech] = sequencia.map(function(p) { return { id: p.id, tech: p.tech || tech, nome: (p.nome || '').split(' ')[0], ja: (p.ordemDia || 0) > 0 }; });
+      if (sequencia.length + (inicio ? 1 : 0) < 2) return;
+      const cor = modo === 'car' ? '#ef4444' : (_corTech(tech === '__tech__' ? '' : tech));
+      // rota pelas ruas (OSRM route); se falhar, linha reta tracejada como antes
+      const ptsRota = (inicio ? [inicio] : []).concat(sequencia);
+      const j = await _osrm('route', ptsRota, '&steps=false');
+      if (j && j.routes && j.routes[0] && j.routes[0].geometry) {
+        const latlngs = j.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
+        L.polyline(latlngs, { color: '#1d4ed8', weight: 6, opacity: 0.35 }).addTo(map);
+        L.polyline(latlngs, { color: '#3b82f6', weight: 3, opacity: 0.95 }).addTo(map);
+        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? ' (saindo de onde você está)' : ''));
+      } else {
+        L.polyline(ptsRota.map(function(p) { return [p.lat, p.lng]; }), { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8, 6' }).addTo(map);
+        resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': sem cálculo pelas ruas (linha reta)');
+      }
+      if (inicio) {
+        L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid white;box-shadow:0 0 0 4px rgba(37,99,235,.25);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: -50 }).addTo(map).bindPopup('Você está aqui');
+      }
+      // Numerinhos de ordem sobre cada ponto
+      sequencia.forEach(function(p, i) {
+        L.marker([p.lat, p.lng], {
+          icon: L.divIcon({
+            className: '',
+            html: '<div style="width:18px;height:18px;border-radius:50%;background:white;border:2px solid ' + cor + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:' + cor + ';box-shadow:0 1px 4px rgba(0,0,0,.2);">' + (i + 1) + '</div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+          zIndexOffset: -100, // fica abaixo dos pins principais
+        }).addTo(map);
+      });
+    } catch (e) { console.error('rota', tech, e && e.message); }
+    finally { terminou(); }
+  });
+}
+/* admin: mostra a ordem sugerida e deixa aplicar com um toque (grava ordemDia de cada OS) */
+function _mostrarSugestaoOrdem(modo) {
+  let box = document.getElementById('rota-sugestao');
+  const techs = Object.keys(_rotaSugerida);
+  if (modo === 'car' || !techs.length) { if (box) box.remove(); return; }
+  if (!box) {
+    box = document.createElement('div'); box.id = 'rota-sugestao';
+    box.style.cssText = 'position:absolute;left:10px;right:10px;bottom:12px;z-index:800;background:white;border:1px solid #c7d2fe;border-radius:12px;padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:12px;';
+    const cont = document.getElementById('map-container-admin') || document.getElementById('leaflet-map-admin').parentElement;
+    cont.appendChild(box);
+  }
+  box.innerHTML = techs.map(function(tech) {
+    const seq = _rotaSugerida[tech];
+    return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0;"><b style="color:' + _corTech(tech) + '">' + esc(tech) + ':</b> <span style="color:#334155;">' + seq.map(function(p, i) { return (i + 1) + ' ' + esc(p.nome); }).join(' → ') + '</span>' +
+      '<button onclick="aplicarOrdemSugerida(\'' + esc(tech) + '\')" style="margin-left:auto;padding:5px 10px;background:#1a2744;color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Aplicar esta ordem</button></div>';
+  }).join('') + '<button onclick="document.getElementById(\'rota-sugestao\').remove()" style="position:absolute;top:-8px;right:-6px;width:22px;height:22px;border-radius:50%;border:1px solid #cbd5e1;background:white;font-size:12px;cursor:pointer;">✕</button>';
+}
+async function aplicarOrdemSugerida(tech) {
+  const seq = _rotaSugerida[tech]; if (!seq) return;
+  if (!confirm('Gravar a ordem sugerida para ' + tech + '?\n' + seq.map(function(p, i) { return (i + 1) + 'º ' + p.nome; }).join('\n'))) return;
+  showToast('Gravando ordem...', '');
+  for (let i = 0; i < seq.length; i++) {
+    const p = seq[i];
+    try { await gasRequest({ action: 'salvarOrdemDia', id: p.id, tech: p.tech, ordem: i + 1 }); } catch (e) { showToast('Falhou em ' + p.nome + ': ' + (e.message || 'erro'), 'error'); return; }
+    if (allOrders[p.tech]) { const os = allOrders[p.tech].find(function(o) { return o.id === p.id; }); if (os) os.ordemDia = i + 1; }
+  }
+  delete _rotaSugerida[tech];
+  showToast('Ordem de ' + tech + ' gravada ✅', 'success');
+  _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {}
 }
 
 function recarregarMapaTecnico() {
