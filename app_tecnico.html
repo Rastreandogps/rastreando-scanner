@@ -10458,8 +10458,10 @@ async function motosBuscar() {
   try {
     const j = await _tlChamar('tecPosicoes');
     const vistos = {};
+    const soTech = (_mapaAdminFiltro && _mapaAdminFiltro !== 'todos') ? _mapaAdminFiltro : ''; // 13/10/2026: com um técnico escolhido, só a moto dele
     (j.tecnicos || []).forEach(function(t) {
       if (!t.pos) return;
+      if (soTech && t.tecnico !== soTech) return;
       vistos[t.tecnico] = true;
       const cor = _corTech(t.tecnico), alvo = L.latLng(t.pos.lat, t.pos.lon);
       let mk = _motosMarcadores[t.tecnico];
@@ -10658,6 +10660,7 @@ let _mapaAdminFiltro = 'todos';
 
 function filtrarMapaAdmin(tech) {
   _mapaAdminFiltro = tech;
+  if (_motosLigado) { motosLimpar(); setTimeout(motosBuscar, 600); } /* 13/10/2026: só a moto do técnico escolhido */
   // Atualizar visual dos botões
   ['todos','Glauber','Eberson','Jonas'].forEach(function(t) {
     const btn = document.getElementById('mf-' + t);
