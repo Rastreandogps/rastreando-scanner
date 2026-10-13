@@ -1590,7 +1590,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-13-v117-proxima-dia';
+const BUILD_VERSION = '2026-10-13-v118-tirar-proxima';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7422,6 +7422,17 @@ async function escolherProximaOS(id) {
     recarregarMapaTecnico();
   } catch (e) { showToast('Não consegui marcar: ' + (e.message || 'erro'), 'error'); }
 }
+/* 13/10/2026: tira a marca de "próxima" na hora (técnico ou admin). Sem marca, a rota volta a sair da base. */
+async function limparProxima(id, tech, modo) {
+  showToast('Tirando a próxima...', '');
+  const r = await gasRequest({ action: 'marcarProxima', id: id, tech: tech, proxima: false });
+  if (!r || !r.ok) { showToast('Não consegui tirar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return; }
+  (allOrders[tech] || []).forEach(function(o) { if (o.id === id) o.proxima = false; });
+  (_firestoreTodasOrdens || []).forEach(function(o) { if (o.id === id) o.proxima = false; });
+  showToast('Próxima retirada. Refazendo a rota...', 'success');
+  if (modo === 'car') recarregarMapaTecnico();
+  else { _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {} }
+}
 // Executa a conclusão após confirmação
 async function confirmarConcluir() {
   if (!pendingConcluir) return;
@@ -10406,6 +10417,7 @@ async function _melhorOrdem(inicio, semOrdem) {
 function _desenharRotas(map, rotasPorTech, modo) {
   _rotaSugerida = {};
   const resumo = [];
+  const proxLista = []; // OS marcadas como "próxima" nesta rota (para o botão de tirar)
   const techs = Object.keys(rotasPorTech);
   let pendentes = techs.length;
   if (!pendentes) return;
@@ -10414,6 +10426,15 @@ function _desenharRotas(map, rotasPorTech, modo) {
     if (pendentes > 0) return;
     const el = document.getElementById(modo === 'car' ? 'map-timestamp-tech' : 'map-timestamp-admin');
     if (el && resumo.length) el.textContent = el.textContent.replace(/ · Rota.*$/, '') + ' · ' + resumo.join(' · ');
+    // 13/10/2026 (pedido do dono): botão "✕" para tirar a "próxima" na hora, sem esperar a meia-noite
+    if (el) proxLista.forEach(function(px) {
+      const b = document.createElement('button'); b.type = 'button';
+      b.textContent = '✕ tirar próxima' + (proxLista.length > 1 ? ' (' + px.tech + ')' : '');
+      b.title = 'Tira a marca de próxima de ' + (px.nome || '') + ' — a rota volta ao normal';
+      b.style.cssText = 'margin-left:6px;padding:1px 8px;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;vertical-align:middle;';
+      b.onclick = function(ev) { ev.stopPropagation(); limparProxima(px.id, px.tech, modo); };
+      el.appendChild(b);
+    });
     _mostrarSugestaoOrdem(modo);
   };
   techs.forEach(async function(tech) {
@@ -10429,6 +10450,7 @@ function _desenharRotas(map, rotasPorTech, modo) {
       if (comData.length < 1) return;
       /* 13/10/2026: "próxima OS" escolhida pelo técnico vai na frente de tudo; as numeradas pelo admin vêm depois, na ordem */
       const prox = comData.find(function(p) { return p.proxima; }) || null;
+      if (prox) proxLista.push({ id: prox.id, tech: prox.tech || (modo === 'car' ? currentUser : tech), nome: (prox.nome || '').split(' ')[0] });
       const comOrdem = comData.filter(function(p) { return p !== prox && (p.ordemDia || 0) > 0; }).sort(function(a, b) { return (a.ordemDia || 0) - (b.ordemDia || 0); });
       const semOrdem = comData.filter(function(p) { return p !== prox && (p.ordemDia || 0) === 0; });
       const nomeTech = modo === 'car' ? currentUser : tech;
