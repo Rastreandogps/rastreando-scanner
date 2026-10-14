@@ -123,6 +123,18 @@
     .screen { max-width: 1100px; }
     #cal-day-cards, .cal-dia-topo { max-width: 1100px !important; }
     #tech-tab-mapa, #admin-tab-mapa { max-width: none; }
+    /* calendário: no computador as casinhas não precisam ser quadradas (ficavam gigantes e escondiam os cards) */
+    .cal-grid .cal-day { aspect-ratio: auto; min-height: 52px; }
+    /* mapa do admin: os controles ficam numa linha só e o mapa ocupa o resto da altura da tela */
+    #admin-tab-mapa .map-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 14px; }
+    #admin-tab-mapa .map-topo-l1 { order: 1; margin: 0; flex: 1 1 auto; justify-content: flex-start; }
+    #admin-tab-mapa .map-topo-l1 #map-timestamp-admin { flex: 0 1 auto; }
+    #admin-tab-mapa .map-topo-l2 { order: 2; margin: 0; flex: 0 0 auto; }
+    #admin-tab-mapa .map-topo-l2 #map-data-admin { flex: 0 0 150px; }
+    #admin-tab-mapa #map-filtros-admin { order: 3; flex: 0 0 auto; }
+    #admin-tab-mapa .map-topo-leg { order: 4; margin: 0; flex: 0 0 auto; }
+    #admin-tab-mapa.active { display: flex; flex-direction: column; height: calc(100vh - var(--topo-app, 108px)); }
+    #admin-tab-mapa #map-container-admin { flex: 1 1 auto; height: auto !important; min-height: 300px; }
   }
 
   /* CALENDAR */
@@ -852,12 +864,12 @@
 
   <!-- MAPA ADMIN -->
   <div id="admin-tab-mapa" class="screen" style="padding:0;overflow:hidden;">
-    <div style="padding:10px 14px;background:white;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+    <div class="map-topo" style="padding:10px 14px;background:white;border-bottom:1px solid var(--border);">
+      <div class="map-topo-l1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
         <span id="map-timestamp-admin" style="font-size:12px;color:var(--muted);flex:1;min-width:0;">Carregando na primeira visita...</span>
         <button onclick="recarregarMapaAdmin()" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='white' stroke-width='2.5'><path d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/><path d='M3 3v5h5'/></svg> Atualizar mapa</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><!-- 14/10/2026: no celular os botões descem para a linha de baixo em vez de cortar -->
+      <div class="map-topo-l2" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;"><!-- 14/10/2026: no celular os botões descem para a linha de baixo em vez de cortar -->
         <span style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 Ver dia:</span>
         <input type="date" id="map-data-admin" style="flex:1 1 130px;min-width:0;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
@@ -879,7 +891,7 @@
           <button onclick="event.stopPropagation();toggleFavMapa('Jonas')" title="Fixar como favorito no mapa" style="width:18px;height:18px;border-radius:50%;border:1.5px solid #e2e8f0;background:#e2e8f0;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:2px;flex-shrink:0;" id="mfav-Jonas">☆</button>
         </div>
       </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;font-weight:600;color:#475569;" aria-label="Legenda das cores do mapa">
+      <div class="map-topo-leg" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;font-weight:600;color:#475569;" aria-label="Legenda das cores do mapa">
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;"></i>Instalação</span>
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></i>Manutenção</span>
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></i>Retirada</span>
@@ -1597,7 +1609,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v123-computador';
+const BUILD_VERSION = '2026-10-14-v124-computador2';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1606,6 +1618,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const v = document.getElementById('login-build-version');
   if (v) v.textContent = BUILD_VERSION;
 });
+/* 14/10/2026: altura real do cabeçalho + abas (para o mapa do admin ocupar o resto da tela no computador) */
+function _medirTopoApp() {
+  try {
+    const vis = function(sel) { let a = 0; document.querySelectorAll(sel).forEach(function(e) { const r = e.getBoundingClientRect(); if (r.height > a) a = r.height; }); return a; };
+    const alt = vis('.app-header') + vis('.tab-bar');
+    if (alt > 40) document.documentElement.style.setProperty('--topo-app', Math.round(alt) + 'px');
+  } catch (_) {}
+}
+window.addEventListener('resize', _medirTopoApp);
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwz_nGoYBkWlEP2AGi6wflteT3QLwM7BJ0MOFLRXMuqj0ww2kA-pQ2PcfQA3JWvZbdP/exec';
 const URL_REAGENDAR = 'https://app.rastreandogpsbr.com.br/reagendar.html';
 // (senha reserva do admin removida do código — sem internet, use a biometria)
@@ -10971,7 +10992,9 @@ async function iniciarMapaAdmin() {
 
   await carregarBasesTecnicos();
   motosLimpar();
+  _medirTopoApp();
   const map = _criarMapa('leaflet-map-admin');
+  setTimeout(function() { try { map.invalidateSize(); } catch (_) {} }, 300);
   _leafletMapAdmin = map;
   _mapaAdminCarregadoEm = Date.now();
 
