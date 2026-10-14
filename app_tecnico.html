@@ -117,6 +117,11 @@
   /* SCREENS */
   .screen { display: none; padding: 20px; max-width: 680px; margin: 0 auto; }
   .screen.active { display: block; }
+  /* 14/10/2026: barra de controles do mapa do admin retrátil */
+  .map-topo-handle { height: 22px; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-bottom: 1px solid var(--border); color: #64748b; font-size: 11px; font-weight: 700; cursor: pointer; user-select: none; }
+  .map-topo-handle:hover { background: #eef2ff; color: #4f46e5; }
+  #admin-tab-mapa.topo-fechado .map-topo { display: none !important; }
+  #admin-tab-mapa.topo-fechado #map-container-admin { height: calc(100vh - 130px) !important; }
   /* 14/10/2026 (pedido do dono): no computador o app usa a tela toda em vez de ficar numa faixa de celular.
      Telas comuns ficam com 1100px; os MAPAS (técnico e admin) ocupam a largura inteira. Celular/tablet: igual a antes. */
   @media (min-width: 1024px) {
@@ -134,7 +139,7 @@
     #admin-tab-mapa #map-filtros-admin { order: 3; flex: 0 0 auto; }
     #admin-tab-mapa .map-topo-leg { order: 4; margin: 0; flex: 0 0 auto; }
     #admin-tab-mapa.active { display: flex; flex-direction: column; height: calc(100vh - var(--topo-app, 108px)); }
-    #admin-tab-mapa #map-container-admin { flex: 1 1 auto; height: auto !important; min-height: 300px; }
+    #admin-tab-mapa #map-container-admin, #admin-tab-mapa.topo-fechado #map-container-admin { flex: 1 1 auto; height: auto !important; min-height: 300px; }
     /* agenda do técnico (admin) estilo Google: calendário fixo na coluna da esquerda, cards à direita.
        (No HTML o calendário, a busca e a lista são irmãos dentro de .admin-section, não filhos de #admin-view-tech-content.) */
     #admin-tab-view-tech { max-width: 1500px; }
@@ -916,6 +921,8 @@
         <span style="display:inline-flex;align-items:center;gap:5px;"><i style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></i>Substituição</span>
       </div>
     </div>
+    <!-- 14/10/2026 (pedido do dono): barra de controles retrátil; recolhida, o mapa ganha a área -->
+    <div class="map-topo-handle" id="map-topo-handle" onclick="alternarTopoMapa()" title="Recolher ou mostrar os controles do mapa"><span id="map-topo-handle-txt">▲ Recolher controles</span></div>
     <div id="map-container-admin" style="position:relative;height:calc(100vh - 190px);">
       <div class="map-loading-wrap hide" id="map-loading-admin">
         <div class="loading-car-wrap show" style="padding:0;">
@@ -1627,7 +1634,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v125-agenda-lateral';
+const BUILD_VERSION = '2026-10-14-v126-barra-retratil';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -1636,6 +1643,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const v = document.getElementById('login-build-version');
   if (v) v.textContent = BUILD_VERSION;
 });
+/* 14/10/2026: barra de controles do mapa do admin recolhida/aberta (lembra a escolha neste aparelho) */
+function alternarTopoMapa(forcar) {
+  const tela = document.getElementById('admin-tab-mapa'); if (!tela) return;
+  const fechar = typeof forcar === 'boolean' ? forcar : !tela.classList.contains('topo-fechado');
+  tela.classList.toggle('topo-fechado', fechar);
+  const t = document.getElementById('map-topo-handle-txt');
+  if (t) { const r = document.getElementById('map-timestamp-admin'); const res = fechar && r ? ' · ' + r.textContent.replace(/^\s*Carregando.*$/, '').slice(0, 90) : ''; t.textContent = (fechar ? '▼ Mostrar controles' : '▲ Recolher controles') + res; }
+  try { localStorage.setItem('adminMapaTopoFechado', fechar ? '1' : '0'); } catch (_) {}
+  setTimeout(function() { try { if (_leafletMapAdmin) _leafletMapAdmin.invalidateSize(); } catch (_) {} }, 250);
+}
 /* 14/10/2026: altura real do cabeçalho + abas (para o mapa do admin ocupar o resto da tela no computador) */
 function _medirTopoApp() {
   try {
@@ -10510,6 +10527,7 @@ function _desenharRotas(map, rotasPorTech, modo) {
     if (pendentes > 0) return;
     const el = document.getElementById(modo === 'car' ? 'map-timestamp-tech' : 'map-timestamp-admin');
     if (el && resumo.length) el.textContent = el.textContent.replace(/ · Rota.*$/, '') + ' · ' + resumo.join(' · ');
+    try { const tela = document.getElementById('admin-tab-mapa'); if (modo !== 'car' && tela && tela.classList.contains('topo-fechado')) alternarTopoMapa(true); } catch (_) {} // barra recolhida: atualiza o resumo no puxador
     // 13/10/2026 (pedido do dono): botão "✕" para tirar a "próxima" na hora, sem esperar a meia-noite
     if (el) proxLista.forEach(function(px) {
       const b = document.createElement('button'); b.type = 'button';
@@ -11012,6 +11030,7 @@ async function iniciarMapaAdmin() {
   await carregarBasesTecnicos();
   motosLimpar();
   _medirTopoApp();
+  try { if (localStorage.getItem('adminMapaTopoFechado') === '1') alternarTopoMapa(true); } catch (_) {}
   const map = _criarMapa('leaflet-map-admin');
   setTimeout(function() { try { map.invalidateSize(); } catch (_) {} }, 300);
   _leafletMapAdmin = map;
