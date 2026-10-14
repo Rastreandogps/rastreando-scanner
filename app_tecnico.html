@@ -897,7 +897,7 @@
         <input type="date" id="map-data-admin" style="flex:1 1 130px;min-width:0;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaAdmin()">
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
         <button onclick="abrirBases()" title="Endereço de partida de cada técnico" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏠 Bases</button>
-        <button onclick="abrirPontoManual()" title="Marcar no mapa um ponto pela latitude e longitude (não entra na rota)" style="padding:6px 10px;background:#fdf2f8;color:#be185d;border:1px solid #f9a8d4;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📍 Ponto</button>
+        <button onclick="abrirPontoManual()" title="Marcar um ponto pela latitude e longitude e colocar na rota de um técnico" style="padding:6px 10px;background:#ecfeff;color:#0e7490;border:1px solid #67e8f9;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎯 Ponto</button>
         <button onclick="abrirMotos()" id="btn-motos" title="Motos dos técnicos: escolher a moto de cada um e ver no mapa" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏍 Técnicos</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -1622,10 +1622,11 @@
 <!-- 14/10/2026: ponto manual no mapa do admin -->
 <div class="modal-overlay" id="modal-ponto">
   <div class="modal-box" style="max-width:420px;">
-    <h3 style="margin:0 0 4px;font-size:17px;">📍 Marcar ponto no mapa</h3>
-    <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.4;">Cole a latitude e a longitude (ex.: <b>-22.7856, -43.3117</b>) ou um link do Google Maps. O ponto fica destacado no mapa, mas <b>não entra na rota</b>.</p>
+    <h3 style="margin:0 0 4px;font-size:17px;">🎯 Marcar ponto no mapa</h3>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.4;">Cole a latitude e a longitude (ex.: <b>-22.7856, -43.3117</b>) ou um link do Google Maps. Escolha o técnico e o dia: o ponto <b>entra na rota dele</b> e aparece no mapa do técnico.</p>
     <input type="text" id="ponto-coord" placeholder="-22.7856, -43.3117 ou link do Google Maps" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:8px;">
-    <input type="text" id="ponto-nome" placeholder="Nome (opcional): ex. Carro do Paulo" maxlength="40" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;">
+    <input type="text" id="ponto-nome" placeholder="Nome (opcional): ex. Carro do Paulo" maxlength="40" autocomplete="off" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:8px;">
+    <div style="display:flex;gap:8px;"><select id="ponto-tech" style="flex:1;min-width:0;padding:10px 8px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:white;"></select><input type="date" id="ponto-dia" style="flex:1;min-width:0;padding:9px 8px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;"></div>
     <div id="ponto-erro" style="color:#dc2626;font-size:12px;font-weight:700;min-height:16px;margin-top:6px;"></div>
     <div class="modal-btns" style="margin-top:8px;"><button type="button" class="btn-cancel" style="flex:1" onclick="fecharPontoManual()">Fechar</button><button type="button" class="btn-primary" style="flex:1" onclick="salvarPontoManual()">Marcar</button></div>
     <div id="ponto-lista" style="margin-top:12px;"></div>
@@ -1647,7 +1648,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v129-ponto-manual';
+const BUILD_VERSION = '2026-10-14-v131-ponto-na-rota';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10214,7 +10215,8 @@ function _criarMapa(divId) {
 
 async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const total = listaOS.length;
-  if (total === 0) {
+  const _pontosAqui = _pontosRotaPara(modo); // 14/10/2026: pontos marcados pelo escritório que entram nesta rota
+  if (total === 0 && !_pontosAqui.length) {
     if (loadingWrap) loadingWrap.classList.add('hide');
     return;
   }
@@ -10429,6 +10431,19 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     if (i < total - 1) await new Promise(r => setTimeout(r, 1100));
   }
 
+  const _nOSPlotadas = bounds.length;
+  // 14/10/2026: pontos marcados (🎯) viram paradas da rota do técnico
+  if (_pontosAqui.length && !document.getElementById('ponto-pulso-css')) { const st = document.createElement('style'); st.id = 'ponto-pulso-css'; st.textContent = '@keyframes pontoPulso{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.9);opacity:0}}'; document.head.appendChild(st); }
+  _pontosAqui.forEach(function(p) {
+    const lat = Number(p.lat), lng = Number(p.lng), idp = 'ponto_' + p.id;
+    const mk = L.marker([lat, lng], { icon: _pontoIcone(p.nome), zIndexOffset: 2000 }).addTo(map).bindPopup(_pontoRotaPopup(p, modo), { maxWidth: 260 });
+    _marcadoresOS[idp] = { marker: mk, ponto: true, nome: p.nome || '' };
+    bounds.push([lat, lng]);
+    const _techKey = modo === 'car' ? '__tech__' : p.tech;
+    if (!_rotasPorTech[_techKey]) _rotasPorTech[_techKey] = [];
+    _rotasPorTech[_techKey].push({ lat: lat, lng: lng, nome: '🎯 ' + (p.nome || 'Ponto'), data: p.dia, ordemDia: 0, id: idp, tech: p.tech, endereco: '', veiculo: '', proxima: false, ponto: true });
+  });
+
   if (loadingWrap) loadingWrap.classList.add('hide');
 
   // Desenhar rotas otimizadas por técnico
@@ -10439,12 +10454,14 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     catch(_) {}
   }
 
-  // Informar resultado
-  const naoEncontrados = total - bounds.length;
-  if (bounds.length === 0) {
+  // Informar resultado (só as OS; os pontos 🎯 não contam)
+  const naoEncontrados = total - _nOSPlotadas;
+  if (total === 0) {
+    showToast(_pontosAqui.length + ' ponto' + (_pontosAqui.length !== 1 ? 's' : '') + ' 🎯 na rota.', '');
+  } else if (_nOSPlotadas === 0) {
     showToast('Nenhum endereço localizado no mapa.', 'error');
   } else if (naoEncontrados > 0) {
-    showToast(bounds.length + ' de ' + total + ' OS plotadas no mapa.' + (_semLocal.length ? ' Sem localização: ' + _semLocal.slice(0, 5).join(', ') + (_semLocal.length > 5 ? '…' : '') + ' (confira o endereço).' : ''), '');
+    showToast(_nOSPlotadas + ' de ' + total + ' OS plotadas no mapa.' + (_semLocal.length ? ' Sem localização: ' + _semLocal.slice(0, 5).join(', ') + (_semLocal.length > 5 ? '…' : '') + ' (confira o endereço).' : ''), '');
   } else {
     showToast('Todas as ' + total + ' OS plotadas! ✅', 'success');
   }
@@ -10453,7 +10470,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const _ts = String(_agora.getHours()).padStart(2,'0') + ':' + String(_agora.getMinutes()).padStart(2,'0');
   const _tsEl1 = document.getElementById('map-timestamp-tech');
   const _tsEl2 = document.getElementById('map-timestamp-admin');
-  const _msg = bounds.length + ' OS plotada' + (bounds.length !== 1 ? 's' : '') + ' · atualizado às ' + _ts;
+  const _msg = _nOSPlotadas + ' OS plotada' + (_nOSPlotadas !== 1 ? 's' : '') + (_pontosAqui.length ? ' + ' + _pontosAqui.length + ' 🎯' : '') + ' · atualizado às ' + _ts;
   if (_tsEl1) _tsEl1.textContent = _msg;
   if (_tsEl2) _tsEl2.textContent = _msg;
 }
@@ -10591,8 +10608,8 @@ function _desenharRotas(map, rotasPorTech, modo) {
       if (!partida && semOrdem.length >= 2) { const nn = _nearestNeighbor(semOrdem); partida = nn[0]; semOrdenados = [partida].concat(await _melhorOrdem(partida, nn.slice(1))); }
       else semOrdenados = partida ? await _melhorOrdem(partida, semOrdem) : semOrdem;
       const sequencia = (prox ? [prox] : []).concat(comOrdem, semOrdenados);
-      if (modo === 'car') _ultimaSequencia = sequencia;
-      if (semOrdem.length >= 2 && modo !== 'car') _rotaSugerida[tech] = sequencia.map(function(p) { return { id: p.id, tech: p.tech || tech, nome: (p.nome || '').split(' ')[0], ja: (p.ordemDia || 0) > 0 }; });
+      if (modo === 'car') _ultimaSequencia = sequencia.filter(function(p) { return !p.ponto; }); // a janela "qual é a próxima?" só lista OS
+      if (semOrdem.length >= 2 && modo !== 'car') _rotaSugerida[tech] = sequencia.map(function(p) { return { id: p.id, tech: p.tech || tech, nome: p.ponto ? p.nome : (p.nome || '').split(' ')[0], ja: (p.ordemDia || 0) > 0, ponto: !!p.ponto }; });
       if (sequencia.length + (inicio ? 1 : 0) < 2) return;
       const cor = modo === 'car' ? '#ef4444' : (_corTech(tech === '__tech__' ? '' : tech));
       // rota pelas ruas (OSRM route); se falhar, linha reta tracejada como antes
@@ -10615,7 +10632,7 @@ function _desenharRotas(map, rotasPorTech, modo) {
       // 13/10/2026 (pedido do dono): o número da sequência vai DENTRO da bolinha do pino (no lugar do carrinho)
       sequencia.forEach(function(p, i) {
         const m = _marcadoresOS[p.id];
-        if (m && m.marker) { try { m.marker.setIcon(_pinIcon(m.cor, m.ini, m.modo, i + 1, m.tipo, m.nome, m.valor)); } catch (_) {} }
+        if (m && m.marker) { try { m.marker.setIcon(m.ponto ? _pontoIcone(m.nome, i + 1) : _pinIcon(m.cor, m.ini, m.modo, i + 1, m.tipo, m.nome, m.valor)); } catch (_) {} }
       });
     } catch (e) { console.error('rota', tech, e && e.message); }
     finally { terminou(); }
@@ -10633,7 +10650,7 @@ async function _armarChegadas(rotasPorTech) {
     for (const tech of Object.keys(rotasPorTech)) {
       if (!tech || tech === '__tech__') continue;
       const pontos = rotasPorTech[tech].filter(function(p) {
-        if (!p.id || !p.data) return false;
+        if (!p.id || !p.data || p.ponto) return false;
         const pd = parseDate(p.data);
         return pd && pd.getDate() === d.getDate() && pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
       }).map(function(p) { return { id: p.id, nome: (p.nome || '').split(' ').slice(0, 2).join(' '), endereco: (p.endereco || '').slice(0, 120), lat: p.lat, lng: p.lng }; });
@@ -10814,13 +10831,14 @@ function _lerCoord(t) {
   if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
   return { lat: lat, lng: lng };
 }
-function _pontoIcone(nome) {
+function _pontoIcone(nome, num) {
+  if (num) nome = num + (nome ? ' · ' + nome : '');
   return L.divIcon({ className: '', iconSize: [44, 56], iconAnchor: [22, 54], popupAnchor: [0, -50],
     html: '<div style="position:relative;width:44px;height:56px;">' +
-      '<div style="position:absolute;left:2px;top:2px;width:40px;height:40px;border-radius:50%;background:rgba(236,72,153,.35);animation:pontoPulso 1.4s ease-out infinite;"></div>' +
-      '<div style="position:absolute;left:6px;top:6px;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#ec4899;border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,.45);"></div>' +
-      '<div style="position:absolute;left:0;right:0;top:12px;text-align:center;font-size:15px;">⭐</div>' +
-      (nome ? '<div style="position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;background:#be185d;color:white;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);">' + esc(nome) + '</div>' : '') +
+      '<div style="position:absolute;left:2px;top:2px;width:40px;height:40px;border-radius:50%;background:rgba(6,182,212,.45);animation:pontoPulso 1.4s ease-out infinite;"></div>' +
+      '<div style="position:absolute;left:6px;top:6px;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#0f172a;border:3px solid #22d3ee;box-shadow:0 3px 10px rgba(0,0,0,.45);"></div>' +
+      '<svg viewBox="0 0 24 24" width="18" height="18" style="position:absolute;left:16px;top:16px;" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="#22d3ee"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></svg>' +
+      (nome ? '<div style="position:absolute;left:50%;top:-20px;transform:translateX(-50%);white-space:nowrap;background:#0f172a;color:#22d3ee;border:1px solid #22d3ee;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.3);">' + esc(nome) + '</div>' : '') +
     '</div>' });
 }
 function desenharPontosManuais(map) {
@@ -10838,25 +10856,105 @@ function desenharPontosManuais(map) {
   });
 }
 function _pontosListaHTML() {
-  const a = _pontosLer(); if (!a.length) return '';
-  return '<div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">No mapa agora</div>' + a.map(function(p) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;font-size:12.5px;"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">⭐ <b>' + esc(p.nome || 'Ponto') + '</b> · ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) + '</span><button onclick="tirarPontoManual(' + p.em + ')" style="border:none;background:#fee2e2;color:#dc2626;border-radius:6px;padding:3px 8px;font-weight:700;cursor:pointer;">✕</button></div>';
+  const a = _pontosLer(), hoje = _diaISO(), feitos = _pontosRota.feitos || {};
+  const r = (_pontosRota.lista || []).filter(function(p) { return p && p.dia >= hoje && !feitos[p.id]; });
+  if (!a.length && !r.length) return '';
+  const fmtDia = function(d) { const x = String(d).split('-'); return x[2] + '/' + x[1]; };
+  return '<div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Pontos marcados</div>' + r.map(function(p) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;font-size:12.5px;"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎯 <b>' + esc(p.nome || 'Ponto') + '</b> · rota de <b style="color:' + _corTech(p.tech) + ';">' + esc(p.tech) + '</b> · ' + fmtDia(p.dia) + '</span><button onclick="tirarPontoRota(\'' + esc(p.id) + '\')" style="border:none;background:#fee2e2;color:#dc2626;border-radius:6px;padding:3px 8px;font-weight:700;cursor:pointer;">✕</button></div>';
+  }).join('') + a.map(function(p) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;font-size:12.5px;"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎯 <b>' + esc(p.nome || 'Ponto') + '</b> · só no mapa · ' + p.lat.toFixed(5) + ', ' + p.lng.toFixed(5) + '</span><button onclick="tirarPontoManual(' + p.em + ')" style="border:none;background:#fee2e2;color:#dc2626;border-radius:6px;padding:3px 8px;font-weight:700;cursor:pointer;">✕</button></div>';
   }).join('');
+}
+/* 14/10/2026 (pedido do dono): PONTO NA ROTA. Com técnico e dia escolhidos, o ponto vai para o Firestore
+   (configuracoes/pontosRota), entra na roteirização como uma parada e aparece no mapa do técnico.
+   NÃO é OS: não vai para a Planilha, não conta valor e não tem cliente. Vale só no dia escolhido.
+   O técnico toca "Cheguei" e ele sai da rota. Sem técnico ("só no meu mapa"), continua como antes (só neste aparelho). */
+let _pontosRota = { lista: [], feitos: {} };
+const PONTOS_OCULTOS_CHAVE = 'pontosRotaOcultos';
+function _diaISO(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _pontosOcultos() { try { return JSON.parse(localStorage.getItem(PONTOS_OCULTOS_CHAVE) || '{}') || {}; } catch (_) { return {}; } }
+async function carregarPontosRota() {
+  const db = getFirestoreDb(); if (!db) return _pontosRota;
+  try { const sn = await db.collection('configuracoes').doc('pontosRota').get(); const d = (sn.exists && sn.data()) || {}; _pontosRota = { lista: Array.isArray(d.lista) ? d.lista : [], feitos: d.feitos || {} }; }
+  catch (e) { console.warn('[PontosRota] Não consegui ler:', e); }
+  return _pontosRota;
+}
+/* pontos que entram NESTE mapa: dia do mapa, técnico do filtro (admin) ou o próprio técnico; sem os já feitos */
+function _pontosRotaPara(modo) {
+  const dia = _diaISO(_mapaDataFiltro || new Date()), ocult = modo === 'car' ? _pontosOcultos() : {};
+  return (_pontosRota.lista || []).filter(function(p) {
+    if (!p || !p.id || !isFinite(p.lat) || !isFinite(p.lng) || p.dia !== dia || _pontosRota.feitos[p.id] || ocult[p.id]) return false;
+    if (modo === 'car') return p.tech === currentUser;
+    return _mapaAdminFiltro === 'todos' || p.tech === _mapaAdminFiltro;
+  });
+}
+function _pontoRotaPopup(p, modo) {
+  const maps = 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lng, sv = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + p.lat + ',' + p.lng;
+  return '<div style="min-width:200px;font-family:system-ui,sans-serif;"><div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">🎯 ' + esc(p.nome || 'Ponto marcado') + '</div>' +
+    '<div style="font-size:11px;color:#64748b;margin-bottom:8px;">Ponto marcado pelo escritório' + (modo !== 'car' ? ' · 👤 ' + esc(p.tech) : '') + '<br>' + Number(p.lat).toFixed(6) + ', ' + Number(p.lng).toFixed(6) + '</div>' +
+    '<div style="display:flex;gap:6px;"><a href="' + maps + '" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:7px;background:#4285F4;color:white;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;">📍 Navegar</a>' +
+    '<a href="' + sv + '" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:7px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;">👁 Street View</a></div>' +
+    (modo === 'car'
+      ? '<button onclick="pontoRotaCheguei(\'' + esc(p.id) + '\')" style="width:100%;margin-top:8px;padding:9px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">✅ Cheguei (tirar da rota)</button>'
+      : '<button onclick="tirarPontoRota(\'' + esc(p.id) + '\')" style="width:100%;margin-top:6px;padding:6px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Tirar da rota</button>') +
+    '</div>';
+}
+async function _pontosRotaGravar(lista) {
+  const db = getFirestoreDb(); if (!db) throw new Error('Sem conexão com o Firebase agora.');
+  const hoje = _diaISO(), feitos = _pontosRota.feitos || {};
+  lista = lista.filter(function(p) { return p && p.dia >= hoje && !feitos[p.id]; }).slice(-30); // limpa os de dias passados e os já feitos
+  await db.collection('configuracoes').doc('pontosRota').set({ lista: lista, feitos: {}, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() });
+  _pontosRota = { lista: lista, feitos: {} };
+}
+async function tirarPontoRota(id) {
+  try { await carregarPontosRota(); await _pontosRotaGravar(_pontosRota.lista.filter(function(p) { return p.id !== id; })); }
+  catch (e) { showToast('Não consegui tirar: ' + (e.message || 'erro'), 'error'); return; }
+  try { _leafletMapAdmin.closePopup(); } catch (_) {}
+  const l = document.getElementById('ponto-lista'); if (l && document.getElementById('modal-ponto').classList.contains('open')) l.innerHTML = _pontosListaHTML();
+  showToast('Ponto tirado da rota.', 'success');
+  _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {}
+}
+/* técnico chegou: marca como feito no Firestore; se não tiver permissão, some pelo menos do celular dele */
+async function pontoRotaCheguei(id) {
+  const o = _pontosOcultos(); o[id] = Date.now();
+  try { Object.keys(o).forEach(function(k) { if (Date.now() - o[k] > 3 * 86400000) delete o[k]; }); localStorage.setItem(PONTOS_OCULTOS_CHAVE, JSON.stringify(o)); } catch (_) {}
+  try { const db = getFirestoreDb(); if (db) { const up = {}; up['feitos.' + id] = true; await db.collection('configuracoes').doc('pontosRota').update(up); } }
+  catch (e) { console.warn('[PontosRota] Não consegui marcar como feito no servidor:', e); }
+  try { _leafletMapTech.closePopup(); } catch (_) {}
+  showToast('Ponto concluído ✅', 'success');
+  try { iniciarMapaTecnico(); } catch (_) {}
 }
 function abrirPontoManual() {
   document.getElementById('ponto-coord').value = ''; document.getElementById('ponto-nome').value = ''; document.getElementById('ponto-erro').textContent = '';
+  document.getElementById('ponto-tech').innerHTML = TECH_NAMES.map(function(t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('') + '<option value="">Só no meu mapa (sem rota)</option>';
+  document.getElementById('ponto-tech').value = (_mapaAdminFiltro && _mapaAdminFiltro !== 'todos') ? _mapaAdminFiltro : TECH_NAMES[0];
+  document.getElementById('ponto-dia').value = _diaISO(_mapaDataFiltro || new Date());
+  carregarPontosRota().then(function() { const l = document.getElementById('ponto-lista'); if (l) l.innerHTML = _pontosListaHTML(); });
   document.getElementById('ponto-lista').innerHTML = _pontosListaHTML();
   document.getElementById('modal-ponto').classList.add('open'); lockScroll();
   setTimeout(function() { document.getElementById('ponto-coord').focus(); }, 100);
 }
 function fecharPontoManual() { document.getElementById('modal-ponto').classList.remove('open'); unlockScroll(); }
-function salvarPontoManual() {
+async function salvarPontoManual() {
   const c = _lerCoord(document.getElementById('ponto-coord').value);
   if (!c) { document.getElementById('ponto-erro').textContent = 'Não entendi. Cole assim: -22.7856, -43.3117 (ou um link do Google Maps com as coordenadas).'; return; }
+  const tech = document.getElementById('ponto-tech').value, dia = document.getElementById('ponto-dia').value;
+  if (tech) { // vai para a rota do técnico
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia < _diaISO()) { document.getElementById('ponto-erro').textContent = 'Escolha o dia (hoje ou para frente).'; return; }
+    const novo = { id: 'p' + Date.now().toString(36), lat: c.lat, lng: c.lng, nome: document.getElementById('ponto-nome').value.trim().slice(0, 40), tech: tech, dia: dia, em: Date.now() };
+    try { await carregarPontosRota(); await _pontosRotaGravar(_pontosRota.lista.concat([novo])); }
+    catch (e) { document.getElementById('ponto-erro').textContent = 'Não consegui salvar: ' + (e.message || 'erro') + '. Tente de novo.'; return; }
+    fecharPontoManual();
+    showToast('Ponto colocado na rota de ' + tech + ' 🎯', 'success');
+    const mesmoDia = dia === _diaISO(_mapaDataFiltro || new Date());
+    if (mesmoDia) { _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {} }
+    return;
+  }
   const a = _pontosLer(); a.push({ lat: c.lat, lng: c.lng, nome: document.getElementById('ponto-nome').value.trim().slice(0, 40), em: Date.now() });
   _pontosGravar(a); fecharPontoManual(); desenharPontosManuais();
   try { _leafletMapAdmin.setView([c.lat, c.lng], Math.max(_leafletMapAdmin.getZoom(), 14)); } catch (_) {}
-  showToast('Ponto marcado no mapa ⭐', 'success');
+  showToast('Ponto marcado no mapa 🎯', 'success');
 }
 function tirarPontoManual(em) {
   _pontosGravar(_pontosLer().filter(function(p) { return p.em !== em; }));
@@ -10912,10 +11010,13 @@ async function aplicarOrdemSugerida(tech) {
   const seq = _rotaSugerida[tech]; if (!seq) return;
   if (!confirm('Gravar a ordem sugerida para ' + tech + '?\n' + seq.map(function(p, i) { return (i + 1) + 'º ' + p.nome; }).join('\n'))) return;
   showToast('Gravando ordem...', '');
+  let n = 0;
   for (let i = 0; i < seq.length; i++) {
     const p = seq[i];
-    try { await gasRequest({ action: 'salvarOrdemDia', id: p.id, tech: p.tech, ordem: i + 1 }); } catch (e) { showToast('Falhou em ' + p.nome + ': ' + (e.message || 'erro'), 'error'); return; }
-    if (allOrders[p.tech]) { const os = allOrders[p.tech].find(function(o) { return o.id === p.id; }); if (os) os.ordemDia = i + 1; }
+    if (p.ponto) continue; // 14/10/2026: ponto 🎯 não é OS (não grava ordem)
+    n++;
+    try { await gasRequest({ action: 'salvarOrdemDia', id: p.id, tech: p.tech, ordem: n }); } catch (e) { showToast('Falhou em ' + p.nome + ': ' + (e.message || 'erro'), 'error'); return; }
+    if (allOrders[p.tech]) { const os = allOrders[p.tech].find(function(o) { return o.id === p.id; }); if (os) os.ordemDia = n; }
   }
   delete _rotaSugerida[tech];
   showToast('Ordem de ' + tech + ' gravada ✅', 'success');
@@ -10945,6 +11046,7 @@ async function iniciarMapaTecnico() {
   }
 
   await carregarBasesTecnicos();
+  await carregarPontosRota();
   const map = _criarMapa('leaflet-map-tech');
   _leafletMapTech = map;
   _mapaTechCarregadoEm = Date.now();
@@ -11125,6 +11227,7 @@ async function iniciarMapaAdmin() {
   }
 
   await carregarBasesTecnicos();
+  await carregarPontosRota();
   motosLimpar();
   _medirTopoApp();
   try { if (localStorage.getItem('adminMapaTopoFechado') === '1') alternarTopoMapa(true); } catch (_) {}
@@ -11163,7 +11266,7 @@ async function iniciarMapaAdmin() {
     document.getElementById('map-loading-admin'),
     'inicial'
   );
-  desenharPontosManuais(map); // 14/10/2026: pontos marcados à mão (não entram na rota)
+  desenharPontosManuais(map); // 14/10/2026: pontos "só no meu mapa" (sem técnico; não entram na rota)
 }
 
 function carregarLeaflet() {
