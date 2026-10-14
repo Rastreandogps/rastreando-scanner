@@ -373,7 +373,7 @@
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px);
     background: #1e293b; color: white; padding: 12px 20px; border-radius: 12px;
-    font-size: 13px; font-weight: 600; z-index: 9999; transition: transform .35s ease;
+    font-size: 13px; font-weight: 600; z-index: 100000; /* 14/10/2026: acima de qualquer janela */ transition: transform .35s ease;
     box-shadow: 0 8px 24px rgba(0,0,0,.3);
     max-width: calc(100vw - 32px); text-align: center; line-height: 1.4;
     pointer-events: none;
@@ -1648,7 +1648,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v132-sem-voce-aqui-admin';
+const BUILD_VERSION = '2026-10-14-v133-aviso-na-frente';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
