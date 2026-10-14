@@ -1831,7 +1831,12 @@ body.modal-aberto{overflow:hidden}
   }
   function fecharModalRetirada() { $('rt-fundo').hidden = true; document.body.classList.remove('modal-aberto'); rtCliente = null; }
   $('rt-cancelar').addEventListener('click', fecharModalRetirada);
-  $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetirada(); });
+  // 14/10/2026 (pedido do dono): a janela só fecha se o clique COMEÇOU e TERMINOU no fundo escuro.
+  // Antes, ao selecionar um texto com o mouse para apagar e soltar o botão fora da caixa, a janela sumia.
+  var _fundoDown = null;
+  document.addEventListener('mousedown', function (ev) { _fundoDown = ev.target; }, true);
+  document.addEventListener('touchstart', function (ev) { _fundoDown = ev.target; }, { capture: true, passive: true });
+  $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalRetirada(); });
   // ---------- ORDEM DE MANUTENÇÃO (vira pedido PENDENTE de manutenção no APP Técnico) ----------
   var mnCliente = null;
   function mnLinhaVeiculo() {
@@ -1852,7 +1857,7 @@ body.modal-aberto{overflow:hidden}
   }
   function fecharModalManut() { $('mn-fundo').hidden = true; document.body.classList.remove('modal-aberto'); mnCliente = null; }
   $('mn-cancelar').addEventListener('click', fecharModalManut);
-  $('mn-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalManut(); });
+  $('mn-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalManut(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('mn-fundo').hidden) fecharModalManut(); });
   $('mn-mais').addEventListener('click', function () {
     if (document.querySelectorAll('#mn-veics .rt-veic').length >= 5) { toast('Até 5 veículos por pedido.', 'erro'); return; }
@@ -2203,7 +2208,7 @@ body.modal-aberto{overflow:hidden}
   $('es-enviar').addEventListener('click', function () { confirmarEstagio(true); });
   $('es-so-marcar').addEventListener('click', function () { confirmarEstagio(false); });
   $('es-cancelar').addEventListener('click', fecharEstagio);
-  $('es-fundo').addEventListener('click', function (ev) { if (ev.target === $('es-fundo')) fecharEstagio(); });
+  $('es-fundo').addEventListener('click', function (ev) { if (ev.target === $('es-fundo') && _fundoDown === $('es-fundo')) fecharEstagio(); });
   // ===== Prints das mensagens (estágios 1 a 5): ficam guardados no servidor =====
   var PR = { c: null, n: 0, itens: [], ver: null, enviando: false }, PR_MAX = 5;
   function prNomeArquivo(c, p, k) {
@@ -2360,15 +2365,15 @@ body.modal-aberto{overflow:hidden}
     if (!(c.estagios && c.estagios[n])) fecharPrints();
   });
   $('pr-fechar').addEventListener('click', fecharPrints);
-  $('pr-fundo').addEventListener('click', function (ev) { if (ev.target === $('pr-fundo') && !PR.enviando) fecharPrints(); });
+  $('pr-fundo').addEventListener('click', function (ev) { if (ev.target === $('pr-fundo') && _fundoDown === $('pr-fundo') && !PR.enviando) fecharPrints(); });
   $('pv-baixar').addEventListener('click', function () { if (PR.ver && PR.ver.img && PR.c) prBaixarDataUrl(PR.ver.img, prNomeArquivo(PR.c, PR.ver.p, 0)); });
   $('pv-excluir').addEventListener('click', prExcluir);
   $('pv-fechar').addEventListener('click', fecharVer);
-  $('pv-fundo').addEventListener('click', function (ev) { if (ev.target === $('pv-fundo')) fecharVer(); });
+  $('pv-fundo').addEventListener('click', function (ev) { if (ev.target === $('pv-fundo') && _fundoDown === $('pv-fundo')) fecharVer(); });
   // Índice: o que é cada estágio
   document.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('[data-acao="indice-est"]')) $('ix-fundo').hidden = false; });
   $('ix-fechar').addEventListener('click', function () { $('ix-fundo').hidden = true; });
-  $('ix-fundo').addEventListener('click', function (ev) { if (ev.target === $('ix-fundo')) $('ix-fundo').hidden = true; });
+  $('ix-fundo').addEventListener('click', function (ev) { if (ev.target === $('ix-fundo') && _fundoDown === $('ix-fundo')) $('ix-fundo').hidden = true; });
 
   // Cadeado do IMEI (fechado = campo travado; aberto = dá para escrever)
   var CADEADO_FECHADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
@@ -2581,7 +2586,7 @@ body.modal-aberto{overflow:hidden}
   });
   function fecharCC() { $('cc-fundo').hidden = true; document.body.classList.remove('modal-aberto'); }
   $('cc-fechar').addEventListener('click', fecharCC);
-  $('cc-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharCC(); });
+  $('cc-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharCC(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('cc-fundo').hidden) fecharCC(); });
   async function ccAcao(dados, msg, btn) {
     if (btn) btn.disabled = true;
@@ -3031,7 +3036,7 @@ body.modal-aberto{overflow:hidden}
   });
   $('dr-valor').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('dr-adicionar').click(); } });
   $('dr-cancelar').addEventListener('click', fecharDespRapida);
-  $('dr-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharDespRapida(); });
+  $('dr-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharDespRapida(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('dr-fundo').hidden) fecharDespRapida(); });
   // edição dos atalhos (4 linhas)
   $('dr-editar').addEventListener('click', function () {
@@ -3139,7 +3144,7 @@ body.modal-aberto{overflow:hidden}
     toast(ok ? '📋 Copiado!' : 'Não consegui copiar. Segure o dedo no texto e copie.', ok ? 'ok' : 'erro');
   });
   $('dpm-cancelar').addEventListener('click', fecharModalDesp);
-  $('dpm-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalDesp(); });
+  $('dpm-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalDesp(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('dpm-fundo').hidden) fecharModalDesp(); });
   ['dpm-nome', 'dpm-valor', 'dpm-dia'].forEach(function (id) { $(id).addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('dpm-salvar').click(); } }); });
   $('dpm-salvar').addEventListener('click', async function () {
@@ -3236,7 +3241,7 @@ body.modal-aberto{overflow:hidden}
   }
   function fecharModalMeta() { $('mt-fundo').hidden = true; document.body.classList.remove('modal-aberto'); mtMes = null; }
   $('mt-cancelar').addEventListener('click', fecharModalMeta);
-  $('mt-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalMeta(); });
+  $('mt-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalMeta(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('mt-fundo').hidden) fecharModalMeta(); });
   $('mt-valor').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); $('mt-salvar').click(); } });
   $('mt-salvar').addEventListener('click', async function () {
@@ -3848,7 +3853,7 @@ body.modal-aberto{overflow:hidden}
   }
   function fecharModalRetorno() { $('rv-fundo').hidden = true; document.body.classList.remove('modal-aberto'); rvCtx = null; }
   $('rv-cancelar').addEventListener('click', fecharModalRetorno);
-  $('rv-fundo').addEventListener('click', function (ev) { if (ev.target === this) fecharModalRetorno(); });
+  $('rv-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalRetorno(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('rv-fundo').hidden) fecharModalRetorno(); });
   $('rv-continuar').addEventListener('click', function () {
     var ctx = rvCtx; fecharModalRetorno();
