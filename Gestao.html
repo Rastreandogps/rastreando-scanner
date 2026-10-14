@@ -627,6 +627,8 @@ body.modal-aberto{overflow:hidden}
 .cliente-card.chip-off .cc-acoes{background:#FECACA;border-top-color:#FCA5A5}
 .cc-titulo .nome-linha{display:flex;align-items:center;gap:6px;min-width:0}
 .cc-titulo .nome-linha .nome{min-width:0}
+.tag-est{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;padding:2px 8px;border-radius:999px;background:#dcfce7;color:#15803d;border:1px solid #86efac;font-size:.72rem;font-weight:800;white-space:nowrap;line-height:1.3}
+.tag-est-led{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.25)}
 .cc-titulo a.nome-wpp{text-decoration:underline dotted rgba(37,211,102,.7);text-underline-offset:3px;cursor:pointer}
 .cc-titulo a.nome-wpp:hover,.cc-titulo a.nome-wpp:focus-visible{color:#128C3F;text-decoration-style:solid}
 .chip-ico{flex-shrink:0;width:24px;height:24px;display:block;animation:chip-pisca 1s ease-in-out infinite}
@@ -1618,7 +1620,7 @@ body.modal-aberto{overflow:hidden}
           '<div class="cc-titulo"><div class="nome-linha">' + (function () {
             var t = soDig(c.telefone); if (t && t.length <= 11) t = '55' + t;
             return t ? '<a class="nome nome-wpp" href="https://wa.me/' + t + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp (sem mensagem)">' + esc(c.nome) + '</a>' : '<div class="nome">' + esc(c.nome) + '</div>';
-          })() + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
+          })() + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagEstagio(c) + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
         '</div>' +
         ledEnviado +
@@ -2061,6 +2063,12 @@ body.modal-aberto{overflow:hidden}
   }
   // ===== Estágios da cobrança (1 a 5) =====
   var EST_TITULOS = { 1: 'Chip será cancelado em breve', 2: 'Chip cancelado: retirada necessária', 3: 'Reforço: medidas e valor do comodato', 4: 'Aviso formal (extrajudicial)', 5: 'Cobrança do comodato (R$ 300 por aparelho)' };
+  // 14/10/2026 (pedido do dono): selo ao lado do nome com o último estágio enviado e a data (visível com o card fechado)
+  function htmlTagEstagio(c) {
+    var u = ultimoEstagio(c); if (!u) return '';
+    var e = c.estagios[u];
+    return '<span class="tag-est" title="Cobrança nº ' + u + ' enviada em ' + esc(dataHoraEstagio(e)) + ' · ' + esc(EST_TITULOS[u]) + '"><span class="tag-est-led" aria-hidden="true"></span>' + u + ' · ' + esc(dataCurtaEstagio(e)) + '</span>';
+  }
   function ultimoEstagio(c) { var m = 0, e = c.estagios || {}; for (var k = 1; k <= 5; k++) if (e[k]) m = k; return m; }
   function dataHoraEstagio(iso) { try { return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
   function dataCurtaEstagio(iso) { try { return new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }); } catch (e) { return ''; } }
