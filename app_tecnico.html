@@ -1634,7 +1634,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v126-barra-retratil';
+const BUILD_VERSION = '2026-10-14-v127-moto-maps';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10650,6 +10650,17 @@ function motosLimpar() {
   Object.keys(_motosAnim).forEach(function(k) { cancelAnimationFrame(_motosAnim[k]); });
   _motosMarcadores = {}; _motosAnim = {};
 }
+/* 14/10/2026 (pedido do dono): balão da moto com botões Google Maps e Street View (abre em outra aba) */
+function _motoPopupHTML(t) {
+  const lat = Number(t.pos.lat), lon = Number(t.pos.lon);
+  const maps = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lon;
+  const sv = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + lat + ',' + lon;
+  return '<b>' + esc(t.tecnico) + '</b><br>' + esc(t.veiculo || '') + '<br>' + (t.pos.kmh || 0) + ' km/h · ' + (t.online ? 'online' : 'sem conexão') +
+    '<div style="display:flex;gap:6px;margin-top:8px;">' +
+      '<a href="' + maps + '" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#4285F4;color:white;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">📍 Google Maps</a>' +
+      '<a href="' + sv + '" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">👁 Street View</a>' +
+    '</div>';
+}
 function _motoIcone(tech, t, cor) {
   const faz = t.ultimoMs ? Math.round((Date.now() - t.ultimoMs) / 60000) : null;
   const quando = faz == null ? 'sem sinal' : (faz < 1 ? 'agora' : faz < 60 ? 'há ' + faz + ' min' : 'há ' + Math.round(faz / 60) + ' h');
@@ -10679,11 +10690,11 @@ async function motosBuscar() {
       let mk = _motosMarcadores[t.tecnico];
       if (!mk) {
         mk = L.marker(alvo, { icon: _motoIcone(t.tecnico, t, cor), zIndexOffset: 500 }).addTo(_leafletMapAdmin);
-        mk.bindPopup('<b>' + esc(t.tecnico) + '</b><br>' + esc(t.veiculo || '') + '<br>' + (t.pos.kmh || 0) + ' km/h · ' + (t.online ? 'online' : 'sem conexão'));
+        mk.bindPopup(_motoPopupHTML(t));
         _motosMarcadores[t.tecnico] = mk;
       } else {
         mk.setIcon(_motoIcone(t.tecnico, t, cor));
-        mk.setPopupContent('<b>' + esc(t.tecnico) + '</b><br>' + esc(t.veiculo || '') + '<br>' + (t.pos.kmh || 0) + ' km/h · ' + (t.online ? 'online' : 'sem conexão'));
+        mk.setPopupContent(_motoPopupHTML(t));
         _motoDeslizar(t.tecnico, mk, alvo);
       }
     });
