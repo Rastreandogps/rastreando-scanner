@@ -135,6 +135,24 @@
     #admin-tab-mapa .map-topo-leg { order: 4; margin: 0; flex: 0 0 auto; }
     #admin-tab-mapa.active { display: flex; flex-direction: column; height: calc(100vh - var(--topo-app, 108px)); }
     #admin-tab-mapa #map-container-admin { flex: 1 1 auto; height: auto !important; min-height: 300px; }
+    /* agenda do técnico (admin) estilo Google: calendário fixo na coluna da esquerda, cards à direita.
+       (No HTML o calendário, a busca e a lista são irmãos dentro de .admin-section, não filhos de #admin-view-tech-content.) */
+    #admin-tab-view-tech { max-width: 1500px; }
+    #admin-tab-view-tech .admin-section {
+      display: grid; grid-template-columns: 340px minmax(0, 1fr); column-gap: 24px; align-items: start;
+      grid-template-areas: "a a" "b b" "c c" "d d" "e e" "f f" "cal busca" "cal res" "cal lista";
+    }
+    #admin-tab-view-tech .admin-section > :nth-child(1) { grid-area: a; }
+    #admin-tab-view-tech .admin-section > :nth-child(2) { grid-area: b; }
+    #admin-tab-view-tech .admin-section > #admin-view-tech-btns { grid-area: c; }
+    #admin-tab-view-tech .admin-section > #admin-resumo-geral { grid-area: d; }
+    #admin-tab-view-tech .admin-section > #admin-view-tech-content { grid-area: e; }
+    #admin-tab-view-tech .admin-section > #admin-cal-loading { grid-area: f; }
+    #admin-tab-view-tech .admin-section > #admin-cal-grid { grid-area: cal; position: sticky; top: calc(var(--topo-app, 108px) + 12px); margin-bottom: 0 !important; }
+    #admin-tab-view-tech .admin-section > #admin-cal-grid + div { grid-area: busca; }
+    #admin-tab-view-tech .admin-section > #admin-cal-busca-resultados { grid-area: res; }
+    #admin-tab-view-tech .admin-section > #admin-cal-busca-resultados + div { grid-area: lista; min-width: 0; }
+    #admin-cal-grid .cal-day { min-height: 46px; }
   }
 
   /* CALENDAR */
@@ -1609,7 +1627,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v124-computador2';
+const BUILD_VERSION = '2026-10-14-v125-agenda-lateral';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7204,6 +7222,7 @@ async function adminVerTecnico(tech) {
   // Mostrar área
   const wrap      = document.getElementById('admin-view-tech-content');
   wrap.style.display = 'block';
+  _medirTopoApp(); // 14/10/2026: o calendário fixo na lateral (computador) usa a altura real do cabeçalho
   const modoBar = document.getElementById('admin-modo-visualizacao-bar');
   if (modoBar) modoBar.style.display = 'flex';
   _atualizarBotoesModoVisualizacao();
