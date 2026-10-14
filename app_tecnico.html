@@ -784,6 +784,7 @@
         <span style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;">📅 Ver dia:</span>
         <input type="date" id="map-data-tech" style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;" onchange="recarregarMapaTecnico()">
         <button onclick="mapDataHoje('tech')" style="padding:6px 10px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
+        <button onclick="alternarSoNumeros()" class="btn-so-numeros" title="Esconder ou mostrar o nome e o valor nos pinos (fica só o número)" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🔢 Só números</button>
       </div>
     </div>
     <div id="map-container-tech" style="position:relative;height:calc(100vh - 190px);">
@@ -898,6 +899,7 @@
         <button onclick="mapDataHoje('admin')" style="padding:6px 10px;background:#ede9fe;color:#7c3aed;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
         <button onclick="abrirBases()" title="Endereço de partida de cada técnico" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏠 Bases</button>
         <button onclick="abrirPontoManual()" title="Marcar um ponto pela latitude e longitude e colocar na rota de um técnico" style="padding:6px 10px;background:#ecfeff;color:#0e7490;border:1px solid #67e8f9;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎯 Ponto</button>
+        <button onclick="alternarSoNumeros()" class="btn-so-numeros" title="Esconder ou mostrar o nome e o valor nos pinos (fica só o número)" style="padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🔢 Só números</button>
         <button onclick="abrirMotos()" id="btn-motos" title="Motos dos técnicos: escolher a moto de cada um e ver no mapa" style="padding:6px 10px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🏍 Técnicos</button>
       </div>
       <div id="map-filtros-admin" style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -1648,7 +1650,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v133-aviso-na-frente';
+const BUILD_VERSION = '2026-10-14-v134-so-numeros';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -8598,9 +8600,27 @@ function _moedaHTML(o) {
 }
 // moedinha dourada no pino (mapa). 13/10/2026: fica logo EMBAIXO DO NOME, acima do pino (pedido do dono)
 function _temMoedaPino(valor) { return !!(valor && _podeVerValor()); }
+/* 14/10/2026 (pedido do dono): botão "🔢 Só números" nos mapas do admin e do técnico: esconde o nome e o valor
+   dos pinos (fica só a bolinha com o número). Liga/desliga; fica guardado neste aparelho. */
+let _soNumeros = false; try { _soNumeros = localStorage.getItem('mapaSoNumeros') === '1'; } catch (_) {}
+function _soNumerosAplicar() {
+  const on = _soNumeros;
+  document.body.classList.toggle('so-numeros', on);
+  if (!document.getElementById('so-numeros-css')) { const st = document.createElement('style'); st.id = 'so-numeros-css'; st.textContent = 'body.so-numeros .pin-rot{display:none!important}'; document.head.appendChild(st); }
+  document.querySelectorAll('.btn-so-numeros').forEach(function (b) {
+    b.style.background = on ? '#1a2744' : '#f1f5f9'; b.style.color = on ? 'white' : '#1a2744'; b.style.border = '1px solid ' + (on ? '#1a2744' : '#cbd5e1');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+function alternarSoNumeros() {
+  _soNumeros = !_soNumeros;
+  try { localStorage.setItem('mapaSoNumeros', _soNumeros ? '1' : '0'); } catch (_) {}
+  _soNumerosAplicar();
+}
+document.addEventListener('DOMContentLoaded', _soNumerosAplicar);
 function _moedaPinoHTML(valor, baixo) {
   if (!_temMoedaPino(valor)) return '';
-  return '<div style="position:absolute;bottom:' + baixo + 'px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;border-radius:999px;background:linear-gradient(180deg,#fef3c7,#fcd34d);border:1.5px solid #d97706;color:#78350f;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none;">' +
+  return '<div class="pin-rot" style="position:absolute;bottom:' + baixo + 'px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:2px 8px 2px 2px;border-radius:999px;background:linear-gradient(180deg,#fef3c7,#fcd34d);border:1.5px solid #d97706;color:#78350f;font-size:11px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none;">' +
     '<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);border:1px solid #92400e;font-size:9px;">$</span>' +
     esc(_fmtMoeda(valor)) + '</div>';
 }
@@ -9900,7 +9920,7 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
       : (modo === 'car' ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>' : ''); /* 13/10/2026: carrinho também na manutenção/retirada do mapa do técnico */
     const tamanho = ordemDia ? 38 : 34;
     const _mz = _temMoedaPino(valor) ? 24 : 0;
-    const nomeAcima = nome ? '<div style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
+    const nomeAcima = nome ? '<div class="pin-rot" style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
     return L.divIcon({
       className: '',
       html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
@@ -9925,7 +9945,7 @@ function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
   }
   const tamanho = ordemDia ? 38 : 34;
   const _mz = _temMoedaPino(valor) ? 24 : 0;
-  const nomeLabel = nome ? '<div style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
+  const nomeLabel = nome ? '<div class="pin-rot" style="position:absolute;bottom:' + (tamanho+4+_mz) + 'px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;pointer-events:none;">' + nome + '</div>' : '';
   return L.divIcon({
     className: '',
     html: '<div style="position:relative;width:' + tamanho + 'px;height:' + tamanho + 'px;">' +
