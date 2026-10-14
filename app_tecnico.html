@@ -1648,7 +1648,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v131-ponto-na-rota';
+const BUILD_VERSION = '2026-10-14-v132-sem-voce-aqui-admin';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10626,7 +10626,7 @@ function _desenharRotas(map, rotasPorTech, modo) {
       }
       if (inicio && inicio.base) {
         L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:30px;height:30px;border-radius:50%;background:#1a2744;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:15px;">🏠</div>', iconSize: [30, 30], iconAnchor: [15, 15] }), zIndexOffset: -50 }).addTo(map).bindPopup('Base de ' + esc(nomeTech) + (base.endereco ? '<br><small>' + esc(base.endereco) + '</small>' : ''));
-      } else if (inicio) {
+      } else if (inicio && !inicio.moto) { // 14/10/2026: no admin a rota parte da moto; a própria moto já mostra o início (sem bolinha "Você está aqui" parada para trás)
         L.marker([inicio.lat, inicio.lng], { icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid white;box-shadow:0 0 0 4px rgba(37,99,235,.25);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: -50 }).addTo(map).bindPopup('Você está aqui');
       }
       // 13/10/2026 (pedido do dono): o número da sequência vai DENTRO da bolinha do pino (no lugar do carrinho)
