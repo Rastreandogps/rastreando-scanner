@@ -388,7 +388,7 @@
   @keyframes tentFlutua { 0%,100% { transform:translateY(0) rotate(0deg); } 25% { transform:translateY(-4px) rotate(-.6deg); } 50% { transform:translateY(-7px) rotate(0deg); } 75% { transform:translateY(-4px) rotate(.6deg); } }
   @keyframes tentFundo { 0%,100% { background-color:#fff5f5; } 50% { background-color:#fecaca; } }
   .os-card:has(.tent-led), .os-mini:has(.tent-led), [data-os-tech]:has(.tent-led) { animation:tentPisca 1.1s ease-in-out infinite, tentFlutua 2.6s ease-in-out infinite, tentFundo 1.1s ease-in-out infinite; border-color:#dc2626 !important; border-left-color:#dc2626 !important; position:relative; z-index:2; will-change:transform; }
-  .modal-box .os-card:has(.tent-led) { animation:tentPisca 1.1s ease-in-out infinite, tentFundo 1.1s ease-in-out infinite; } /* dentro da janela não balança (para ler e tocar nos botões) */
+  .modal-box .os-card:has(.tent-led), .modal-box [data-os-tech]:has(.tent-led), .os-det-adm:has(.tent-led) { animation:tentPisca 1.1s ease-in-out infinite, tentFundo 1.1s ease-in-out infinite; } /* card aberto/expandido: só pisca */ /* dentro da janela não balança (para ler e tocar nos botões) */
   @media (prefers-reduced-motion: reduce) { .os-card:has(.tent-led), .os-mini:has(.tent-led), [data-os-tech]:has(.tent-led) { animation:tentPisca 1.1s ease-in-out infinite; } }
   .os-card:has(.tent-aguarda), .os-mini:has(.tent-aguarda), [data-os-tech]:has(.tent-aguarda) { animation:none; box-shadow:0 0 0 2px #f59e0b !important; background:#fffbeb !important; }
   /* 15/10/2026: substituição com a instalação feita e a retirada pendente: card vermelho */
@@ -1704,7 +1704,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v141-especial-flutuando';
+const BUILD_VERSION = '2026-10-15-v143-libera-link';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7084,7 +7084,14 @@ function _ehTentativaOS(o) {
   // OS criada antes da v139 (tipo "Remoção"), mas vinda de uma tentativa de retirada da Gestão
   return (t.includes('remo') || t.includes('retir')) && /Tentativa de retirada/i.test(String(o.obs || ''));
 }
-function _linkPagTentativa(o) { const m = String((o && o.obs) || '').match(/LINK DE PAGAMENTO:\s*(https?:\/\/\S+)/i); return m ? m[1].replace(/[|,;]+$/, '') : (o && o.tentLink) || ''; }
+// 15/10/2026: o técnico só vê o link quando o administrador LIBERA (botão azul → verde); o administrador vê sempre
+function _linkOrigemTentativa(o) { const m = String((o && o.obs) || '').match(/LINK DE PAGAMENTO:\s*(https?:\/\/\S+)/i); return m ? m[1].replace(/[|,;]+$/, '') : ''; }
+function _linkLiberadoTentativa(o) { return !!(o && o.tentLink); }
+function _linkPagTentativa(o) {
+  if (!o) return '';
+  if (currentRole === 'admin') return o.tentLink || _linkOrigemTentativa(o);
+  return o.tentLink || '';
+}
 function _htmlTentativa(o, mini) {
   const ag = o.tentPagou === 'aguardando';
   const prom = o.tentPromessa ? formatDateBR(o.tentPromessa) : '';
@@ -7101,10 +7108,13 @@ function _htmlTentativa(o, mini) {
     (ag ? '<div class="tent-aguarda" style="margin-top:6px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">⏳ O técnico informou que o cliente pagou · aguardando a confirmação no Asaas</div>' : '') +
     (prom && !ag ? '<div style="margin-top:6px;background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">📅 Cliente prometeu pagar até ' + esc(prom) + '</div>' : '') +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
+      (adm ? (_linkLiberadoTentativa(o)
+          ? '<button type="button" onclick="event.stopPropagation();alternarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" title="Toque para tirar o link do técnico" style="flex:1 1 100%;padding:9px;background:#16a34a;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">✅ Link liberado ao técnico · toque para tirar</button>'
+          : '<button type="button" onclick="event.stopPropagation();alternarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1 1 100%;padding:9px;background:#1d4ed8;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔗 Liberar o link de pagamento ao técnico</button>') : '') +
       (link ? '<button type="button" onclick="event.stopPropagation();enviarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#25D366;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">💬 Mandar link de pagamento</button>' +
           '<button type="button" onclick="event.stopPropagation();copiarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" title="Copiar o link" style="padding:9px 11px;background:#f1f5f9;color:#334155;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔗 Copiar link</button>'
-        : adm ? '<button type="button" onclick="event.stopPropagation();buscarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#1d4ed8;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔗 Buscar o link de pagamento</button>'
-        : '<span style="font-size:11.5px;color:#b91c1c;">Link de pagamento ainda não chegou. Peça ao administrador.</span>') +
+        : adm ? ''
+        : '<span style="font-size:11.5px;color:#b91c1c;">Link de pagamento ainda não liberado. Peça ao administrador.</span>') +
       (adm && ag ? '<button type="button" onclick="event.stopPropagation();conferirTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#f59e0b;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔎 Conferir pagamento no Asaas</button>' : '') +
     '</div>' +
   '</div>';
@@ -7116,15 +7126,30 @@ function copiarLinkTentativa(id, tech) {
   else prompt('Copie o link:', link);
 }
 // 15/10/2026: OS de tentativa criada antes da v139 (sem o link na observação): o administrador busca o link no pedido da Gestão
-async function buscarLinkTentativa(id, tech) {
-  showToast('Buscando o link...', '');
-  let r;
-  try { r = await _chamarRemocoes({ acao: 'tent_link', osId: id }); } catch (e) { showToast('Não consegui buscar: ' + e.message, 'error'); return; }
+// botão do administrador: azul = liberar (o técnico passa a ver o link) · verde = liberado (toque de novo tira)
+async function alternarLinkTentativa(id, tech) {
+  const o = _osFresca(id, tech); if (!o) { showToast('OS não encontrada', 'error'); return; }
+  if (_linkLiberadoTentativa(o)) {
+    const g0 = await gasRequest({ action: 'marcarTentativa', id: id, tech: tech, tentLink: '' });
+    if (!g0 || !g0.ok) { showToast('Não consegui tirar: ' + ((g0 && g0.error) || 'sem conexão com o Firebase'), 'error'); return; }
+    [allOrders && allOrders[tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (x) { if (x && x.id === id) x.tentLink = ''; }); });
+    showToast('Link tirado do técnico.', 'success');
+    try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
+    return;
+  }
+  return buscarLinkTentativa(id, tech, _linkOrigemTentativa(o));
+}
+async function buscarLinkTentativa(id, tech, jaTenho) {
+  let r = jaTenho ? { link: jaTenho } : null;
+  if (!r) {
+    showToast('Buscando o link...', '');
+    try { r = await _chamarRemocoes({ acao: 'tent_link', osId: id }); } catch (e) { showToast('Não consegui buscar: ' + e.message, 'error'); return; }
+  }
   if (!r || !r.link) { showToast('O pedido desta OS não tem link de pagamento.', 'error'); return; }
   const g = await gasRequest({ action: 'marcarTentativa', id: id, tech: tech, tentLink: r.link });
   if (!g || !g.ok) { showToast('Não consegui salvar o link: ' + ((g && g.error) || 'sem conexão com o Firebase'), 'error'); return; }
   [allOrders && allOrders[tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (o) { if (o && o.id === id) o.tentLink = r.link; }); });
-  showToast('Link de pagamento colocado na OS ✅ (o técnico também vê)', 'success');
+  showToast('Link liberado ao técnico ✅', 'success');
   try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
 }
 function enviarLinkTentativa(id, tech) {
@@ -7413,7 +7438,7 @@ function _renderCardOSDetalhado(o) {
     const tech = adminTechSelecionado;
 
     return (
-      '<div data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+      '<div class="os-det-adm" data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
         'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';position:relative;">' +
 
         // ── Checkbox seleção em massa
