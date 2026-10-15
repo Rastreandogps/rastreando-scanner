@@ -1696,7 +1696,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v137-substituicao-valores';
+const BUILD_VERSION = '2026-10-15-v138-substituicao-rotulos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -9443,12 +9443,12 @@ function _cardManutencao(r) {
       '<div style="min-width:0;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
-      '<label style="' + lbl + '">💰 Valor do serviço</label>' +
+      '<label style="' + lbl + '">' + (sub ? '💰 Valor da instalação (o cliente paga ao técnico)' : '💰 Valor do serviço') + '</label>' +
       '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
         '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
         '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
       '</div>' +
-      (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Instalação no veículo novo (pago pelo cliente)</div>' +
+      (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Instalação no veículo novo</div>' +
         '<label style="' + lbl + 'margin-top:10px;">🔧 Valor da retirada (você paga ao técnico)</label>' +
         '<div style="display:flex;align-items:center;gap:6px;background:#fff7ed;border-radius:8px;padding:8px 10px;border:2px solid #fdba74;">' +
           '<span style="font-size:14px;font-weight:700;color:#9a3412;">R$</span>' +
