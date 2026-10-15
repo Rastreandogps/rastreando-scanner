@@ -1696,7 +1696,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v136-substituicao-etapas';
+const BUILD_VERSION = '2026-10-15-v137-substituicao-valores';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2379,7 +2379,7 @@ function showAdminTab(tab) {
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
   'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
-  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa'
+  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa', 'salvarValorRetirada'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -2433,7 +2433,7 @@ async function gasRequest(payload) {
   if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
     try {
       await espelharNoFirestore(payload); // grava de verdade, na hora
-      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
+      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa' && payload.action !== 'salvarValorRetirada') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
       return { ok: true };
     } catch (e) {
       console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
@@ -2586,7 +2586,12 @@ async function espelharNoFirestore(payload) {
 
     case 'marcarSubEtapa': // 15/10/2026: substituição feita em 2 partes (só no Firestore, como a "próxima")
       if (!ref) return;
-      await ref.set({ subFeito: payload.subFeito === 'retirada' || payload.subFeito === 'instalacao' ? payload.subFeito : '', subFeitoEm: agora, atualizadoEm: agora }, { merge: true });
+      await ref.set({ subFeito: payload.subFeito === 'retirada' || payload.subFeito === 'instalacao' ? payload.subFeito : '', subFeitoDia: payload.subFeitoDia || '', subFeitoEm: agora, atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'salvarValorRetirada': // 15/10/2026: valor da retirada da substituição (você paga ao técnico; só no Firestore)
+      if (!ref) return;
+      await ref.set({ valorRetirada: String(payload.valor == null ? '' : payload.valor), atualizadoEm: agora }, { merge: true });
       break;
 
     case 'marcarProxima': // 13/10/2026: "próxima OS" escolhida pelo técnico no mapa (só no Firestore; a Planilha não precisa)
@@ -2804,7 +2809,9 @@ function docFirestoreParaOrdem(doc) {
     ordemDia:        d.ordemDia || 0,
     notaTecnico:     d.notaTecnico || '',
     proxima:         !!d.proxima && _proximaValeHoje(d.proximaEm),
-    subFeito:        d.subFeito === 'retirada' || d.subFeito === 'instalacao' ? d.subFeito : '' // 15/10/2026: etapa já feita da substituição
+    subFeito:        d.subFeito === 'retirada' || d.subFeito === 'instalacao' ? d.subFeito : '', // 15/10/2026: etapa já feita da substituição
+    subFeitoDia:     d.subFeitoDia || '',
+    valorRetirada:   d.valorRetirada == null ? '' : String(d.valorRetirada)
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -3558,14 +3565,23 @@ function _cofrinhoHTML(dia, ehHoje) {
     const d = parseDate(o.data);
     return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
   };
-  const ativos = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && doDia(o));
-  const feitos = (doneOrders[currentUser] || []).filter(doDia);
-  const aReceber = ativos.reduce((s, o) => s + _valorNumOS(o), 0);
-  const recebido = feitos.reduce((s, o) => s + _valorNumOS(o), 0);
+  const ativos = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && doDia(o) && !_ehSubstOS(o));
+  const feitos = (doneOrders[currentUser] || []).filter(o => doDia(o) && !_ehSubstOS(o));
+  let aReceber = ativos.reduce((s, o) => s + _valorNumOS(o), 0);
+  let recebido = feitos.reduce((s, o) => s + _valorNumOS(o), 0);
+  let nTot = ativos.length + feitos.length, nFeito = feitos.length;
+  // 15/10/2026: substituição conta por parte (instalação e retirada), no dia em que cada parte foi feita
+  const isoDia = dia.year + '-' + String(dia.month + 1).padStart(2, '0') + '-' + String(dia.day).padStart(2, '0');
+  (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && _ehSubstOS(o)).concat((doneOrders[currentUser] || []).filter(_ehSubstOS)).forEach(function (o) {
+    _partesSubst(_comCamposFS(o)).forEach(function (pt) {
+      if (pt.dia !== isoDia) return;
+      nTot++;
+      if (pt.feito) { recebido += pt.v; nFeito++; } else aReceber += pt.v;
+    });
+  });
   const total = aReceber + recebido;
   if (total <= 0) return '';
   const pct = Math.max(0, Math.min(100, Math.round(recebido / total * 100)));
-  const nTot = ativos.length + feitos.length, nFeito = feitos.length;
   const chave = dia.year + '-' + dia.month + '-' + dia.day;
   const caiu = _cofUltimo[chave] !== undefined && recebido > _cofUltimo[chave];
   _cofUltimo[chave] = recebido;
@@ -6899,14 +6915,33 @@ async function enviarResumoDia(tech) {
     return d && d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
   });
 
-  if (deHoje.length === 0) {
+  const _subAbertaHoje = (allOrders[tech] || []).some(function (o) { return o.status !== 'concluido' && _ehSubstOS(o) && _comCamposFS(o).subFeito && o.subFeitoDia === _isoHoje(); });
+  if (deHoje.length === 0 && !_subAbertaHoje) {
     showToast('Nenhum serviço concluído hoje para ' + tech, 'error');
     return;
   }
 
   // Montar linhas por cliente
   let totalGeral = 0, totalCliente = 0;
-  const linhas = deHoje.map(o => {
+  // 15/10/2026: substituição entra por parte, no dia em que cada parte foi feita (também a que foi feita com a OS ainda aberta)
+  const hojeISO = _isoHoje(), subLinhas = [], vistos = {};
+  const subsHoje = deHoje.filter(_ehSubstOS).concat((allOrders[tech] || []).filter(function (o) { return o.status !== 'concluido' && _ehSubstOS(o); }));
+  subsHoje.forEach(function (o0) {
+    if (vistos[o0.id]) return; vistos[o0.id] = 1;
+    const o = _comCamposFS(o0), t = _trocaVeiculoDeOS(o) || { deModelo: 'veículo antigo', para: 'veículo novo' };
+    _partesSubst(o).forEach(function (pt) {
+      if (!pt.feito || pt.dia !== hojeISO || !(pt.v > 0)) return;
+      if (pt.k === 'instalacao') {
+        const _pc = pagoPeloCliente(o);
+        if (_pc) totalCliente += pt.v; else totalGeral += pt.v;
+        subLinhas.push('👤 *' + (o.nome || 'Cliente') + '* — *R$' + pt.v.toFixed(2).replace('.', ',') + '*' + (_pc ? ' _(pago pelo cliente)_' : '') + '\n   ↳ ' + t.para + ' — Instalação (substituição) ✅');
+      } else {
+        totalGeral += pt.v;
+        subLinhas.push('👤 *' + (o.nome || 'Cliente') + '* — *R$' + pt.v.toFixed(2).replace('.', ',') + '*\n   ↳ ' + t.deModelo + ' — Retirada (substituição) ✅');
+      }
+    });
+  });
+  const linhas = deHoje.filter(function (o) { return !_ehSubstOS(o); }).map(o => {
     const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
     const _pc = pagoPeloCliente(o);
     if (_pc) totalCliente += valor; else totalGeral += valor;
@@ -6928,7 +6963,7 @@ async function enviarResumoDia(tech) {
     }).join('\n');
 
     return '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
-  }).join('\n\n');
+  }).concat(subLinhas).join('\n\n');
 
   const clienteStr = totalCliente > 0 ? '\n\n✅ _Pago direto pelo cliente: R$' + totalCliente.toFixed(2).replace('.',',') + ' (não entra no total)_' : '';
   const totalStr = clienteStr + ((totalGeral > 0 || totalCliente > 0) ? '\n\n*Total do dia: R$' + totalGeral.toFixed(2).replace('.',',') + '*' : '');
@@ -7015,6 +7050,54 @@ function _trocaVeiculoDeOS(o) {
   const para = m[2].replace(/\s*\(placa a confirmar\)\s*$/i, '').trim();
   return { de: de, deModelo: de.replace(/\s*\([^)]*\)\s*$/, ''), para: para };
 }
+/* ═══ VALORES DA SUBSTITUIÇÃO (15/10/2026, pedido do dono) ═══
+   Instalação: valor da OS (valorInstalacao), pago pelo cliente ao técnico (vai para o cofrinho).
+   Retirada: valor à parte (valorRetirada, padrão R$ 30,00), pago por você: entra no cofrinho e no RESUMO DO DIA.
+   Cada parte conta no dia em que foi feita (subFeitoDia); a parte que fecha a OS conta no dia da OS. */
+const SUB_DESDE = '2026-10-15';          // OS de substituição mais antigas não ganham o padrão de R$ 30 (não mexe no histórico)
+const SUB_RETIRADA_PADRAO = 30;
+function _isoHoje() { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0'); }
+function _isoDeDataOS(dataStr) {
+  if (!dataStr || !String(dataStr).trim() || dataStr === 'undefined') return '';
+  const d = parseDate(dataStr); if (!d) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function _ehSubstOS(o) { return !!o && String(o.tipo || '').toLowerCase().includes('substitu'); }
+function _valorRetiradaOS(o) {
+  if (!_ehSubstOS(o)) return 0;
+  const bruto = o.valorRetirada == null ? '' : String(o.valorRetirada).trim();
+  if (bruto !== '') { const v = parseFloat(bruto.replace(',', '.')); return v > 0 ? v : 0; }
+  const iso = _isoDeDataOS(o.data);
+  return (!iso || iso >= SUB_DESDE) ? SUB_RETIRADA_PADRAO : 0;
+}
+// as 2 partes da substituição: valor, se já foi feita e em que dia conta
+function _partesSubst(o) {
+  const dOS = _isoDeDataOS(o.data), concl = o.status === 'concluido', sf = o.subFeito || '';
+  const parte = function (k, v) { const antes = sf === k; return { k: k, v: v, feito: concl || antes, dia: antes ? (o.subFeitoDia || dOS) : dOS }; };
+  return [parte('instalacao', _valorNumOS(o)), parte('retirada', _valorRetiradaOS(o))];
+}
+// junta os campos que só existem no Firestore (etapa e valor da retirada) numa OS que veio da Planilha
+function _comCamposFS(o) {
+  if (!o || !_ehSubstOS(o) || !Array.isArray(_firestoreTodasOrdens)) return o;
+  const f = _firestoreTodasOrdens.find(function (x) { return x.id === o.id; });
+  if (f) { if (!o.subFeito && f.subFeito) { o.subFeito = f.subFeito; o.subFeitoDia = f.subFeitoDia; } if ((o.valorRetirada == null || o.valorRetirada === '') && f.valorRetirada !== '') o.valorRetirada = f.valorRetirada; }
+  return o;
+}
+async function editarValorRetirada(id, tech) {
+  const o = _osFresca(id, tech); if (!o) { showToast('OS não encontrada', 'error'); return; }
+  const atual = _valorRetiradaOS(o);
+  const txt = prompt('Valor da RETIRADA (você paga ao técnico):', atual ? atual.toFixed(2).replace('.', ',') : '30,00');
+  if (txt == null) return;
+  const v = parseFloat(String(txt).replace(/[^\d,.]/g, '').replace(',', '.'));
+  if (!(v >= 0) || v > 2000) { showToast('Valor inválido', 'error'); return; }
+  const r = await gasRequest({ action: 'salvarValorRetirada', id: id, tech: tech, valor: v.toFixed(2) });
+  if (!r || !r.ok) { showToast('Não consegui salvar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return; }
+  [allOrders && allOrders[tech], _firestoreTodasOrdens, window._adminOrdersCache, doneOrders && doneOrders[tech], _doneAdminCache && _doneAdminCache[tech]].forEach(function (l) {
+    (l || []).forEach(function (x) { if (x && x.id === id) x.valorRetirada = v.toFixed(2); });
+  });
+  showToast('Retirada: R$ ' + v.toFixed(2).replace('.', ',') + ' ✅', 'success');
+  try { if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
+}
 // Visual "carro atual ⇄ carro novo" (mini = card pequeno da grade)
 function _htmlTrocaVeiculo(o, mini) {
   const t = _trocaVeiculoDeOS(o);
@@ -7035,7 +7118,21 @@ function _htmlTrocaVeiculo(o, mini) {
     '<div style="font-size:10.5px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">🔁 Troca de veículo</div>' +
     '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px 2px;font-size:13px;color:#4c1d95;">' +
       '<span>🚗 <b>' + esc(t.de) + '</b></span>' + seta + '<span>🚙 <b>' + esc(t.para) + '</b></span>' +
-    '</div>' + etapa +
+    '</div>' + etapa + _chipRetiradaHTML(o) +
+  '</div>';
+}
+
+// 15/10/2026: valor da retirada na caixa da troca (o administrador toca para mudar; o técnico só vê, se puder ver valores)
+function _chipRetiradaHTML(o) {
+  if (!_ehSubstOS(o) || !_podeVerValor()) return '';
+  const v = _valorRetiradaOS(o), adm = currentRole === 'admin';
+  const feita = o.status === 'concluido' || o.subFeito === 'retirada';
+  return '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">' +
+    '<' + (adm ? 'button type="button" onclick="event.stopPropagation();editarValorRetirada(\'' + esc(o.id) + '\',\'' + esc(o._tech || o.tecnico || '') + '\')" title="Toque para mudar o valor da retirada"' : 'span') +
+      ' style="display:inline-flex;align-items:center;gap:5px;background:#fff7ed;color:#9a3412;border:1.5px solid #fdba74;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;' + (adm ? 'cursor:pointer;' : '') + '">' +
+      '🔧 Retirada R$ ' + v.toFixed(2).replace('.', ',') + (feita ? ' ✓' : '') + (adm ? ' ✏️' : '') +
+    '</' + (adm ? 'button' : 'span') + '>' +
+    '<span style="font-size:11px;color:#9a3412;">você paga · entra no resumo do dia</span>' +
   '</div>';
 }
 
@@ -7061,6 +7158,17 @@ function _atualizarTotaisAdminTech(doneAdmin) {
         if (d.getDate() === hoje.getDate()) totalDia += v;
       }
     }
+  });
+  // 15/10/2026: retirada da substituição (você paga), no dia em que foi feita — também com a OS ainda aberta
+  const _hojeISO = _isoHoje(), _mesISO = _hojeISO.slice(0, 7);
+  const _abertas = (allOrders && adminTechSelecionado && allOrders[adminTechSelecionado]) || [];
+  (doneAdmin || []).concat(_abertas.filter(function (o) { return o.status !== 'concluido'; })).forEach(function (o0) {
+    if (!_ehSubstOS(o0)) return;
+    const o = _comCamposFS(o0);
+    _partesSubst(o).forEach(function (pt) {
+      if (pt.k !== 'retirada' || !pt.feito || !(pt.v > 0)) return;
+      if (String(pt.dia).slice(0, 7) === _mesISO) { totalMes += pt.v; if (pt.dia === _hojeISO) totalDia += pt.v; }
+    });
   });
   const elDia = document.getElementById('admin-view-tech-total-dia');
   const elMes = document.getElementById('admin-view-tech-total-mes');
@@ -7629,7 +7737,9 @@ function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
   const sf = o.subFeito || '';
   const bt = function (cor, txt, acao) { return '<button type="button" onclick="' + acao + '" style="width:100%;padding:12px;background:' + cor + ';color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">' + txt + '</button>'; };
   document.getElementById('sub-etapa-nome').textContent = o.nome || '';
-  document.getElementById('sub-etapa-veic').textContent = '🚗 ' + t.deModelo + '  ⇄  🚙 ' + t.para;
+  document.getElementById('sub-etapa-veic').textContent = '🚗 ' + t.deModelo + '  ⇄  🚙 ' + t.para +
+    (_podeVerValor() ? '\nInstalação R$ ' + _valorNumOS(o).toFixed(2).replace('.', ',') + ' (cliente) · Retirada R$ ' + _valorRetiradaOS(o).toFixed(2).replace('.', ',') + ' (empresa)' : '');
+  document.getElementById('sub-etapa-veic').style.whiteSpace = 'pre-line';
   let txt, bts;
   if (sf === 'retirada') {
     txt = 'A retirada do ' + t.deModelo + ' já foi feita. A instalação no ' + t.para + ' foi concluída?';
@@ -7666,9 +7776,9 @@ async function _subEtapaEscolher(escolha) {
   pendingConcluir = null; _concluirDoMapa = false;
   const valor = escolha === 'desfazer' ? '' : escolha;
   showToast('Salvando...', '');
-  const r = await gasRequest({ action: 'marcarSubEtapa', id: se.id, tech: se.tech, subFeito: valor });
+  const r = await gasRequest({ action: 'marcarSubEtapa', id: se.id, tech: se.tech, subFeito: valor, subFeitoDia: valor ? _isoHoje() : '' });
   if (!r || !r.ok) { showToast('Não consegui salvar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return; }
-  const marca = function (lista) { (lista || []).forEach(function (o) { if (o && o.id === se.id) o.subFeito = valor; }); };
+  const marca = function (lista) { (lista || []).forEach(function (o) { if (o && o.id === se.id) { o.subFeito = valor; o.subFeitoDia = valor ? _isoHoje() : ''; } }); };
   Object.keys(allOrders || {}).forEach(function (k) { marca(allOrders[k]); });
   marca(_firestoreTodasOrdens); marca(window._adminOrdersCache);
   showToast(valor === 'retirada' ? 'Retirada registrada. A OS continua só com a instalação.'
@@ -9338,6 +9448,12 @@ function _cardManutencao(r) {
         '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
         '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
       '</div>' +
+      (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Instalação no veículo novo (pago pelo cliente)</div>' +
+        '<label style="' + lbl + 'margin-top:10px;">🔧 Valor da retirada (você paga ao técnico)</label>' +
+        '<div style="display:flex;align-items:center;gap:6px;background:#fff7ed;border-radius:8px;padding:8px 10px;border:2px solid #fdba74;">' +
+          '<span style="font-size:14px;font-weight:700;color:#9a3412;">R$</span>' +
+          '<input type="number" id="rm-vret-' + id + '" value="30" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:#9a3412;">' +
+        '</div>' : '') +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
       '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : '✅ Criar OS de manutenção') + '</button>' +
@@ -9386,6 +9502,10 @@ async function criarOSManutencao(id) {
     return;
   }
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
+  if (sub) { // 15/10/2026: valor da retirada (Firestore)
+    const vret = parseFloat(String(document.getElementById('rm-vret-' + id)?.value || '30').replace(',', '.'));
+    try { await gasRequest({ action: 'salvarValorRetirada', id: novoId, tech: tecnico, valor: (vret >= 0 ? vret : 30).toFixed(2) }); } catch (e) {}
+  }
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
     showToast((sub ? 'OS de substituição' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
