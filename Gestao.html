@@ -706,7 +706,11 @@ body.modal-aberto{overflow:hidden}
 .cc-tent{padding:0 16px 12px}
 .btn-tent{width:100%;padding:11px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fef2f2;color:#b91c1c;font-family:var(--font-body);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-tent:hover{background:#fee2e2}
-.tn-imei{font-size:.72rem;color:var(--text-3);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:2px 0 3px 2px}
+.tn-imei{font-size:.72rem;color:var(--text-3);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:2px 0 3px 2px;display:flex;align-items:center;gap:5px}
+.tn-cp{width:20px;height:20px;padding:0;border:1px solid var(--border);border-radius:5px;background:#fff;color:var(--text-3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.tn-cp:hover{color:var(--navy-light);border-color:var(--navy-light)}
+.tn-cp.ok{color:#059669;border-color:#6ee7b7}
+.tn-cp svg{width:12px;height:12px}
 .tn-regras{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;font-size:.84rem;color:#7f1d1d;line-height:1.5;margin:8px 0 10px}
 .tr-sub{font-size:.78rem;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
 .tr-novo{display:grid;grid-template-columns:1fr 90px 80px;gap:8px;margin-bottom:8px}
@@ -1916,9 +1920,16 @@ body.modal-aberto{overflow:hidden}
     document.body.classList.add('modal-aberto');
   }
   function tnLinhaVeiculo(imei, k) {
-    return '<div class="tn-veic" data-imei="' + esc(imei || '') + '">' + (imei ? '<div class="tn-imei">Aparelho ' + (k + 1) + ' · IMEI ' + esc(imei) + '</div>' : '') +
+    return '<div class="tn-veic" data-imei="' + esc(imei || '') + '">' + (imei ? '<div class="tn-imei">Aparelho ' + (k + 1) + ' · IMEI ' + esc(imei) + '<button type="button" class="tn-cp" data-cp="' + esc(imei) + '" title="Copiar o IMEI" aria-label="Copiar o IMEI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>' : '') +
       '<div class="rt-veic"><input type="text" class="rt-modelo" maxlength="45" placeholder="Modelo do veículo" autocomplete="off"><input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div></div>';
   }
+  $('tn-veics').addEventListener('click', function (ev) { // 15/10/2026: copiar o IMEI com um toque
+    var b = ev.target.closest('.tn-cp'); if (!b) return;
+    var v = b.getAttribute('data-cp');
+    var ok = function () { b.classList.add('ok'); toast('IMEI copiado: ' + v, 'ok'); setTimeout(function () { b.classList.remove('ok'); }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(ok, function () { toast('Não consegui copiar.', 'erro'); });
+    else { var t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); ok(); } catch (e) {} t.remove(); }
+  });
   $('tn-mais').addEventListener('click', function () {
     if (document.querySelectorAll('#tn-veics .tn-veic').length >= 10) { toast('Até 10 veículos por pedido.', 'erro'); return; }
     $('tn-veics').insertAdjacentHTML('beforeend', tnLinhaVeiculo('', 0));
