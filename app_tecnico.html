@@ -1704,7 +1704,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v143-libera-link';
+const BUILD_VERSION = '2026-10-15-v144-especial-por-veiculo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2602,6 +2602,8 @@ async function espelharNoFirestore(payload) {
       { const up = { tentEm: agora, atualizadoEm: agora };
         if ('tentPagou' in payload) up.tentPagou = payload.tentPagou === 'aguardando' ? 'aguardando' : '';
         if ('tentPromessa' in payload) up.tentPromessa = String(payload.tentPromessa || '').slice(0, 10);
+        if ('tentRetirados' in payload) up.tentRetirados = (Array.isArray(payload.tentRetirados) ? payload.tentRetirados : []).slice(0, 20).map(function (x) { return { i: Number(x.i) || 0, dia: String(x.dia || '').slice(0, 10) }; });
+        if ('tentPagoDia' in payload) up.tentPagoDia = String(payload.tentPagoDia || '').slice(0, 10);
         if ('tentLink' in payload) up.tentLink = /^https?:\/\//.test(String(payload.tentLink || '')) ? String(payload.tentLink).slice(0, 400) : '';
         await ref.set(up, { merge: true }); }
       break;
@@ -2831,7 +2833,9 @@ function docFirestoreParaOrdem(doc) {
     valorRetirada:   d.valorRetirada == null ? '' : String(d.valorRetirada),
     tentPagou:       d.tentPagou === 'aguardando' ? 'aguardando' : '', // 15/10/2026: tentativa de retirada
     tentPromessa:    d.tentPromessa || '',
-    tentLink:        d.tentLink || ''
+    tentLink:        d.tentLink || '',
+    tentRetirados:   Array.isArray(d.tentRetirados) ? d.tentRetirados : [],
+    tentPagoDia:     d.tentPagoDia || ''
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -3585,15 +3589,15 @@ function _cofrinhoHTML(dia, ehHoje) {
     const d = parseDate(o.data);
     return d && d.getDate() === dia.day && d.getMonth() === dia.month && d.getFullYear() === dia.year;
   };
-  const ativos = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && doDia(o) && !_ehSubstOS(o));
-  const feitos = (doneOrders[currentUser] || []).filter(o => doDia(o) && !_ehSubstOS(o));
+  const ativos = (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && doDia(o) && !_ehOSPorPartes(o));
+  const feitos = (doneOrders[currentUser] || []).filter(o => doDia(o) && !_ehOSPorPartes(o));
   let aReceber = ativos.reduce((s, o) => s + _valorNumOS(o), 0);
   let recebido = feitos.reduce((s, o) => s + _valorNumOS(o), 0);
   let nTot = ativos.length + feitos.length, nFeito = feitos.length;
   // 15/10/2026: substituição conta por parte (instalação e retirada), no dia em que cada parte foi feita
   const isoDia = dia.year + '-' + String(dia.month + 1).padStart(2, '0') + '-' + String(dia.day).padStart(2, '0');
-  (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && _ehSubstOS(o)).concat((doneOrders[currentUser] || []).filter(_ehSubstOS)).forEach(function (o) {
-    _partesSubst(_comCamposFS(o)).forEach(function (pt) {
+  (allOrders[currentUser] || []).filter(o => o.status !== 'concluido' && _ehOSPorPartes(o)).concat((doneOrders[currentUser] || []).filter(_ehOSPorPartes)).forEach(function (o) {
+    _partesOS(_comCamposFS(o)).forEach(function (pt) {
       if (pt.dia !== isoDia) return;
       nTot++;
       if (pt.feito) { recebido += pt.v; nFeito++; } else aReceber += pt.v;
@@ -6935,7 +6939,7 @@ async function enviarResumoDia(tech) {
     return d && d.getDate() === hoje.getDate() && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear();
   });
 
-  const _subAbertaHoje = (allOrders[tech] || []).some(function (o) { return o.status !== 'concluido' && _ehSubstOS(o) && _comCamposFS(o).subFeito && o.subFeitoDia === _isoHoje(); });
+  const _subAbertaHoje = (allOrders[tech] || []).some(function (o) { return o.status !== 'concluido' && _ehOSPorPartes(o) && _partesOS(_comCamposFS(o)).some(function (pt) { return pt.feito && pt.dia === _isoHoje(); }); });
   if (deHoje.length === 0 && !_subAbertaHoje) {
     showToast('Nenhum serviço concluído hoje para ' + tech, 'error');
     return;
@@ -6945,23 +6949,18 @@ async function enviarResumoDia(tech) {
   let totalGeral = 0, totalCliente = 0;
   // 15/10/2026: substituição entra por parte, no dia em que cada parte foi feita (também a que foi feita com a OS ainda aberta)
   const hojeISO = _isoHoje(), subLinhas = [], vistos = {};
-  const subsHoje = deHoje.filter(_ehSubstOS).concat((allOrders[tech] || []).filter(function (o) { return o.status !== 'concluido' && _ehSubstOS(o); }));
+  // (inclui a ESPECIAL: cada veículo retirado e o "cliente pagou" contam no dia em que aconteceram)
+  const subsHoje = deHoje.filter(_ehOSPorPartes).concat((allOrders[tech] || []).filter(function (o) { return o.status !== 'concluido' && _ehOSPorPartes(o); }));
   subsHoje.forEach(function (o0) {
     if (vistos[o0.id]) return; vistos[o0.id] = 1;
-    const o = _comCamposFS(o0), t = _trocaVeiculoDeOS(o) || { deModelo: 'veículo antigo', para: 'veículo novo' };
-    _partesSubst(o).forEach(function (pt) {
+    const o = _comCamposFS(o0);
+    _partesOS(o).forEach(function (pt) {
       if (!pt.feito || pt.dia !== hojeISO || !(pt.v > 0)) return;
-      if (pt.k === 'instalacao') {
-        const _pc = pagoPeloCliente(o);
-        if (_pc) totalCliente += pt.v; else totalGeral += pt.v;
-        subLinhas.push('👤 *' + (o.nome || 'Cliente') + '* — *R$' + pt.v.toFixed(2).replace('.', ',') + '*' + (_pc ? ' _(pago pelo cliente)_' : '') + '\n   ↳ ' + t.para + ' — Instalação (substituição) ✅');
-      } else {
-        totalGeral += pt.v;
-        subLinhas.push('👤 *' + (o.nome || 'Cliente') + '* — *R$' + pt.v.toFixed(2).replace('.', ',') + '*\n   ↳ ' + t.deModelo + ' — Retirada (substituição) ✅');
-      }
+      if (pt.pc) totalCliente += pt.v; else totalGeral += pt.v;
+      subLinhas.push('👤 *' + (o.nome || 'Cliente') + '* — *R$' + pt.v.toFixed(2).replace('.', ',') + '*' + (pt.pc ? ' _(pago pelo cliente)_' : '') + '\n   ↳ ' + pt.rotulo + ' ✅');
     });
   });
-  const linhas = deHoje.filter(function (o) { return !_ehSubstOS(o); }).map(o => {
+  const linhas = deHoje.filter(function (o) { return !_ehOSPorPartes(o); }).map(o => {
     const valor = o.valorInstalacao ? parseFloat(o.valorInstalacao) : 0;
     const _pc = pagoPeloCliente(o);
     if (_pc) totalCliente += valor; else totalGeral += valor;
@@ -7105,6 +7104,13 @@ function _htmlTentativa(o, mini) {
   return '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:9px 12px;margin-bottom:8px;">' +
     '<div style="font-size:10.5px;font-weight:900;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🚨 Tentativa de retirada</div>' +
     '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha R$ ' + TENT_VALOR_COBRANCA + ',00 quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00)' : '') + '.</div>' +
+    (function () { // 15/10/2026: veículos retirados aos poucos
+      const vs = _veiculosDaOS(o); if (vs.length < 2 && !_retiradosTent(o).length) return '';
+      const feitos = {}; _retiradosTent(o).forEach(function (x) { feitos[x.i] = x.dia; });
+      const n = Object.keys(feitos).length;
+      return '<div style="margin-top:7px;font-size:11px;font-weight:800;color:#7f1d1d;">Retirados: ' + n + ' de ' + vs.length + '</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">' +
+        vs.map(function (v) { const f = feitos[v.i]; return '<span style="font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:8px;' + (f ? 'background:#dcfce7;color:#166534;border:1px solid #86efac;' : 'background:#fff;color:#7f1d1d;border:1px solid #fca5a5;') + '">' + (f ? '✅ ' : '⬜ ') + esc(v.modelo) + (f ? ' · ' + esc(formatDateBR(f)) : '') + '</span>'; }).join('') + '</div>';
+    })() +
     (ag ? '<div class="tent-aguarda" style="margin-top:6px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">⏳ O técnico informou que o cliente pagou · aguardando a confirmação no Asaas</div>' : '') +
     (prom && !ag ? '<div style="margin-top:6px;background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">📅 Cliente prometeu pagar até ' + esc(prom) + '</div>' : '') +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
@@ -7178,12 +7184,13 @@ function _abrirTentativa(o, id, tech, origem) {
   } else {
     txt = 'Tentativa de retirada. O que aconteceu?';
     bts = bt('#10b981', '💰 O cliente pagou', "_tentEscolher('pagou')") +
-      bt('#ef4444', '🔧 Retirei o equipamento', "_tentEscolher('retirou')") +
+      bt('#ef4444', _veiculosDaOS(o).length > 1 ? '🔧 Retirei veículo(s)' : '🔧 Retirei o equipamento', "_tentEscolher('retirou')") +
       bt('#0ea5e9', '📅 Cliente prometeu pagar / reagendar', "_tentEscolher('promessa')");
   }
   document.getElementById('sub-etapa-tit').textContent = '🚨 Tentativa de retirada';
   document.getElementById('sub-etapa-nome').textContent = o.nome || '';
-  document.getElementById('sub-etapa-veic').textContent = o.veiculo ? String(o.veiculo).split(' | ')[0] : '';
+  const _vsT = _veiculosDaOS(o);
+  document.getElementById('sub-etapa-veic').textContent = _vsT.length > 1 ? _vsT.length + ' veículos · ' + _retiradosTent(o).length + ' retirado(s)' : (o.veiculo ? String(o.veiculo).split(' | ')[0] : '');
   document.getElementById('sub-etapa-txt').textContent = txt;
   document.getElementById('sub-etapa-bts').innerHTML = bts;
   document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
@@ -7192,7 +7199,7 @@ function _abrirTentativa(o, id, tech, origem) {
 async function _tentMarcar(se, campos) {
   const r = await gasRequest(Object.assign({ action: 'marcarTentativa', id: se.id, tech: se.tech }, campos));
   if (!r || !r.ok) { showToast('Não consegui salvar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return false; }
-  const marca = function (l) { (l || []).forEach(function (o) { if (o && o.id === se.id) { o.tentPagou = campos.tentPagou || ''; o.tentPromessa = campos.tentPromessa || ''; } }); };
+  const marca = function (l) { (l || []).forEach(function (o) { if (o && o.id === se.id) Object.keys(campos).forEach(function (k) { o[k] = campos[k]; }); }); };
   Object.keys(allOrders || {}).forEach(function (k) { marca(allOrders[k]); }); marca(_firestoreTodasOrdens); marca(window._adminOrdersCache);
   try {
     if (currentRole === 'admin') { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); if (typeof renderAdminOSList === 'function') renderAdminOSList(); }
@@ -7207,11 +7214,55 @@ async function _tentConcluir(se, valor) {
   pendingConcluir = { id: se.id, tech: se.tech };
   return confirmarConcluir();
 }
+// 15/10/2026: cliente com mais de um veículo: o técnico marca cada carro retirado (R$ 50 cada, no dia em que saiu).
+// A OS só some quando todos foram retirados (ou quando o cliente pagou).
+function _tentAbrirChecklist(se) {
+  const o = _osFresca(se.id, se.tech) || {};
+  const vs = _veiculosDaOS(o), feitos = {}; _retiradosTent(o).forEach(function (x) { feitos[x.i] = x.dia; });
+  const adm = currentRole === 'admin';
+  _subEtapa = se;
+  document.getElementById('sub-etapa-txt').textContent = 'Marque os veículos que você retirou' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00 cada)' : '') + '. A OS continua aberta até sair o último.';
+  document.getElementById('sub-etapa-bts').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:6px;">' + vs.map(function (v) {
+      const f = feitos[v.i];
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid ' + (f ? '#86efac' : '#e2e8f0') + ';border-radius:10px;background:' + (f ? '#f0fdf4' : '#fff') + ';cursor:pointer;font-size:14px;">' +
+        '<input type="checkbox" class="tent-ck" data-i="' + v.i + '"' + (f ? ' checked' : '') + (f && !adm ? ' disabled' : '') + ' style="width:20px;height:20px;accent-color:#16a34a;">' +
+        '<span style="flex:1;min-width:0;"><b>' + esc(v.modelo) + '</b>' + (v.placa ? ' <span style="color:var(--muted);font-size:12px;">' + esc(v.placa) + '</span>' : '') +
+        (f ? '<small style="display:block;color:#166534;font-weight:700;">retirado em ' + esc(formatDateBR(f)) + '</small>' : '') + '</span></label>';
+    }).join('') + '</div>' +
+    '<button type="button" onclick="_tentSalvarChecklist()" style="width:100%;margin-top:10px;padding:12px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">✅ Salvar retirada</button>';
+  document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
+}
+async function _tentSalvarChecklist() {
+  const se = _subEtapa; if (!se) return;
+  const o = _osFresca(se.id, se.tech) || {};
+  const vs = _veiculosDaOS(o), antes = {}; _retiradosTent(o).forEach(function (x) { antes[x.i] = x.dia; });
+  const hoje = _isoHoje(), lista = [];
+  document.querySelectorAll('#sub-etapa-bts .tent-ck').forEach(function (ck) { const i = Number(ck.getAttribute('data-i')); if (ck.checked) lista.push({ i: i, dia: antes[i] || hoje }); });
+  const novos = lista.filter(function (x) { return !antes[x.i]; }).length;
+  if (!novos && lista.length === Object.keys(antes).length) { showToast('Marque pelo menos um veículo.', 'error'); return; }
+  document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll(); _subEtapa = null;
+  if (!(await _tentMarcar(se, { tentRetirados: lista }))) return;
+  [allOrders && allOrders[se.tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (x) { if (x && x.id === se.id) x.tentRetirados = lista; }); });
+  if (lista.length >= vs.length) { // saiu o último: conclui a OS
+    showToast('Todos os veículos retirados. Concluindo a OS...', 'success');
+    return _tentConcluir(se, TENT_VALOR_RETIRADA * lista.length + (o.tentPagoDia ? TENT_VALOR_COBRANCA : 0));
+  }
+  showToast(novos + (novos === 1 ? ' veículo retirado' : ' veículos retirados') + ' (faltam ' + (vs.length - lista.length) + '). A OS continua aberta.', 'success');
+}
 async function _tentEscolher(escolha) {
   const se = _subEtapa; if (!se) return;
+  if (escolha === 'retirou') { // mais de um veículo: lista para marcar cada um
+    const oR = _osFresca(se.id, se.tech) || {};
+    if (_veiculosDaOS(oR).length > 1) return _tentAbrirChecklist(se);
+  }
   document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll();
   _subEtapa = null;
-  if (escolha === 'retirou') return _tentConcluir(se, TENT_VALOR_RETIRADA);
+  if (escolha === 'retirou') { // um veículo só
+    const oR = _osFresca(se.id, se.tech) || {};
+    await _tentMarcar(se, { tentRetirados: [{ i: 0, dia: _isoHoje() }] });
+    return _tentConcluir(se, TENT_VALOR_RETIRADA + (oR.tentPagoDia ? TENT_VALOR_COBRANCA : 0));
+  }
   pendingConcluir = null; _concluirDoMapa = false;
   if (escolha === 'pagou') {
     if (currentRole === 'admin') return _tentConferirEConcluir(se);
@@ -7232,7 +7283,7 @@ async function _tentEscolher(escolha) {
   if (escolha === 'conferir') return _tentConferirEConcluir(se);
   if (escolha === 'forcar') {
     if (!confirm('Concluir como PAGO (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico) mesmo sem o pagamento aparecer no Asaas?')) return;
-    return _tentConcluir(se, TENT_VALOR_COBRANCA);
+    return _tentConcluirPago(se);
   }
   if (escolha === 'naopagou') { if (await _tentMarcar(se, { tentPagou: '' })) showToast('Pronto. A tentativa continua aberta.', 'success'); }
 }
@@ -7241,9 +7292,14 @@ async function _tentConferirEConcluir(se) {
   let r;
   try { r = await _chamarRemocoes({ acao: 'tent_status', osId: se.id }); }
   catch (e) { showToast('Não consegui conferir: ' + e.message, 'error'); return; }
-  if (r && r.quitado) { showToast('✅ Pagamento confirmado no Asaas. Concluindo (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico)...', 'success'); return _tentConcluir(se, TENT_VALOR_COBRANCA); }
+  if (r && r.quitado) { showToast('✅ Pagamento confirmado no Asaas. Concluindo (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico)...', 'success'); return _tentConcluirPago(se); }
   showToast('Ainda não aparece pago no Asaas (' + ((r && r.emAberto) || 0) + ' de ' + ((r && r.total) || 0) + ' em aberto). A OS fica aguardando.', 'error');
   await _tentMarcar(se, { tentPagou: 'aguardando' });
+}
+async function _tentConcluirPago(se) { // R$ 10 no dia da confirmação + R$ 50 de cada veículo já retirado antes
+  const o = _osFresca(se.id, se.tech) || {};
+  await _tentMarcar(se, { tentPagoDia: _isoHoje(), tentPagou: '' });
+  return _tentConcluir(se, TENT_VALOR_COBRANCA + TENT_VALOR_RETIRADA * _retiradosTent(o).length);
 }
 function conferirTentativa(id, tech) { return _tentConferirEConcluir({ id: id, tech: tech, origem: 'admin' }); }
 
@@ -7275,10 +7331,43 @@ function _partesSubst(o) {
 }
 // junta os campos que só existem no Firestore (etapa e valor da retirada) numa OS que veio da Planilha
 function _comCamposFS(o) {
-  if (!o || !_ehSubstOS(o) || !Array.isArray(_firestoreTodasOrdens)) return o;
+  if (!o || !_ehOSPorPartes(o) || !Array.isArray(_firestoreTodasOrdens)) return o;
   const f = _firestoreTodasOrdens.find(function (x) { return x.id === o.id; });
-  if (f) { if (!o.subFeito && f.subFeito) { o.subFeito = f.subFeito; o.subFeitoDia = f.subFeitoDia; } if ((o.valorRetirada == null || o.valorRetirada === '') && f.valorRetirada !== '') o.valorRetirada = f.valorRetirada; }
+  if (f) {
+    if (!o.subFeito && f.subFeito) { o.subFeito = f.subFeito; o.subFeitoDia = f.subFeitoDia; } if ((o.valorRetirada == null || o.valorRetirada === '') && f.valorRetirada !== '') o.valorRetirada = f.valorRetirada;
+    if ((!o.tentRetirados || !o.tentRetirados.length) && f.tentRetirados && f.tentRetirados.length) o.tentRetirados = f.tentRetirados;
+    if (!o.tentPagoDia && f.tentPagoDia) o.tentPagoDia = f.tentPagoDia;
+  }
   return o;
+}
+/* 15/10/2026: OS que contam por PARTE no cofrinho e no resumo do dia: substituição (instalação + retirada) e
+   ESPECIAL (cada veículo retirado = R$ 50 no dia em que saiu; cliente pagou = R$ 10 no dia da confirmação). */
+function _ehOSPorPartes(o) { return _ehSubstOS(o) || _ehTentativaOS(o); }
+function _veiculosDaOS(o) {
+  return String((o && o.veiculo) || '').split(' || ').map(function (v) { return v.trim(); }).filter(Boolean).map(function (v, i) {
+    const pl = v.match(/Placa:\s*([A-Z0-9-]+)/i);
+    return { i: i, modelo: (v.split(' | ')[0] || ('Veículo ' + (i + 1))).trim(), placa: pl ? pl[1].toUpperCase() : '' };
+  });
+}
+function _retiradosTent(o) { return Array.isArray(o && o.tentRetirados) ? o.tentRetirados.filter(function (x) { return x && x.i != null; }) : []; }
+function _partesOS(o) {
+  if (_ehSubstOS(o)) {
+    const t = _trocaVeiculoDeOS(o) || { deModelo: 'veículo antigo', para: 'veículo novo' };
+    return _partesSubst(o).map(function (pt) {
+      return Object.assign(pt, pt.k === 'instalacao'
+        ? { pc: pagoPeloCliente(o), rotulo: t.para + ' — Instalação (substituição)' }
+        : { pc: false, rotulo: t.deModelo + ' — Retirada (substituição)' });
+    });
+  }
+  // ESPECIAL
+  const vs = _veiculosDaOS(o), ret = _retiradosTent(o), dOS = _isoDeDataOS(o.data), concl = o.status === 'concluido';
+  const partes = ret.map(function (x) { const v = vs[x.i] || { modelo: 'Veículo ' + (Number(x.i) + 1) }; return { k: 'ret' + x.i, v: TENT_VALOR_RETIRADA, feito: true, dia: x.dia || dOS, pc: false, rotulo: v.modelo + (v.placa ? ' (' + v.placa + ')' : '') + ' — Retirada (especial)' }; });
+  if (o.tentPagoDia) partes.push({ k: 'pago', v: TENT_VALOR_COBRANCA, feito: true, dia: o.tentPagoDia, pc: false, rotulo: 'Cliente pagou pelo link — Cobrança (especial)' });
+  if (!concl) { // o que ainda falta (só para o "a receber" do cofrinho, no dia da OS)
+    const feitos = {}; ret.forEach(function (x) { feitos[x.i] = 1; });
+    (vs.length ? vs : [{ i: 0 }]).forEach(function (v) { if (!feitos[v.i]) partes.push({ k: 'falta' + v.i, v: TENT_VALOR_RETIRADA, feito: false, dia: dOS, pc: false, rotulo: '' }); });
+  }
+  return partes;
 }
 async function editarValorRetirada(id, tech) {
   const o = _osFresca(id, tech); if (!o) { showToast('OS não encontrada', 'error'); return; }
@@ -7346,6 +7435,7 @@ function _atualizarTotaisAdminTech(doneAdmin) {
   const hoje = new Date();
   let totalMes = 0, totalDia = 0;
   (doneAdmin || []).forEach(o => {
+    if (_ehTentativaOS(o)) return; // 15/10/2026: ESPECIAL conta por parte (abaixo)
     if (!o.valorInstalacao || pagoPeloCliente(o)) return;
     const v = parseFloat(o.valorInstalacao);
     if (isNaN(v)) return;
@@ -7361,10 +7451,10 @@ function _atualizarTotaisAdminTech(doneAdmin) {
   const _hojeISO = _isoHoje(), _mesISO = _hojeISO.slice(0, 7);
   const _abertas = (allOrders && adminTechSelecionado && allOrders[adminTechSelecionado]) || [];
   (doneAdmin || []).concat(_abertas.filter(function (o) { return o.status !== 'concluido'; })).forEach(function (o0) {
-    if (!_ehSubstOS(o0)) return;
+    if (!_ehOSPorPartes(o0)) return;
     const o = _comCamposFS(o0);
-    _partesSubst(o).forEach(function (pt) {
-      if (pt.k !== 'retirada' || !pt.feito || !(pt.v > 0)) return;
+    _partesOS(o).forEach(function (pt) {
+      if (pt.pc || !pt.feito || !(pt.v > 0)) return;
       if (String(pt.dia).slice(0, 7) === _mesISO) { totalMes += pt.v; if (pt.dia === _hojeISO) totalDia += pt.v; }
     });
   });
