@@ -383,6 +383,8 @@
   .toast.error { background: var(--danger); }
 
   /* MODAL */
+  /* 15/10/2026: substituição com a instalação feita e a retirada pendente: card vermelho */
+  .os-card:has(.sub-aguarda-ret), .os-mini:has(.sub-aguarda-ret), [data-os-tech]:has(.sub-aguarda-ret) { background:#fef2f2 !important; border-left-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.45) !important; }
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 10000;
     display: none; align-items: center; justify-content: center; padding: 24px;
@@ -1500,6 +1502,20 @@
   </div>
 </div>
 
+<!-- MODAL: SUBSTITUIÇÃO EM 2 ETAPAS (15/10/2026) -->
+<div class="modal-overlay" id="modal-sub-etapa">
+  <div class="modal-box">
+    <div class="modal-title">🔁 O que foi feito?</div>
+    <div class="modal-sub" id="sub-etapa-txt"></div>
+    <div style="background:#f5f3ff;border-radius:12px;padding:12px;margin-bottom:12px;text-align:center;">
+      <div id="sub-etapa-nome" style="font-size:15px;font-weight:700;color:var(--primary);"></div>
+      <div id="sub-etapa-veic" style="font-size:12px;color:#5b21b6;margin-top:4px;font-weight:600;"></div>
+    </div>
+    <div id="sub-etapa-bts" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button type="button" class="btn-cancel" onclick="fecharSubEtapa()" style="width:100%;margin-top:10px;">Cancelar</button>
+  </div>
+</div>
+
 <!-- MODAL: VEÍCULOS EXTRAS FINANCEIRO -->
 <div class="modal-overlay" id="modal-veiculos-extra">
   <div class="modal-box" style="max-width:400px;max-height:85vh;overflow-y:auto;">
@@ -1680,7 +1696,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v135-tecnicos-compacto';
+const BUILD_VERSION = '2026-10-15-v136-substituicao-etapas';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2363,7 +2379,7 @@ function showAdminTab(tab) {
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
   'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
-  'logLembreteHoje', 'marcarProxima'
+  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -2417,7 +2433,7 @@ async function gasRequest(payload) {
   if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
     try {
       await espelharNoFirestore(payload); // grava de verdade, na hora
-      if (payload.action !== 'marcarProxima') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
+      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
       return { ok: true };
     } catch (e) {
       console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
@@ -2566,6 +2582,11 @@ async function espelharNoFirestore(payload) {
     case 'updateStatus':
       if (!ref) return;
       await ref.set(Object.assign({ status: payload.status || 'ativo', atualizadoEm: agora }, payload.status === 'concluido' ? { proxima: false } : {}), { merge: true });
+      break;
+
+    case 'marcarSubEtapa': // 15/10/2026: substituição feita em 2 partes (só no Firestore, como a "próxima")
+      if (!ref) return;
+      await ref.set({ subFeito: payload.subFeito === 'retirada' || payload.subFeito === 'instalacao' ? payload.subFeito : '', subFeitoEm: agora, atualizadoEm: agora }, { merge: true });
       break;
 
     case 'marcarProxima': // 13/10/2026: "próxima OS" escolhida pelo técnico no mapa (só no Firestore; a Planilha não precisa)
@@ -2782,7 +2803,8 @@ function docFirestoreParaOrdem(doc) {
     valorInstalacao: d.valorInstalacao || '',
     ordemDia:        d.ordemDia || 0,
     notaTecnico:     d.notaTecnico || '',
-    proxima:         !!d.proxima && _proximaValeHoje(d.proximaEm)
+    proxima:         !!d.proxima && _proximaValeHoje(d.proximaEm),
+    subFeito:        d.subFeito === 'retirada' || d.subFeito === 'instalacao' ? d.subFeito : '' // 15/10/2026: etapa já feita da substituição
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -5789,7 +5811,13 @@ async function adminReatribuirDireto(id, techOld, techNew) {
 }
 
 // Admin conclui OS diretamente — reflete em todo o ecossistema
-async function adminConcluirOS(id, tech) {
+// 15/10/2026: substituição pergunta antes o que foi feito (retirada, instalação ou as duas)
+function adminConcluirOS(id, tech) {
+  const o = _osFresca(id, tech);
+  if (_abrirSubEtapaSePrecisar(o, id, tech, 'admin')) return;
+  return _adminConcluirOSDireto(id, tech);
+}
+async function _adminConcluirOSDireto(id, tech) {
   setAdminSyncStatus('syncing');
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
   if (result.ok) {
@@ -6992,14 +7020,22 @@ function _htmlTrocaVeiculo(o, mini) {
   const t = _trocaVeiculoDeOS(o);
   if (!t) return '';
   const seta = '<span style="display:inline-block;background:#8b5cf6;color:#fff;border-radius:6px;padding:0 4px;margin:0 3px;font-weight:800;">⇄</span>';
+  const sf = o && o.subFeito;
   if (mini) {
-    return '<div style="font-size:10px;font-weight:700;line-height:1.5;word-break:break-word;color:#5b21b6;">🚗 ' + esc(t.deModelo) + seta + '🚙 ' + esc(t.para) + '</div>';
+    return '<div style="font-size:10px;font-weight:700;line-height:1.5;word-break:break-word;color:#5b21b6;">🚗 ' + esc(t.deModelo) + seta + '🚙 ' + esc(t.para) + '</div>' +
+      (sf === 'instalacao' ? '<div class="sub-aguarda-ret" style="font-size:9.5px;font-weight:800;color:#b91c1c;">⏳ AGUARDANDO RETIRADA</div>'
+        : sf === 'retirada' ? '<div class="sub-so-inst" style="font-size:9.5px;font-weight:800;color:#047857;">✅ Retirada feita · falta instalar</div>' : '');
   }
+  const etapa = sf === 'instalacao'
+    ? '<div class="sub-aguarda-ret" style="margin-top:6px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">⏳ Instalação feita no ' + esc(t.para) + ' · AGUARDANDO A RETIRADA do ' + esc(t.deModelo) + '</div>'
+    : sf === 'retirada'
+      ? '<div class="sub-so-inst" style="margin-top:6px;background:#d1fae5;border:1px solid #6ee7b7;color:#047857;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">✅ Retirada do ' + esc(t.deModelo) + ' feita · agora é só a INSTALAÇÃO no ' + esc(t.para) + '</div>'
+      : '';
   return '<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:8px 12px;margin-bottom:8px;">' +
     '<div style="font-size:10.5px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">🔁 Troca de veículo</div>' +
     '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px 2px;font-size:13px;color:#4c1d95;">' +
       '<span>🚗 <b>' + esc(t.de) + '</b></span>' + seta + '<span>🚙 <b>' + esc(t.para) + '</b></span>' +
-    '</div>' +
+    '</div>' + etapa +
   '</div>';
 }
 
@@ -7478,6 +7514,7 @@ function cardConcluir(btn) {
   let o = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
   if (!o && Array.isArray(window._adminOrdersCache)) o = window._adminOrdersCache.find(x => x.id === id);
   pendingConcluir = { id, tech };
+  if (_abrirSubEtapaSePrecisar(o, id, tech, 'card')) return; // 15/10/2026: substituição pergunta o que foi feito
   document.getElementById('concluir-nome').textContent    = o ? o.nome    : '';
   document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
   document.getElementById('modal-concluir').classList.add('open'); lockScroll();
@@ -7501,6 +7538,7 @@ function concluirPeloMapa(id, tech) {
   const o = _osFresca(id, tech) || (allOrders[currentUser] || []).find(function(x) { return x.id === id; });
   pendingConcluir = { id: id, tech: tech || currentUser };
   _concluirDoMapa = true;
+  if (_abrirSubEtapaSePrecisar(o, id, tech || currentUser, 'mapa')) return; // 15/10/2026
   document.getElementById('concluir-nome').textContent    = o ? o.nome : '';
   document.getElementById('concluir-veiculo').textContent = o ? (o.veiculo || '') : '';
   document.getElementById('modal-concluir').classList.add('open'); lockScroll();
@@ -7576,6 +7614,73 @@ async function limparProxima(id, tech, modo) {
   if (modo === 'car') recarregarMapaTecnico();
   else { _mapaDesatualizado = true; try { recarregarMapaAdmin(); } catch (_) {} }
 }
+/* ═══ SUBSTITUIÇÃO EM 2 ETAPAS (15/10/2026, pedido do dono) ═══
+   Ao concluir uma OS de substituição, pergunta o que foi feito:
+   - "Só a retirada": a OS continua, agora só com a instalação.
+   - "Só a instalação": a OS continua VERMELHA, aguardando a retirada.
+   - "As duas": conclui a OS como sempre.
+   Com uma etapa já feita, o próximo concluir pergunta só se a outra foi feita e conclui a OS.
+   A etapa fica gravada no Firestore (campo subFeito), como a "próxima". */
+let _subEtapa = null; // { id, tech, origem: 'card' | 'mapa' | 'admin' }
+function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
+  const t = _trocaVeiculoDeOS(o) || (o && String(o.tipo || '').toLowerCase().includes('substitu') ? { de: 'veículo antigo', deModelo: 'veículo antigo', para: 'veículo novo' } : null);
+  if (!t) return false;
+  _subEtapa = { id: id, tech: tech, origem: origem };
+  const sf = o.subFeito || '';
+  const bt = function (cor, txt, acao) { return '<button type="button" onclick="' + acao + '" style="width:100%;padding:12px;background:' + cor + ';color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">' + txt + '</button>'; };
+  document.getElementById('sub-etapa-nome').textContent = o.nome || '';
+  document.getElementById('sub-etapa-veic').textContent = '🚗 ' + t.deModelo + '  ⇄  🚙 ' + t.para;
+  let txt, bts;
+  if (sf === 'retirada') {
+    txt = 'A retirada do ' + t.deModelo + ' já foi feita. A instalação no ' + t.para + ' foi concluída?';
+    bts = bt('#10b981', '✅ Sim, instalação feita · concluir a OS', "_subEtapaEscolher('final')") +
+      '<button type="button" onclick="_subEtapaEscolher(\'desfazer\')" style="background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;">A retirada não foi feita (desmarcar)</button>';
+  } else if (sf === 'instalacao') {
+    txt = 'A instalação no ' + t.para + ' já foi feita. A retirada do ' + t.deModelo + ' foi concluída?';
+    bts = bt('#10b981', '✅ Sim, retirada feita · concluir a OS', "_subEtapaEscolher('final')") +
+      '<button type="button" onclick="_subEtapaEscolher(\'desfazer\')" style="background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;">A instalação não foi feita (desmarcar)</button>';
+  } else {
+    txt = 'Esta OS é uma troca de veículo. O que foi concluído?';
+    bts = bt('#ef4444', '🔧 Só a retirada (do ' + esc(t.deModelo) + ')', "_subEtapaEscolher('retirada')") +
+      bt('#3b82f6', '📡 Só a instalação (no ' + esc(t.para) + ')', "_subEtapaEscolher('instalacao')") +
+      bt('#10b981', '✅ As duas · concluir a OS', "_subEtapaEscolher('final')");
+  }
+  document.getElementById('sub-etapa-txt').textContent = txt;
+  document.getElementById('sub-etapa-bts').innerHTML = bts;
+  document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
+  return true;
+}
+function fecharSubEtapa() {
+  document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll();
+  _subEtapa = null; pendingConcluir = null; _concluirDoMapa = false;
+}
+async function _subEtapaEscolher(escolha) {
+  const se = _subEtapa; if (!se) return;
+  document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll();
+  _subEtapa = null;
+  if (escolha === 'final') { // conclui a OS como sempre
+    if (se.origem === 'admin') { pendingConcluir = null; return _adminConcluirOSDireto(se.id, se.tech); }
+    pendingConcluir = { id: se.id, tech: se.tech };
+    return confirmarConcluir();
+  }
+  pendingConcluir = null; _concluirDoMapa = false;
+  const valor = escolha === 'desfazer' ? '' : escolha;
+  showToast('Salvando...', '');
+  const r = await gasRequest({ action: 'marcarSubEtapa', id: se.id, tech: se.tech, subFeito: valor });
+  if (!r || !r.ok) { showToast('Não consegui salvar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return; }
+  const marca = function (lista) { (lista || []).forEach(function (o) { if (o && o.id === se.id) o.subFeito = valor; }); };
+  Object.keys(allOrders || {}).forEach(function (k) { marca(allOrders[k]); });
+  marca(_firestoreTodasOrdens); marca(window._adminOrdersCache);
+  showToast(valor === 'retirada' ? 'Retirada registrada. A OS continua só com a instalação.'
+    : valor === 'instalacao' ? 'Instalação registrada. A OS fica vermelha aguardando a retirada.'
+    : 'Etapa desmarcada.', 'success');
+  marcarMapaDesatualizado();
+  try {
+    if (currentRole === 'admin') { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); if (typeof renderAdminOSList === 'function') renderAdminOSList(); }
+    else await loadTechOrders();
+  } catch (e) {}
+}
+
 // Executa a conclusão após confirmação
 async function confirmarConcluir() {
   if (!pendingConcluir) return;
