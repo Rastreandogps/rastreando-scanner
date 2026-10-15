@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>/* 15/10/2026: emojis viravam "?" no WhatsApp do computador quando o link era wa.me.
+   Troca sozinho todo link wa.me (botões e window.open) pelo api.whatsapp.com/send, que mantém os emojis. */
+(function(){
+  function conv(u){
+    try{
+      var s=String(u||''), m=s.match(/^https?:\/\/wa\.me\/(\d*)\/?(?:\?(.*))?$/i); if(!m) return u;
+      var txt=null; (m[2]||'').split('&').forEach(function(par){ var i=par.indexOf('='); if(i>0 && par.slice(0,i)==='text') txt=decodeURIComponent(par.slice(i+1).replace(/\+/g,' ')); });
+      return 'https://api.whatsapp.com/send?'+(m[1]?'phone='+m[1]+(txt!=null?'&':''):'')+(txt!=null?'text='+encodeURIComponent(txt):'');
+    }catch(e){ return u }
+  }
+  window.waLink=conv;
+  var wo=window.open; window.open=function(u){ var a=Array.prototype.slice.call(arguments); a[0]=conv(u); return wo.apply(window,a) };
+  document.addEventListener('click',function(e){ var a=e.target&&e.target.closest&&e.target.closest('a[href*="wa.me/"]'); if(a) a.href=conv(a.href) },true);
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APP Técnico</title>
@@ -1704,7 +1719,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v146-link-regularizar';
+const BUILD_VERSION = '2026-10-15-v147-emojis-whatsapp';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
