@@ -1036,7 +1036,7 @@
         .cof-foto{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:50% 15%;display:block;border:3px solid #f59e0b;box-shadow:0 2px 8px rgba(0,0,0,.2);background:#fff}
         .cof.cheio .cof-foto{border-color:#16a34a}
         .cof-porco{display:flex;flex-direction:column;align-items:center}
-        .cof-apelido{margin-top:4px;padding:1px 7px;border-radius:999px;background:linear-gradient(90deg,#ec4899,#f43f5e);color:#fff;font-size:9.5px;font-weight:800;white-space:nowrap;letter-spacing:.2px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+        .cof-apelido{max-width:100px;overflow:hidden;text-overflow:ellipsis;margin-top:4px;padding:1px 7px;border-radius:999px;background:linear-gradient(90deg,#ec4899,#f43f5e);color:#fff;font-size:9.5px;font-weight:800;white-space:nowrap;letter-spacing:.2px;box-shadow:0 1px 3px rgba(0,0,0,.2)}
         .cof-moeda-cai{position:absolute;left:50%;top:-6px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff7c2,#fbbf24 45%,#b45309);border:1px solid #92400e;color:#78350f;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;opacity:0}
         .cof-porco.caiu .cof-moeda-cai{animation:cofCai .7s ease-in}
         @keyframes cofCai{0%{opacity:1;transform:translateY(-34px) rotate(0)}80%{opacity:1;transform:translateY(4px) rotate(300deg)}100%{opacity:0;transform:translateY(8px) rotate(360deg)}}
@@ -1735,7 +1735,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v149-data-nao-salva';
+const BUILD_VERSION = '2026-10-15-v150-nome-cofrinho';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3653,7 +3653,7 @@ function _cofrinhoHTML(dia, ehHoje) {
     '<div class="cof-topo">' +
       '<div class="cof-porco' + (caiu ? ' caiu' : '') + '"><span class="cof-moeda-cai">$</span>' +
         '<img class="cof-foto" src="' + esc(_fotoTecnicoURL(currentUser)) + '" alt="" onerror="this.outerHTML=\'🐷\'">' +
-        '<div class="cof-apelido">Técnico sexy</div></div>' +
+        '<div class="cof-apelido">' + esc(currentUser || 'Técnico') + '</div></div>' + // 15/10/2026: nome do técnico (pedido do dono)
       '<div style="flex:1;min-width:0;">' +
         '<div class="cof-tit">' + titulo + '</div>' +
         '<div class="cof-val"><b>' + esc(_fmtMoeda(recebido)) + '</b><span>de ' + esc(_fmtMoeda(total)) + ' do dia</span></div>' +
