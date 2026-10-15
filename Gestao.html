@@ -706,6 +706,7 @@ body.modal-aberto{overflow:hidden}
 .cc-tent{padding:0 16px 12px}
 .btn-tent{width:100%;padding:11px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fef2f2;color:#b91c1c;font-family:var(--font-body);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-tent:hover{background:#fee2e2}
+.tn-imei{font-size:.72rem;color:var(--text-3);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:2px 0 3px 2px}
 .tn-regras{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;font-size:.84rem;color:#7f1d1d;line-height:1.5;margin:8px 0 10px}
 .tr-sub{font-size:.78rem;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
 .tr-novo{display:grid;grid-template-columns:1fr 90px 80px;gap:8px;margin-bottom:8px}
@@ -1162,8 +1163,9 @@ body.modal-aberto{overflow:hidden}
       • <b>Cliente paga</b> pelo link (1 fatura: link do Asaas · 2 ou mais: página Regularizar, um PIX só) → técnico ganha <b>R$ 10</b>, só depois que o Asaas confirmar.<br>
       • <b>Cliente não paga</b> → técnico combina e retira o equipamento → ganha <b>R$ 50</b>.
     </div>
-    <label>Veículo <span style="font-weight:600;color:var(--text-3)">(opcional)</span></label>
-    <div class="rt-veic"><input type="text" id="tn-modelo" maxlength="45" placeholder="Modelo do veículo" autocomplete="off"><input type="text" id="tn-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div>
+    <label>Veículo(s) <span style="font-weight:600;color:var(--text-3)">(opcional · um por aparelho)</span></label>
+    <div id="tn-veics"></div>
+    <button type="button" class="btn-link" id="tn-mais">+ adicionar outro veículo</button>
     <label for="tn-obs">Observação para o técnico (opcional)</label>
     <textarea id="tn-obs" maxlength="300" placeholder="Ex.: não responde desde agosto; já pedimos a retirada 2 vezes"></textarea>
     <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (lista de retiradas): lá você escolhe o técnico e cria a OS.</div>
@@ -1906,11 +1908,22 @@ body.modal-aberto{overflow:hidden}
     if (!c) return;
     tnCliente = c;
     $('tn-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + (c.faturas ? c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) : '');
-    ['tn-modelo', 'tn-placa', 'tn-obs'].forEach(function (id) { $(id).value = ''; });
+    $('tn-obs').value = '';
+    var ims = imeisDe(c); // 15/10/2026: uma linha de veículo por aparelho (IMEI) do card
+    $('tn-veics').innerHTML = (ims.length ? ims : ['']).map(function (im, k) { return tnLinhaVeiculo(im, k); }).join('');
     $('tn-enviar').disabled = false;
     $('tn-fundo').hidden = false;
     document.body.classList.add('modal-aberto');
   }
+  function tnLinhaVeiculo(imei, k) {
+    return '<div class="tn-veic" data-imei="' + esc(imei || '') + '">' + (imei ? '<div class="tn-imei">Aparelho ' + (k + 1) + ' · IMEI ' + esc(imei) + '</div>' : '') +
+      '<div class="rt-veic"><input type="text" class="rt-modelo" maxlength="45" placeholder="Modelo do veículo" autocomplete="off"><input type="text" class="rt-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div></div>';
+  }
+  $('tn-mais').addEventListener('click', function () {
+    if (document.querySelectorAll('#tn-veics .tn-veic').length >= 10) { toast('Até 10 veículos por pedido.', 'erro'); return; }
+    $('tn-veics').insertAdjacentHTML('beforeend', tnLinhaVeiculo('', 0));
+    var m = document.querySelectorAll('#tn-veics .rt-modelo'); m[m.length - 1].focus();
+  });
   function fecharModalTentativa() { $('tn-fundo').hidden = true; document.body.classList.remove('modal-aberto'); tnCliente = null; }
   $('tn-cancelar').addEventListener('click', fecharModalTentativa);
   $('tn-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalTentativa(); });
@@ -1919,12 +1932,15 @@ body.modal-aberto{overflow:hidden}
   async function enviarTentativa(confirmado) {
     if (!tnCliente) return;
     var c = tnCliente;
-    var modelo = $('tn-modelo').value.trim(), placa = $('tn-placa').value.trim();
-    var imeiCard = String(c.imei || '').replace(/\s+/g, ' ').trim();
-    var obs = [imeiCard ? 'IMEI do aparelho: ' + imeiCard : '', $('tn-obs').value.trim()].filter(Boolean).join(' · ');
+    var veiculos = Array.prototype.map.call(document.querySelectorAll('#tn-veics .tn-veic'), function (el) {
+      return { modelo: el.querySelector('.rt-modelo').value.trim(), placa: el.querySelector('.rt-placa').value.trim(), imei: el.getAttribute('data-imei') || '' };
+    }).filter(function (v) { return v.modelo || v.placa; });
+    if (veiculos.some(function (v) { return v.modelo.length < 2; })) { toast('Informe o modelo de cada veículo preenchido.', 'erro'); return; }
+    var ims = imeisDe(c);
+    var obs = [ims.length ? (ims.length > 1 ? 'IMEIs dos aparelhos (' + ims.length + '): ' : 'IMEI do aparelho: ') + ims.join(', ') : '', $('tn-obs').value.trim()].filter(Boolean).join(' · ');
     var btn = $('tn-enviar'); btn.disabled = true;
     try {
-      var r = await chamar('tent_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: modelo ? [{ modelo: modelo, placa: placa }] : [], obs: obs, confirmarDuplicado: confirmado });
+      var r = await chamar('tent_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: obs, confirmarDuplicado: confirmado });
       fecharModalTentativa();
       avisarAppTecnico(r.protocolo);
       RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
