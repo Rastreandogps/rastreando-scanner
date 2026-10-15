@@ -1704,7 +1704,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v144-especial-por-veiculo';
+const BUILD_VERSION = '2026-10-15-v145-libera-link-pilula';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7114,10 +7114,9 @@ function _htmlTentativa(o, mini) {
     (ag ? '<div class="tent-aguarda" style="margin-top:6px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">⏳ O técnico informou que o cliente pagou · aguardando a confirmação no Asaas</div>' : '') +
     (prom && !ag ? '<div style="margin-top:6px;background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">📅 Cliente prometeu pagar até ' + esc(prom) + '</div>' : '') +
     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
-      (adm ? (_linkLiberadoTentativa(o)
-          ? '<button type="button" onclick="event.stopPropagation();alternarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" title="Toque para tirar o link do técnico" style="flex:1 1 100%;padding:9px;background:#16a34a;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">✅ Link liberado ao técnico · toque para tirar</button>'
-          : '<button type="button" onclick="event.stopPropagation();alternarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1 1 100%;padding:9px;background:#1d4ed8;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔗 Liberar o link de pagamento ao técnico</button>') : '') +
-      (link ? '<button type="button" onclick="event.stopPropagation();enviarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#25D366;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">💬 Mandar link de pagamento</button>' +
+      (adm ? '<button type="button" onclick="event.stopPropagation();alternarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" title="' + (_linkLiberadoTentativa(o) ? 'Toque para tirar o link do técnico' : 'Toque para o técnico ver o link de pagamento') + '" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;' +
+          (_linkLiberadoTentativa(o) ? 'background:#dcfce7;color:#166534;border:1.5px solid #86efac;">✅ Link liberado ao técnico' : 'background:#dbeafe;color:#1d4ed8;border:1.5px solid #93c5fd;">🔗 Liberar link ao técnico') + '</button>' : '') +
+      (link && !adm ? '<button type="button" onclick="event.stopPropagation();enviarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#25D366;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">💬 Mandar link de pagamento</button>' +
           '<button type="button" onclick="event.stopPropagation();copiarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" title="Copiar o link" style="padding:9px 11px;background:#f1f5f9;color:#334155;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔗 Copiar link</button>'
         : adm ? ''
         : '<span style="font-size:11.5px;color:#b91c1c;">Link de pagamento ainda não liberado. Peça ao administrador.</span>') +
