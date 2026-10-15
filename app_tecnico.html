@@ -383,6 +383,10 @@
   .toast.error { background: var(--danger); }
 
   /* MODAL */
+  /* 15/10/2026: TENTATIVA DE RETIRADA: o card pisca em vermelho */
+  @keyframes tentPisca { 0%,100% { box-shadow:0 0 0 2px rgba(220,38,38,.55), 0 0 14px rgba(220,38,38,.35); } 50% { box-shadow:0 0 0 3px rgba(220,38,38,1), 0 0 26px rgba(220,38,38,.75); } }
+  .os-card:has(.tent-led), .os-mini:has(.tent-led), [data-os-tech]:has(.tent-led) { animation:tentPisca 1.1s ease-in-out infinite; border-left-color:#dc2626 !important; background:#fff5f5 !important; }
+  .os-card:has(.tent-aguarda), .os-mini:has(.tent-aguarda), [data-os-tech]:has(.tent-aguarda) { animation:none; box-shadow:0 0 0 2px #f59e0b !important; background:#fffbeb !important; }
   /* 15/10/2026: substituição com a instalação feita e a retirada pendente: card vermelho */
   .os-card:has(.sub-aguarda-ret), .os-mini:has(.sub-aguarda-ret), [data-os-tech]:has(.sub-aguarda-ret) { background:#fef2f2 !important; border-left-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.45) !important; }
   .modal-overlay {
@@ -1505,7 +1509,7 @@
 <!-- MODAL: SUBSTITUIÇÃO EM 2 ETAPAS (15/10/2026) -->
 <div class="modal-overlay" id="modal-sub-etapa">
   <div class="modal-box">
-    <div class="modal-title">🔁 O que foi feito?</div>
+    <div class="modal-title" id="sub-etapa-tit">🔁 O que foi feito?</div>
     <div class="modal-sub" id="sub-etapa-txt"></div>
     <div style="background:#f5f3ff;border-radius:12px;padding:12px;margin-bottom:12px;text-align:center;">
       <div id="sub-etapa-nome" style="font-size:15px;font-weight:700;color:var(--primary);"></div>
@@ -1696,7 +1700,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v138-substituicao-rotulos';
+const BUILD_VERSION = '2026-10-15-v139-tentativa-retirada';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2379,7 +2383,7 @@ function showAdminTab(tab) {
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
   'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
-  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa', 'salvarValorRetirada'
+  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa', 'salvarValorRetirada', 'marcarTentativa'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -2433,7 +2437,7 @@ async function gasRequest(payload) {
   if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
     try {
       await espelharNoFirestore(payload); // grava de verdade, na hora
-      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa' && payload.action !== 'salvarValorRetirada') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
+      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa' && payload.action !== 'salvarValorRetirada' && payload.action !== 'marcarTentativa') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
       return { ok: true };
     } catch (e) {
       console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
@@ -2587,6 +2591,11 @@ async function espelharNoFirestore(payload) {
     case 'marcarSubEtapa': // 15/10/2026: substituição feita em 2 partes (só no Firestore, como a "próxima")
       if (!ref) return;
       await ref.set({ subFeito: payload.subFeito === 'retirada' || payload.subFeito === 'instalacao' ? payload.subFeito : '', subFeitoDia: payload.subFeitoDia || '', subFeitoEm: agora, atualizadoEm: agora }, { merge: true });
+      break;
+
+    case 'marcarTentativa': // 15/10/2026: tentativa de retirada — "cliente disse que pagou" / promessa (só no Firestore)
+      if (!ref) return;
+      await ref.set({ tentPagou: payload.tentPagou === 'aguardando' ? 'aguardando' : '', tentPromessa: String(payload.tentPromessa || '').slice(0, 10), tentEm: agora, atualizadoEm: agora }, { merge: true });
       break;
 
     case 'salvarValorRetirada': // 15/10/2026: valor da retirada da substituição (você paga ao técnico; só no Firestore)
@@ -2811,7 +2820,9 @@ function docFirestoreParaOrdem(doc) {
     proxima:         !!d.proxima && _proximaValeHoje(d.proximaEm),
     subFeito:        d.subFeito === 'retirada' || d.subFeito === 'instalacao' ? d.subFeito : '', // 15/10/2026: etapa já feita da substituição
     subFeitoDia:     d.subFeitoDia || '',
-    valorRetirada:   d.valorRetirada == null ? '' : String(d.valorRetirada)
+    valorRetirada:   d.valorRetirada == null ? '' : String(d.valorRetirada),
+    tentPagou:       d.tentPagou === 'aguardando' ? 'aguardando' : '', // 15/10/2026: tentativa de retirada
+    tentPromessa:    d.tentPromessa || ''
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -3705,7 +3716,7 @@ function _classeTipoOS(o) {
 function _badgeTipoLed(o, mini) {
   const t = (o && o.tipo) ? String(o.tipo).trim() : '';
   if (!t) return '';
-  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + '"><span class="led"></span>' + esc(t) + '</span>';
+  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + (_ehTentativaOS(o) ? ' tent-led' : '') + '"><span class="led"></span>' + esc(t) + '</span>';
 }
 
 // A mesma cor, em números (usada quando o destaque do dia precisa repintar
@@ -7050,6 +7061,131 @@ function _trocaVeiculoDeOS(o) {
   const para = m[2].replace(/\s*\(placa a confirmar\)\s*$/i, '').trim();
   return { de: de, deModelo: de.replace(/\s*\([^)]*\)\s*$/, ''), para: para };
 }
+/* ═══ TENTATIVA DE RETIRADA (15/10/2026, pedido do dono) ═══
+   Cliente devendo que não responde. O técnico liga do número dele:
+   - cliente paga pelo link (Asaas ou Regularizar) → R$ 10 ao técnico, SÓ depois que o administrador confirmar no Asaas;
+   - cliente não paga → o técnico retira → R$ 50;
+   - cliente promete pagar → a OS continua, com a data da promessa.
+   O valor vai no "valor da instalação" da OS (50; vira 10 quando o pagamento é confirmado). Você paga: entra no resumo do dia. */
+const TENT_VALOR_RETIRADA = 50, TENT_VALOR_COBRANCA = 10;
+function _ehTentativaOS(o) { return !!o && String(o.tipo || '').toLowerCase().includes('tentativa'); }
+function _linkPagTentativa(o) { const m = String((o && o.obs) || '').match(/LINK DE PAGAMENTO:\s*(https?:\/\/\S+)/i); return m ? m[1].replace(/[|,;]+$/, '') : ''; }
+function _htmlTentativa(o, mini) {
+  const ag = o.tentPagou === 'aguardando';
+  const prom = o.tentPromessa ? formatDateBR(o.tentPromessa) : '';
+  if (mini) {
+    return '<div style="font-size:9.5px;font-weight:900;color:#b91c1c;">🚨 LIGAR E COBRAR</div>' +
+      (ag ? '<div class="tent-aguarda" style="font-size:9.5px;font-weight:800;color:#b45309;">⏳ aguardando pagamento</div>' : prom ? '<div style="font-size:9.5px;font-weight:800;color:#0f766e;">📅 prometeu ' + esc(prom) + '</div>' : '');
+  }
+  const link = _linkPagTentativa(o), tel = String(o.telefone || '').replace(/\D/g, '');
+  const adm = currentRole === 'admin';
+  const tid = esc(o.id), ttech = esc(o._tech || o.tecnico || '');
+  return '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:9px 12px;margin-bottom:8px;">' +
+    '<div style="font-size:10.5px;font-weight:900;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🚨 Tentativa de retirada</div>' +
+    '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha R$ ' + TENT_VALOR_COBRANCA + ',00 quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00)' : '') + '.</div>' +
+    (ag ? '<div class="tent-aguarda" style="margin-top:6px;background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">⏳ O técnico informou que o cliente pagou · aguardando a confirmação no Asaas</div>' : '') +
+    (prom && !ag ? '<div style="margin-top:6px;background:#f0fdfa;border:1px solid #99f6e4;color:#0f766e;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:800;">📅 Cliente prometeu pagar até ' + esc(prom) + '</div>' : '') +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
+      (link ? '<button type="button" onclick="event.stopPropagation();enviarLinkTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#25D366;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">💬 Mandar link de pagamento</button>' : '<span style="font-size:11.5px;color:#b91c1c;">Sem link de pagamento nesta OS.</span>') +
+      (adm && ag ? '<button type="button" onclick="event.stopPropagation();conferirTentativa(\'' + tid + '\',\'' + ttech + '\')" style="flex:1;min-width:150px;padding:9px;background:#f59e0b;color:white;border:none;border-radius:9px;font-size:12.5px;font-weight:800;cursor:pointer;">🔎 Conferir pagamento no Asaas</button>' : '') +
+    '</div>' +
+  '</div>';
+}
+function enviarLinkTentativa(id, tech) {
+  const o = _osFresca(id, tech); if (!o) return;
+  const link = _linkPagTentativa(o); if (!link) { showToast('Esta OS não tem link de pagamento', 'error'); return; }
+  let tel = String(o.telefone || '').replace(/\D/g, '');
+  if (tel && tel.length <= 11) tel = '55' + tel;
+  const nome = String(o.nome || '').trim().split(/\s+/)[0] || '';
+  const msg = 'Olá' + (nome ? ', ' + nome : '') + '! Conforme conversamos, segue o link para regularizar o pagamento do seu rastreador:\n' + link + '\n\nAssim que o pagamento cair, fica tudo certo. Qualquer dúvida, é só me chamar.';
+  window.open('https://wa.me/' + (tel || '') + '?text=' + encodeURIComponent(msg), '_blank');
+}
+function _abrirTentativa(o, id, tech, origem) {
+  _subEtapa = { id: id, tech: tech, origem: origem, tentativa: true };
+  const ag = o.tentPagou === 'aguardando', adm = currentRole === 'admin';
+  const bt = function (cor, txt, acao) { return '<button type="button" onclick="' + acao + '" style="width:100%;padding:12px;background:' + cor + ';color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">' + txt + '</button>'; };
+  const lk = function (txt, acao) { return '<button type="button" onclick="' + acao + '" style="background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:4px;">' + txt + '</button>'; };
+  let txt, bts;
+  if (ag && adm) {
+    txt = 'O técnico informou que o cliente pagou. Confira no Asaas antes de concluir.';
+    bts = bt('#10b981', '🔎 Conferir no Asaas e concluir (R$ ' + TENT_VALOR_COBRANCA + ')', "_tentEscolher('conferir')") +
+      bt('#ef4444', '🔧 Retirei o equipamento · concluir (R$ ' + TENT_VALOR_RETIRADA + ')', "_tentEscolher('retirou')") +
+      lk('Confirmar o pagamento mesmo sem aparecer no Asaas', "_tentEscolher('forcar')") + lk('O cliente não pagou (tirar o aguardando)', "_tentEscolher('naopagou')");
+  } else if (ag) {
+    txt = 'Você já informou que o cliente pagou. A OS é concluída quando o administrador confirmar o pagamento.';
+    bts = bt('#ef4444', '🔧 Retirei o equipamento · concluir', "_tentEscolher('retirou')");
+  } else {
+    txt = 'Tentativa de retirada. O que aconteceu?';
+    bts = bt('#10b981', '💰 O cliente pagou', "_tentEscolher('pagou')") +
+      bt('#ef4444', '🔧 Retirei o equipamento', "_tentEscolher('retirou')") +
+      bt('#0ea5e9', '📅 Cliente prometeu pagar / reagendar', "_tentEscolher('promessa')");
+  }
+  document.getElementById('sub-etapa-tit').textContent = '🚨 Tentativa de retirada';
+  document.getElementById('sub-etapa-nome').textContent = o.nome || '';
+  document.getElementById('sub-etapa-veic').textContent = o.veiculo ? String(o.veiculo).split(' | ')[0] : '';
+  document.getElementById('sub-etapa-txt').textContent = txt;
+  document.getElementById('sub-etapa-bts').innerHTML = bts;
+  document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
+  return true;
+}
+async function _tentMarcar(se, campos) {
+  const r = await gasRequest(Object.assign({ action: 'marcarTentativa', id: se.id, tech: se.tech }, campos));
+  if (!r || !r.ok) { showToast('Não consegui salvar: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); return false; }
+  const marca = function (l) { (l || []).forEach(function (o) { if (o && o.id === se.id) { o.tentPagou = campos.tentPagou || ''; o.tentPromessa = campos.tentPromessa || ''; } }); };
+  Object.keys(allOrders || {}).forEach(function (k) { marca(allOrders[k]); }); marca(_firestoreTodasOrdens); marca(window._adminOrdersCache);
+  try {
+    if (currentRole === 'admin') { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); if (typeof renderAdminOSList === 'function') renderAdminOSList(); }
+    else await loadTechOrders();
+  } catch (e) {}
+  return true;
+}
+async function _tentConcluir(se, valor) {
+  await gasRequest({ action: 'salvarValorInstalacao', id: se.id, tech: se.tech, valor: String(valor) });
+  [allOrders && allOrders[se.tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (o) { if (o && o.id === se.id) o.valorInstalacao = String(valor); }); });
+  if (se.origem === 'admin') { pendingConcluir = null; return _adminConcluirOSDireto(se.id, se.tech); }
+  pendingConcluir = { id: se.id, tech: se.tech };
+  return confirmarConcluir();
+}
+async function _tentEscolher(escolha) {
+  const se = _subEtapa; if (!se) return;
+  document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll();
+  _subEtapa = null;
+  if (escolha === 'retirou') return _tentConcluir(se, TENT_VALOR_RETIRADA);
+  pendingConcluir = null; _concluirDoMapa = false;
+  if (escolha === 'pagou') {
+    if (currentRole === 'admin') return _tentConferirEConcluir(se);
+    if (await _tentMarcar(se, { tentPagou: 'aguardando' })) showToast('Anotado! A OS é concluída quando o pagamento for confirmado no Asaas.', 'success');
+    return;
+  }
+  if (escolha === 'promessa') {
+    const h = new Date(); h.setDate(h.getDate() + 3);
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const t = prompt('Até que dia o cliente prometeu pagar? (dd/mm/aaaa)', pad(h.getDate()) + '/' + pad(h.getMonth() + 1) + '/' + h.getFullYear());
+    if (t == null) return;
+    const m = String(t).trim().match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+    if (!m) { showToast('Data inválida. Use dd/mm/aaaa.', 'error'); return; }
+    const iso = (m[3] || String(new Date().getFullYear())) + '-' + pad(m[2]) + '-' + pad(m[1]);
+    if (await _tentMarcar(se, { tentPagou: '', tentPromessa: iso })) showToast('Promessa anotada: ' + formatDateBR(iso) + '. A OS continua aberta.', 'success');
+    return;
+  }
+  if (escolha === 'conferir') return _tentConferirEConcluir(se);
+  if (escolha === 'forcar') {
+    if (!confirm('Concluir como PAGO (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico) mesmo sem o pagamento aparecer no Asaas?')) return;
+    return _tentConcluir(se, TENT_VALOR_COBRANCA);
+  }
+  if (escolha === 'naopagou') { if (await _tentMarcar(se, { tentPagou: '' })) showToast('Pronto. A tentativa continua aberta.', 'success'); }
+}
+async function _tentConferirEConcluir(se) {
+  showToast('Conferindo no Asaas...', '');
+  let r;
+  try { r = await _chamarRemocoes({ acao: 'tent_status', osId: se.id }); }
+  catch (e) { showToast('Não consegui conferir: ' + e.message, 'error'); return; }
+  if (r && r.quitado) { showToast('✅ Pagamento confirmado no Asaas. Concluindo (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico)...', 'success'); return _tentConcluir(se, TENT_VALOR_COBRANCA); }
+  showToast('Ainda não aparece pago no Asaas (' + ((r && r.emAberto) || 0) + ' de ' + ((r && r.total) || 0) + ' em aberto). A OS fica aguardando.', 'error');
+  await _tentMarcar(se, { tentPagou: 'aguardando' });
+}
+function conferirTentativa(id, tech) { return _tentConferirEConcluir({ id: id, tech: tech, origem: 'admin' }); }
+
 /* ═══ VALORES DA SUBSTITUIÇÃO (15/10/2026, pedido do dono) ═══
    Instalação: valor da OS (valorInstalacao), pago pelo cliente ao técnico (vai para o cofrinho).
    Retirada: valor à parte (valorRetirada, padrão R$ 30,00), pago por você: entra no cofrinho e no RESUMO DO DIA.
@@ -7100,6 +7236,7 @@ async function editarValorRetirada(id, tech) {
 }
 // Visual "carro atual ⇄ carro novo" (mini = card pequeno da grade)
 function _htmlTrocaVeiculo(o, mini) {
+  if (_ehTentativaOS(o)) return _htmlTentativa(o, mini); // 15/10/2026: tentativa de retirada usa o mesmo lugar do card
   const t = _trocaVeiculoDeOS(o);
   if (!t) return '';
   const seta = '<span style="display:inline-block;background:#8b5cf6;color:#fff;border-radius:6px;padding:0 4px;margin:0 3px;font-weight:800;">⇄</span>';
@@ -7731,6 +7868,7 @@ async function limparProxima(id, tech, modo) {
    A etapa fica gravada no Firestore (campo subFeito), como a "próxima". */
 let _subEtapa = null; // { id, tech, origem: 'card' | 'mapa' | 'admin' }
 function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
+  if (_ehTentativaOS(o)) return _abrirTentativa(o, id, tech, origem); // 15/10/2026
   const t = _trocaVeiculoDeOS(o) || (o && String(o.tipo || '').toLowerCase().includes('substitu') ? { de: 'veículo antigo', deModelo: 'veículo antigo', para: 'veículo novo' } : null);
   if (!t) return false;
   _subEtapa = { id: id, tech: tech, origem: origem };
@@ -7755,6 +7893,7 @@ function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
       bt('#3b82f6', '📡 Só a instalação (no ' + esc(t.para) + ')', "_subEtapaEscolher('instalacao')") +
       bt('#10b981', '✅ As duas · concluir a OS', "_subEtapaEscolher('final')");
   }
+  document.getElementById('sub-etapa-tit').textContent = '🔁 O que foi feito?';
   document.getElementById('sub-etapa-txt').textContent = txt;
   document.getElementById('sub-etapa-bts').innerHTML = bts;
   document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
@@ -9562,10 +9701,16 @@ function _cardRemocao(r) {
   return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #fecaca;border-left:5px solid #ef4444;box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
       '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
-      '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">📤 Remoção</span>' +
+      (r.tentativa ? '<span style="background:#dc2626;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;">🚨 Tentativa de retirada</span>'
+        : '<span style="background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">📤 Remoção</span>') +
     '</div>' +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
-    (daGestao ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 9px;margin-bottom:8px;">🧾 Criado pela Gestão · inadimplência</div>' : '') +
+    (r.tentativa ? '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;color:#7f1d1d;line-height:1.45;">' +
+        '<b>🚨 Tentativa de retirada</b> · ' + esc(String(r.qtdVencidas || '')) + (r.qtdVencidas === 1 ? ' fatura vencida' : ' faturas vencidas') + (r.totalVencido ? ' · R$ ' + Number(r.totalVencido).toFixed(2).replace('.', ',') : '') + '<br>' +
+        'O técnico liga e cobra. Pagou: <b>R$ ' + TENT_VALOR_COBRANCA + '</b> (depois de confirmar no Asaas). Retirou: <b>R$ ' + TENT_VALOR_RETIRADA + '</b>.' +
+        (r.linkPagamento ? '<br>🔗 Link que vai para o cliente: <a href="' + esc(r.linkPagamento) + '" target="_blank" style="color:#b91c1c;word-break:break-all;">' + esc(r.linkPagamento) + '</a>' : '') +
+      '</div>'
+      : daGestao ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 9px;margin-bottom:8px;">🧾 Criado pela Gestão · inadimplência</div>' : '') +
     (telCad ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(telCad) + ' <span style="font-size:11px;">(cadastro)</span></div>' : '') +
     (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
     '<div style="margin:4px 0 8px;"><label style="' + lbl + '">📍 Endereço ou link de localização</label>' +
@@ -9585,11 +9730,12 @@ function _cardRemocao(r) {
       '<label style="' + lbl + '">💰 Valor do serviço</label>' +
       '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
         '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
-        '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
+        '<input type="number" id="rm-valor-' + id + '" placeholder="0,00"' + (r.tentativa ? ' value="' + TENT_VALOR_RETIRADA + '"' : '') + ' step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
       '</div>' +
+      (r.tentativa ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Valor se retirar (vira R$ ' + TENT_VALOR_COBRANCA + ' se o cliente pagar)</div>' : '') +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
-      '<button onclick="criarOSRemocao(\'' + id + '\')" style="flex:1;padding:10px;background:#ef4444;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ Criar OS de remoção</button>' +
+      '<button onclick="criarOSRemocao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (r.tentativa ? '#dc2626' : '#ef4444') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (r.tentativa ? '🚨 Criar OS de tentativa' : '✅ Criar OS de remoção') + '</button>' +
       '<button onclick="ignorarRemocao(\'' + id + '\')" style="padding:10px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
     '</div>' +
   '</div>';
@@ -9643,6 +9789,10 @@ async function criarOSRemocao(id) {
     return (v.modelo || '') + ' | Placa: ' + (v.placa || '');
   }).join(' || ');
   const partesObs = [];
+  if (r.tentativa) { // 15/10/2026
+    partesObs.push('TENTATIVA DE RETIRADA: ligue para o cliente. Pagou = R$ ' + TENT_VALOR_COBRANCA + ' (depois de confirmado). Retirou = R$ ' + TENT_VALOR_RETIRADA);
+    if (r.linkPagamento) partesObs.push('LINK DE PAGAMENTO: ' + r.linkPagamento);
+  } else
   partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar os veículos listados');
   if (r.referencia) partesObs.push('Ref.: ' + r.referencia);
   if (r.telefoneContato && r.telefone && r.telefoneContato !== r.telefone) partesObs.push('Tel. do cadastro: ' + _fmtTelRemocao(r.telefone));
@@ -9654,8 +9804,8 @@ async function criarOSRemocao(id) {
   const resultSave = await gasRequest({
     action: 'saveOrder', tech: tecnico, id: novoId,
     nome: r.nome || '', telefone: _fmtTelRemocao(r.telefoneContato || r.telefone),
-    endereco: enderecoOS, tipo: 'Remoção', data: data,
-    veiculo: veiculoStr, obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id))
+    endereco: enderecoOS, tipo: r.tentativa ? 'Tentativa de retirada' : 'Remoção', data: data,
+    veiculo: veiculoStr || (r.tentativa ? 'Veículo a confirmar | Placa: ' : ''), obs: embutirHora(partesObs.join(' | '), hora, _lerPeriodo('rm-periodo-' + id), '', '', r.tentativa ? String(r.cpf || '').replace(/\D/g, '') : '')
   });
 
   if (!resultSave.ok) {
@@ -9668,7 +9818,7 @@ async function criarOSRemocao(id) {
   if (valor) await gasRequest({ action: 'salvarValorInstalacao', id: novoId, tech: tecnico, valor: valor });
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
-    showToast('OS de remoção criada para ' + tecnico + '! ✅', 'success');
+    showToast((r.tentativa ? 'OS de tentativa de retirada' : 'OS de remoção') + ' criada para ' + tecnico + '! ✅', 'success');
     _apagarAvisoRemocao(id);
   } catch (e) {
     showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
