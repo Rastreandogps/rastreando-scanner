@@ -669,6 +669,37 @@
 .tec-chip .tec-main:focus-visible,.tec-chip .tec-fav:focus-visible{outline:2px solid var(--c);outline-offset:2px}
 .tec-chip.todos .tec-main:focus-visible{outline-color:#93c5fd}
 @media (prefers-reduced-motion:reduce){.tec-chip{transition:none}}
+/* 15/10/2026 (v135, pedido do dono): seletor de técnico COMPACTO — uma fileira de "pílulas" no topo (rola de lado se não couber),
+   título pequeno, sem a frase; o calendário sobe e ocupa mais a tela. Mesmos botões e funções de antes. */
+#admin-tab-view-tech .admin-section{padding-top:12px}
+#admin-tab-view-tech .tec-tit{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin:0 0 8px}
+.tec-sel{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;margin:0 -4px 12px;padding:3px 4px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tec-sel::-webkit-scrollbar{display:none}
+.tec-chip{flex:0 0 auto;border-radius:999px;border-width:1.5px}
+.tec-chip .tec-main{padding:4px 10px 4px 4px;gap:7px;border-radius:999px}
+.tec-chip .tec-av{width:26px;height:26px;font-size:12.5px;box-shadow:0 0 0 2px var(--t)}
+.tec-chip .tec-txt{flex-direction:row;align-items:center;gap:6px}
+.tec-chip .tec-nome{font-size:13.5px}
+.tec-chip .tec-qtd{margin:0;font-size:11.5px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f1f5f9;display:inline-flex;align-items:center;justify-content:center}
+.tec-chip.sel .tec-qtd{background:rgba(255,255,255,.75)}
+.tec-chip .tec-fav{position:static;width:22px;height:22px;font-size:12px;margin:0 4px 0 -4px;flex-shrink:0}
+.tec-chip.todos{grid-column:auto}
+.tec-chip.todos .tec-main{padding:4px 12px 4px 4px}
+.tec-chip.todos .tec-av{width:26px;height:26px;font-size:14px}
+.tec-chip.todos .tec-pontos{display:none}
+.tec-chip.todos .tec-qtd{background:rgba(255,255,255,.14);color:#fff}
+@media (min-width:1024px){.tec-sel{flex-wrap:wrap;overflow:visible}}
+/* celular: todos os técnicos lado a lado numa fileira só (mini-cartões: letra, nome embaixo, número no canto) */
+@media (max-width:600px){
+  .tec-sel{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px;overflow:visible;margin:0 0 12px;padding:0}
+  .tec-chip{border-radius:14px;min-width:0}
+  .tec-chip .tec-main,.tec-chip.todos .tec-main{flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;padding:8px 2px 6px;border-radius:14px}
+  .tec-chip .tec-av,.tec-chip.todos .tec-av{width:30px;height:30px;font-size:13px}
+  .tec-chip .tec-txt{flex-direction:column;align-items:center;gap:0;max-width:100%}
+  .tec-chip .tec-nome{font-size:11.5px;max-width:100%}
+  .tec-chip .tec-qtd{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;font-size:10px}
+  .tec-chip .tec-fav{position:absolute;top:1px;left:1px;width:18px;height:18px;font-size:10px;margin:0}
+}
 </style>
 </head>
 <body>
@@ -1257,8 +1288,7 @@
   <!-- VER TÉCNICO -->
   <div id="admin-tab-view-tech" class="screen" style="background:#e8eef8;min-height:100vh;">
     <div class="admin-section">
-      <h3>👁️ Visualizar Calendário do Técnico</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Selecione um técnico para ver o calendário e as ordens dele.</p>
+      <h3 class="tec-tit">Calendário dos técnicos</h3><!-- 15/10/2026 (pedido do dono): título pequeno e sem a frase de instrução -->
       <div id="admin-view-tech-btns" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"></div>
       <!-- Bloco de notas -->
       <div id="admin-resumo-geral" style="display:block;">
@@ -1650,7 +1680,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-14-v134-so-numeros';
+const BUILD_VERSION = '2026-10-15-v135-tecnicos-compacto';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2191,14 +2221,14 @@ function gerarElementosDinamicos() {
     const favTech = localStorage.getItem('adminFavTech') || '';
     const selTec = (typeof adminTechSelecionado === 'string') ? adminTechSelecionado : '';
     const vendoTodos = (typeof _adminVendoTodos !== 'undefined') && _adminVendoTodos;
-    const qtdTxt = (q) => q > 0 ? '<b>' + q + '</b> ' + (q === 1 ? 'ordem' : 'ordens') : 'sem ordens';
+    const qtdTxt = (q) => '<b>' + q + '</b>'; /* 15/10/2026 (v135): só o número na pílula (o texto "ordens" ocupava espaço) */
     btnView.className = 'tec-sel';
     btnView.removeAttribute('style');
     btnView.innerHTML =
       '<div class="tec-chip todos admin-tech-btn' + (vendoTodos ? ' sel' : '') + '" data-tech="todos">' +
-        '<button type="button" class="tec-main" onclick="adminVerTodos()">' +
+        '<button type="button" class="tec-main" onclick="adminVerTodos()" title="Todos os técnicos: ' + totalGeral + ' ordens">' +
           '<span class="tec-av" aria-hidden="true">🗓️</span>' +
-          '<span class="tec-txt"><span class="tec-nome">Todos os técnicos</span><span class="tec-qtd">' + qtdTxt(totalGeral) + '</span></span>' +
+          '<span class="tec-txt"><span class="tec-nome">Todos</span><span class="tec-qtd">' + qtdTxt(totalGeral) + '</span></span>' +
           '<span class="tec-pontos" aria-hidden="true">' + TECH_NAMES.map((n, i) => '<i style="background:' + (CORES_TEC[i] || CORES_TEC[0]) + '"></i>').join('') + '</span>' +
         '</button>' +
       '</div>' +
@@ -2208,7 +2238,7 @@ function gerarElementosDinamicos() {
         const qtd = (allOrders[n] || []).length;
         const isFav = favTech === n;
         return '<div class="tec-chip admin-tech-btn' + (selTec === n && !vendoTodos ? ' sel' : '') + '" data-tech="' + n + '" style="--c:' + cor + ';--t:' + tint + '">' +
-          '<button type="button" class="tec-main" onclick="adminVerTecnico(&quot;' + n + '&quot;)">' +
+          '<button type="button" class="tec-main" onclick="adminVerTecnico(&quot;' + n + '&quot;)" title="' + n + ': ' + qtd + (qtd === 1 ? ' ordem' : ' ordens') + '">' +
             '<span class="tec-av" aria-hidden="true">' + String(n).trim().charAt(0).toUpperCase() + '</span>' +
             '<span class="tec-txt"><span class="tec-nome">' + n + '</span><span class="tec-qtd">' + qtdTxt(qtd) + '</span></span>' +
           '</button>' +
