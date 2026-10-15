@@ -703,6 +703,10 @@ body.modal-aberto{overflow:hidden}
 .btn-troca:hover{background:#ede9fe}
 .cc-acoes .btn-troca{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
 .cls-acoes .btn-troca{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+.cc-tent{padding:0 16px 12px}
+.btn-tent{width:100%;padding:11px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fef2f2;color:#b91c1c;font-family:var(--font-body);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-tent:hover{background:#fee2e2}
+.tn-regras{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;font-size:.84rem;color:#7f1d1d;line-height:1.5;margin:8px 0 10px}
 .tr-sub{font-size:.78rem;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
 .tr-novo{display:grid;grid-template-columns:1fr 90px 80px;gap:8px;margin-bottom:8px}
 .tr-novo input,.tr-novo select,.tr-opc select{min-width:0}
@@ -1147,6 +1151,23 @@ body.modal-aberto{overflow:hidden}
     <div class="rt-link-dica">Preenchido: o técnico vai pela localização do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
     <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos de manutenção): lá você escolhe o técnico e a data.</div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="mn-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="mn-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="tn-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="tn-titulo">
+    <h3 id="tn-titulo">🚨 Tentativa de retirada</h3>
+    <div class="rt-cli" id="tn-cli"></div>
+    <div class="tn-regras">
+      A OS chega no APP Técnico <b>piscando em vermelho</b>. O técnico liga para o cliente do número dele:<br>
+      • <b>Cliente paga</b> pelo link (1 fatura: link do Asaas · 2 ou mais: página Regularizar, um PIX só) → técnico ganha <b>R$ 10</b>, só depois que o Asaas confirmar.<br>
+      • <b>Cliente não paga</b> → técnico combina e retira o equipamento → ganha <b>R$ 50</b>.
+    </div>
+    <label>Veículo <span style="font-weight:600;color:var(--text-3)">(opcional)</span></label>
+    <div class="rt-veic"><input type="text" id="tn-modelo" maxlength="45" placeholder="Modelo do veículo" autocomplete="off"><input type="text" id="tn-placa" maxlength="8" placeholder="Placa" autocomplete="off"></div>
+    <label for="tn-obs">Observação para o técnico (opcional)</label>
+    <textarea id="tn-obs" maxlength="300" placeholder="Ex.: não responde desde agosto; já pedimos a retirada 2 vezes"></textarea>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (lista de retiradas): lá você escolhe o técnico e cria a OS.</div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="tn-enviar" style="width:auto;background:#dc2626">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="tn-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div class="modal-fundo" id="tr-fundo" hidden>
@@ -1677,6 +1698,7 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn btn-pri" data-idx="' + i + '" data-acao="salvar-retorno" style="width:100%">Salvar</button>' +
         '</div>' +
         htmlEstagios(c, i) +
+        '<div class="cc-tent"><button type="button" class="btn-tent" data-idx="' + i + '" data-acao="tentativa">🚨 Enviar para tentativa de retirada</button></div>' +
         '<div class="cc-acoes">' +
           '<button type="button" class="btn-wpp-cliente" data-idx="' + i + '">' +
             '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>' +
@@ -1785,6 +1807,9 @@ body.modal-aberto{overflow:hidden}
     $('lista-clientes').querySelectorAll('[data-acao="manutencao"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalManut(lista[Number(b.getAttribute('data-idx'))]); });
     });
+    $('lista-clientes').querySelectorAll('[data-acao="tentativa"]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirModalTentativa(lista[Number(b.getAttribute('data-idx'))]); });
+    });
     $('lista-clientes').querySelectorAll('[data-acao="troca"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalTroca(lista[Number(b.getAttribute('data-idx'))]); });
     });
@@ -1875,6 +1900,43 @@ body.modal-aberto{overflow:hidden}
   document.addEventListener('mousedown', function (ev) { _fundoDown = ev.target; }, true);
   document.addEventListener('touchstart', function (ev) { _fundoDown = ev.target; }, { capture: true, passive: true });
   $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalRetirada(); });
+  // ---------- TENTATIVA DE RETIRADA (15/10/2026: técnico liga, cobra pelo link ou retira; R$ 10 se pagar, R$ 50 se retirar) ----------
+  var tnCliente = null;
+  function abrirModalTentativa(c) {
+    if (!c) return;
+    tnCliente = c;
+    $('tn-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + ' · ' + (c.faturas ? c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + ' · ' + brl(c.valorTotal) : '');
+    ['tn-modelo', 'tn-placa', 'tn-obs'].forEach(function (id) { $(id).value = ''; });
+    $('tn-enviar').disabled = false;
+    $('tn-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+  }
+  function fecharModalTentativa() { $('tn-fundo').hidden = true; document.body.classList.remove('modal-aberto'); tnCliente = null; }
+  $('tn-cancelar').addEventListener('click', fecharModalTentativa);
+  $('tn-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalTentativa(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('tn-fundo').hidden) fecharModalTentativa(); });
+  $('tn-enviar').addEventListener('click', function () { enviarTentativa(false); });
+  async function enviarTentativa(confirmado) {
+    if (!tnCliente) return;
+    var c = tnCliente;
+    var modelo = $('tn-modelo').value.trim(), placa = $('tn-placa').value.trim();
+    var imeiCard = String(c.imei || '').replace(/\s+/g, ' ').trim();
+    var obs = [imeiCard ? 'IMEI do aparelho: ' + imeiCard : '', $('tn-obs').value.trim()].filter(Boolean).join(' · ');
+    var btn = $('tn-enviar'); btn.disabled = true;
+    try {
+      var r = await chamar('tent_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: modelo ? [{ modelo: modelo, placa: placa }] : [], obs: obs, confirmarDuplicado: confirmado });
+      fecharModalTentativa();
+      avisarAppTecnico(r.protocolo);
+      RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
+      toast('Tentativa de retirada enviada ao APP Técnico (' + r.protocolo + '). ' + (r.linkRegularizar ? 'Link: página Regularizar (' + r.qtdVencidas + ' faturas).' : 'Link: fatura no Asaas.'), 'ok');
+    } catch (e) {
+      var msg = (e && e.message) || 'Erro ao enviar.';
+      btn.disabled = false;
+      if (/Já existe um pedido de retirada pendente/.test(msg)) { if (confirm(msg + '\n\nCriar outro mesmo assim?')) enviarTentativa(true); return; }
+      toast(msg, 'erro');
+    }
+  }
+
   // ---------- TROCA DE VEÍCULO (15/10/2026: vira pedido PENDENTE de SUBSTITUIÇÃO no APP Técnico, igual ao troca.html) ----------
   var trCliente = null;
   function abrirModalTroca(c) {
