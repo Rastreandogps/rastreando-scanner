@@ -1704,7 +1704,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v145-libera-link-pilula';
+const BUILD_VERSION = '2026-10-15-v146-link-regularizar';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7086,10 +7086,13 @@ function _ehTentativaOS(o) {
 // 15/10/2026: o técnico só vê o link quando o administrador LIBERA (botão azul → verde); o administrador vê sempre
 function _linkOrigemTentativa(o) { const m = String((o && o.obs) || '').match(/LINK DE PAGAMENTO:\s*(https?:\/\/\S+)/i); return m ? m[1].replace(/[|,;]+$/, '') : ''; }
 function _linkLiberadoTentativa(o) { return !!(o && o.tentLink); }
+// 15/10/2026 (v146): o link de pagamento é SEMPRE a página Regularizar (ela aceita 1 fatura ou junta 2+).
+// OS antigas guardavam o link da fatura no Asaas: agora ele é ignorado; o que vale é se o link está liberado.
+const TENT_LINK_REGULARIZAR = 'https://app.rastreandogpsbr.com.br/regularizar.html';
 function _linkPagTentativa(o) {
   if (!o) return '';
-  if (currentRole === 'admin') return o.tentLink || _linkOrigemTentativa(o);
-  return o.tentLink || '';
+  if (currentRole === 'admin') return TENT_LINK_REGULARIZAR;
+  return o.tentLink ? TENT_LINK_REGULARIZAR : '';
 }
 function _htmlTentativa(o, mini) {
   const ag = o.tentPagou === 'aguardando';
@@ -7142,7 +7145,7 @@ async function alternarLinkTentativa(id, tech) {
     try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
     return;
   }
-  return buscarLinkTentativa(id, tech, _linkOrigemTentativa(o));
+  return buscarLinkTentativa(id, tech, TENT_LINK_REGULARIZAR);
 }
 async function buscarLinkTentativa(id, tech, jaTenho) {
   let r = jaTenho ? { link: jaTenho } : null;
