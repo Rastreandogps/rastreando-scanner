@@ -698,6 +698,16 @@ body.modal-aberto{overflow:hidden}
 .btn-manut:hover{background:#fef3c7}
 .cc-acoes .btn-manut{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
 .cls-acoes .btn-manut{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+/* 15/10/2026: troca de veículo (vira pedido de SUBSTITUIÇÃO no APP Técnico) */
+.btn-troca{border:1.5px solid #c4b5fd;border-radius:var(--radius-sm);background:#f5f3ff;color:#6d28d9;font-family:var(--font-body);font-weight:700;cursor:pointer}
+.btn-troca:hover{background:#ede9fe}
+.cc-acoes .btn-troca{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
+.cls-acoes .btn-troca{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+.tr-sub{font-size:.78rem;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px}
+.tr-novo{display:grid;grid-template-columns:1fr 90px 80px;gap:8px;margin-bottom:8px}
+.tr-novo input,.tr-novo select,.tr-opc select{min-width:0}
+.tr-opc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+@media(max-width:420px){.tr-novo{grid-template-columns:1fr 1fr}.tr-novo .tr-nmodelo{grid-column:1/-1}}
 #mn-veics .rt-veic{grid-template-columns:1fr 90px 132px}
 #mn-veics select{min-width:0;padding:10px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.9rem;background:#fff;color:var(--text)}
 @media(max-width:420px){#mn-veics .rt-veic{grid-template-columns:1fr 1fr}#mn-veics select{grid-column:1/-1}}
@@ -1137,6 +1147,28 @@ body.modal-aberto{overflow:hidden}
     <div class="rt-link-dica">Preenchido: o técnico vai pela localização do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
     <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos de manutenção): lá você escolhe o técnico e a data.</div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="mn-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="mn-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="tr-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="tr-titulo">
+    <h3 id="tr-titulo">🔁 Troca de veículo</h3>
+    <div class="rt-cli" id="tr-cli"></div>
+    <div class="tr-sub">Sai deste veículo</div>
+    <div class="rt-veic"><input type="text" id="tr-amodelo" maxlength="45" placeholder="Modelo do veículo atual" autocomplete="off"><input type="text" id="tr-aplaca" maxlength="8" placeholder="Placa" autocomplete="off"></div>
+    <div class="tr-sub">Vai para este veículo</div>
+    <div class="tr-novo"><input type="text" class="tr-nmodelo" id="tr-nmodelo" maxlength="45" placeholder="Modelo do veículo novo" autocomplete="off"><input type="text" id="tr-nplaca" maxlength="8" placeholder="Placa" autocomplete="off"><input type="text" id="tr-nano" maxlength="4" inputmode="numeric" placeholder="Ano" autocomplete="off"></div>
+    <div class="tr-opc">
+      <select id="tr-gnv" aria-label="Tem GNV?"><option value="">Tem GNV?</option><option value="nao">Sem GNV</option><option value="sim">Com GNV</option></select>
+      <select id="tr-bloq" aria-label="Com ou sem bloqueio"><option value="">Bloqueio?</option><option value="com">Com bloqueio</option><option value="sem">Sem bloqueio</option></select>
+    </div>
+    <div class="rt-link-dica">A placa e o ano do veículo novo são opcionais (o técnico confirma na hora).</div>
+    <label for="tr-desc">Observação (opcional)</label>
+    <textarea id="tr-desc" maxlength="500" placeholder="Ex.: cliente vendeu o carro antigo, entrega o novo na sexta"></textarea>
+    <label for="tr-link">🛰️ Link do monitoramento <span style="font-weight:600;color:var(--text-3)">(opcional)</span></label>
+    <input type="text" id="tr-link" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Cole o link da localização em tempo real">
+    <div class="rt-link-dica">Preenchido: o técnico vai pela localização do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos de manutenção, card roxo "Substituição"): lá você escolhe o técnico, a data e o valor.</div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="tr-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="tr-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1652,6 +1684,7 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn-retorno" data-idx="' + i + '" data-acao="retorno">📅 Retorno</button>' +
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
           '<button type="button" class="btn-manut" data-idx="' + i + '" data-acao="manutencao">🛠️ Manutenção</button>' +
+          '<button type="button" class="btn-troca" data-idx="' + i + '" data-acao="troca">🔁 Troca de veículo</button>' +
           '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
@@ -1752,6 +1785,9 @@ body.modal-aberto{overflow:hidden}
     $('lista-clientes').querySelectorAll('[data-acao="manutencao"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalManut(lista[Number(b.getAttribute('data-idx'))]); });
     });
+    $('lista-clientes').querySelectorAll('[data-acao="troca"]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirModalTroca(lista[Number(b.getAttribute('data-idx'))]); });
+    });
     $('lista-clientes').querySelectorAll('[data-acao="retirada"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalRetirada(lista[Number(b.getAttribute('data-idx'))]); });
     });
@@ -1812,6 +1848,8 @@ body.modal-aberto{overflow:hidden}
   $('classif-conteudo').addEventListener('click', function (ev) {
     var bm = ev.target.closest('.cls-man');
     if (bm) { var cm = clienteParaRetirada(bm.getAttribute('data-cpf')); if (cm) abrirModalManut(cm); else toast('Cliente não encontrado.', 'erro'); return; }
+    var bt = ev.target.closest('.cls-trc');
+    if (bt) { var ct = clienteParaRetirada(bt.getAttribute('data-cpf')); if (ct) abrirModalTroca(ct); else toast('Cliente não encontrado.', 'erro'); return; }
     var b = ev.target.closest('.cls-ret');
     if (!b) return;
     var c = clienteParaRetirada(b.getAttribute('data-cpf'));
@@ -1837,6 +1875,51 @@ body.modal-aberto{overflow:hidden}
   document.addEventListener('mousedown', function (ev) { _fundoDown = ev.target; }, true);
   document.addEventListener('touchstart', function (ev) { _fundoDown = ev.target; }, { capture: true, passive: true });
   $('rt-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalRetirada(); });
+  // ---------- TROCA DE VEÍCULO (15/10/2026: vira pedido PENDENTE de SUBSTITUIÇÃO no APP Técnico, igual ao troca.html) ----------
+  var trCliente = null;
+  function abrirModalTroca(c) {
+    if (!c) return;
+    trCliente = c;
+    $('tr-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + (c.telefone ? ' · ' + esc(c.telefone) : '');
+    ['tr-amodelo', 'tr-aplaca', 'tr-nmodelo', 'tr-nplaca', 'tr-nano', 'tr-gnv', 'tr-bloq', 'tr-desc', 'tr-link'].forEach(function (id) { $(id).value = ''; });
+    $('tr-enviar').disabled = false;
+    $('tr-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+    setTimeout(function () { $('tr-amodelo').focus(); }, 30);
+  }
+  function fecharModalTroca() { $('tr-fundo').hidden = true; document.body.classList.remove('modal-aberto'); trCliente = null; }
+  $('tr-cancelar').addEventListener('click', fecharModalTroca);
+  $('tr-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalTroca(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('tr-fundo').hidden) fecharModalTroca(); });
+  $('tr-enviar').addEventListener('click', function () { enviarTroca(false); });
+  async function enviarTroca(confirmado) {
+    if (!trCliente) return;
+    var c = trCliente;
+    var atual = { modelo: $('tr-amodelo').value.trim(), placa: $('tr-aplaca').value.trim() };
+    var novo = { modelo: $('tr-nmodelo').value.trim(), placa: $('tr-nplaca').value.trim(), ano: $('tr-nano').value.trim(), gnv: $('tr-gnv').value, tipoRastreio: $('tr-bloq').value };
+    if (atual.modelo.length < 2) { toast('Informe o modelo do veículo atual.', 'erro'); $('tr-amodelo').focus(); return; }
+    if (novo.modelo.length < 2) { toast('Informe o modelo do veículo novo.', 'erro'); $('tr-nmodelo').focus(); return; }
+    if (novo.ano && !/^\d{4}$/.test(novo.ano)) { toast('O ano precisa ter 4 números (ex.: 2020).', 'erro'); $('tr-nano').focus(); return; }
+    if (!novo.gnv) { toast('Escolha se o veículo novo tem GNV.', 'erro'); $('tr-gnv').focus(); return; }
+    if (!novo.tipoRastreio) { toast('Escolha com ou sem bloqueio no veículo novo.', 'erro'); $('tr-bloq').focus(); return; }
+    var link = $('tr-link').value.trim();
+    if (link && !/^https?:\/\/\S+$/i.test(link)) { toast('O link do monitoramento precisa começar com http:// ou https://', 'erro'); $('tr-link').focus(); return; }
+    var imeiCard = String(c.imei || '').replace(/\s+/g, ' ').trim();
+    var desc = [imeiCard ? 'IMEI do aparelho: ' + imeiCard : '', $('tr-desc').value.trim()].filter(Boolean).join(' · ');
+    var btn = $('tr-enviar'); btn.disabled = true;
+    try {
+      var r = await chamar('trc_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', atual: atual, novo: novo, descricao: desc, linkLocalizacao: link, confirmarDuplicado: confirmado });
+      fecharModalTroca();
+      avisarAppTecnico(r.protocolo);
+      toast('Troca de veículo enviada ao APP Técnico (' + r.protocolo + ').' + (link ? ' Com o link do monitoramento.' : r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+    } catch (e) {
+      var msg = (e && e.message) || 'Erro ao enviar.';
+      btn.disabled = false;
+      if (/Já existe um pedido de troca de veículo pendente/.test(msg)) { if (confirm(msg + '\n\nCriar outro mesmo assim?')) enviarTroca(true); return; }
+      toast(msg, 'erro');
+    }
+  }
+
   // ---------- ORDEM DE MANUTENÇÃO (vira pedido PENDENTE de manutenção no APP Técnico) ----------
   var mnCliente = null;
   function mnLinhaVeiculo() {
@@ -3676,7 +3759,15 @@ body.modal-aberto{overflow:hidden}
   });
   $('cl-pontos').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-ret').addEventListener('change', function () { if (CLS) renderClassificacao(); });
-  $('cl-busca').addEventListener('input', function () { if (CLS) renderClassificacao(); });
+  // 15/10/2026: ao começar a digitar um nome, a lista passa sozinha para "Todos" (quem já pagou também aparece);
+  // ao apagar a busca, volta para o que estava antes. Se tocar em outro botão durante a busca, vale o que tocou.
+  var clsStatusAntesBusca = null;
+  $('cl-busca').addEventListener('input', function () {
+    var tem = this.value.trim() !== '';
+    if (tem && clsStatusAntesBusca === null) { clsStatusAntesBusca = clsFiltro.status; clsFiltro.status = 'todos'; }
+    else if (!tem && clsStatusAntesBusca !== null) { clsFiltro.status = clsStatusAntesBusca; clsStatusAntesBusca = null; }
+    if (CLS) renderClassificacao();
+  });
   $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
   $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
 
@@ -3735,7 +3826,7 @@ body.modal-aberto{overflow:hidden}
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
-        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.' + ((termo || fVen) && clsFiltro.status !== 'todos' ? '<br><small>Está filtrando só por "' + (clsFiltro.status === 'pagos' ? 'Já pagos' : 'A receber') + '". Toque em <b>Todos</b> para buscar entre todos os clientes.</small>' : '') + '</div>';
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
@@ -3757,7 +3848,7 @@ body.modal-aberto{overflow:hidden}
       b.addEventListener('click', function () { var k = b.getAttribute('data-cls'); clsFiltro.classe = clsFiltro.classe === k ? '' : k; renderClassificacao(); });
     });
     $('classif-conteudo').querySelectorAll('[data-st]').forEach(function (b) {
-      b.addEventListener('click', function () { clsFiltro.status = b.getAttribute('data-st'); renderClassificacao(); });
+      b.addEventListener('click', function () { clsFiltro.status = b.getAttribute('data-st'); if (clsStatusAntesBusca !== null) clsStatusAntesBusca = clsFiltro.status; renderClassificacao(); });
     });
     if ($('cls-limpa-classe')) $('cls-limpa-classe').addEventListener('click', function () { clsFiltro.classe = ''; renderClassificacao(); });
     $('cls-recalcular').addEventListener('click', function () { abrirClassificacao(true); });
