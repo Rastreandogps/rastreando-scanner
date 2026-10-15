@@ -1164,7 +1164,7 @@ body.modal-aberto{overflow:hidden}
     <div class="rt-cli" id="tn-cli"></div>
     <div class="tn-regras">
       A OS chega no APP Técnico <b>piscando em vermelho</b>. O técnico liga para o cliente do número dele:<br>
-      • <b>Cliente paga</b> pelo link (1 fatura: link do Asaas · 2 ou mais: página Regularizar, um PIX só) → técnico ganha <b>R$ 10</b>, só depois que o Asaas confirmar.<br>
+      • <b>Cliente paga</b> pela página <b>Regularizar</b> (1 fatura: PIX dela · 2 ou mais: tudo num PIX só) → técnico ganha <b>R$ 10</b>, só depois que o Asaas confirmar.<br>
       • <b>Cliente não paga</b> → técnico combina e retira o equipamento → ganha <b>R$ 50</b>.
     </div>
     <label>Veículo(s) <span style="font-weight:600;color:var(--text-3)">(opcional · um por aparelho)</span></label>
@@ -1955,7 +1955,7 @@ body.modal-aberto{overflow:hidden}
       fecharModalTentativa();
       avisarAppTecnico(r.protocolo);
       RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
-      toast('Tentativa de retirada enviada ao APP Técnico (' + r.protocolo + '). ' + (r.linkRegularizar ? 'Link: página Regularizar (' + r.qtdVencidas + ' faturas).' : 'Link: fatura no Asaas.'), 'ok');
+      toast('Tentativa de retirada enviada ao APP Técnico (' + r.protocolo + '). ' + 'Link: página Regularizar (' + r.qtdVencidas + (r.qtdVencidas === 1 ? ' fatura).' : ' faturas).'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
       btn.disabled = false;
