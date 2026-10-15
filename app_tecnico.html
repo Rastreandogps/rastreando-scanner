@@ -1529,6 +1529,18 @@
   </div>
 </div>
 
+<!-- MODAL: DATA MUDADA E NÃO SALVA (15/10/2026, pedido do dono: técnico concluía sem querer em vez de salvar a data) -->
+<div class="modal-overlay" id="modal-data-pend">
+  <div class="modal-box" style="position:relative;">
+    <button type="button" onclick="fecharDataPend()" aria-label="Fechar" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border:none;background:#f1f5f9;border-radius:8px;font-size:18px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;">✕</button>
+    <div class="modal-title" style="padding-right:36px;">📅 A data não foi salva</div>
+    <div class="modal-sub" id="data-pend-txt"></div>
+    <button type="button" onclick="dataPendSalvar()" style="width:100%;padding:13px;background:#3b82f6;color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px;">💾 Salvar a nova data</button>
+    <button type="button" onclick="dataPendConcluir()" style="width:100%;padding:11px;background:white;color:#059669;border:2px solid #10b981;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Não, quero concluir a OS</button>
+    <button type="button" class="btn-cancel" onclick="fecharDataPend()" style="width:100%;margin-top:10px;">Cancelar</button>
+  </div>
+</div>
+
 <!-- MODAL: SUBSTITUIÇÃO EM 2 ETAPAS (15/10/2026) -->
 <div class="modal-overlay" id="modal-sub-etapa">
   <div class="modal-box">
@@ -1723,7 +1735,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v148-whatsapp-web';
+const BUILD_VERSION = '2026-10-15-v149-data-nao-salva';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7923,10 +7935,36 @@ let pendingConcluir = null;
 let _adminOrdersCache = []; // cache das OS do técnico selecionado para clique no calendário
 
 // Abre modal de confirmação de conclusão
+/* 15/10/2026: mudou a data da OS e não tocou em Salvar? Antes de concluir, pergunta (era o "concluí sem querer") */
+let _dataPend = null;
+function _dataNaoSalva(btn, id) {
+  let el = btn;
+  while (el && el.querySelector && !el.querySelector('.card-date-input[data-id="' + CSS.escape(id) + '"]')) el = el.parentElement;
+  const inp = el && el.querySelector ? el.querySelector('.card-date-input[data-id="' + CSS.escape(id) + '"]') : null;
+  return inp && inp.value && inp.value !== inp.defaultValue ? inp : null;
+}
+function fecharDataPend() { document.getElementById('modal-data-pend').classList.remove('open'); unlockScroll(); _dataPend = null; }
+function dataPendSalvar() {
+  const d = _dataPend; fecharDataPend(); if (!d) return;
+  const b = d.inp.parentElement && d.inp.parentElement.querySelector('.btn-save-date');
+  if (b) cardSaveDateAndRefreshCal(b);
+}
+function dataPendConcluir() { const d = _dataPend; fecharDataPend(); if (d) { d.btn._semChecarData = true; cardConcluir(d.btn); } }
 function cardConcluir(btn) {
   const id     = btn.getAttribute('data-id');
   const tech   = btn.getAttribute('data-tech');
   if (!id || !tech) return;
+  if (!btn._semChecarData) {
+    const inp = _dataNaoSalva(btn, id);
+    if (inp) {
+      _dataPend = { btn: btn, inp: inp };
+      const br = inp.value.split('-').reverse().join('/');
+      document.getElementById('data-pend-txt').innerHTML = 'Você trocou a data para <b>' + br + '</b>, mas ainda não tocou em <b>Salvar</b>.<br>Quer salvar a nova data? (a OS continua aberta)';
+      document.getElementById('modal-data-pend').classList.add('open'); lockScroll();
+      return;
+    }
+  }
+  btn._semChecarData = false;
   // Busca OS para mostrar nome/veiculo no modal
   let o = (allOrders[tech] || allOrders[currentUser] || []).find(x => x.id === id);
   if (!o && Array.isArray(window._adminOrdersCache)) o = window._adminOrdersCache.find(x => x.id === id);
