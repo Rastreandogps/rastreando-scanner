@@ -1700,7 +1700,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v139-tentativa-retirada';
+const BUILD_VERSION = '2026-10-15-v140-tentativa-veiculos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -9679,7 +9679,7 @@ function _cardRemocao(r) {
   const lbl = 'font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;';
   const inp = 'width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:13px;outline:none;';
   const veiculosHtml = (r.veiculos || []).map(function(v, i) {
-    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + '</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + (v.imei ? ' · IMEI ' + esc(v.imei) : '') + '</span>';
   }).join('') || '<span style="color:var(--muted);font-size:12px;">Não informado</span>';
   const qtdLista = (r.veiculos || []).length;
   const daGestao = r.origem === 'gestao';
@@ -9786,7 +9786,7 @@ async function criarOSRemocao(id) {
   }
 
   const veiculoStr = (r.veiculos || []).map(function(v) {
-    return (v.modelo || '') + ' | Placa: ' + (v.placa || '');
+    return (v.modelo || '') + ' | Placa: ' + (v.placa || '') + (v.imei ? ' | IMEI: ' + v.imei : ''); // 15/10/2026: IMEI do aparelho (tentativa)
   }).join(' || ');
   const partesObs = [];
   if (r.tentativa) { // 15/10/2026
