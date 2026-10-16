@@ -987,6 +987,7 @@ body.modal-aberto{overflow:hidden}
         <option value="ouro">🥇 Ouro</option>
         <option value="prata">🥈 Prata</option>
         <option value="latao">🚩 Latão</option>
+        <option value="proximo">🆕 Próximo mês</option>
       </select>
       <select id="cl-venc" aria-label="Filtrar por dia de vencimento">
         <option value="">Vence: todos</option>
@@ -3897,9 +3898,11 @@ body.modal-aberto{overflow:hidden}
     var PX = CLS.proximos || []; /* 16/10/2026: só para achar o nome; fora de todas as contas */
     if (PX.length) cards += '<button type="button" class="cls-card cls-proximo' + (clsFiltro.classe === 'proximo' ? ' sel' : '') + '" data-cls="proximo">' +
       '<div class="t">' + CLS_NOME.proximo + ' · ' + PX.length + (PX.length === 1 ? ' cliente' : ' clientes') + '</div>' +
-      '<div class="nota">Assinatura nova com o 1º boleto no mês que vem. Não entra em nenhuma conta; a medalha (Latão) vem no mês do 1º boleto.</div>' +
+      (function () { var t = 0, l = 0; PX.forEach(function (c) { t += Number(c.valor) || 0; l += Number(c.valorEmDia != null ? c.valorEmDia : c.valor) || 0; });
+        return '<div class="l rec"><span>Mensalidades (pagando em dia)</span><b>' + brl(l) + '</b></div><div class="l"><span>Valor cheio</span><b>' + brl(t) + '</b></div>'; })() +
+      '<div class="nota">Assinatura nova com o 1º boleto no mês que vem. Só para consulta: não entra em nenhuma conta, e a medalha (Latão) vem no mês do 1º boleto. Sem descontar a taxa do Asaas.</div>' +
     '</button>';
-    $('cl-classe').value = (clsFiltro.classe && clsFiltro.classe !== 'proximo') ? clsFiltro.classe : ''; // mantém o filtro de medalha igual ao dos cartões
+    $('cl-classe').value = clsFiltro.classe || ''; // mantém o filtro de medalha igual ao dos cartões
     // pontuação: só aparecem as pontuações que existem hoje, da maior para a menor, com a quantidade de clientes
     var porPts = {};
     (CLS.clientes || []).forEach(function (c) { if (c.pontos != null) porPts[c.pontos] = (porPts[c.pontos] || 0) + 1; });
@@ -3940,7 +3943,7 @@ body.modal-aberto{overflow:hidden}
       if (c.proximo) return '<div class="cls-item">' +
         '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
           '<span class="cls-selo proximo">' + CLS_NOME.proximo + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
-          '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + '</div></div></div>' +
+          '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + (c.valorEmDia != null && c.valorEmDia !== c.valor ? '<br>em dia: ' + brl(c.valorEmDia) : '') + '</div></div></div>' +
         '<div class="cls-bols"><div><span>1º boleto vence ' + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
         '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
       '</div>';
