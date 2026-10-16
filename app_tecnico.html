@@ -10724,12 +10724,40 @@ function _coordSuspeita(c) {
     return 2 * R * Math.asin(Math.sqrt(h)) < k.raio;
   });
 }
+/* 16/10/2026 (v151): endereço que vem do Asaas pela Gestão ("Rua, 81 - Bairro - Cidade/RJ - CEP 26060324") não era
+   achado: o "CEP 26060324" e o "/RJ" atrapalhavam a busca e a cidade era lida como "CEP ...". Agora: tira o CEP e o /RJ do
+   texto, usa o CEP para buscar o nome oficial da rua (ViaCEP, gratuito) e, se a rua não for achada, cai no bairro
+   (fica marcado como aproximado no mapa, nunca no centro da cidade). */
+function _cepDoEndereco(e) { const m = String(e || '').match(/CEP\s*:?\s*(\d{5})-?(\d{3})\b/i) || String(e || '').match(/\b(\d{5})-(\d{3})\b/); return m ? m[1] + m[2] : ''; }
+function _limparEnderecoAsaas(e) {
+  return String(e || '').replace(/\s*[-–,]?\s*CEP\s*:?\s*\d{5}-?\d{3}\b/gi, ' ').replace(/\b(\d{5})-(\d{3})\b/g, ' ')
+    .replace(/\s*\/\s*RJ\b/gi, '').replace(/\s{2,}/g, ' ').trim().replace(/\s*[-–,]\s*$/, '').trim();
+}
+const _viaCepMem = {};
+async function _viaCep(cep) {
+  if (!cep) return null;
+  if (cep in _viaCepMem) return _viaCepMem[cep];
+  let j = null;
+  try { const ctl = new AbortController(); const tm = setTimeout(function () { ctl.abort(); }, 6000);
+    const r = await fetch('https://viacep.com.br/ws/' + cep + '/json/', { signal: ctl.signal }); clearTimeout(tm);
+    j = await r.json(); if (!j || j.erro) j = null; } catch (_) { j = null; }
+  _viaCepMem[cep] = j; return j;
+}
 async function _geocodificar(endereco) {
   // Se for coordenada direta, retorna sem consultar Nominatim
   const coordDireta = _detectarCoordenada(endereco);
   if (coordDireta) return Object.assign({ nivel: 'exato' }, coordDireta);
 
+  const cep = _cepDoEndereco(endereco);
+  endereco = _limparEnderecoAsaas(endereco);
   const tentativas = [];
+  const vc = await _viaCep(cep);
+  const est0 = _enderecoEstruturado(endereco);
+  if (vc && vc.logradouro && vc.localidade) { // nome oficial da rua pelo CEP (vem primeiro)
+    const num = est0 && (est0.rua.match(/\s(\d{1,6}[a-z]?)$/i) || [])[1];
+    tentativas.push('street=' + encodeURIComponent(vc.logradouro + (num ? ' ' + num : '')) + '&city=' + encodeURIComponent(vc.localidade) + '&state=' + encodeURIComponent(vc.uf || 'RJ') + '&country=Brasil');
+    tentativas.push('q=' + encodeURIComponent(vc.logradouro + ', ' + (vc.bairro ? vc.bairro + ', ' : '') + vc.localidade + ', ' + (vc.uf || 'RJ') + ', Brasil'));
+  }
   // 0. Busca estruturada (a mais confiável): rua + número separados da cidade
   const est = _enderecoEstruturado(endereco);
   if (est) tentativas.push('street=' + encodeURIComponent(est.rua) + '&city=' + encodeURIComponent(est.cidade) + '&state=RJ&country=Brasil');
@@ -10743,6 +10771,15 @@ async function _geocodificar(endereco) {
       if (r && !melhor) melhor = r; // bairro: guarda como aproximado e continua tentando algo mais exato
     } catch(_) {}
     await new Promise(r => setTimeout(r, 400));
+  }
+  if (!melhor) { // 16/10/2026 (v151): última tentativa, o bairro (aproximado)
+    const partes = endereco.split(/\s*(?:[-–]|,)\s*/).map(x => x.trim()).filter(Boolean);
+    const cidade = (vc && vc.localidade) || (est0 && est0.cidade) || '';
+    let bairro = (vc && vc.bairro) || '';
+    if (!bairro && partes.length >= 3) { const ini = /^\d{1,6}[a-z]?$/i.test(partes[1]) ? 2 : 1; if (partes[ini] && partes[ini] !== cidade) bairro = partes[ini]; }
+    if (bairro && cidade) {
+      try { const r = await _consultarNominatim('q=' + encodeURIComponent(bairro + ', ' + cidade + ', RJ, Brasil')); if (r) melhor = Object.assign(r, { nivel: 'bairro' }); } catch (_) {}
+    }
   }
   return melhor; // null = não achou nada que preste (fica fora do mapa, nunca no centro da cidade)
 }
