@@ -2635,6 +2635,7 @@ async function espelharNoFirestore(payload) {
         if ('tentPromessa' in payload) up.tentPromessa = String(payload.tentPromessa || '').slice(0, 10);
         if ('tentRetirados' in payload) up.tentRetirados = (Array.isArray(payload.tentRetirados) ? payload.tentRetirados : []).slice(0, 20).map(function (x) { return { i: Number(x.i) || 0, dia: String(x.dia || '').slice(0, 10) }; });
         if ('tentPagoDia' in payload) up.tentPagoDia = String(payload.tentPagoDia || '').slice(0, 10);
+        if ('tentPagoQtd' in payload) up.tentPagoQtd = Math.max(0, Math.min(20, Number(payload.tentPagoQtd) || 0)); // 16/10/2026 (v151): placas que pagaram
         if ('tentLink' in payload) up.tentLink = /^https?:\/\//.test(String(payload.tentLink || '')) ? String(payload.tentLink).slice(0, 400) : '';
         await ref.set(up, { merge: true }); }
       break;
@@ -2866,7 +2867,8 @@ function docFirestoreParaOrdem(doc) {
     tentPromessa:    d.tentPromessa || '',
     tentLink:        d.tentLink || '',
     tentRetirados:   Array.isArray(d.tentRetirados) ? d.tentRetirados : [],
-    tentPagoDia:     d.tentPagoDia || ''
+    tentPagoDia:     d.tentPagoDia || '',
+    tentPagoQtd:     Number(d.tentPagoQtd) || 0 // 16/10/2026 (v151)
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -7126,6 +7128,12 @@ function _trocaVeiculoDeOS(o) {
    - cliente promete pagar → a OS continua, com a data da promessa.
    O valor vai no "valor da instalação" da OS (50; vira 10 quando o pagamento é confirmado). Você paga: entra no resumo do dia. */
 const TENT_VALOR_RETIRADA = 50, TENT_VALOR_COBRANCA = 10;
+/* 16/10/2026 (v151, pedido do dono): a cobrança paga POR PLACA. Cliente com 4 placas que pagou = 4 x R$ 10 = R$ 40.
+   Conta as placas que ficaram com o cliente (as que o técnico já retirou ganham os R$ 50 da retirada, não os R$ 10).
+   Na confirmação do pagamento a quantidade fica gravada (tentPagoQtd), para o valor não mudar depois. */
+function _tentQtdCobranca(o) { if (o && Number(o.tentPagoQtd) > 0) return Number(o.tentPagoQtd); const n = _veiculosDaOS(o).length || 1; return Math.max(1, n - _retiradosTent(o).length); }
+function _tentValorCobranca(o) { return TENT_VALOR_COBRANCA * _tentQtdCobranca(o); }
+function _tentTxtCobranca(o) { const q = _tentQtdCobranca(o); return 'R$ ' + (TENT_VALOR_COBRANCA * q) + ',00' + (q > 1 ? ' (R$ ' + TENT_VALOR_COBRANCA + ' por placa x ' + q + ')' : ''); }
 function _ehTentativaOS(o) {
   if (!o) return false;
   const t = String(o.tipo || '').toLowerCase();
@@ -7156,7 +7164,7 @@ function _htmlTentativa(o, mini) {
   const tid = esc(o.id), ttech = esc(o._tech || o.tecnico || '');
   return '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:9px 12px;margin-bottom:8px;">' +
     '<div style="font-size:10.5px;font-weight:900;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🚨 Tentativa de retirada</div>' +
-    '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha R$ ' + TENT_VALOR_COBRANCA + ',00 quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00)' : '') + '.</div>' +
+    '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha ' + _tentTxtCobranca(o) + ' quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00)' : '') + '.</div>' +
     (function () { // 15/10/2026: veículos retirados aos poucos
       const vs = _veiculosDaOS(o); if (vs.length < 2 && !_retiradosTent(o).length) return '';
       const feitos = {}; _retiradosTent(o).forEach(function (x) { feitos[x.i] = x.dia; });
@@ -7226,7 +7234,7 @@ function _abrirTentativa(o, id, tech, origem) {
   let txt, bts;
   if (ag && adm) {
     txt = 'O técnico informou que o cliente pagou. Confira no Asaas antes de concluir.';
-    bts = bt('#10b981', '🔎 Conferir no Asaas e concluir (R$ ' + TENT_VALOR_COBRANCA + ')', "_tentEscolher('conferir')") +
+    bts = bt('#10b981', '🔎 Conferir no Asaas e concluir (R$ ' + _tentValorCobranca(o) + ')', "_tentEscolher('conferir')") +
       bt('#ef4444', '🔧 Retirei o equipamento · concluir (R$ ' + TENT_VALOR_RETIRADA + ')', "_tentEscolher('retirou')") +
       lk('Confirmar o pagamento mesmo sem aparecer no Asaas', "_tentEscolher('forcar')") + lk('O cliente não pagou (tirar o aguardando)', "_tentEscolher('naopagou')");
   } else if (ag) {
@@ -7297,7 +7305,7 @@ async function _tentSalvarChecklist() {
   [allOrders && allOrders[se.tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (x) { if (x && x.id === se.id) x.tentRetirados = lista; }); });
   if (lista.length >= vs.length) { // saiu o último: conclui a OS
     showToast('Todos os veículos retirados. Concluindo a OS...', 'success');
-    return _tentConcluir(se, TENT_VALOR_RETIRADA * lista.length + (o.tentPagoDia ? TENT_VALOR_COBRANCA : 0));
+    return _tentConcluir(se, TENT_VALOR_RETIRADA * lista.length + (o.tentPagoDia ? _tentValorCobranca(o) : 0));
   }
   showToast(novos + (novos === 1 ? ' veículo retirado' : ' veículos retirados') + ' (faltam ' + (vs.length - lista.length) + '). A OS continua aberta.', 'success');
 }
@@ -7312,7 +7320,7 @@ async function _tentEscolher(escolha) {
   if (escolha === 'retirou') { // um veículo só
     const oR = _osFresca(se.id, se.tech) || {};
     await _tentMarcar(se, { tentRetirados: [{ i: 0, dia: _isoHoje() }] });
-    return _tentConcluir(se, TENT_VALOR_RETIRADA + (oR.tentPagoDia ? TENT_VALOR_COBRANCA : 0));
+    return _tentConcluir(se, TENT_VALOR_RETIRADA + (oR.tentPagoDia ? _tentValorCobranca(oR) : 0));
   }
   pendingConcluir = null; _concluirDoMapa = false;
   if (escolha === 'pagou') {
@@ -7333,7 +7341,7 @@ async function _tentEscolher(escolha) {
   }
   if (escolha === 'conferir') return _tentConferirEConcluir(se);
   if (escolha === 'forcar') {
-    if (!confirm('Concluir como PAGO (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico) mesmo sem o pagamento aparecer no Asaas?')) return;
+    if (!confirm('Concluir como PAGO (R$ ' + _tentValorCobranca(_osFresca(se.id, se.tech) || {}) + ' ao técnico) mesmo sem o pagamento aparecer no Asaas?')) return;
     return _tentConcluirPago(se);
   }
   if (escolha === 'naopagou') { if (await _tentMarcar(se, { tentPagou: '' })) showToast('Pronto. A tentativa continua aberta.', 'success'); }
@@ -7343,14 +7351,15 @@ async function _tentConferirEConcluir(se) {
   let r;
   try { r = await _chamarRemocoes({ acao: 'tent_status', osId: se.id }); }
   catch (e) { showToast('Não consegui conferir: ' + e.message, 'error'); return; }
-  if (r && r.quitado) { showToast('✅ Pagamento confirmado no Asaas. Concluindo (R$ ' + TENT_VALOR_COBRANCA + ' ao técnico)...', 'success'); return _tentConcluirPago(se); }
+  if (r && r.quitado) { showToast('✅ Pagamento confirmado no Asaas. Concluindo (R$ ' + _tentValorCobranca(_osFresca(se.id, se.tech) || {}) + ' ao técnico)...', 'success'); return _tentConcluirPago(se); }
   showToast('Ainda não aparece pago no Asaas (' + ((r && r.emAberto) || 0) + ' de ' + ((r && r.total) || 0) + ' em aberto). A OS fica aguardando.', 'error');
   await _tentMarcar(se, { tentPagou: 'aguardando' });
 }
-async function _tentConcluirPago(se) { // R$ 10 no dia da confirmação + R$ 50 de cada veículo já retirado antes
+async function _tentConcluirPago(se) { // R$ 10 por placa que ficou, no dia da confirmação + R$ 50 de cada veículo já retirado antes
   const o = _osFresca(se.id, se.tech) || {};
-  await _tentMarcar(se, { tentPagoDia: _isoHoje(), tentPagou: '' });
-  return _tentConcluir(se, TENT_VALOR_COBRANCA + TENT_VALOR_RETIRADA * _retiradosTent(o).length);
+  const qtd = _tentQtdCobranca(o);
+  await _tentMarcar(se, { tentPagoDia: _isoHoje(), tentPagou: '', tentPagoQtd: qtd });
+  return _tentConcluir(se, TENT_VALOR_COBRANCA * qtd + TENT_VALOR_RETIRADA * _retiradosTent(o).length);
 }
 function conferirTentativa(id, tech) { return _tentConferirEConcluir({ id: id, tech: tech, origem: 'admin' }); }
 
@@ -7413,7 +7422,7 @@ function _partesOS(o) {
   // ESPECIAL
   const vs = _veiculosDaOS(o), ret = _retiradosTent(o), dOS = _isoDeDataOS(o.data), concl = o.status === 'concluido';
   const partes = ret.map(function (x) { const v = vs[x.i] || { modelo: 'Veículo ' + (Number(x.i) + 1) }; return { k: 'ret' + x.i, v: TENT_VALOR_RETIRADA, feito: true, dia: x.dia || dOS, pc: false, rotulo: v.modelo + (v.placa ? ' (' + v.placa + ')' : '') + ' — Retirada (especial)' }; });
-  if (o.tentPagoDia) partes.push({ k: 'pago', v: TENT_VALOR_COBRANCA, feito: true, dia: o.tentPagoDia, pc: false, rotulo: 'Cliente pagou pelo link — Cobrança (especial)' });
+  if (o.tentPagoDia) { const qc = _tentQtdCobranca(o); partes.push({ k: 'pago', v: TENT_VALOR_COBRANCA * qc, feito: true, dia: o.tentPagoDia, pc: false, rotulo: 'Cliente pagou pelo link — Cobrança (especial)' + (qc > 1 ? ' · ' + qc + ' placas' : '') }); }
   if (!concl) { // o que ainda falta (só para o "a receber" do cofrinho, no dia da OS)
     const feitos = {}; ret.forEach(function (x) { feitos[x.i] = 1; });
     (vs.length ? vs : [{ i: 0 }]).forEach(function (v) { if (!feitos[v.i]) partes.push({ k: 'falta' + v.i, v: TENT_VALOR_RETIRADA, feito: false, dia: dOS, pc: false, rotulo: '' }); });
@@ -9935,7 +9944,7 @@ function _cardRemocao(r) {
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
     (r.tentativa ? '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;color:#7f1d1d;line-height:1.45;">' +
         '<b>🚨 Tentativa de retirada</b> · ' + esc(String(r.qtdVencidas || '')) + (r.qtdVencidas === 1 ? ' fatura vencida' : ' faturas vencidas') + (r.totalVencido ? ' · R$ ' + Number(r.totalVencido).toFixed(2).replace('.', ',') : '') + '<br>' +
-        'O técnico liga e cobra. Pagou: <b>R$ ' + TENT_VALOR_COBRANCA + '</b> (depois de confirmar no Asaas). Retirou: <b>R$ ' + TENT_VALOR_RETIRADA + '</b>.' +
+        'O técnico liga e cobra. Pagou: <b>R$ ' + TENT_VALOR_COBRANCA + ' por placa</b> (depois de confirmar no Asaas). Retirou: <b>R$ ' + TENT_VALOR_RETIRADA + ' por veículo</b>.' +
         (r.linkPagamento ? '<br>🔗 Link que vai para o cliente: <a href="' + esc(r.linkPagamento) + '" target="_blank" style="color:#b91c1c;word-break:break-all;">' + esc(r.linkPagamento) + '</a>' : '') +
       '</div>'
       : daGestao ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 9px;margin-bottom:8px;">🧾 Criado pela Gestão · inadimplência</div>' : '') +
@@ -9960,7 +9969,7 @@ function _cardRemocao(r) {
         '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
         '<input type="number" id="rm-valor-' + id + '" placeholder="0,00"' + (r.tentativa ? ' value="' + TENT_VALOR_RETIRADA + '"' : '') + ' step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
       '</div>' +
-      (r.tentativa ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Valor se retirar (vira R$ ' + TENT_VALOR_COBRANCA + ' se o cliente pagar)</div>' : '') +
+      (r.tentativa ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Valor se retirar (vira R$ ' + TENT_VALOR_COBRANCA + ' por placa se o cliente pagar)</div>' : '') +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
       '<button onclick="criarOSRemocao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (r.tentativa ? '#dc2626' : '#ef4444') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (r.tentativa ? '🚨 Criar OS de tentativa' : '✅ Criar OS de remoção') + '</button>' +
@@ -10018,7 +10027,7 @@ async function criarOSRemocao(id) {
   }).join(' || ');
   const partesObs = [];
   if (r.tentativa) { // 15/10/2026
-    partesObs.push('TENTATIVA DE RETIRADA: ligue para o cliente. Pagou = R$ ' + TENT_VALOR_COBRANCA + ' (depois de confirmado). Retirou = R$ ' + TENT_VALOR_RETIRADA);
+    partesObs.push('TENTATIVA DE RETIRADA: ligue para o cliente. Pagou = R$ ' + TENT_VALOR_COBRANCA + ' por placa (depois de confirmado). Retirou = R$ ' + TENT_VALOR_RETIRADA + ' por veículo');
     if (r.linkPagamento) partesObs.push('LINK DE PAGAMENTO: ' + r.linkPagamento);
   } else
   partesObs.push(r.veiculosTipo === 'todos' ? 'Retirar TODOS os veículos' : 'Retirar os veículos listados');
