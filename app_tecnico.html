@@ -1735,7 +1735,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-15-v150-nome-cofrinho';
+const BUILD_VERSION = '2026-10-16-v151-link-curto';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3742,6 +3742,7 @@ function renderCalDayCards(ids, semScroll) {
   // rola nada — era isso que fazia a tela "pular" sozinha pra cima
   // enquanto o técnico estava lendo um card mais abaixo.
   if (!semScroll) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  try { _tecModalAtualizarLink(); } catch (e) {} // 16/10/2026 (v151)
 }
 
 // Devolve a classe de cor do card conforme o tipo de serviço, pra a tela do
@@ -3792,9 +3793,27 @@ function abrirModalVerOSTecnico(id) {
   const o = (allOrders[currentUser] || []).find(x => x.id === id);
   if (!o) { showToast('OS não encontrada', 'error'); return; }
   const conteudo = document.getElementById('modal-ver-os-conteudo');
-  if (conteudo) conteudo.innerHTML = renderCardInline(o);
+  if (conteudo) { conteudo.innerHTML = renderCardInline(o); conteudo.dataset.tecOs = id; conteudo.dataset.tecLink = o.tentLink ? '1' : ''; }
   document.getElementById('modal-ver-os').classList.add('open');
   lockScroll();
+}
+// 16/10/2026 (v151): o card aberto pela Grade é uma "foto" da hora em que abriu. Se o administrador libera
+// (ou tira) o link de pagamento com o card aberto, a atualização automática chega e o card não mudava: o link
+// só aparecia trocando de modo. Agora, quando os dados chegam, o card aberto se redesenha se o link mudou.
+// Não redesenha se o técnico estiver digitando ou com a data mudada sem salvar.
+function _tecModalAtualizarLink() {
+  const modal = document.getElementById('modal-ver-os'), conteudo = document.getElementById('modal-ver-os-conteudo');
+  if (!modal || !conteudo || !modal.classList.contains('open') || !conteudo.dataset.tecOs) return;
+  const id = conteudo.dataset.tecOs;
+  const o = (allOrders[currentUser] || []).find(x => x.id === id);
+  if (!o || (o.tentLink ? '1' : '') === conteudo.dataset.tecLink) return;
+  const foco = document.activeElement;
+  if (foco && conteudo.contains(foco) && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName)) return;
+  let dataMudada = false;
+  conteudo.querySelectorAll('input[type="date"]').forEach(function (inp) { if (inp.defaultValue !== inp.value) dataMudada = true; });
+  if (dataMudada) return;
+  conteudo.innerHTML = renderCardInline(o);
+  conteudo.dataset.tecLink = o.tentLink ? '1' : '';
 }
 
 function renderCardInline(o) {
@@ -7196,8 +7215,7 @@ function enviarLinkTentativa(id, tech) {
   const link = _linkPagTentativa(o); if (!link) { showToast('Esta OS não tem link de pagamento', 'error'); return; }
   let tel = String(o.telefone || '').replace(/\D/g, '');
   if (tel && tel.length <= 11) tel = '55' + tel;
-  const nome = String(o.nome || '').trim().split(/\s+/)[0] || '';
-  const msg = 'Olá' + (nome ? ', ' + nome : '') + '! Conforme conversamos, segue o link para regularizar o pagamento do seu rastreador:\n' + link + '\n\nAssim que o pagamento cair, fica tudo certo. Qualquer dúvida, é só me chamar.';
+  const msg = 'Segue o link para pagamento:\n\n' + link; /* 16/10/2026 (v151, pedido do dono): só isso, sem mais texto */
   window.open('https://wa.me/' + (tel || '') + '?text=' + encodeURIComponent(msg), '_blank');
 }
 function _abrirTentativa(o, id, tech, origem) {
@@ -8446,7 +8464,7 @@ function abrirModalVerOS(id, tech) {
   let o = _adminOrdersCache.find(x => x.id === id) || (allOrders[tech] || []).find(x => x.id === id);
   if (!o) { showToast('OS não encontrada', 'error'); return; }
   const conteudo = document.getElementById('modal-ver-os-conteudo');
-  if (conteudo) conteudo.innerHTML = _renderCardOSDetalhado(o);
+  if (conteudo) { conteudo.innerHTML = _renderCardOSDetalhado(o); conteudo.dataset.tecOs = ''; }
   document.getElementById('modal-ver-os').classList.add('open');
   lockScroll();
 }
