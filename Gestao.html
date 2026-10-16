@@ -314,6 +314,9 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .cls-card .l b{color:var(--text)}
 .cls-card .l.rec b{color:var(--navy)}
 .cls-ouro .t{color:#B7791F} .cls-prata .t{color:#64748B} .cls-latao .t{color:#C2410C}
+/* 16/10/2026: clientes do próximo mês (1º boleto no mês que vem): só aparecem, não entram em nenhuma conta */
+.cls-proximo .t{color:#0E7490} .cls-card.cls-proximo{grid-column:1/-1;background:#F0FDFF;border-color:#A5F3FC}
+.cls-proximo .nota{font-size:12px;color:#64748B;margin-top:4px}
 .cls-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .cls-filtros button{padding:7px 12px;border:1.5px solid var(--border);border-radius:20px;background:#fff;font-size:.8rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .cls-filtros button.ativo{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -323,7 +326,7 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .cls-item .nome{font-weight:700}
 .cls-item .sub{font-size:.76rem;color:var(--text-3)}
 .cls-selo{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:20px;margin-top:4px}
-.cls-selo.ouro{background:#FEF3C7;color:#B7791F} .cls-selo.prata{background:#F1F5F9;color:#475569} .cls-selo.latao{background:#FFEDD5;color:#C2410C}
+.cls-selo.proximo{background:#CFFAFE;color:#0E7490} .cls-selo.ouro{background:#FEF3C7;color:#B7791F} .cls-selo.prata{background:#F1F5F9;color:#475569} .cls-selo.latao{background:#FFEDD5;color:#C2410C}
 .cls-hist{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
 .cls-hist span{font-size:.7rem;padding:2px 6px;border-radius:6px;font-weight:700}
 .h3{background:var(--green-dim);color:var(--green)} .h2{background:#E0F2FE;color:#0369A1} .h1{background:var(--amber-dim);color:var(--amber)} .h0{background:var(--danger-dim);color:var(--danger)}
@@ -1892,7 +1895,7 @@ body.modal-aberto{overflow:hidden}
     var d = soDig(cpf), achou = null;
     ['dois', 'um'].forEach(function (k) { if (!achou) achou = ((DADOS && DADOS[k]) || []).find(function (c) { return soDig(c.cpf) === d; }) || null; });
     if (achou) return achou; // é devedor: usa o card completo
-    var c = ((CLS && CLS.clientes) || []).find(function (x) { return soDig(x.cpf) === d; });
+    var c = ((CLS && CLS.clientes) || []).concat((CLS && CLS.proximos) || []).find(function (x) { return soDig(x.cpf) === d; }); /* 16/10/2026: + próximo mês */
     return c ? { nome: c.nome, cpf: c.cpf, telefone: c.telefone || '', faturas: [], valorTotal: 0, diasAtrasoMax: 0, semDebito: true } : null;
   }
   $('classif-conteudo').addEventListener('click', function (ev) {
@@ -2667,7 +2670,7 @@ body.modal-aberto{overflow:hidden}
 
   // ---------- CLASSIFICAÇÃO OURO / PRATA / LATÃO ----------
   var CLS = null, clsFiltro = { classe: '', status: 'receber' }, clsCarregando = false;
-  var CLS_NOME = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão' };
+  var CLS_NOME = { ouro: '🥇 Ouro', prata: '🥈 Prata', latao: '🚩 Latão', proximo: '🆕 Próximo mês' };
   function alvoCls() { return abaAtual === 'pagos' ? $('pagos-conteudo') : abaAtual === 'gestao' ? $('gestao-conteudo') : $('classif-conteudo'); }
   function renderClsAtual() { if (abaAtual === 'pagos') renderPagos(); else if (abaAtual === 'gestao') renderGestao(); else renderClassificacao(); }
   async function abrirClassificacao(forcar) {
@@ -3891,7 +3894,12 @@ body.modal-aberto{overflow:hidden}
         '<div class="l"><span>Total do mês</span><b>' + brl(r.total) + '</b></div>' +
       '</button>';
     }).join('');
-    $('cl-classe').value = clsFiltro.classe || ''; // mantém o filtro de medalha igual ao dos cartões
+    var PX = CLS.proximos || []; /* 16/10/2026: só para achar o nome; fora de todas as contas */
+    if (PX.length) cards += '<button type="button" class="cls-card cls-proximo' + (clsFiltro.classe === 'proximo' ? ' sel' : '') + '" data-cls="proximo">' +
+      '<div class="t">' + CLS_NOME.proximo + ' · ' + PX.length + (PX.length === 1 ? ' cliente' : ' clientes') + '</div>' +
+      '<div class="nota">Assinatura nova com o 1º boleto no mês que vem. Não entra em nenhuma conta; a medalha (Latão) vem no mês do 1º boleto.</div>' +
+    '</button>';
+    $('cl-classe').value = (clsFiltro.classe && clsFiltro.classe !== 'proximo') ? clsFiltro.classe : ''; // mantém o filtro de medalha igual ao dos cartões
     // pontuação: só aparecem as pontuações que existem hoje, da maior para a menor, com a quantidade de clientes
     var porPts = {};
     (CLS.clientes || []).forEach(function (c) { if (c.pontos != null) porPts[c.pontos] = (porPts[c.pontos] || 0) + 1; });
@@ -3904,7 +3912,7 @@ body.modal-aberto{overflow:hidden}
     marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret']);
     var fRetCl = $('cl-ret').value;
     var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
-    var lista = CLS.clientes.filter(function (c) {
+    var lista = (clsFiltro.classe === 'proximo' ? [] : CLS.clientes).filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
       if (fPts !== '' && String(c.pontos) !== fPts) return false;
       if (fRetCl === 'sim' && !retiradaDe(c.cpf)) return false;
@@ -3918,7 +3926,24 @@ body.modal-aberto{overflow:hidden}
       if (clsFiltro.status === 'pagos') return c.aReceber === 0;
       return true;
     });
+    /* clientes do próximo mês: entram na lista em "Todos" (e quando o cartão deles está escolhido), sem medalha */
+    if ((clsFiltro.classe === 'proximo' || (!clsFiltro.classe && clsFiltro.status === 'todos')) && fPts === '') {
+      PX.forEach(function (c) {
+        if (fRetCl === 'sim' && !retiradaDe(c.cpf)) return;
+        if (fRetCl === 'nao' && retiradaDe(c.cpf)) return;
+        if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0)) return;
+        if (fVen) { var d = Number(String(c.vencimento || '').slice(8, 10)); if (fVen === 'outro' ? (d === 15 || d === 20) : d !== Number(fVen)) return; }
+        lista.push(Object.assign({ proximo: true }, c));
+      });
+    }
     var itens = lista.length ? lista.map(function (c) {
+      if (c.proximo) return '<div class="cls-item">' +
+        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
+          '<span class="cls-selo proximo">' + CLS_NOME.proximo + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
+          '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + '</div></div></div>' +
+        '<div class="cls-bols"><div><span>1º boleto vence ' + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
+      '</div>';
       var hist = c.historico.map(function (h) {
         var cls = h.atraso === 0 ? 'h3' : h.atraso <= 7 ? 'h2' : h.atraso <= 15 ? 'h1' : 'h0';
         var txt = h.atraso === 0 ? 'em dia' : '+' + h.atraso + 'd';
