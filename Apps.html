@@ -126,6 +126,12 @@
     .modal-tut-ok{background:var(--navy);color:#fff}
     .modal-tut-cancel{background:#f1f5f9;color:#475569}
     @media(min-width:520px){.modal-tut-fundo{align-items:center}}
+    /* 16/10/2026: janela do link do cartão NFC */
+    .modal-nfc-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+    .modal-nfc-topo h2{margin:0}
+    .modal-nfc-x{width:36px;height:36px;flex:none;border-radius:50%;border:1px solid #e2e8f0;background:#f1f5f9;color:#475569;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .modal-nfc-link{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:10px 12px;margin-bottom:14px;word-break:break-all;color:#1e293b}
+    .modal-nfc-link.vazio{color:#94a3b8}
     .gaveta .chev { margin-left: auto; font-size: 18px; color: var(--muted); transition: transform 0.2s; }
     .gaveta[open] .chev { transform: rotate(180deg); }
     .gaveta[open] > summary { border-color: var(--border-h); }
@@ -428,11 +434,12 @@
         </button>
       </div>
       <!-- 14/10/2026: cartão de emergência NFC (botão FUI ROUBADO), já com o login do Mateus -->
-      <a class="app-btn wide" href="https://gps.rastreandogpsbr.com.br/nfc.html?u=Mateus" target="_blank" rel="noopener">
+      <!-- 16/10/2026 (pedido do dono): toque abre a janela para digitar o login do cliente e copiar o link do cartão -->
+      <a class="app-btn wide" href="#" id="btn-nfc-link" role="button">
         <div class="icon ic-red"><i class="ti ti-nfc" aria-hidden="true"></i></div>
         <div class="info">
           <span class="app-name">Cartão NFC · Fui roubado</span>
-          <span class="app-desc">Tela do cartão de emergência, já com o login Mateus preenchido</span><span class="app-file" title="Repositório rastreando-app no GitHub">📄 nfc.html · app</span>
+          <span class="app-desc">Digite o login do cliente e copie o link para gravar no cartão</span><span class="app-file" title="Repositório rastreando-app no GitHub">📄 nfc.html · app</span>
         </div>
       </a>
       <a class="app-btn wide" href="https://api.rastreandogpsbr.com.br/" target="_blank" rel="noopener">
@@ -650,6 +657,44 @@
   </script>
 
 <!-- Modal de login do tutorial -->
+<!-- 16/10/2026: link do cartão NFC com o login do cliente -->
+<div class="modal-tut-fundo" id="modal-nfc" hidden>
+  <div class="modal-tut-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-nfc-titulo">
+    <div class="modal-nfc-topo"><h2 id="modal-nfc-titulo">Link do cartão NFC</h2><button type="button" class="modal-nfc-x" id="modal-nfc-x" aria-label="Fechar" title="Fechar">✕</button></div>
+    <p>Digite o login do cliente. O link já sai pronto para gravar no cartão (nunca grave a senha).</p>
+    <input class="modal-tut-campo" id="modal-nfc-login" type="text" placeholder="Login do cliente — ex.: LuizCastilho" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <div class="modal-nfc-link vazio" id="modal-nfc-link">https://gps.rastreandogpsbr.com.br/nfc.html?u=</div>
+    <div class="modal-tut-btns">
+      <button class="modal-tut-cancel" id="modal-nfc-abrir" type="button">Abrir</button>
+      <button class="modal-tut-ok" id="modal-nfc-copiar" type="button">Copiar link</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var BASE='https://gps.rastreandogpsbr.com.br/nfc.html?u=';
+  var modal=document.getElementById('modal-nfc'), campo=document.getElementById('modal-nfc-login'), caixa=document.getElementById('modal-nfc-link');
+  var btCopiar=document.getElementById('modal-nfc-copiar'), btAbrir=document.getElementById('modal-nfc-abrir');
+  function login(){ return String(campo.value||'').trim().replace(/\s+/g,'') }
+  function link(){ var l=login(); return l ? BASE+encodeURIComponent(l) : '' }
+  function pintar(){ var u=link(); caixa.textContent=u||BASE; caixa.classList.toggle('vazio',!u); btCopiar.textContent='Copiar link' }
+  function abrir(){ campo.value=''; pintar(); modal.hidden=false; setTimeout(function(){ campo.focus() },60) }
+  function fechar(){ modal.hidden=true }
+  document.getElementById('btn-nfc-link').addEventListener('click',function(e){ e.preventDefault(); abrir() });
+  document.getElementById('modal-nfc-x').addEventListener('click',fechar);
+  modal.addEventListener('click',function(e){ if(e.target===modal) fechar() });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !modal.hidden) fechar() });
+  campo.addEventListener('input',pintar);
+  campo.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); btCopiar.click() } });
+  btCopiar.addEventListener('click',function(){
+    var u=link(); if(!u){ campo.focus(); return }
+    var ok=function(){ btCopiar.textContent='Copiado ✓' };
+    var reserva=function(){ var t=document.createElement('textarea'); t.value=u; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); ok() }catch(_){ prompt('Copie o link:',u) } document.body.removeChild(t) };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok,reserva); else reserva();
+  });
+  btAbrir.addEventListener('click',function(){ var u=link(); if(!u){ campo.focus(); return } window.open(u,'_blank','noopener') });
+})();
+</script>
 <div class="modal-tut-fundo" id="modal-tut" hidden>
   <div class="modal-tut-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-tut-titulo">
     <h2 id="modal-tut-titulo">Enviar acesso pelo WhatsApp</h2>
