@@ -7164,7 +7164,7 @@ function _htmlTentativa(o, mini) {
   const tid = esc(o.id), ttech = esc(o._tech || o.tecnico || '');
   return '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:9px 12px;margin-bottom:8px;">' +
     '<div style="font-size:10.5px;font-weight:900;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🚨 Tentativa de retirada</div>' +
-    '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha ' + _tentTxtCobranca(o) + ' quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00)' : '') + '.</div>' +
+    '<div style="font-size:12.5px;color:#7f1d1d;line-height:1.45;">Ligue para o cliente do seu número. <b>Se ele quiser pagar</b>, mande o link de pagamento' + (_podeVerValor() ? ' (você ganha ' + _tentTxtCobranca(o) + ' quando o pagamento for confirmado)' : '') + '. <b>Se não</b>, combine e retire o equipamento' + (_podeVerValor() ? (_veiculosDaOS(o).length > 1 ? ' (R$ ' + TENT_VALOR_RETIRADA + ',00 por veículo, R$ ' + (TENT_VALOR_RETIRADA * _veiculosDaOS(o).length) + ',00 os ' + _veiculosDaOS(o).length + ')' : ' (R$ ' + TENT_VALOR_RETIRADA + ',00)') : '') + '.</div>' +
     (function () { // 15/10/2026: veículos retirados aos poucos
       const vs = _veiculosDaOS(o); if (vs.length < 2 && !_retiradosTent(o).length) return '';
       const feitos = {}; _retiradosTent(o).forEach(function (x) { feitos[x.i] = x.dia; });
@@ -7623,8 +7623,8 @@ function _renderCardOSDetalhado(o) {
         _htmlTrocaVeiculo(o) + renderVeiculosAdmin(o.veiculo) +
 
         // Valor da instalação
-        (o.valorInstalacao && parseFloat(o.valorInstalacao) > 0
-          ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + parseFloat(o.valorInstalacao).toFixed(2).replace('.',',') + '</div>'
+        (_valorNumOS(o) > 0 /* 16/10/2026 (v151): tentativa com 2+ veículos mostra R$ 50 x veículos */
+          ? '<div style="display:inline-flex;align-items:center;gap:5px;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px;">💰 R$' + _valorNumOS(o).toFixed(2).replace('.',',') + '</div>'
           : '') +
         _pcChipHTML(o, tech) +
 
@@ -9209,7 +9209,12 @@ async function _indConciliar() {
 let _permVerValor = false;
 let _unsubPermTec = null;
 function _podeVerValor() { return currentRole === 'admin' || _permVerValor === true; }
-function _valorNumOS(o) { const v = o && o.valorInstalacao ? parseFloat(String(o.valorInstalacao).replace(',', '.')) : 0; return v > 0 ? v : 0; }
+function _valorNumOS(o) {
+  /* 16/10/2026 (v151, pedido do dono): tentativa de retirada ainda aberta vale R$ 50 POR VEÍCULO (2 carros = R$ 100).
+     O valor gravado na criação era só R$ 50; ao concluir, o app grava o valor certo (retiradas + cobrança). */
+  if (o && o.status !== 'concluido' && typeof _ehTentativaOS === 'function' && _ehTentativaOS(o)) return TENT_VALOR_RETIRADA * Math.max(1, _veiculosDaOS(o).length);
+  const v = o && o.valorInstalacao ? parseFloat(String(o.valorInstalacao).replace(',', '.')) : 0; return v > 0 ? v : 0;
+}
 function _fmtMoeda(v) { return 'R$ ' + (Math.round(v * 100) / 100).toFixed(2).replace('.', ',').replace(',00', ''); }
 // moedinha dourada com o valor (cards)
 function _moedaHTML(o) {
