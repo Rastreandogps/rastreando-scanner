@@ -1735,7 +1735,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-16-v151-link-curto';
+const BUILD_VERSION = '2026-10-16-v152-rota-sem-rastro';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -11258,8 +11258,27 @@ async function _melhorOrdem(inicio, semOrdem) {
   const ordem = j.waypoints.map(function(w, i) { return { i: i, pos: w.waypoint_index }; }).filter(function(x) { return x.i > 0; }).sort(function(a, b) { return a.pos - b.pos; });
   return ordem.map(function(x) { return pts[x.i]; });
 }
+/* 16/10/2026 (v152, pedido do dono: "fica um rastro pra trás"): a rota do mapa do administrador era calculada uma vez,
+   a partir de onde a moto estava ao abrir o mapa (ou da base). A moto andava e o pedaço já percorrido ficava desenhado
+   atrás dela. Agora, a cada posição nova da moto (10 s), a linha é cortada no ponto mais perto da moto; se a moto sair
+   da rota (mais de 350 m), a rota é recalculada pelas ruas a partir dela (no máximo 1 vez por minuto). */
+let _rotaVivo = {};
+function _distM(a1, o1, a2, o2) { const R = 6371000, r = Math.PI / 180, dA = (a2 - a1) * r, dO = (o2 - o1) * r; const h = Math.sin(dA / 2) ** 2 + Math.cos(a1 * r) * Math.cos(a2 * r) * Math.sin(dO / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+function _rotaPintar(r, ll) { (r.linhas || []).forEach(function (l) { try { l.setLatLngs(ll); } catch (_) {} }); }
+function _rotaAparar(tech, lat, lng) {
+  const r = _rotaVivo[tech]; if (!r || !r.latlngs || r.latlngs.length < 2 || !isFinite(lat) || !isFinite(lng)) return;
+  let melhor = -1, md = Infinity;
+  for (let i = r.idx; i < r.latlngs.length; i++) { const d = _distM(lat, lng, r.latlngs[i][0], r.latlngs[i][1]); if (d < md) { md = d; melhor = i; } }
+  if (md <= 350) { r.idx = melhor; _rotaPintar(r, [[lat, lng]].concat(r.latlngs.slice(melhor + 1))); return; }
+  if (r.recalculando || Date.now() - (r.recalcEm || 0) < 60000 || !r.seq || !r.seq.length) return;
+  r.recalculando = true; r.recalcEm = Date.now();
+  _osrm('route', [{ lat: lat, lng: lng }].concat(r.seq), '&steps=false').then(function (j) {
+    if (j && j.routes && j.routes[0] && j.routes[0].geometry) { r.latlngs = j.routes[0].geometry.coordinates.map(function (c) { return [c[1], c[0]]; }); r.idx = 0; _rotaPintar(r, r.latlngs); }
+  }).catch(function () {}).finally(function () { r.recalculando = false; });
+}
 function _desenharRotas(map, rotasPorTech, modo) {
   _rotaSugerida = {};
+  if (modo !== 'car') _rotaVivo = {};
   const resumo = [];
   const proxLista = []; // OS marcadas como "próxima" nesta rota (para o botão de tirar)
   const techs = Object.keys(rotasPorTech);
@@ -11321,8 +11340,10 @@ function _desenharRotas(map, rotasPorTech, modo) {
       const j = await _osrm('route', ptsRota, '&steps=false');
       if (j && j.routes && j.routes[0] && j.routes[0].geometry) {
         const latlngs = j.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
-        L.polyline(latlngs, { color: '#1d4ed8', weight: 6, opacity: 0.35 }).addTo(map);
-        L.polyline(latlngs, { color: '#3b82f6', weight: 3, opacity: 0.95 }).addTo(map);
+        const _l1 = L.polyline(latlngs, { color: '#1d4ed8', weight: 6, opacity: 0.35 }).addTo(map);
+        const _l2 = L.polyline(latlngs, { color: '#3b82f6', weight: 3, opacity: 0.95 }).addTo(map);
+        if (modo !== 'car') { _rotaVivo[tech] = { linhas: [_l1, _l2], latlngs: latlngs, idx: 0, seq: sequencia.map(function (p) { return { lat: p.lat, lng: p.lng }; }), recalcEm: (inicio && inicio.moto) ? Date.now() : 0 };
+          const _mp = _motosUltPos[tech]; if (_mp && inicio && inicio.moto) _rotaAparar(tech, _mp.lat, _mp.lng); }
         resumo.push((modo === 'car' ? 'Rota' : 'Rota ' + tech) + ': ' + _fmtKm(j.routes[0].distance) + ' · ' + _fmtMin(j.routes[0].duration) + (inicio ? (inicio.base ? ' (saindo da base)' : inicio.moto ? ' (da posição da moto)' : ' (saindo de onde você está)') : '') + (prox ? ' · próxima: ' + esc((prox.nome || '').split(' ')[0]) : ''));
       } else {
         L.polyline(ptsRota.map(function(p) { return [p.lat, p.lng]; }), { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8, 6' }).addTo(map);
@@ -11440,6 +11461,7 @@ async function motosBuscar() {
         mk.setPopupContent(_motoPopupHTML(t));
         _motoDeslizar(t.tecnico, mk, alvo);
       }
+      try { _rotaAparar(t.tecnico, Number(t.pos.lat), Number(t.pos.lon)); } catch (_) {} // 16/10/2026 (v152): sem rastro para trás
     });
     Object.keys(_motosMarcadores).forEach(function(k) { if (!vistos[k]) { try { _motosMarcadores[k].remove(); } catch (_) {} delete _motosMarcadores[k]; } });
   } catch (e) { console.warn('[Motos]', e && e.message); }
