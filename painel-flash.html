@@ -383,8 +383,9 @@ textarea{resize:vertical;min-height:80px}
     finally { b.disabled = false; b.textContent = 'Salvar'; }
   });
   async function carregar() {
-    if (FILTRO === 'consultas') CONS = null;
-    if (!carregar._cfg) { carregar._cfg = true; cfgCarregar(); }
+
+    if (!carregar._cfg) { carregar._cfg = true; cfgCarregar(); consCarregar(); } /* 17/10/2026: consultas já ao abrir (o número aparece na aba) */
+    else consCarregar();
     $('btn-atualizar').disabled = true;
     try { var r = await chamar('nfcLista', {}); PEDIDOS = r.pedidos || []; desenhar(); }
     catch (e) { toast(e.message, 'erro'); }
