@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v155-flash-rota';
+const BUILD_VERSION = '2026-10-17-v156-flash-pino';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10609,6 +10609,19 @@ function _corTipoOS(tipo) {
 function _pinIcon(cor, inicial, modo, ordemDia, tipo, nome, valor) {
   // Manutenção e Retirada: pílula amarela com o texto do tipo
   const _t = (tipo || '').toLowerCase();
+  if (_t === 'flash') { // 17/10/2026 (v156, pedido do dono): ENTREGA (Rastreando Flash) — bolinha verde com raio
+    const tam = ordemDia ? 40 : 36, _mzF = _temMoedaPino(valor) ? 24 : 0;
+    const raio = '<svg viewBox="0 0 24 24" width="' + (ordemDia ? 13 : 19) + '" height="' + (ordemDia ? 13 : 19) + '" fill="#fde047" stroke="#14532d" stroke-width="1.2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>';
+    const dentro = ordemDia ? '<div style="display:flex;flex-direction:column;align-items:center;line-height:1;">' + raio + '<span style="font-size:13px;font-weight:900;color:white;margin-top:-1px;">' + ordemDia + '</span></div>' : raio;
+    const rot = nome ? '<div class="pin-rot" style="position:absolute;bottom:' + (tam + 4 + _mzF) + 'px;left:50%;transform:translateX(-50%);background:#14532d;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap;">⚡ ' + esc(nome) + '</div>' : '';
+    return L.divIcon({
+      className: '',
+      html: '<div style="position:relative;width:' + tam + 'px;height:' + tam + 'px;">' + rot + _moedaPinoHTML(valor, tam + 3) +
+        '<div style="width:' + tam + 'px;height:' + tam + 'px;border-radius:50%;background:#16a34a;border:3px solid white;box-shadow:0 0 0 3px #16a34a55,0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;">' + dentro + '</div>' +
+      '</div>',
+      iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2], popupAnchor: [0, -(tam + 26 + _mzF)],
+    });
+  }
   const ehManut = _t.includes('manut');
   const ehRetir = _t.includes('remo') || _t.includes('retir');
 
@@ -11171,10 +11184,11 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       _coordUsadas[_chave] = 0;
     }
 
-    const _mk = L.marker([plotLat, plotLng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, o.tipo || '', (o.nome || '').split(' ')[0], _valorNumOS(o)) })
+    const _tipoPino = _ehEntregaFlash(o) ? 'flash' : (o.tipo || ''); // 17/10/2026 (v156): entrega = pino verde com raio
+    const _mk = L.marker([plotLat, plotLng], { icon: _pinIcon(cor, ini, modo, o.ordemDia || 0, _tipoPino, (o.nome || '').split(' ')[0], _valorNumOS(o)) })
       .addTo(map)
       .bindPopup(popup, { maxWidth: 260 });
-    _marcadoresOS[o.id] = { marker: _mk, cor: cor, ini: ini, modo: modo, tipo: o.tipo || '', nome: (o.nome || '').split(' ')[0], valor: _valorNumOS(o) }; // 13/10/2026: o roteirizador numera dentro da bolinha
+    _marcadoresOS[o.id] = { marker: _mk, cor: cor, ini: ini, modo: modo, tipo: _tipoPino, nome: (o.nome || '').split(' ')[0], valor: _valorNumOS(o) }; // 13/10/2026: o roteirizador numera dentro da bolinha
 
     bounds.push([plotLat, plotLng]);
 
