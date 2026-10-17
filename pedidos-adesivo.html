@@ -129,6 +129,8 @@ textarea{resize:vertical;min-height:80px}
 .frt.wpp{background:#EEF3FB;color:var(--navy)}
 .gps{margin-top:8px;font-size:.82rem;line-height:1.45;padding:8px 10px;border-radius:10px;background:var(--green-dim);color:#006B4B}
 .gps.longe{background:#FFF3E0;color:#8A4B00}
+.tecinfo{margin-top:8px;font-size:.82rem;line-height:1.45;padding:8px 10px;border-radius:10px;background:#EEF3FB;color:var(--navy)}
+.pacoes .tec{background:var(--navy);border-color:var(--navy);color:#fff}
 .pedido.st-frete{border-left:4px solid #2451A0}
 .pedido.st-enviado{border-left:4px solid #00B37E}
 .pedido.st-entregue{border-left:4px solid #8A96AA;opacity:.85}
@@ -210,6 +212,12 @@ textarea{resize:vertical;min-height:80px}
     return '<div class="gps' + (longe ? ' longe' : '') + '">📍 O cliente estava no local da entrega (precisão de ' + (g.prec ? 'cerca de ' + g.prec + ' m' : '?') + '). Use "Abrir no mapa" para ir direto ao ponto.' +
       (longe ? '<br>⚠️ O ponto fica a ' + String(dv).replace('.', ',') + ' km do endereço digitado. Confirme com o cliente antes de sair.' : '') + '</div>';
   }
+  /* 17/10/2026: etapa 2 — entrega pelo técnico */
+  function tecHtml(p) {
+    if (!p.manutId) return '';
+    var t = p.tecnicoOS ? '🛵 OS criada para <b>' + esc(p.tecnicoOS) + '</b>' + (p.dataOS ? ' · ' + esc(p.dataOS.split('-').reverse().join('/')) : '') : p.osStatus === 'ignorado' ? '🛵 Ignorado no APP Técnico' : '🛵 No APP Técnico, aguardando você criar a OS (Agendamentos)';
+    return '<div class="tecinfo">' + t + (p.valorTecnico != null ? ' · técnico recebe ' + Number(p.valorTecnico).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '') + '</div>';
+  }
   function desenhar() {
     $('filtros').innerHTML = FIL.map(function (f) { var n = PEDIDOS.filter(function (p) { return passa(p, f[0]); }).length; return '<button data-f="' + f[0] + '" class="' + (FILTRO === f[0] ? 'on' : '') + '">' + f[1] + '<b>' + n + '</b></button>'; }).join('');
     var l = PEDIDOS.filter(function (p) { return passa(p, FILTRO); });
@@ -220,8 +228,8 @@ textarea{resize:vertical;min-height:80px}
         '<div class="pt"><div><b>' + esc(p.nome) + '</b><div class="muted">' + esc(p.protocolo) + ' · ' + esc(dt) + ' · CPF ' + esc(fmtCpf(p.cpf)) + '</div></div><div class="qtd">' + p.qtd + (p.qtd === 1 ? ' adesivo' : ' adesivos') + '</div></div>' +
         (p.frete && p.freteModo === 'pix' ? '<span class="frt">Entrega ' + (p.status === 'aguardando' ? 'a pagar ' : 'paga ') + Number(p.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(p.frete.kmIda).replace('.', ',') + ' km</span>' : '<span class="frt wpp">Entrega combinada pelo WhatsApp</span>') +
         '<div class="pl">📦 ' + esc(endTxt(p.endereco)) + '<br>Recebe: <b>' + esc(p.recebe) + '</b> · WhatsApp ' + esc(fmtTel(p.whatsapp)) + '<br>Link da fitinha: ' + (p.login ? '<a href="' + esc(LINK_NFC + encodeURIComponent(p.login)) + '" target="_blank" rel="noopener">' + esc(p.login) + '</a>' : '<b style="color:var(--danger)">login do app não encontrado (preencha abaixo)</b>') + '</div>' +
-        localHtml(p) +
-        '<div class="pacoes"><a class="wpp" href="https://wa.me/55' + esc(p.whatsapp) + '" target="_blank" rel="noopener">WhatsApp</a>' + (localDe(p) ? '<a href="https://www.google.com/maps/dir/?api=1&destination=' + localDe(p).lat + ',' + localDe(p).lon + '" target="_blank" rel="noopener">Abrir no mapa</a>' : '') + '<button data-a="end">Copiar endereço</button>' + (p.login ? '<button data-a="link">Copiar link da fitinha</button>' : '') + '</div>' +
+        localHtml(p) + tecHtml(p) +
+        '<div class="pacoes"><a class="wpp" href="https://wa.me/55' + esc(p.whatsapp) + '" target="_blank" rel="noopener">WhatsApp</a>' + (localDe(p) ? '<a href="https://www.google.com/maps/dir/?api=1&destination=' + localDe(p).lat + ',' + localDe(p).lon + '" target="_blank" rel="noopener">Abrir no mapa</a>' : '') + '<button data-a="end">Copiar endereço</button>' + (p.login ? '<button data-a="link">Copiar link da fitinha</button>' : '') + (!p.manutId && p.status !== 'aguardando' && p.status !== 'cancelado' && p.status !== 'entregue' ? '<button data-a="tec" class="tec">Enviar ao APP Técnico</button>' : '') + '</div>' +
         '<div class="pform"><select data-c="status">' + Object.keys(ST).map(function (k) { return '<option value="' + k + '"' + (k === p.status ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select>' +
         '<input type="text" data-c="rastreio" placeholder="Código de rastreio" value="' + esc(p.rastreio || '') + '">' +
         '<input type="text" data-c="login" class="full" placeholder="Login do app do cliente (para o link da fitinha)" value="' + esc(p.login || '') + '">' +
@@ -235,6 +243,12 @@ textarea{resize:vertical;min-height:80px}
     var card = b.closest('.pedido'), p = PEDIDOS.find(function (x) { return x.id === card.dataset.id; }); if (!p) return;
     if (b.dataset.a === 'end') return copiar(p.recebe + '\n' + endTxt(p.endereco) + (localDe(p) ? '\nLocalização: https://maps.google.com/?q=' + localDe(p).lat + ',' + localDe(p).lon : ''), 'Endereço copiado.');
     if (b.dataset.a === 'link') return copiar(LINK_NFC + encodeURIComponent(p.login), 'Link da fitinha copiado.');
+    if (b.dataset.a === 'tec') {
+      b.disabled = true; b.textContent = 'Enviando...';
+      try { var rt = await chamar('nfcTecnico', { id: p.id }); PEDIDOS = PEDIDOS.map(function (x) { return x.id === p.id ? rt.pedido : x; }); desenhar(); toast('Enviado ao APP Técnico (' + rt.manutId + '). Crie a OS em Agendamentos.', 'ok'); }
+      catch (e) { toast(e.message, 'erro'); b.disabled = false; b.textContent = 'Enviar ao APP Técnico'; }
+      return;
+    }
     if (b.dataset.a === 'salvar') {
       var v = function (c) { return card.querySelector('[data-c="' + c + '"]').value; };
       b.disabled = true; b.textContent = 'Salvando...';
