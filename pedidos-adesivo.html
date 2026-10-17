@@ -127,6 +127,8 @@ textarea{resize:vertical;min-height:80px}
 .pedido.st-aguardando{border-left:4px solid #CBD5E1;opacity:.85}
 .frt{display:inline-block;margin-top:6px;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--green-dim);color:#006B4B}
 .frt.wpp{background:#EEF3FB;color:var(--navy)}
+.gps{margin-top:8px;font-size:.82rem;line-height:1.45;padding:8px 10px;border-radius:10px;background:var(--green-dim);color:#006B4B}
+.gps.longe{background:#FFF3E0;color:#8A4B00}
 .pedido.st-frete{border-left:4px solid #2451A0}
 .pedido.st-enviado{border-left:4px solid #00B37E}
 .pedido.st-entregue{border-left:4px solid #8A96AA;opacity:.85}
@@ -196,8 +198,18 @@ textarea{resize:vertical;min-height:80px}
   function passa(p, f) { var x = FIL.find(function (y) { return y[0] === f; }); return x[2] ? x[2](p) : p.status === f; }
   function fmtCpf(c) { c = String(c || ''); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c; }
   function fmtTel(t) { t = String(t || ''); return t.length === 11 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 6) + '-' + t.slice(6) : t; }
-  function endTxt(e) { e = e || {}; return e.rua + ', ' + e.numero + (e.complemento ? ' - ' + e.complemento : '') + ' - ' + e.bairro + ' - ' + e.cidade + '/' + e.uf + ' - CEP ' + String(e.cep || '').replace(/(\d{5})(\d{3})/, '$1-$2'); }
+  function endTxt(e) { e = e || {}; var cid = [e.cidade, e.uf].filter(Boolean).join('/'), cep = e.cep ? 'CEP ' + String(e.cep).replace(/(\d{5})(\d{3})/, '$1-$2') : '';
+    var t = [[e.rua, e.numero && (e.rua ? e.numero : 'Nº ' + e.numero)].filter(Boolean).join(', '), e.complemento, e.bairro, cid, cep].filter(Boolean).join(' - ');
+    return t || 'Sem endereço digitado (use a localização)'; }
   async function copiar(t, ok) { try { await navigator.clipboard.writeText(t); toast(ok, 'ok'); } catch (e) { prompt('Copie:', t); } }
+  /* 17/10/2026: cliente que pediu estando no local da entrega (localização do celular) */
+  function localDe(p) { var g = p.local || (p.frete && p.frete.gps ? { lat: p.frete.lat, lon: p.frete.lon, prec: p.frete.prec } : null); return g && isFinite(+g.lat) && isFinite(+g.lon) ? g : null; }
+  function localHtml(p) {
+    var g = localDe(p); if (!g) return '';
+    var dv = p.frete && p.frete.divergeKm, longe = dv != null && dv >= 1;
+    return '<div class="gps' + (longe ? ' longe' : '') + '">📍 O cliente estava no local da entrega (precisão de ' + (g.prec ? 'cerca de ' + g.prec + ' m' : '?') + '). Use "Abrir no mapa" para ir direto ao ponto.' +
+      (longe ? '<br>⚠️ O ponto fica a ' + String(dv).replace('.', ',') + ' km do endereço digitado. Confirme com o cliente antes de sair.' : '') + '</div>';
+  }
   function desenhar() {
     $('filtros').innerHTML = FIL.map(function (f) { var n = PEDIDOS.filter(function (p) { return passa(p, f[0]); }).length; return '<button data-f="' + f[0] + '" class="' + (FILTRO === f[0] ? 'on' : '') + '">' + f[1] + '<b>' + n + '</b></button>'; }).join('');
     var l = PEDIDOS.filter(function (p) { return passa(p, FILTRO); });
@@ -208,7 +220,8 @@ textarea{resize:vertical;min-height:80px}
         '<div class="pt"><div><b>' + esc(p.nome) + '</b><div class="muted">' + esc(p.protocolo) + ' · ' + esc(dt) + ' · CPF ' + esc(fmtCpf(p.cpf)) + '</div></div><div class="qtd">' + p.qtd + (p.qtd === 1 ? ' adesivo' : ' adesivos') + '</div></div>' +
         (p.frete && p.freteModo === 'pix' ? '<span class="frt">Entrega ' + (p.status === 'aguardando' ? 'a pagar ' : 'paga ') + Number(p.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(p.frete.kmIda).replace('.', ',') + ' km</span>' : '<span class="frt wpp">Entrega combinada pelo WhatsApp</span>') +
         '<div class="pl">📦 ' + esc(endTxt(p.endereco)) + '<br>Recebe: <b>' + esc(p.recebe) + '</b> · WhatsApp ' + esc(fmtTel(p.whatsapp)) + '<br>Link da fitinha: ' + (p.login ? '<a href="' + esc(LINK_NFC + encodeURIComponent(p.login)) + '" target="_blank" rel="noopener">' + esc(p.login) + '</a>' : '<b style="color:var(--danger)">login do app não encontrado (preencha abaixo)</b>') + '</div>' +
-        '<div class="pacoes"><a class="wpp" href="https://wa.me/55' + esc(p.whatsapp) + '" target="_blank" rel="noopener">WhatsApp</a><button data-a="end">Copiar endereço</button>' + (p.login ? '<button data-a="link">Copiar link da fitinha</button>' : '') + '</div>' +
+        localHtml(p) +
+        '<div class="pacoes"><a class="wpp" href="https://wa.me/55' + esc(p.whatsapp) + '" target="_blank" rel="noopener">WhatsApp</a>' + (localDe(p) ? '<a href="https://www.google.com/maps/dir/?api=1&destination=' + localDe(p).lat + ',' + localDe(p).lon + '" target="_blank" rel="noopener">Abrir no mapa</a>' : '') + '<button data-a="end">Copiar endereço</button>' + (p.login ? '<button data-a="link">Copiar link da fitinha</button>' : '') + '</div>' +
         '<div class="pform"><select data-c="status">' + Object.keys(ST).map(function (k) { return '<option value="' + k + '"' + (k === p.status ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select>' +
         '<input type="text" data-c="rastreio" placeholder="Código de rastreio" value="' + esc(p.rastreio || '') + '">' +
         '<input type="text" data-c="login" class="full" placeholder="Login do app do cliente (para o link da fitinha)" value="' + esc(p.login || '') + '">' +
@@ -220,7 +233,7 @@ textarea{resize:vertical;min-height:80px}
   $('lista').addEventListener('click', async function (ev) {
     var b = ev.target.closest('[data-a]'); if (!b) return;
     var card = b.closest('.pedido'), p = PEDIDOS.find(function (x) { return x.id === card.dataset.id; }); if (!p) return;
-    if (b.dataset.a === 'end') return copiar(p.recebe + '\n' + endTxt(p.endereco), 'Endereço copiado.');
+    if (b.dataset.a === 'end') return copiar(p.recebe + '\n' + endTxt(p.endereco) + (localDe(p) ? '\nLocalização: https://maps.google.com/?q=' + localDe(p).lat + ',' + localDe(p).lon : ''), 'Endereço copiado.');
     if (b.dataset.a === 'link') return copiar(LINK_NFC + encodeURIComponent(p.login), 'Link da fitinha copiado.');
     if (b.dataset.a === 'salvar') {
       var v = function (c) { return card.querySelector('[data-c="' + c + '"]').value; };
