@@ -1735,7 +1735,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-16-v152-rota-sem-rastro';
+const BUILD_VERSION = '2026-10-17-v153-entrega-nfc';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -9779,6 +9779,7 @@ function _cardManutencao(r) {
   const optsTec = TECH_NAMES.map(function(n) {
     return '<option value="' + n + '"' + (n === 'Eberson' ? ' selected' : '') + '>' + n + '</option>';
   }).join('');
+  const nfc = r.tipo === 'entrega_nfc'; // 17/10/2026 (v153): entrega do adesivo NFC (pedido pago na página do cliente)
   const telCad = _fmtTelRemocao(r.telefone);
   const telOutro = _fmtTelRemocao(r.telefoneContato);
   const enviado = r.criadoEm ? new Date(r.criadoEm).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
@@ -9802,6 +9803,7 @@ function _cardManutencao(r) {
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
       '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
       (sub ? '<span style="background:#ede9fe;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔁 Substituição</span>'
+           : nfc ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">📦 Entrega de adesivo</span>'
            : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔧 Manutenção</span>') +
     '</div>' +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
@@ -9815,7 +9817,7 @@ function _cardManutencao(r) {
     (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
     '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(r.enderecoTexto || '') + '</div>' +
     (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
-    (sub ? '' : '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>') +
+    (sub || nfc ? '' : '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>') +
     (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
       '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
@@ -9824,10 +9826,10 @@ function _cardManutencao(r) {
       '<div style="min-width:0;"><label style="' + lbl + '">Período</label>' + _selPeriodoHTML('rm-periodo-' + id, r.periodo || '', inp + 'font-weight:600;') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:10px;">' +
-      '<label style="' + lbl + '">' + (sub ? '💰 Valor da instalação (o cliente paga ao técnico)' : '💰 Valor do serviço') + '</label>' +
+      '<label style="' + lbl + '">' + (sub ? '💰 Valor da instalação (o cliente paga ao técnico)' : nfc ? '💰 Técnico recebe (75% do frete, você paga)' : '💰 Valor do serviço') + '</label>' +
       '<div style="display:flex;align-items:center;gap:6px;background:#f0f4ff;border-radius:8px;padding:8px 10px;border:2px solid var(--border);">' +
         '<span style="font-size:14px;font-weight:700;color:var(--primary);">R$</span>' +
-        '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
+        '<input type="number" id="rm-valor-' + id + '" placeholder="0,00" step="0.01" min="0"' + (nfc && r.valorTecnico != null ? ' value="' + Number(r.valorTecnico).toFixed(2) + '"' : '') + ' style="flex:1;border:none;background:transparent;font-size:14px;font-weight:700;outline:none;color:var(--primary);">' +
       '</div>' +
       (sub ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;">Instalação no veículo novo</div>' +
         '<label style="' + lbl + 'margin-top:10px;">🔧 Valor da retirada (você paga ao técnico)</label>' +
@@ -9837,7 +9839,7 @@ function _cardManutencao(r) {
         '</div>' : '') +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
-      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : '✅ Criar OS de manutenção') + '</button>' +
+      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : nfc ? '#16a34a' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : nfc ? '✅ Criar OS de entrega' : '✅ Criar OS de manutenção') + '</button>' +
       '<button onclick="ignorarManutencao(\'' + id + '\')" style="padding:10px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
     '</div>' +
   '</div>';
@@ -9858,6 +9860,7 @@ async function criarOSManutencao(id) {
     ? (nvx.gnv // a OS é do veículo novo (onde vai a instalação), no mesmo formato do agendamento
         ? (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + ' | GNV: ' + (nvx.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (nvx.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio')
         : (nvx.modelo || '') + ' | Placa: ' + (nvx.placa || 'a confirmar'))
+    : r.tipo === 'entrega_nfc' ? 'Entrega de adesivo NFC' // 17/10/2026 (v153)
     : (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
   const partesObs = sub
     ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + (nvx.placa ? ' (' + nvx.placa + ')' : ' (placa a confirmar)'), 'Cobrar como nova instalação; retirada sem custo']
@@ -9889,7 +9892,7 @@ async function criarOSManutencao(id) {
   }
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
-    showToast((sub ? 'OS de substituição' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
+    showToast((sub ? 'OS de substituição' : r.tipo === 'entrega_nfc' ? 'OS de entrega' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
     _apagarAvisoRemocao(id);
   } catch (e) {
     showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
