@@ -323,6 +323,13 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .cls-info{font-size:.76rem;color:var(--text-3);margin-bottom:10px}
 .cls-item{background:#fff;border:2px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .cls-item .topo{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+/* 17/10/2026: boneco "migrar para a plataforma própria" */
+.mig{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;vertical-align:middle;margin-left:8px;flex-shrink:0;box-shadow:0 2px 6px rgba(37,99,235,.35);background:#2563eb}
+.mig svg{width:15px;height:15px}
+.mig.fila{background:#f59e0b;box-shadow:0 2px 6px rgba(245,158,11,.35)}
+.mig.ok{background:#16a34a;box-shadow:0 2px 6px rgba(22,163,74,.35)}
+.mig[disabled]{opacity:.6;cursor:wait}
+.cls-item .nome{display:inline}
 .cls-item .nome{font-weight:700}
 .cls-item .sub{font-size:.76rem;color:var(--text-3)}
 .cls-selo{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:20px;margin-top:4px}
@@ -1900,6 +1907,13 @@ body.modal-aberto{overflow:hidden}
     return c ? { nome: c.nome, cpf: c.cpf, telefone: c.telefone || '', faturas: [], valorTotal: 0, diasAtrasoMax: 0, semDebito: true } : null;
   }
   $('classif-conteudo').addEventListener('click', function (ev) {
+    var mg = ev.target.closest('.mig');
+    if (mg) {
+      var tp = mg.getAttribute('data-mig');
+      if (tp === 'ok') { toast('Este cliente já está na plataforma.', 'ok'); return; }
+      if (tp === 'fila') { toast('Já está na fila do Tempo Real. Abra o Tempo Real → Admin → + para criar o cadastro.', 'ok'); return; }
+      migEnviar(mg, false); return;
+    }
     var bm = ev.target.closest('.cls-man');
     if (bm) { var cm = clienteParaRetirada(bm.getAttribute('data-cpf')); if (cm) abrirModalManut(cm); else toast('Cliente não encontrado.', 'erro'); return; }
     var bt = ev.target.closest('.cls-trc');
@@ -3883,7 +3897,47 @@ body.modal-aberto{overflow:hidden}
   $('cl-classe').addEventListener('change', function () { clsFiltro.classe = this.value; if (CLS) renderClassificacao(); });
   $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
 
+  /* 17/10/2026 (pedido do dono): migração para a plataforma própria — azul = migrar, laranja = na fila do Tempo Real, verde = já está na plataforma */
+  var MIG = { plat: {}, fila: {}, lido: false, lendo: false };
+  var SVG_BONECO = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 14 0"/><path d="M19 8v6M16 11h6"/></svg>';
+  var SVG_BONECO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 14 0"/><path d="M16 11l2 2 4-4"/></svg>';
+  var SVG_RELOGIO = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  function htmlMigrar(c) {
+    var d = soDig(c.cpf);
+    if (MIG.plat[d]) return '<button type="button" class="mig ok" data-mig="ok" title="Já está na plataforma (CPF vinculado no Tempo Real)">' + SVG_BONECO_OK + '</button>';
+    if (MIG.fila[d]) return '<button type="button" class="mig fila" data-mig="fila" data-cpf="' + esc(d) + '" title="Na fila do Tempo Real: falta criar o cadastro lá">' + SVG_RELOGIO + '</button>';
+    return '<button type="button" class="mig" data-mig="migrar" data-cpf="' + esc(d) + '" title="Migrar para a plataforma (cria o cadastro no Tempo Real)">' + SVG_BONECO + '</button>';
+  }
+  async function migLer() {
+    if (MIG.lendo) return; MIG.lendo = true;
+    try {
+      var r = await chamar('cli_status', {});
+      MIG.plat = {}; MIG.fila = {};
+      (r.plataforma || []).forEach(function (x) { MIG.plat[x] = 1; }); (r.fila || []).forEach(function (x) { MIG.fila[x] = 1; });
+      MIG.lido = true; if (CLS) renderClassificacao();
+    } catch (e) { /* sem o status: todos aparecem azuis */ }
+    finally { MIG.lendo = false; }
+  }
+  async function migEnviar(btn, forcar) {
+    var d = btn.getAttribute('data-cpf');
+    var c = clienteParaRetirada(d);
+    if (!c) { toast('Cliente não encontrado.', 'erro'); return; }
+    btn.disabled = true;
+    try {
+      var r = await chamar('cli_fila', { cpf: d, nome: c.nome, telefone: c.telefone || '', forcar: !!forcar });
+      if (r.jaCadastrado) {
+        MIG.plat[d] = 1; renderClassificacao();
+        if (confirm(c.nome + ' já tem cadastro na plataforma (CPF vinculado). Mandar para a fila mesmo assim, para criar outro acesso?')) {
+          var b2 = document.querySelector('.mig[data-cpf="' + d + '"]') || btn; return migEnviar(b2, true);
+        }
+        return;
+      }
+      MIG.fila[d] = 1; renderClassificacao();
+      toast((r.repetido ? 'Já estava na fila' : 'Enviado para o Tempo Real') + ': ' + c.nome + ' (' + r.total + ' na fila). Abra o Tempo Real → Admin → + para criar o cadastro.', 'ok');
+    } catch (e) { toast('Não consegui enviar: ' + (e.message || 'erro'), 'erro'); btn.disabled = false; }
+  }
   function renderClassificacao() {
+    if (!MIG.lido) migLer();
     var R = CLS.resumo;
     var cards = ['ouro', 'prata', 'latao'].map(function (k) {
       var r = R[k];
@@ -3941,7 +3995,7 @@ body.modal-aberto{overflow:hidden}
     }
     var itens = lista.length ? lista.map(function (c) {
       if (c.proximo) return '<div class="cls-item">' +
-        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
+        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div>' + htmlMigrar(c) + '<div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
           '<span class="cls-selo proximo">' + CLS_NOME.proximo + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
           '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + (c.valorEmDia != null && c.valorEmDia !== c.valor ? '<br>em dia: ' + brl(c.valorEmDia) : '') + '</div></div></div>' +
         '<div class="cls-bols"><div><span>1º boleto vence ' + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
@@ -3957,7 +4011,7 @@ body.modal-aberto{overflow:hidden}
         return '<div><span>Vence ' + dataBR(b.vencimento) + ' · <span class="st-' + b.status + '">' + st + '</span>' + (b.prorata ? ' · Pró-rata' : '') + '</span><b>' + brl(b.valor) + '</b></div>';
       }).join('');
       return '<div class="cls-item">' +
-        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div><div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
+        '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div>' + htmlMigrar(c) + '<div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
           '<span class="cls-selo ' + c.classe + '">' + CLS_NOME[c.classe] + ' · ' + c.pontos + ' pts' + (c.poucos ? ' (menos de 5 pagos)' : '') + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
