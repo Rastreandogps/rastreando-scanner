@@ -131,6 +131,10 @@ textarea{resize:vertical;min-height:80px}
 .cfg-l span{font-weight:700;color:var(--text-2)}
 .cfg-l .btn{width:auto;padding:9px 16px;margin:0}
 .cfg-info{font-size:.78rem;color:var(--text-3);margin-top:8px}
+.cfg-lb input{flex:1;width:auto;min-width:0;font-weight:500;font-size:.92rem}
+.cfg-lb2{margin-top:8px;flex-wrap:wrap}
+.cfg-lb2 .btn{font-size:.82rem;padding:8px 12px}
+.cfg-info a{color:var(--navy-light);font-weight:700}
 .hbt{flex:none} .hx{min-width:0}
 /* 17/10/2026: no computador as abas cabem todas (quebram linha em vez de rolar) e os pedidos ficam em 2 colunas */
 @media (min-width:1000px){
@@ -189,6 +193,10 @@ textarea{resize:vertical;min-height:80px}
       <label for="cfg-km">Distância máxima da base</label>
       <div class="cfg-l"><input type="number" id="cfg-km" min="1" max="200" step="1" inputmode="numeric"><span>km</span><button class="btn btn-pri" id="cfg-salvar" type="button">Salvar</button></div>
       <div class="cfg-info" id="cfg-info"></div>
+      <label for="cfg-base" style="margin-top:14px">Endereço da base (de onde sai a entrega)</label>
+      <div class="cfg-l cfg-lb"><input type="text" id="cfg-base" placeholder="Rua, número, cidade — ou cole as coordenadas do Google Maps"><button class="btn btn-pri" id="cfg-base-salvar" type="button">Salvar</button></div>
+      <div class="cfg-l cfg-lb2"><button class="btn btn-sec" id="cfg-base-aqui" type="button">📍 Usar onde estou agora</button><button class="btn btn-sec" id="cfg-base-padrao" type="button">Voltar para a base padrão</button></div>
+      <div class="cfg-info" id="cfg-base-info"></div>
     </div>
     <div class="filtros" id="filtros"></div>
     <div id="lista"></div>
@@ -293,9 +301,39 @@ textarea{resize:vertical;min-height:80px}
   /* 17/10/2026: distância máxima de entrega escolhida aqui (vale na hora para os próximos cálculos de frete) */
   function brl2(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
   function cfgPintar(c) {
-    $('cfg-km').value = c.maxKm;
+    $('cfg-km').value = c.maxKm; cfgBasePintar(c);
     $('cfg-info').textContent = 'Frete: ' + brl2(c.fixo) + ' + ' + brl2(c.porKm) + ' por km (só a ida). Até ' + String(c.maxKm).replace('.', ',') + ' km: ' + brl2(c.fixo + c.porKm * c.maxKm) + '. Mais longe que isso, o cliente é levado a combinar pelo WhatsApp.';
   }
+  function cfgBasePintar(c) {
+    if (!c.base) return;
+    $('cfg-base-info').innerHTML = 'Base atual: <b>' + esc(c.base.nome || '') + '</b> · <a href="https://www.google.com/maps/search/?api=1&query=' + c.base.lat + ',' + c.base.lon + '" target="_blank" rel="noopener">ver no mapa</a>';
+  }
+  async function cfgBaseSalvar(extra, b, txtBtn) {
+    b.disabled = true; b.textContent = 'Salvando...';
+    try { var c = await chamar('nfcConfig', extra); cfgPintar(c); toast('Base de entrega atualizada.', 'ok'); $('cfg-base').value = ''; }
+    catch (e) { toast(e.message, 'erro'); }
+    finally { b.disabled = false; b.textContent = txtBtn; }
+  }
+  $('cfg-base-salvar').addEventListener('click', function () {
+    var t = $('cfg-base').value.trim();
+    if (t.length < 5) { toast('Digite o endereço da base ou cole as coordenadas.', 'erro'); return; }
+    cfgBaseSalvar({ base: t }, this, 'Salvar');
+  });
+  $('cfg-base-aqui').addEventListener('click', function () {
+    var b = this;
+    if (!navigator.geolocation) { toast('Este aparelho não dá a localização.', 'erro'); return; }
+    b.disabled = true; b.textContent = 'Pegando a localização...';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      b.disabled = false; b.textContent = '📍 Usar onde estou agora';
+      if (pos.coords.accuracy > 300) { toast('A localização veio imprecisa (' + Math.round(pos.coords.accuracy) + ' m). Tente perto de uma janela ou digite o endereço.', 'erro'); return; }
+      if (!confirm('Usar o lugar onde você está agora como base de entrega?')) return;
+      cfgBaseSalvar({ base: pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6) }, b, '📍 Usar onde estou agora');
+    }, function () { b.disabled = false; b.textContent = '📍 Usar onde estou agora'; toast('Não consegui pegar a localização.', 'erro'); }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  });
+  $('cfg-base-padrao').addEventListener('click', function () {
+    if (!confirm('Voltar a base para São João de Meriti (a padrão)?')) return;
+    cfgBaseSalvar({ basePadrao: true }, this, 'Voltar para a base padrão');
+  });
   async function cfgCarregar() { try { cfgPintar(await chamar('nfcConfig', {})); } catch (e) { $('cfg-info').textContent = 'Não consegui ler a configuração: ' + e.message; } }
   $('cfg-salvar').addEventListener('click', async function () {
     var b = this, v = Number($('cfg-km').value);
