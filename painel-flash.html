@@ -137,8 +137,18 @@ textarea{resize:vertical;min-height:80px}
 .cfg-info a{color:var(--navy-light);font-weight:700}
 .hbt{flex:none} .hx{min-width:0}
 /* 17/10/2026: no computador as abas cabem todas (quebram linha em vez de rolar) e os pedidos ficam em 2 colunas */
-@media (min-width:1000px){
+/* 17/10/2026: no computador a configuração fica numa coluna à esquerda e os pedidos à direita */
+@media (min-width:1100px){
+  .stage{max-width:1500px}
+  #tela-lista:not([hidden]){display:grid;grid-template-columns:340px minmax(0,1fr);grid-template-rows:auto auto auto 1fr;column-gap:22px;align-items:start}
+  #tela-lista > .cfg{grid-column:1;grid-row:1 / span 4;position:sticky;top:84px;margin-bottom:0}
+  #tela-lista > .filtros, #tela-lista > #lista, #tela-lista > #btn-atualizar{grid-column:2}
+  .cfg-lb input{font-size:.85rem}
+}
+@media (min-width:1000px) and (max-width:1099px){
   .stage{max-width:1100px}
+}
+@media (min-width:1000px){
   .filtros{flex-wrap:wrap;overflow:visible}
   #lista{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   #lista > .pedido{margin:0}
@@ -194,7 +204,7 @@ textarea{resize:vertical;min-height:80px}
       <div class="cfg-l"><input type="number" id="cfg-km" min="1" max="200" step="1" inputmode="numeric"><span>km</span><button class="btn btn-pri" id="cfg-salvar" type="button">Salvar</button></div>
       <div class="cfg-info" id="cfg-info"></div>
       <label for="cfg-base" style="margin-top:14px">Endereço da base (de onde sai a entrega)</label>
-      <div class="cfg-l cfg-lb"><input type="text" id="cfg-base" placeholder="Rua, número, cidade — ou cole as coordenadas do Google Maps"><button class="btn btn-pri" id="cfg-base-salvar" type="button">Salvar</button></div>
+      <div class="cfg-l cfg-lb"><input type="text" id="cfg-base" placeholder="Endereço ou coordenadas"><button class="btn btn-pri" id="cfg-base-salvar" type="button">Salvar</button></div>
       <div class="cfg-l cfg-lb2"><button class="btn btn-sec" id="cfg-base-aqui" type="button">📍 Usar onde estou agora</button><button class="btn btn-sec" id="cfg-base-padrao" type="button">Voltar para a base padrão</button></div>
       <div class="cfg-info" id="cfg-base-info"></div>
     </div>
