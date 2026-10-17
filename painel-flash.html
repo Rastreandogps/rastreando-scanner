@@ -122,6 +122,14 @@ textarea{resize:vertical;min-height:80px}
 .filtros button{flex:none;border:1.5px solid var(--border);background:#fff;border-radius:99px;padding:8px 14px;font:inherit;font-size:.85rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .filtros button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .filtros b{margin-left:4px}
+.cfg{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.cfg-t{font-family:var(--font-display);font-weight:700;color:var(--navy);margin-bottom:8px}
+.cfg label{display:block;font-size:.8rem;color:var(--text-2);margin-bottom:4px}
+.cfg-l{display:flex;align-items:center;gap:8px}
+.cfg-l input{width:90px;padding:9px 10px;border:1.5px solid var(--border);border-radius:9px;font:inherit;font-size:1rem;font-weight:700;color:var(--navy)}
+.cfg-l span{font-weight:700;color:var(--text-2)}
+.cfg-l .btn{width:auto;padding:9px 16px;margin:0}
+.cfg-info{font-size:.78rem;color:var(--text-3);margin-top:8px}
 .hbt{flex:none} .hx{min-width:0}
 /* 17/10/2026: no computador as abas cabem todas (quebram linha em vez de rolar) e os pedidos ficam em 2 colunas */
 @media (min-width:1000px){
@@ -175,6 +183,12 @@ textarea{resize:vertical;min-height:80px}
     <p class="muted" style="margin-top:10px">O mesmo login da Gestão.</p>
   </section>
   <section id="tela-lista" hidden>
+    <div class="cfg" id="cfg">
+      <div class="cfg-t">⚡ Área de entrega</div>
+      <label for="cfg-km">Distância máxima da base</label>
+      <div class="cfg-l"><input type="number" id="cfg-km" min="1" max="200" step="1" inputmode="numeric"><span>km</span><button class="btn btn-pri" id="cfg-salvar" type="button">Salvar</button></div>
+      <div class="cfg-info" id="cfg-info"></div>
+    </div>
     <div class="filtros" id="filtros"></div>
     <div id="lista"></div>
     <button class="btn btn-sec" id="btn-atualizar" style="margin-top:6px">Atualizar</button>
@@ -267,7 +281,23 @@ textarea{resize:vertical;min-height:80px}
       } catch (e) { toast(e.message, 'erro'); b.disabled = false; b.textContent = 'Salvar'; }
     }
   });
+  /* 17/10/2026: distância máxima de entrega escolhida aqui (vale na hora para os próximos cálculos de frete) */
+  function brl2(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function cfgPintar(c) {
+    $('cfg-km').value = c.maxKm;
+    $('cfg-info').textContent = 'Frete: ' + brl2(c.fixo) + ' + ' + brl2(c.porKm) + ' por km (só a ida). Até ' + String(c.maxKm).replace('.', ',') + ' km: ' + brl2(c.fixo + c.porKm * c.maxKm) + '. Mais longe que isso, o cliente é levado a combinar pelo WhatsApp.';
+  }
+  async function cfgCarregar() { try { cfgPintar(await chamar('nfcConfig', {})); } catch (e) { $('cfg-info').textContent = 'Não consegui ler a configuração: ' + e.message; } }
+  $('cfg-salvar').addEventListener('click', async function () {
+    var b = this, v = Number($('cfg-km').value);
+    if (!(v >= 1 && v <= 200)) { toast('Use um número entre 1 e 200 km.', 'erro'); return; }
+    b.disabled = true; b.textContent = 'Salvando...';
+    try { cfgPintar(await chamar('nfcConfig', { maxKm: v })); toast('Distância máxima: ' + v + ' km.', 'ok'); }
+    catch (e) { toast(e.message, 'erro'); }
+    finally { b.disabled = false; b.textContent = 'Salvar'; }
+  });
   async function carregar() {
+    if (!carregar._cfg) { carregar._cfg = true; cfgCarregar(); }
     $('btn-atualizar').disabled = true;
     try { var r = await chamar('nfcLista', {}); PEDIDOS = r.pedidos || []; desenhar(); }
     catch (e) { toast(e.message, 'erro'); }
