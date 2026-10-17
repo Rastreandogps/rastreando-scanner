@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v158-tec-whatsapp';
+const BUILD_VERSION = '2026-10-17-v159-concluir-sem-data';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5426,6 +5426,7 @@ async function loadAdminDoneOrders() {
   const result = await gasRequest({ action: 'getAllDoneOrders' });
   if (result.ok) {
     allDoneOrders = normalizarOrdens(result.data || Object.fromEntries(TECH_NAMES.map(n => [n, []])));
+    if (!loadAdminDoneOrders._flashOk) { loadAdminDoneOrders._flashOk = true; if (await _flashCorrigirSemData()) showToast('Entrega concluída sem data corrigida: agora aparece em Concluídos e no resumo.', 'success'); }
     gerarFiltroMesDone();
     renderAdminDoneList();
     const total = TECH_NAMES.reduce((s,t) => s + (allDoneOrders[t]||[]).length, 0);
@@ -5975,8 +5976,32 @@ function adminConcluirOS(id, tech) {
   if (_abrirSubEtapaSePrecisar(o, id, tech, 'admin')) return;
   return _adminConcluirOSDireto(id, tech);
 }
+/* 17/10/2026 (v159): OS concluída SEM DATA sumia (Concluídos, cofrinho e resumo do dia só contam OS com data).
+   Agora, ao concluir uma OS sem data, ela recebe a data de hoje. */
+function _dataValidaOS(o) { return !!(o && o.data && String(o.data).trim() && o.data !== 'undefined' && parseDate(o.data)); }
+async function _garantirDataAoConcluir(id, tech, o) {
+  o = o || _osFresca(id, tech);
+  if (!o || _dataValidaOS(o)) return;
+  const hoje = _isoHoje();
+  try { const r = await gasRequest({ action: 'updateDate', id, tech, data: hoje }); if (r && r.ok) o.data = hoje; } catch (e) { /* segue: conclui assim mesmo */ }
+}
+/* entrega do Rastreando Flash já concluída sem data (antes da v159): ganha a data em que a rota começou (ou hoje) */
+async function _flashCorrigirSemData() {
+  try {
+    const pend = [];
+    TECH_NAMES.forEach(function (t) { (allDoneOrders[t] || []).forEach(function (o) { if (_ehEntregaFlash(o) && !_dataValidaOS(o)) pend.push({ o: o, t: t }); }); });
+    if (!pend.length) return false;
+    for (const x of pend) {
+      const ri = _flashRotaIni(x.o), d = ri ? new Date(ri) : new Date();
+      const iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      try { await gasRequest({ action: 'updateDate', id: x.o.id, tech: x.t, data: iso }); x.o.data = iso; } catch (e) {}
+    }
+    return true;
+  } catch (e) { return false; }
+}
 async function _adminConcluirOSDireto(id, tech) {
   setAdminSyncStatus('syncing');
+  await _garantirDataAoConcluir(id, tech);
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
   if (result.ok) {
     showToast('OS concluída! ✅', 'success');
@@ -8242,6 +8267,7 @@ async function confirmarConcluir() {
   const _dataConcluida = _osAntes ? _osAntes.data : '';
   fecharModalConcluir();
   setSyncStatus('syncing');
+  await _garantirDataAoConcluir(id, tech, _osAntes); // 17/10/2026 (v159)
   const result = await gasRequest({ action: 'updateStatus', id, tech, status: 'concluido' });
   if (result.ok) {
     showToast('Serviço concluído! ✅', 'success');
