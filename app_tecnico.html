@@ -276,6 +276,11 @@
      Fica no estilo (e não direto no card) pra que, ao tirar o destaque
      de um dia do calendário, a cor do tipo volte sozinha. */
   .os-mini { box-shadow: 0 0 0 3px #3b82f6, 0 2px 6px rgba(0,0,0,.12); }
+  /* 17/10/2026 (v154, pedido do dono): OS de ENTREGA (Rastreando Flash) com o quadro ondulado, para achar na grade de longe */
+  .os-flash { border: 14px solid transparent !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; border-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2060%2060%22%20width%3D%2260%22%20height%3D%2260%22%3E%3Cpath%20d%3D%22M10.0%2010.0L10.2%2010.3L10.5%2010.6L10.8%2010.8L11.0%2011.1L11.2%2011.4L11.5%2011.6L11.8%2011.9L12.0%2012.1L12.2%2012.3L12.5%2012.5L12.8%2012.7L13.0%2012.9L13.2%2013.1L13.5%2013.2L13.8%2013.3L14.0%2013.4L14.2%2013.5L14.5%2013.6L14.8%2013.6L15.0%2013.6L15.2%2013.6L15.5%2013.6L15.8%2013.5L16.0%2013.4L16.2%2013.3L16.5%2013.2L16.8%2013.1L17.0%2012.9L17.2%2012.7L17.5%2012.5L17.8%2012.3L18.0%2012.1L18.2%2011.9L18.5%2011.6L18.8%2011.4L19.0%2011.1L19.2%2010.8L19.5%2010.6L19.8%2010.3L20.0%2010.0L20.2%209.7L20.5%209.4L20.8%209.2L21.0%208.9L21.2%208.6L21.5%208.4L21.8%208.1L22.0%207.9L22.2%207.7L22.5%207.5L22.8%207.3L23.0%207.1L23.2%206.9L23.5%206.8L23.8%206.7L24.0%206.6L24.2%206.5L24.5%206.4L24.8%206.4L25.0%206.4L25.2%206.4L25.5%206.4L25.8%206.5L26.0%206.6L26.2%206.7L26.5%206.8L26.8%206.9L27.0%207.1L27.2%207.3L27.5%207.5L27.8%207.7L28.0%207.9L28.2%208.1L28.5%208.4L28.8%208.6L29.0%208.9L29.2%209.2L29.5%209.4L29.8%209.7L30.0%2010.0L30.2%2010.3L30.5%2010.6L30.8%2010.8L31.0%2011.1L31.2%2011.4L31.5%2011.6L31.8%2011.9L32.0%2012.1L32.2%2012.3L32.5%2012.5L32.8%2012.7L33.0%2012.9L33.2%2013.1L33.5%2013.2L33.8%2013.3L34.0%2013.4L34.2%2013.5L34.5%2013.6L34.8%2013.6L35.0%2013.6L35.2%2013.6L35.5%2013.6L35.8%2013.5L36.0%2013.4L36.2%2013.3L36.5%2013.2L36.8%2013.1L37.0%2012.9L37.2%2012.7L37.5%2012.5L37.8%2012.3L38.0%2012.1L38.2%2011.9L38.5%2011.6L38.8%2011.4L39.0%2011.1L39.2%2010.8L39.5%2010.6L39.8%2010.3L40.0%2010.0L40.2%209.7L40.5%209.4L40.8%209.2L41.0%208.9L41.2%208.6L41.5%208.4L41.8%208.1L42.0%207.9L42.2%207.7L42.5%207.5L42.8%207.3L43.0%207.1L43.2%206.9L43.5%206.8L43.8%206.7L44.0%206.6L44.2%206.5L44.5%206.4L44.8%206.4L45.0%206.4L45.2%206.4L45.5%206.4L45.8%206.5L46.0%206.6L46.2%206.7L46.5%206.8L46.8%206.9L47.0%207.1L47.2%207.3L47.5%207.5L47.8%207.7L48.0%207.9L48.2%208.1L48.5%208.4L48.8%208.6L49.0%208.9L49.2%209.2L49.5%209.4L49.8%209.7L50.0%2010.0L49.7%2010.2L49.4%2010.5L49.2%2010.8L48.9%2011.0L48.6%2011.2L48.4%2011.5L48.1%2011.8L47.9%2012.0L47.7%2012.2L47.5%2012.5L47.3%2012.8L47.1%2013.0L46.9%2013.2L46.8%2013.5L46.7%2013.8L46.6%2014.0L46.5%2014.2L46.4%2014.5L46.4%2014.8L46.4%2015.0L46.4%2015.2L46.4%2015.5L46.5%2015.8L46.6%2016.0L46.7%2016.2L46.8%2016.5L46.9%2016.8L47.1%2017.0L47.3%2017.2L47.5%2017.5L47.7%2017.8L47.9%2018.0L48.1%2018.2L48.4%2018.5L48.6%2018.8L48.9%2019.0L49.2%2019.2L49.4%2019.5L49.7%2019.8L50.0%2020.0L50.3%2020.2L50.6%2020.5L50.8%2020.8L51.1%2021.0L51.4%2021.2L51.6%2021.5L51.9%2021.8L52.1%2022.0L52.3%2022.2L52.5%2022.5L52.7%2022.8L52.9%2023.0L53.1%2023.2L53.2%2023.5L53.3%2023.8L53.4%2024.0L53.5%2024.2L53.6%2024.5L53.6%2024.8L53.6%2025.0L53.6%2025.2L53.6%2025.5L53.5%2025.8L53.4%2026.0L53.3%2026.2L53.2%2026.5L53.1%2026.8L52.9%2027.0L52.7%2027.2L52.5%2027.5L52.3%2027.8L52.1%2028.0L51.9%2028.2L51.6%2028.5L51.4%2028.8L51.1%2029.0L50.8%2029.2L50.6%2029.5L50.3%2029.8L50.0%2030.0L49.7%2030.2L49.4%2030.5L49.2%2030.8L48.9%2031.0L48.6%2031.2L48.4%2031.5L48.1%2031.8L47.9%2032.0L47.7%2032.2L47.5%2032.5L47.3%2032.8L47.1%2033.0L46.9%2033.2L46.8%2033.5L46.7%2033.8L46.6%2034.0L46.5%2034.2L46.4%2034.5L46.4%2034.8L46.4%2035.0L46.4%2035.2L46.4%2035.5L46.5%2035.8L46.6%2036.0L46.7%2036.2L46.8%2036.5L46.9%2036.8L47.1%2037.0L47.3%2037.2L47.5%2037.5L47.7%2037.8L47.9%2038.0L48.1%2038.2L48.4%2038.5L48.6%2038.8L48.9%2039.0L49.2%2039.2L49.4%2039.5L49.7%2039.8L50.0%2040.0L50.3%2040.2L50.6%2040.5L50.8%2040.8L51.1%2041.0L51.4%2041.2L51.6%2041.5L51.9%2041.8L52.1%2042.0L52.3%2042.2L52.5%2042.5L52.7%2042.8L52.9%2043.0L53.1%2043.2L53.2%2043.5L53.3%2043.8L53.4%2044.0L53.5%2044.2L53.6%2044.5L53.6%2044.8L53.6%2045.0L53.6%2045.2L53.6%2045.5L53.5%2045.8L53.4%2046.0L53.3%2046.2L53.2%2046.5L53.1%2046.8L52.9%2047.0L52.7%2047.2L52.5%2047.5L52.3%2047.8L52.1%2048.0L51.9%2048.2L51.6%2048.5L51.4%2048.8L51.1%2049.0L50.8%2049.2L50.6%2049.5L50.3%2049.8L50.0%2050.0L49.8%2050.3L49.5%2050.6L49.2%2050.8L49.0%2051.1L48.8%2051.4L48.5%2051.6L48.2%2051.9L48.0%2052.1L47.8%2052.3L47.5%2052.5L47.2%2052.7L47.0%2052.9L46.8%2053.1L46.5%2053.2L46.2%2053.3L46.0%2053.4L45.8%2053.5L45.5%2053.6L45.2%2053.6L45.0%2053.6L44.8%2053.6L44.5%2053.6L44.2%2053.5L44.0%2053.4L43.8%2053.3L43.5%2053.2L43.2%2053.1L43.0%2052.9L42.8%2052.7L42.5%2052.5L42.2%2052.3L42.0%2052.1L41.8%2051.9L41.5%2051.6L41.2%2051.4L41.0%2051.1L40.8%2050.8L40.5%2050.6L40.2%2050.3L40.0%2050.0L39.8%2049.7L39.5%2049.4L39.2%2049.2L39.0%2048.9L38.8%2048.6L38.5%2048.4L38.2%2048.1L38.0%2047.9L37.8%2047.7L37.5%2047.5L37.2%2047.3L37.0%2047.1L36.8%2046.9L36.5%2046.8L36.2%2046.7L36.0%2046.6L35.8%2046.5L35.5%2046.4L35.2%2046.4L35.0%2046.4L34.8%2046.4L34.5%2046.4L34.2%2046.5L34.0%2046.6L33.8%2046.7L33.5%2046.8L33.2%2046.9L33.0%2047.1L32.8%2047.3L32.5%2047.5L32.2%2047.7L32.0%2047.9L31.8%2048.1L31.5%2048.4L31.2%2048.6L31.0%2048.9L30.8%2049.2L30.5%2049.4L30.2%2049.7L30.0%2050.0L29.8%2050.3L29.5%2050.6L29.2%2050.8L29.0%2051.1L28.8%2051.4L28.5%2051.6L28.2%2051.9L28.0%2052.1L27.8%2052.3L27.5%2052.5L27.2%2052.7L27.0%2052.9L26.8%2053.1L26.5%2053.2L26.2%2053.3L26.0%2053.4L25.8%2053.5L25.5%2053.6L25.2%2053.6L25.0%2053.6L24.8%2053.6L24.5%2053.6L24.2%2053.5L24.0%2053.4L23.8%2053.3L23.5%2053.2L23.2%2053.1L23.0%2052.9L22.8%2052.7L22.5%2052.5L22.2%2052.3L22.0%2052.1L21.8%2051.9L21.5%2051.6L21.2%2051.4L21.0%2051.1L20.8%2050.8L20.5%2050.6L20.2%2050.3L20.0%2050.0L19.8%2049.7L19.5%2049.4L19.2%2049.2L19.0%2048.9L18.8%2048.6L18.5%2048.4L18.2%2048.1L18.0%2047.9L17.8%2047.7L17.5%2047.5L17.2%2047.3L17.0%2047.1L16.8%2046.9L16.5%2046.8L16.2%2046.7L16.0%2046.6L15.8%2046.5L15.5%2046.4L15.2%2046.4L15.0%2046.4L14.8%2046.4L14.5%2046.4L14.2%2046.5L14.0%2046.6L13.8%2046.7L13.5%2046.8L13.2%2046.9L13.0%2047.1L12.8%2047.3L12.5%2047.5L12.2%2047.7L12.0%2047.9L11.8%2048.1L11.5%2048.4L11.2%2048.6L11.0%2048.9L10.8%2049.2L10.5%2049.4L10.2%2049.7L10.0%2050.0L9.7%2049.8L9.4%2049.5L9.2%2049.2L8.9%2049.0L8.6%2048.8L8.4%2048.5L8.1%2048.2L7.9%2048.0L7.7%2047.8L7.5%2047.5L7.3%2047.2L7.1%2047.0L6.9%2046.8L6.8%2046.5L6.7%2046.2L6.6%2046.0L6.5%2045.8L6.4%2045.5L6.4%2045.2L6.4%2045.0L6.4%2044.8L6.4%2044.5L6.5%2044.2L6.6%2044.0L6.7%2043.8L6.8%2043.5L6.9%2043.2L7.1%2043.0L7.3%2042.8L7.5%2042.5L7.7%2042.2L7.9%2042.0L8.1%2041.8L8.4%2041.5L8.6%2041.2L8.9%2041.0L9.2%2040.8L9.4%2040.5L9.7%2040.2L10.0%2040.0L10.3%2039.8L10.6%2039.5L10.8%2039.2L11.1%2039.0L11.4%2038.8L11.6%2038.5L11.9%2038.2L12.1%2038.0L12.3%2037.8L12.5%2037.5L12.7%2037.2L12.9%2037.0L13.1%2036.8L13.2%2036.5L13.3%2036.2L13.4%2036.0L13.5%2035.8L13.6%2035.5L13.6%2035.2L13.6%2035.0L13.6%2034.8L13.6%2034.5L13.5%2034.2L13.4%2034.0L13.3%2033.8L13.2%2033.5L13.1%2033.2L12.9%2033.0L12.7%2032.8L12.5%2032.5L12.3%2032.2L12.1%2032.0L11.9%2031.8L11.6%2031.5L11.4%2031.2L11.1%2031.0L10.8%2030.8L10.6%2030.5L10.3%2030.2L10.0%2030.0L9.7%2029.8L9.4%2029.5L9.2%2029.2L8.9%2029.0L8.6%2028.8L8.4%2028.5L8.1%2028.2L7.9%2028.0L7.7%2027.8L7.5%2027.5L7.3%2027.2L7.1%2027.0L6.9%2026.8L6.8%2026.5L6.7%2026.2L6.6%2026.0L6.5%2025.8L6.4%2025.5L6.4%2025.2L6.4%2025.0L6.4%2024.8L6.4%2024.5L6.5%2024.2L6.6%2024.0L6.7%2023.8L6.8%2023.5L6.9%2023.2L7.1%2023.0L7.3%2022.8L7.5%2022.5L7.7%2022.2L7.9%2022.0L8.1%2021.8L8.4%2021.5L8.6%2021.2L8.9%2021.0L9.2%2020.8L9.4%2020.5L9.7%2020.2L10.0%2020.0L10.3%2019.8L10.6%2019.5L10.8%2019.2L11.1%2019.0L11.4%2018.8L11.6%2018.5L11.9%2018.2L12.1%2018.0L12.3%2017.8L12.5%2017.5L12.7%2017.2L12.9%2017.0L13.1%2016.8L13.2%2016.5L13.3%2016.2L13.4%2016.0L13.5%2015.8L13.6%2015.5L13.6%2015.2L13.6%2015.0L13.6%2014.8L13.6%2014.5L13.5%2014.2L13.4%2014.0L13.3%2013.8L13.2%2013.5L13.1%2013.2L12.9%2013.0L12.7%2012.8L12.5%2012.5L12.3%2012.2L12.1%2012.0L11.9%2011.8L11.6%2011.5L11.4%2011.2L11.1%2011.0L10.8%2010.8L10.6%2010.5L10.3%2010.2Z%22%20fill%3D%22%23f0fdf4%22%20stroke%3D%22%2316a34a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E") 20 fill / 14px round !important; }
+  .os-mini.os-flash { padding: 2px 4px !important; }
+  .os-flash > label:first-child { top: -8px !important; right: -8px !important; }
+  .os-flash .tipo-led { background: #dcfce7 !important; color: #166534 !important; }
   .os-mini.tipo-manut { box-shadow: 0 0 0 3px #f59e0b, 0 2px 6px rgba(0,0,0,.12); }
   .os-mini.tipo-remocao { box-shadow: 0 0 0 3px #ef4444, 0 2px 6px rgba(0,0,0,.12); }
 
@@ -1735,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v153-entrega-nfc';
+const BUILD_VERSION = '2026-10-17-v154-flash-ondulado';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3750,6 +3755,9 @@ function renderCalDayCards(ids, semScroll) {
 // Devolve a classe de cor do card conforme o tipo de serviço, pra a tela do
 // técnico ficar igual à do Admin: azul = instalação (padrão, sem classe),
 // amarelo = manutenção, vermelho = retirada/remoção.
+/* 17/10/2026 (v154): OS de entrega do Rastreando Flash (criada a partir do pedido pago) */
+function _ehEntregaFlash(o) { return !!o && /rastreando flash|entrega de adesivo nfc/i.test(String(o.veiculo || '') + ' ' + String(o.obs || '')); }
+function _flashCls(o) { return _ehEntregaFlash(o) ? ' os-flash' : ''; }
 function _classeTipoOS(o) {
   const t = (o && o.tipo ? o.tipo : '').toLowerCase();
   if (t.includes('manut')) return ' tipo-manut';
@@ -3763,7 +3771,7 @@ function _classeTipoOS(o) {
 function _badgeTipoLed(o, mini) {
   const t = (o && o.tipo) ? String(o.tipo).trim() : '';
   if (!t) return '';
-  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + (_ehTentativaOS(o) ? ' tent-led' : '') + '"><span class="led"></span>' + esc(_ehTentativaOS(o) ? '🚨 Especial' : t) + '</span>';
+  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + (_ehTentativaOS(o) ? ' tent-led' : '') + '"><span class="led"></span>' + esc(_ehTentativaOS(o) ? '🚨 Especial' : _ehEntregaFlash(o) ? '⚡ Entrega' : t) + '</span>';
 }
 
 // A mesma cor, em números (usada quando o destaque do dia precisa repintar
@@ -3779,7 +3787,7 @@ function _corTipoRGB(o) {
 function _renderCardTecnicoCompacto(o) {
   const hora   = getHoraOS(o);
   const modelo = _modeloPrincipalVeiculo(o.veiculo);
-  return '<div data-os-id="' + esc(o.id) + '" data-glow="' + _corTipoRGB(o) + '" class="os-mini' + _classeTipoOS(o) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;">' +
+  return '<div data-os-id="' + esc(o.id) + '" data-glow="' + _corTipoRGB(o) + '" class="os-mini' + _classeTipoOS(o) + _flashCls(o) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;">' +
     _badgeTipoLed(o, true) +
     (getPeriodoOS(o) ? '<div style="margin-bottom:3px;max-width:100%;">' + _periodoPill(o) + '</div>' : '') +
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
@@ -3820,7 +3828,7 @@ function _tecModalAtualizarLink() {
 
 function renderCardInline(o) {
   const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
-  const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o);
+  const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o) + _flashCls(o);
   const dateVal  = hasDate ? toInputDate(o.data) : '';
   const telLimpo = (o.telefone || '').replace(/\D/g,'');
   const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
@@ -4012,7 +4020,7 @@ function renderTechOSList() {
 
   list.innerHTML = monthly.map(o => {
     const hasDate  = o.data && o.data.trim() !== '' && o.data !== 'undefined';
-    const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o);
+    const cardCls  = (hasDate ? '' : ' pending') + _classeTipoOS(o) + _flashCls(o);
     const dateVal  = hasDate ? toInputDate(o.data) : '';
     const telLimpo = (o.telefone || '').replace(/\D/g,'');
     const wppLink  = telLimpo ? 'https://wa.me/55' + telLimpo : '';
@@ -7539,7 +7547,7 @@ function _renderCardOSCompacto(o) {
   else cor = '#3b82f6';
   const hora   = getHoraOS(o);
   const modelo = _modeloPrincipalVeiculo(o.veiculo);
-  return '<div data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 3px ' + cor + ',0 2px 6px rgba(0,0,0,.12);">' +
+  return '<div class="' + _flashCls(o).trim() + '" data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 3px ' + cor + ',0 2px 6px rgba(0,0,0,.12);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
@@ -7588,7 +7596,7 @@ function _renderCardOSDetalhado(o) {
     const tech = adminTechSelecionado;
 
     return (
-      '<div class="os-det-adm" data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
+      '<div class="os-det-adm' + _flashCls(o) + '" data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
         'box-shadow:0 4px 8px rgba(0,0,0,.08),0 0 0 2px ' + borderLed + ';position:relative;">' +
 
         // ── Checkbox seleção em massa
@@ -9799,7 +9807,7 @@ function _cardManutencao(r) {
       '<div style="font-size:11.5px;color:#7c3aed;margin-top:5px;">Cobrar como nova instalação (valor conforme o bairro). Retirada sem custo.</div>' +
     '</div>' : '';
 
-  return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid ' + (sub ? '#ddd6fe' : '#fde68a') + ';border-left:5px solid ' + (sub ? '#8b5cf6' : '#f59e0b') + ';box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
+  return '<div class="' + (nfc ? 'os-flash' : '') + '" style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid ' + (sub ? '#ddd6fe' : '#fde68a') + ';border-left:5px solid ' + (sub ? '#8b5cf6' : '#f59e0b') + ';box-shadow:0 2px 8px rgba(0,0,0,.06);" id="rm-card-' + id + '">' +
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
       '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
       (sub ? '<span style="background:#ede9fe;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔁 Substituição</span>'
