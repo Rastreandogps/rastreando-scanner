@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v154-flash-ondulado';
+const BUILD_VERSION = '2026-10-17-v155-flash-rota';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2641,6 +2641,7 @@ async function espelharNoFirestore(payload) {
         if ('tentRetirados' in payload) up.tentRetirados = (Array.isArray(payload.tentRetirados) ? payload.tentRetirados : []).slice(0, 20).map(function (x) { return { i: Number(x.i) || 0, dia: String(x.dia || '').slice(0, 10) }; });
         if ('tentPagoDia' in payload) up.tentPagoDia = String(payload.tentPagoDia || '').slice(0, 10);
         if ('tentPagoQtd' in payload) up.tentPagoQtd = Math.max(0, Math.min(20, Number(payload.tentPagoQtd) || 0)); // 16/10/2026 (v151): placas que pagaram
+        if ('rotaIni' in payload) up.rotaIni = String(payload.rotaIni || '').slice(0, 30); // 17/10/2026 (v155): entrega Rastreando Flash — técnico iniciou a rota
         if ('tentLink' in payload) up.tentLink = /^https?:\/\//.test(String(payload.tentLink || '')) ? String(payload.tentLink).slice(0, 400) : '';
         await ref.set(up, { merge: true }); }
       break;
@@ -2873,6 +2874,7 @@ function docFirestoreParaOrdem(doc) {
     tentLink:        d.tentLink || '',
     tentRetirados:   Array.isArray(d.tentRetirados) ? d.tentRetirados : [],
     tentPagoDia:     d.tentPagoDia || '',
+    rotaIni:         d.rotaIni || '', // 17/10/2026 (v155)
     tentPagoQtd:     Number(d.tentPagoQtd) || 0 // 16/10/2026 (v151)
   };
 }
@@ -3758,6 +3760,45 @@ function renderCalDayCards(ids, semScroll) {
 /* 17/10/2026 (v154): OS de entrega do Rastreando Flash (criada a partir do pedido pago) */
 function _ehEntregaFlash(o) { return !!o && /rastreando flash|entrega de adesivo nfc/i.test(String(o.veiculo || '') + ' ' + String(o.obs || '')); }
 function _flashCls(o) { return _ehEntregaFlash(o) ? ' os-flash' : ''; }
+/* 17/10/2026 (v155, pedido do dono): na ENTREGA o botão de concluir vira 2 passos:
+   1º "Iniciar rota" (abre o mapa até o cliente e marca a hora); 2º "Entregue", que conclui e o valor cai no cofrinho. */
+function _flashRotaIni(o) { // a OS pode vir da Planilha (sem os campos do Firestore): procura também no Firestore e neste aparelho
+  if (!o) return '';
+  if (o.rotaIni) return o.rotaIni;
+  const f = Array.isArray(_firestoreTodasOrdens) ? _firestoreTodasOrdens.find(function (x) { return x && x.id === o.id; }) : null;
+  if (f && f.rotaIni) return (o.rotaIni = f.rotaIni);
+  try { const l = localStorage.getItem('flashRota:' + o.id); if (l) return l; } catch (e) {}
+  return '';
+}
+function _flashHoraRota(o) { const r = _flashRotaIni(o), d = r ? new Date(r) : null; return d && !isNaN(d) ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+function _flashBtnTec(o, normal) {
+  if (!_ehEntregaFlash(o)) return normal;
+  const est = 'width:100%;margin-top:8px;padding:11px;color:white;border:none;border-radius:10px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;';
+  if (!_flashRotaIni(o)) return '<button onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser || '') + '\')" style="' + est + 'background:#16a34a;">🛵 Iniciar rota</button>';
+  return '<div style="margin-top:8px;font-size:12px;font-weight:700;color:#166534;background:#dcfce7;border-radius:8px;padding:6px 10px;text-align:center;">🛵 Em rota desde ' + _flashHoraRota(o) + ' · <a href="' + _flashLinkMapa(o) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#166534;">abrir o mapa</a></div>' +
+    normal.replace(/<svg[\s\S]*?<\/svg> Marcar como Concluído/, '📦 Entregue · concluir');
+}
+function _flashBtnAdm(o, tech, normal) {
+  if (!_ehEntregaFlash(o)) return normal;
+  if (!_flashRotaIni(o)) return '<button onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:7px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">🛵 Iniciar rota</button>';
+  return normal.replace('>✅</button>', ' title="Em rota desde ' + _flashHoraRota(o) + '">📦 Entregue</button>');
+}
+function _flashLinkMapa(o) {
+  const c = _detectarCoordenada(o && o.endereco);
+  return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + (c ? c.lat + ',' + c.lng : encodeURIComponent((o && o.endereco) || ''));
+}
+async function flashIniciarRota(id, tech) {
+  const todas = [].concat(allOrders[tech] || [], allOrders[currentUser] || [], window._adminOrdersCache || [], _firestoreTodasOrdens || []);
+  const o = todas.find(function (x) { return x && x.id === id; });
+  if (!o) { showToast('OS não encontrada. Atualize a lista.', 'error'); return; }
+  const w = window.open(_flashLinkMapa(o), '_blank'); // abre o mapa já (antes de salvar), senão o celular bloqueia
+  const agora = new Date().toISOString();
+  try { localStorage.setItem('flashRota:' + id, agora); } catch (e) {}
+  o.rotaIni = agora;
+  const ok = await _tentMarcar({ id: id, tech: tech }, { rotaIni: agora });
+  if (ok) showToast('Rota iniciada. Quando entregar, toque em "Entregue". 🛵', 'success');
+  else if (w && !ok) { /* o mapa abriu, mas não salvou: o botão continua "Iniciar rota" */ }
+}
 function _classeTipoOS(o) {
   const t = (o && o.tipo ? o.tipo : '').toLowerCase();
   if (t.includes('manut')) return ' tipo-manut';
@@ -3971,9 +4012,9 @@ function renderCardInline(o) {
       '<button onclick="event.stopPropagation();apagarNotaCard(this)" style="flex-shrink:0;padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
     '</div>' +
     // Marcar como Concluído
-    '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:4px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+    _flashBtnTec(o, '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:4px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
       '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
-    '</button>' +
+    '</button>') +
   '</div>';
 }
 
@@ -4195,9 +4236,9 @@ function renderTechOSList() {
           '<button onclick="event.stopPropagation();apagarNotaCard(this)" ' +
             'style="flex-shrink:0;padding:8px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:14px;cursor:pointer;" title="Apagar nota">🗑️</button>' +
         '</div>' +
-        '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+        _flashBtnTec(o, '<button class="card-concluir" onclick="event.stopPropagation();cardConcluir(this)" data-id="' + o.id + '" data-tech="' + esc(currentUser) + '" style="width:100%;margin-top:8px;padding:10px;background:#10b981;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">' +
           '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Concluído' +
-        '</button>' +
+        '</button>') +
 
       '</div>'
     );
@@ -7729,7 +7770,7 @@ function _renderCardOSDetalhado(o) {
         '</div>' : '') +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;background:#f8fafc;border-radius:10px;">' +
           '<span style="font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0;"></span>' +
-          '<div style="display:flex;gap:4px;">' +
+          '<div style="display:flex;gap:4px;flex-wrap:wrap;min-width:0;">' + /* 17/10/2026 (v155): quebra linha em vez de vazar do card */
             [0,1,2,3,4,5,6,7,8].map(function(n) {
               const ativo = (o.ordemDia || 0) === n;
               const label = n === 0 ? '—' : String(n);
@@ -7741,7 +7782,7 @@ function _renderCardOSDetalhado(o) {
         '</div>' +
         '<div style="display:flex;gap:6px;">' +
           '<button class="admin-view-edit-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar</button>' +
-          '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>' +
+          _flashBtnAdm(o, tech, '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>') +
           '<button class="admin-del-tech-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="padding:7px 12px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;cursor:pointer;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
         '</div>' +
 
