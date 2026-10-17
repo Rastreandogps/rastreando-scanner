@@ -124,6 +124,9 @@ textarea{resize:vertical;min-height:80px}
 .filtros b{margin-left:4px}
 .pedido{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
 .pedido.st-novo{border-left:4px solid #E07B00}
+.pedido.st-aguardando{border-left:4px solid #CBD5E1;opacity:.85}
+.frt{display:inline-block;margin-top:6px;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--green-dim);color:#006B4B}
+.frt.wpp{background:#EEF3FB;color:var(--navy)}
 .pedido.st-frete{border-left:4px solid #2451A0}
 .pedido.st-enviado{border-left:4px solid #00B37E}
 .pedido.st-entregue{border-left:4px solid #8A96AA;opacity:.85}
@@ -188,8 +191,8 @@ textarea{resize:vertical;min-height:80px}
     return j.result;
   }
   var PEDIDOS = [], FILTRO = 'abertos';
-  var ST = { novo: 'Novo', frete: 'Frete combinado', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
-  var FIL = [['abertos', 'Para enviar', function (p) { return p.status === 'novo' || p.status === 'frete'; }], ['novo', 'Novos'], ['frete', 'Frete combinado'], ['enviado', 'Enviados'], ['entregue', 'Entregues'], ['cancelado', 'Cancelados'], ['todos', 'Todos', function () { return true; }]];
+  var ST = { aguardando: 'Aguardando PIX', novo: 'Pago · para entregar', frete: 'Frete combinado (WhatsApp)', enviado: 'Saiu para entrega', entregue: 'Entregue', cancelado: 'Cancelado' };
+  var FIL = [['abertos', 'Para enviar', function (p) { return p.status === 'novo' || p.status === 'frete'; }], ['aguardando', 'Aguardando PIX'], ['novo', 'Pagos'], ['frete', 'Frete pelo WhatsApp'], ['enviado', 'Enviados'], ['entregue', 'Entregues'], ['cancelado', 'Cancelados'], ['todos', 'Todos', function () { return true; }]];
   function passa(p, f) { var x = FIL.find(function (y) { return y[0] === f; }); return x[2] ? x[2](p) : p.status === f; }
   function fmtCpf(c) { c = String(c || ''); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c; }
   function fmtTel(t) { t = String(t || ''); return t.length === 11 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 7) + '-' + t.slice(7) : t.length === 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, 6) + '-' + t.slice(6) : t; }
@@ -203,6 +206,7 @@ textarea{resize:vertical;min-height:80px}
       var dt = new Date(p.criadoMs || 0).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
       return '<div class="pedido st-' + esc(p.status) + '" data-id="' + esc(p.id) + '">' +
         '<div class="pt"><div><b>' + esc(p.nome) + '</b><div class="muted">' + esc(p.protocolo) + ' · ' + esc(dt) + ' · CPF ' + esc(fmtCpf(p.cpf)) + '</div></div><div class="qtd">' + p.qtd + (p.qtd === 1 ? ' adesivo' : ' adesivos') + '</div></div>' +
+        (p.frete && p.freteModo === 'pix' ? '<span class="frt">Entrega ' + (p.status === 'aguardando' ? 'a pagar ' : 'paga ') + Number(p.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(p.frete.kmIda).replace('.', ',') + ' km</span>' : '<span class="frt wpp">Entrega combinada pelo WhatsApp</span>') +
         '<div class="pl">📦 ' + esc(endTxt(p.endereco)) + '<br>Recebe: <b>' + esc(p.recebe) + '</b> · WhatsApp ' + esc(fmtTel(p.whatsapp)) + '<br>Link da fitinha: ' + (p.login ? '<a href="' + esc(LINK_NFC + encodeURIComponent(p.login)) + '" target="_blank" rel="noopener">' + esc(p.login) + '</a>' : '<b style="color:var(--danger)">login do app não encontrado (preencha abaixo)</b>') + '</div>' +
         '<div class="pacoes"><a class="wpp" href="https://wa.me/55' + esc(p.whatsapp) + '" target="_blank" rel="noopener">WhatsApp</a><button data-a="end">Copiar endereço</button>' + (p.login ? '<button data-a="link">Copiar link da fitinha</button>' : '') + '</div>' +
         '<div class="pform"><select data-c="status">' + Object.keys(ST).map(function (k) { return '<option value="' + k + '"' + (k === p.status ? ' selected' : '') + '>' + ST[k] + '</option>'; }).join('') + '</select>' +
