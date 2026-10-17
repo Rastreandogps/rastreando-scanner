@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v157-flash-rota-modal';
+const BUILD_VERSION = '2026-10-17-v158-tec-whatsapp';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -8798,7 +8798,7 @@ async function _tlGerar() {
     if (_tl.destino === undefined) _tl.destino = await _tlDestino(_tl.os);
     if (!_tl) return;
     const d = _tl.destino;
-    const j = await _tlChamar('tecCriar', { tecnico: _tl.tech, os: String(_tl.os.id || ''), destino: d ? { lat: d.lat, lon: d.lng } : null });
+    const j = await _tlChamar('tecCriar', { tecnico: _tl.tech, tel: TECH_TEL[_tl.tech] || '', os: String(_tl.os.id || ''), destino: d ? { lat: d.lat, lon: d.lng } : null });
     if (!_tl) return;
     _tl.codigo = j.codigo; _tl.expiraMs = j.expiraMs; _tl.online = j.online !== false;
     _tlResultado();
@@ -8894,7 +8894,7 @@ async function _tlCorrigirDestino(btn) {
   if (!(c.lat <= 6 && c.lat >= -34 && c.lng <= -28 && c.lng >= -74)) { msg.style.color = '#dc2626'; msg.textContent = 'Essa posição fica fora do Brasil. Confira o sinal de menos (no Rio as duas começam com −).'; return; }
   btn.disabled = true; btn.textContent = '...';
   try {
-    const j = await _tlChamar('tecCriar', { tecnico: _tl.tech, os: String(_tl.os.id || ''), destino: { lat: c.lat, lon: c.lng } });
+    const j = await _tlChamar('tecCriar', { tecnico: _tl.tech, tel: TECH_TEL[_tl.tech] || '', os: String(_tl.os.id || ''), destino: { lat: c.lat, lon: c.lng } });
     if (!_tl) return;
     _tl.destino = { lat: c.lat, lng: c.lng, fonte: 'manual' };
     _tl.codigo = j.codigo; _tl.expiraMs = j.expiraMs; if (j.online !== undefined) _tl.online = j.online !== false;
