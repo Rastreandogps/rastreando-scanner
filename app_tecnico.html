@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v156-flash-pino';
+const BUILD_VERSION = '2026-10-17-v157-flash-rota-modal';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3771,21 +3771,36 @@ function _flashRotaIni(o) { // a OS pode vir da Planilha (sem os campos do Fires
   return '';
 }
 function _flashHoraRota(o) { const r = _flashRotaIni(o), d = r ? new Date(r) : null; return d && !isNaN(d) ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+const _flashNormal = {}; // 17/10/2026 (v157): guarda o botão normal para trocar na hora (modal aberto) quando inicia a rota
 function _flashBtnTec(o, normal) {
   if (!_ehEntregaFlash(o)) return normal;
+  _flashNormal[o.id + '|tec'] = normal;
   const est = 'width:100%;margin-top:8px;padding:11px;color:white;border:none;border-radius:10px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;';
-  if (!_flashRotaIni(o)) return '<button onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser || '') + '\')" style="' + est + 'background:#16a34a;">🛵 Iniciar rota</button>';
+  if (!_flashRotaIni(o)) return '<button data-flash-ini="' + esc(o.id) + '" data-flash-v="tec" onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(o._tech || currentUser || '') + '\')" style="' + est + 'background:#16a34a;">🛵 Iniciar rota</button>';
   return '<div style="margin-top:8px;font-size:12px;font-weight:700;color:#166534;background:#dcfce7;border-radius:8px;padding:6px 10px;text-align:center;">🛵 Em rota desde ' + _flashHoraRota(o) + ' · <a href="' + _flashLinkMapa(o) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#166534;">abrir o mapa</a></div>' +
     normal.replace(/<svg[\s\S]*?<\/svg> Marcar como Concluído/, '📦 Entregue · concluir');
 }
 function _flashBtnAdm(o, tech, normal) {
   if (!_ehEntregaFlash(o)) return normal;
-  if (!_flashRotaIni(o)) return '<button onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:7px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">🛵 Iniciar rota</button>';
+  _flashNormal[o.id + '|adm|' + tech] = normal;
+  if (!_flashRotaIni(o)) return '<button data-flash-ini="' + esc(o.id) + '" data-flash-v="adm" data-flash-t="' + esc(tech) + '" onclick="event.stopPropagation();flashIniciarRota(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="flex:1;padding:7px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">🛵 Iniciar rota</button>';
   return normal.replace('>✅</button>', ' title="Em rota desde ' + _flashHoraRota(o) + '">📦 Entregue</button>');
 }
 function _flashLinkMapa(o) {
   const c = _detectarCoordenada(o && o.endereco);
   return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + (c ? c.lat + ',' + c.lng : encodeURIComponent((o && o.endereco) || ''));
+}
+function _flashTrocarBotoes(o) {
+  document.querySelectorAll('[data-flash-ini="' + (window.CSS && CSS.escape ? CSS.escape(o.id) : o.id) + '"]').forEach(function (b) {
+    try {
+      const v = b.getAttribute('data-flash-v'), t = b.getAttribute('data-flash-t') || '';
+      const normal = v === 'adm' ? _flashNormal[o.id + '|adm|' + t] : _flashNormal[o.id + '|tec'];
+      if (!normal) return;
+      const novo = v === 'adm' ? _flashBtnAdm(o, t, normal) : _flashBtnTec(o, normal);
+      const tmp = document.createElement('div'); tmp.innerHTML = novo;
+      b.replaceWith.apply(b, Array.prototype.slice.call(tmp.childNodes));
+    } catch (e) { /* na próxima atualização da lista o botão certo aparece */ }
+  });
 }
 async function flashIniciarRota(id, tech) {
   const todas = [].concat(allOrders[tech] || [], allOrders[currentUser] || [], window._adminOrdersCache || [], _firestoreTodasOrdens || []);
@@ -3795,7 +3810,9 @@ async function flashIniciarRota(id, tech) {
   const agora = new Date().toISOString();
   try { localStorage.setItem('flashRota:' + id, agora); } catch (e) {}
   o.rotaIni = agora;
+  _flashTrocarBotoes(o); // já mostra "Entregue" (inclusive com a janela da OS aberta)
   const ok = await _tentMarcar({ id: id, tech: tech }, { rotaIni: agora });
+  _flashTrocarBotoes(o); // a lista pode ter sido redesenhada
   if (ok) showToast('Rota iniciada. Quando entregar, toque em "Entregue". 🛵', 'success');
   else if (w && !ok) { /* o mapa abriu, mas não salvou: o botão continua "Iniciar rota" */ }
 }
