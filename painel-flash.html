@@ -122,6 +122,7 @@ textarea{resize:vertical;min-height:80px}
 .filtros button{flex:none;border:1.5px solid var(--border);background:#fff;border-radius:99px;padding:8px 14px;font:inherit;font-size:.85rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .filtros button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .filtros b{margin-left:4px}
+.pform .excluir{background:#FDECEC;color:#C62828;grid-column:1/-1}
 .cfg{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
 .cfg-t{font-family:var(--font-display);font-weight:700;color:var(--navy);margin-bottom:8px}
 .cfg label{display:block;font-size:.8rem;color:var(--text-2);margin-bottom:4px}
@@ -257,7 +258,8 @@ textarea{resize:vertical;min-height:80px}
         '<input type="text" data-c="rastreio" placeholder="Código de rastreio" value="' + esc(p.rastreio || '') + '">' +
         '<input type="text" data-c="login" class="full" placeholder="Login do app do cliente (para o link da fitinha)" value="' + esc(p.login || '') + '">' +
         '<input type="text" data-c="obs" class="full" placeholder="Observação (só para você)" value="' + esc(p.obs || '') + '">' +
-        '<button class="btn btn-pri salvar" data-a="salvar">Salvar</button></div></div>';
+        '<button class="btn btn-pri salvar" data-a="salvar">Salvar</button>' +
+        (p.status === 'cancelado' ? '<button class="btn excluir" data-a="excluir">🗑 Excluir pedido</button>' : '') + '</div></div>';
     }).join('');
   }
   $('filtros').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; FILTRO = b.dataset.f; desenhar(); });
@@ -266,6 +268,13 @@ textarea{resize:vertical;min-height:80px}
     var card = b.closest('.pedido'), p = PEDIDOS.find(function (x) { return x.id === card.dataset.id; }); if (!p) return;
     if (b.dataset.a === 'end') return copiar(p.recebe + '\n' + endTxt(p.endereco) + (localDe(p) ? '\nLocalização: https://maps.google.com/?q=' + localDe(p).lat + ',' + localDe(p).lon : ''), 'Endereço copiado.');
     if (b.dataset.a === 'link') return copiar(LINK_NFC + encodeURIComponent(p.login), 'Link da fitinha copiado.');
+    if (b.dataset.a === 'excluir') {
+      if (!confirm('Excluir o pedido ' + p.protocolo + ' de ' + p.nome + '? Ele some do painel e da lista do cliente. Não dá para desfazer.')) return;
+      b.disabled = true; b.textContent = 'Excluindo...';
+      try { await chamar('nfcExcluir', { id: p.id }); PEDIDOS = PEDIDOS.filter(function (x) { return x.id !== p.id; }); desenhar(); toast('Pedido ' + p.protocolo + ' excluído.', 'ok'); }
+      catch (e) { toast(e.message, 'erro'); b.disabled = false; b.textContent = '🗑 Excluir pedido'; }
+      return;
+    }
     if (b.dataset.a === 'tec') {
       b.disabled = true; b.textContent = 'Enviando...';
       try { var rt = await chamar('nfcTecnico', { id: p.id }); PEDIDOS = PEDIDOS.map(function (x) { return x.id === p.id ? rt.pedido : x; }); desenhar(); toast('Enviado ao APP Técnico (' + rt.manutId + '). Crie a OS em Agendamentos.', 'ok'); }
