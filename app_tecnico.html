@@ -9803,7 +9803,7 @@ function _cardManutencao(r) {
     '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">' +
       '<div style="font-size:15px;font-weight:700;color:var(--primary);">' + esc(r.nome || '') + '</div>' +
       (sub ? '<span style="background:#ede9fe;color:#6d28d9;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔁 Substituição</span>'
-           : nfc ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">📦 Entrega de adesivo</span>'
+           : nfc ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">⚡ Rastreando Flash</span>'
            : '<span style="background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;">🔧 Manutenção</span>') +
     '</div>' +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Protocolo ' + esc(id) + (enviado ? ' · enviado ' + esc(enviado) : '') + '</div>' +
@@ -9839,7 +9839,7 @@ function _cardManutencao(r) {
         '</div>' : '') +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
-      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : nfc ? '#16a34a' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : nfc ? '✅ Criar OS de entrega' : '✅ Criar OS de manutenção') + '</button>' +
+      '<button onclick="criarOSManutencao(\'' + id + '\')" style="flex:1;padding:10px;background:' + (sub ? '#8b5cf6' : nfc ? '#16a34a' : '#f59e0b') + ';color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">' + (sub ? '✅ Criar OS de substituição' : nfc ? '⚡ Criar OS de entrega' : '✅ Criar OS de manutenção') + '</button>' +
       '<button onclick="ignorarManutencao(\'' + id + '\')" style="padding:10px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Ignorar</button>' +
     '</div>' +
   '</div>';
@@ -9860,7 +9860,7 @@ async function criarOSManutencao(id) {
     ? (nvx.gnv // a OS é do veículo novo (onde vai a instalação), no mesmo formato do agendamento
         ? (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + ' | GNV: ' + (nvx.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (nvx.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio')
         : (nvx.modelo || '') + ' | Placa: ' + (nvx.placa || 'a confirmar'))
-    : r.tipo === 'entrega_nfc' ? 'Entrega de adesivo NFC' // 17/10/2026 (v153)
+    : r.tipo === 'entrega_nfc' ? 'Rastreando Flash · adesivo NFC' // 17/10/2026 (v153)
     : (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
   const partesObs = sub
     ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + (nvx.placa ? ' (' + nvx.placa + ')' : ' (placa a confirmar)'), 'Cobrar como nova instalação; retirada sem custo']
@@ -9892,7 +9892,7 @@ async function criarOSManutencao(id) {
   }
   try {
     await _chamarRemocoes({ acao: 'atualizar', id: id, status: 'agendado', tecnico: tecnico, osId: novoId, dataOS: data });
-    showToast((sub ? 'OS de substituição' : r.tipo === 'entrega_nfc' ? 'OS de entrega' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
+    showToast((sub ? 'OS de substituição' : r.tipo === 'entrega_nfc' ? 'OS do Rastreando Flash' : 'OS de manutenção') + ' criada para ' + tecnico + '! ✅', 'success');
     _apagarAvisoRemocao(id);
   } catch (e) {
     showToast('OS criada, mas o pedido não foi baixado da lista: ' + e.message + ' — use "Ignorar" nele.', 'error');
