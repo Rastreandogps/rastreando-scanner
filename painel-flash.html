@@ -161,6 +161,11 @@ textarea{resize:vertical;min-height:80px}
 .frt.wpp{background:#EEF3FB;color:var(--navy)}
 .gps{margin-top:8px;font-size:.82rem;line-height:1.45;padding:8px 10px;border-radius:10px;background:var(--green-dim);color:#006B4B}
 .gps.longe{background:#FFF3E0;color:#8A4B00}
+.cline{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cst{display:inline-block;font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:99px;background:#EEF3FB;color:var(--navy)}
+.cst.c-ok{background:#EEF3FB;color:var(--navy)} .cst.c-venc{background:#FFF3E0;color:#8A4B00} .cst.c-nao{background:#F1F5F9;color:#64748B}
+.cst.c-ja{background:#F1F5F9;color:#475569} .cst.c-fre{background:var(--green-dim);color:#006B4B} .cst.c-ped{background:#DCFCE7;color:#166534} .cst.c-par{background:#FDECEC;color:#B42318}
+.pedido.cons{border-left:4px solid #CBD5E1}
 .tecinfo{margin-top:8px;font-size:.82rem;line-height:1.45;padding:8px 10px;border-radius:10px;background:#EEF3FB;color:var(--navy)}
 .pacoes .tec{background:var(--navy);border-color:var(--navy);color:#fff}
 .pedido.st-frete{border-left:4px solid #2451A0}
@@ -260,8 +265,32 @@ textarea{resize:vertical;min-height:80px}
     var t = p.tecnicoOS ? '🛵 OS criada para <b>' + esc(p.tecnicoOS) + '</b>' + (p.dataOS ? ' · ' + esc(p.dataOS.split('-').reverse().join('/')) : '') : p.osStatus === 'ignorado' ? '🛵 Ignorado no APP Técnico' : '🛵 No APP Técnico, aguardando você criar a OS (Agendamentos)';
     return '<div class="tecinfo">' + t + (p.valorTecnico != null ? ' · técnico recebe ' + Number(p.valorTecnico).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '') + '</div>';
   }
+  /* 17/10/2026 (pedido do dono): aba Consultas — quem digitou o CPF na página, se calculou o frete e se fez o pedido */
+  var CONS = null, consCarregando = false;
+  var CONS_RES = { ok: ['Entrou para pedir', 'c-ok'], pix_aberto: ['Voltou com PIX em aberto', 'c-ok'], vencido: ['Boleto vencido', 'c-venc'], nao_cliente: ['Não é cliente', 'c-nao'], ja_pediu: ['Já tinha pedido', 'c-ja'] };
+  async function consCarregar() {
+    if (consCarregando) return; consCarregando = true;
+    try { var r = await chamar('nfcConsultas', {}); CONS = r.consultas || []; }
+    catch (e) { toast(e.message, 'erro'); if (!CONS) CONS = []; }
+    finally { consCarregando = false; desenhar(); }
+  }
+  function consDesenhar() {
+    if (!CONS) { $('lista').innerHTML = '<div class="vazio">Carregando as consultas...</div>'; consCarregar(); return; }
+    if (!CONS.length) { $('lista').innerHTML = '<div class="vazio">Ninguém digitou o CPF ainda.</div>'; return; }
+    $('lista').innerHTML = CONS.map(function (c) {
+      var dt = new Date(c.em || 0).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      var rs = CONS_RES[c.resultado] || [c.resultado, ''];
+      var etapa = c.protocolo ? '<span class="cst c-ped">✅ Fez o pedido ' + esc(c.protocolo) + '</span>'
+        : c.frete ? '<span class="cst c-fre">💰 Calculou o frete: ' + Number(c.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(c.frete.kmIda).replace('.', ',') + ' km' + (c.frete.gps ? ' · 📍 pela localização' : '') + '</span><span class="cst c-par">Não fez o pedido</span>'
+        : (c.resultado === 'ok' ? '<span class="cst c-par">Não calculou o frete</span>' : '');
+      return '<div class="pedido cons"><div class="pt"><div><b>' + esc(c.nome || 'Sem nome no Asaas') + '</b><div class="muted">CPF ' + esc(fmtCpf(c.cpf)) + ' · ' + esc(dt) + '</div></div></div>' +
+        '<div class="cline"><span class="cst ' + rs[1] + '">' + esc(rs[0]) + (c.resultado === 'vencido' && c.qtdVencidos ? ' (' + c.qtdVencidos + ')' : '') + '</span>' + etapa + '</div></div>';
+    }).join('');
+  }
   function desenhar() {
-    $('filtros').innerHTML = FIL.map(function (f) { var n = PEDIDOS.filter(function (p) { return passa(p, f[0]); }).length; return '<button data-f="' + f[0] + '" class="' + (FILTRO === f[0] ? 'on' : '') + '">' + f[1] + '<b>' + n + '</b></button>'; }).join('');
+    $('filtros').innerHTML = FIL.map(function (f) { var n = PEDIDOS.filter(function (p) { return passa(p, f[0]); }).length; return '<button data-f="' + f[0] + '" class="' + (FILTRO === f[0] ? 'on' : '') + '">' + f[1] + '<b>' + n + '</b></button>'; }).join('') +
+      '<button data-f="consultas" class="' + (FILTRO === 'consultas' ? 'on' : '') + '">🔎 Consultas<b>' + (CONS ? CONS.length : '') + '</b></button>';
+    if (FILTRO === 'consultas') { consDesenhar(); return; }
     var l = PEDIDOS.filter(function (p) { return passa(p, FILTRO); });
     if (!l.length) { $('lista').innerHTML = '<div class="vazio">Nenhum pedido aqui.</div>'; return; }
     $('lista').innerHTML = l.map(function (p) {
@@ -354,6 +383,7 @@ textarea{resize:vertical;min-height:80px}
     finally { b.disabled = false; b.textContent = 'Salvar'; }
   });
   async function carregar() {
+    if (FILTRO === 'consultas') CONS = null;
     if (!carregar._cfg) { carregar._cfg = true; cfgCarregar(); }
     $('btn-atualizar').disabled = true;
     try { var r = await chamar('nfcLista', {}); PEDIDOS = r.pedidos || []; desenhar(); }
