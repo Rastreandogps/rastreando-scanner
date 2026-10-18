@@ -735,6 +735,8 @@ body.modal-aberto{overflow:hidden}
 .cc-tent{padding:0 16px 12px}
 .btn-tent{width:100%;padding:11px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fef2f2;color:#b91c1c;font-family:var(--font-body);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-tent:hover{background:#fee2e2}
+.btn-tent.feita{border-color:#86efac;background:#f0fdf4;color:#15803d;font-weight:700}
+.btn-tent.feita:hover{background:#dcfce7}
 .tn-imei{font-size:.72rem;color:var(--text-3);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:2px 0 3px 2px;display:flex;align-items:center;gap:5px}
 .tn-cp{width:20px;height:20px;padding:0;border:1px solid var(--border);border-radius:5px;background:#fff;color:var(--text-3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .tn-cp:hover{color:var(--navy-light);border-color:var(--navy-light)}
@@ -1734,7 +1736,7 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn btn-pri" data-idx="' + i + '" data-acao="salvar-retorno" style="width:100%">Salvar</button>' +
         '</div>' +
         htmlEstagios(c, i) +
-        '<div class="cc-tent"><button type="button" class="btn-tent" data-idx="' + i + '" data-acao="tentativa">🚨 Enviar para tentativa de retirada</button></div>' +
+        '<div class="cc-tent">' + htmlBtnTentativa(c, i) + '</div>' +
         '<div class="cc-acoes">' +
           '<button type="button" class="btn-wpp-cliente" data-idx="' + i + '">' +
             '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>' +
@@ -1844,7 +1846,11 @@ body.modal-aberto{overflow:hidden}
       b.addEventListener('click', function () { abrirModalManut(lista[Number(b.getAttribute('data-idx'))]); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="tentativa"]').forEach(function (b) {
-      b.addEventListener('click', function () { abrirModalTentativa(lista[Number(b.getAttribute('data-idx'))]); });
+      b.addEventListener('click', function () {
+        var c = lista[Number(b.getAttribute('data-idx'))];
+        if (b.classList.contains('feita') && !confirm('Você já enviou a tentativa de retirada para ' + (c && c.nome || 'este cliente') + '. Enviar outra mesmo assim?')) return;
+        abrirModalTentativa(c);
+      });
     });
     $('lista-clientes').querySelectorAll('[data-acao="troca"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalTroca(lista[Number(b.getAttribute('data-idx'))]); });
@@ -1869,12 +1875,21 @@ body.modal-aberto{overflow:hidden}
   // "Retirada solicitada": clientes com ordem de retirada pendente ou já agendada no APP Técnico
   var RETS = null;
   function retiradaDe(cpf) { return RETS ? RETS[soDig(cpf)] || null : null; }
+  // 18/10/2026 (pedido do dono): depois de enviar a tentativa de retirada, o botão fica marcado (para não enviar de novo sem querer)
+  function htmlBtnTentativa(c, i) {
+    var r = retiradaDe(c.cpf);
+    if (r && r.tentativa) {
+      var dt = r.em ? new Date(r.em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+      return '<button type="button" class="btn-tent feita" data-idx="' + i + '" data-acao="tentativa" title="Protocolo ' + esc(r.protocolo || '') + '">✅ Tentativa de retirada enviada' + (dt ? ' em ' + dt : '') + (r.status === 'agendado' ? ' · OS agendada' : '') + '</button>';
+    }
+    return '<button type="button" class="btn-tent" data-idx="' + i + '" data-acao="tentativa">🚨 Enviar para tentativa de retirada</button>';
+  }
   function htmlTagRetirada(cpf) {
     var r = retiradaDe(cpf);
     if (!r) return '';
     return r.status === 'agendado'
       ? '<button type="button" class="tag-ret agendada" data-cpf="' + esc(soDig(cpf)) + '" title="Toque para remover a marcação (protocolo ' + esc(r.protocolo || '') + ')">🔧 Retirada agendada</button>'
-      : '<button type="button" class="tag-ret" data-cpf="' + esc(soDig(cpf)) + '" title="Toque para remover a marcação (protocolo ' + esc(r.protocolo || '') + ')">🔧 Retirada solicitada</button>';
+      : '<button type="button" class="tag-ret" data-cpf="' + esc(soDig(cpf)) + '" title="Toque para remover a marcação (protocolo ' + esc(r.protocolo || '') + ')">' + (r.tentativa ? '🚨 Tentativa enviada' : '🔧 Retirada solicitada') + '</button>';
   }
   function redesenharAbaAtual() {
     if ((abaAtual === 'dois' || abaAtual === 'um') && typeof renderLista === 'function') renderLista();
@@ -1991,7 +2006,7 @@ body.modal-aberto{overflow:hidden}
       var r = await chamar('tent_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', veiculos: veiculos, obs: obs, confirmarDuplicado: confirmado });
       fecharModalTentativa();
       avisarAppTecnico(r.protocolo);
-      RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString() }; redesenharAbaAtual();
+      RETS = RETS || {}; RETS[soDig(c.cpf)] = { status: 'pendente', protocolo: r.protocolo, em: new Date().toISOString(), tentativa: true }; redesenharAbaAtual();
       toast('Tentativa de retirada enviada ao APP Técnico (' + r.protocolo + '). ' + 'Link: página Regularizar (' + r.qtdVencidas + (r.qtdVencidas === 1 ? ' fatura).' : ' faturas).'), 'ok');
     } catch (e) {
       var msg = (e && e.message) || 'Erro ao enviar.';
