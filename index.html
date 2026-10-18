@@ -571,14 +571,14 @@
              letter-spacing:2px;outline:none;"
       placeholder="Ex: A J16"
     />
-    <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#555;white-space:nowrap;">+ 3 últimos dígitos</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:#555;white-space:nowrap;">+ 4 últimos dígitos</div>
   </div>
 
   <div class="counter-bar">
     <div class="counter">NOMES GERADOS <span class="counter-num" id="count-nome">0</span></div>
   </div>
 
-  <div class="section-label" id="label-formato">Resultado — formato: A J16 XXX</div>
+  <div class="section-label" id="label-formato">Resultado — formato: A J16 XXXX</div>
   <div class="output-box" id="out-nome"></div>
 
   <div class="actions">
@@ -650,13 +650,23 @@
     btn.classList.add('scanning');
     state[type].scanning = true;
     state[type].paused   = false;
+    const meuInicio = (state[type].inicio = (state[type].inicio || 0) + 1); // 18/10/2026: evita câmera presa com toque duplo
 
     const container = document.getElementById('scanner-' + type);
+    limparCamera(container);
+
+    // 18/10/2026: sem leitor nativo (ex.: iPhone), o Quagga abre a câmera sozinho — não abrir outra antes
+    if (state[type].mode !== 'qr' && !('BarcodeDetector' in window)) {
+      startBarcodeLoop(type, null, container);
+      return;
+    }
+
     let video = container.querySelector('video');
     if (!video) {
       video = document.createElement('video');
       video.setAttribute('playsinline', '');
       video.setAttribute('muted', '');
+      video.muted = true;
       video.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;';
       container.appendChild(video);
     }
@@ -665,14 +675,17 @@
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
       });
+      if (!state[type].scanning || state[type].inicio !== meuInicio) { stream.getTracks().forEach(t => t.stop()); return; }
       streams[type] = stream;
       video.srcObject = stream;
       await video.play();
     } catch(e) {
+      if (state[type].inicio !== meuInicio) return;
       showToast('Erro ao acessar câmera', true);
       stopScan(type);
       return;
     }
+    if (!state[type].scanning || state[type].inicio !== meuInicio) return;
 
     const mode = state[type].mode;
 
@@ -717,7 +730,7 @@
           // BarcodeDetector não suporta QR — usa jsQR
           startJsQrLoop(type, video);
         }
-      });
+      }).catch(() => { if (state[type].scanning) startJsQrLoop(type, video); });
     } else {
       // Sem BarcodeDetector — usa jsQR
       startJsQrLoop(type, video);
@@ -777,6 +790,8 @@
 
     } else {
       // Quagga fallback
+      try { Quagga.offDetected(); } catch(e) {}
+      const inicioQ = state[type].inicio;
       Quagga.init({
         inputStream: {
           name: 'Live', type: 'LiveStream',
@@ -790,12 +805,13 @@
         locate: true,
         frequency: 15,
       }, function(err) {
-        if (err) { showToast('Erro ao iniciar scanner', true); stopScan(type); return; }
+        if (!state[type].scanning || state[type].inicio !== inicioQ) { try { Quagga.stop(); } catch(e) {} return; }
+        if (err) { showToast('Erro ao acessar câmera', true); stopScan(type); return; }
         Quagga.start();
       });
 
       Quagga.onDetected(function(result) {
-        if (state[type].paused) return;
+        if (!state[type].scanning || state[type].paused) return;
         const code = result.codeResult.code;
         if (!code || code.length < 5) return;
         state[type].paused = true;
@@ -820,9 +836,16 @@
     const ph = document.getElementById('ph-' + type);
     if (ph) ph.style.display = 'flex';
 
-    const container = document.getElementById('scanner-' + type);
-    const video = container.querySelector('video');
-    if (video) { video.srcObject = null; video.remove(); }
+    limparCamera(document.getElementById('scanner-' + type));
+  }
+
+  // 18/10/2026: tira da tela TODOS os vídeos/canvas da câmera (inclusive os que o Quagga cria)
+  function limparCamera(container) {
+    if (!container) return;
+    container.querySelectorAll('video, canvas').forEach(el => {
+      if (el.tagName === 'VIDEO') { try { if (el.srcObject) el.srcObject.getTracks().forEach(t => t.stop()); } catch(e) {} el.srcObject = null; }
+      el.remove();
+    });
   }
 
   // ─── ADD CODE ─────────────────────────────────────────────────────────────
@@ -868,27 +891,34 @@
   function atualizarNomes() {
     const prefixo = document.getElementById('prefixo-input').value.trim() || 'A J16';
     const imeis   = state.imei.items;
-    const nomes   = imeis.map(imei => prefixo + ' ' + imei.slice(-3));
+    const nomes   = imeis.map(imei => prefixo + ' ' + imei.slice(-4));
     state.nome.items = nomes;
     document.getElementById('out-nome').textContent = nomes.join('\n');
     document.getElementById('count-nome').textContent = nomes.length;
-    document.getElementById('label-formato').textContent = 'Resultado — formato: ' + prefixo + ' XXX';
+    document.getElementById('label-formato').textContent = 'Resultado — formato: ' + prefixo + ' XXXX';
   }
 
   // ─── COPY / CLEAR ─────────────────────────────────────────────────────────
   function copyOutput(type) {
     const text = document.getElementById('out-' + type).textContent;
     if (!text) { showToast('Nada para copiar', true); return; }
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => showToast('📋 COPIADO!'));
-    } else {
+    const copiarAntigo = () => {
       const ta = document.createElement('textarea');
       ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
       document.body.appendChild(ta);
       ta.select();
-      document.execCommand('copy');
+      ta.setSelectionRange(0, text.length);
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch(e) {}
       document.body.removeChild(ta);
-      showToast('📋 COPIADO!');
+      showToast(ok ? '📋 COPIADO!' : 'Não consegui copiar', !ok);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast('📋 COPIADO!')).catch(copiarAntigo);
+    } else {
+      copiarAntigo();
     }
   }
 
@@ -896,6 +926,7 @@
     state[type].items = [];
     document.getElementById('out-' + type).textContent = '';
     document.getElementById('count-' + type).textContent = '0';
+    if (type === 'imei') atualizarNomes(); // 18/10/2026: limpar os IMEIs limpa os nomes também
     showToast('🗑 LISTA LIMPA');
   }
 
