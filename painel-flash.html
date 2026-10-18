@@ -306,7 +306,7 @@ textarea{resize:vertical;min-height:80px}
       var dt = new Date(c.em || 0).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
       var rs = CONS_RES[c.resultado] || [c.resultado, ''];
       var etapa = c.protocolo ? '<span class="cst c-ped">✅ Fez o pedido ' + esc(c.protocolo) + '</span>'
-        : c.frete ? '<span class="cst c-fre">💰 Calculou o frete: ' + Number(c.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(c.frete.kmIda).replace('.', ',') + ' km' + (c.frete.gps ? ' · 📍 pela localização' : '') + '</span><span class="cst c-par">Não fez o pedido</span>'
+        : c.frete ? '<span class="cst c-fre">💰 Calculou o frete: ' + Number(c.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(c.frete.kmIda).replace('.', ',') + ' km' + (c.frete.gps ? ' · 📍 pela localização' : '') + '</span>' + (c.frete.bairro || c.frete.cidade ? '<span class="cst c-ok">📍 ' + esc([c.frete.bairro, c.frete.cidade].filter(Boolean).join(' · ')) + '</span>' : '') + '<span class="cst c-par">Não fez o pedido</span>'
         : (c.resultado === 'ok' ? '<span class="cst c-par">Não calculou o frete</span>' : '');
       return '<div class="pedido cons" data-cid="' + esc(c.id) + '"><div class="pt"><div><b>' + esc(c.nome || 'Sem nome no Asaas') + '</b><div class="muted">CPF ' + esc(fmtCpf(c.cpf)) + ' · ' + esc(dt) + '</div></div><button class="cdel" data-a="cexcluir" title="Excluir esta consulta" aria-label="Excluir esta consulta">🗑</button></div>' +
         '<div class="cline"><span class="cst ' + rs[1] + '">' + esc(rs[0]) + (c.resultado === 'vencido' && c.qtdVencidos ? ' (' + c.qtdVencidos + ')' : '') + '</span>' + etapa + '</div></div>';
