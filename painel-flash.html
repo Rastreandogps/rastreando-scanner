@@ -111,6 +111,11 @@ textarea{resize:vertical;min-height:80px}
 #toast.mostrar{transform:translateX(-50%) translateY(0)}
 #toast.erro{background:var(--danger)} #toast.ok{background:#008F64} #toast.aviso{background:#A35A00}
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+  /* 18/10/2026: botão de excluir consulta */
+  .cons .pt{align-items:flex-start}
+  .cdel{flex:0 0 auto;width:34px;height:34px;border-radius:10px;border:1px solid #f3c2c2;background:#fff5f5;color:#b42318;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cdel:hover{background:#fee4e2}
+  .cdel:disabled{opacity:.5;cursor:default}
 </style>
 <style>
 /* 17/10/2026: tela do dono para os pedidos do adesivo de emergência (NFC) */
@@ -283,7 +288,7 @@ textarea{resize:vertical;min-height:80px}
       var etapa = c.protocolo ? '<span class="cst c-ped">✅ Fez o pedido ' + esc(c.protocolo) + '</span>'
         : c.frete ? '<span class="cst c-fre">💰 Calculou o frete: ' + Number(c.frete.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' · ' + String(c.frete.kmIda).replace('.', ',') + ' km' + (c.frete.gps ? ' · 📍 pela localização' : '') + '</span><span class="cst c-par">Não fez o pedido</span>'
         : (c.resultado === 'ok' ? '<span class="cst c-par">Não calculou o frete</span>' : '');
-      return '<div class="pedido cons"><div class="pt"><div><b>' + esc(c.nome || 'Sem nome no Asaas') + '</b><div class="muted">CPF ' + esc(fmtCpf(c.cpf)) + ' · ' + esc(dt) + '</div></div></div>' +
+      return '<div class="pedido cons" data-cid="' + esc(c.id) + '"><div class="pt"><div><b>' + esc(c.nome || 'Sem nome no Asaas') + '</b><div class="muted">CPF ' + esc(fmtCpf(c.cpf)) + ' · ' + esc(dt) + '</div></div><button class="cdel" data-a="cexcluir" title="Excluir esta consulta" aria-label="Excluir esta consulta">🗑</button></div>' +
         '<div class="cline"><span class="cst ' + rs[1] + '">' + esc(rs[0]) + (c.resultado === 'vencido' && c.qtdVencidos ? ' (' + c.qtdVencidos + ')' : '') + '</span>' + etapa + '</div></div>';
     }).join('');
   }
@@ -312,6 +317,14 @@ textarea{resize:vertical;min-height:80px}
   $('filtros').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b) return; FILTRO = b.dataset.f; desenhar(); });
   $('lista').addEventListener('click', async function (ev) {
     var b = ev.target.closest('[data-a]'); if (!b) return;
+    if (b.dataset.a === 'cexcluir') { /* 18/10/2026: excluir card da aba Consultas */
+      var cc = b.closest('.pedido'), cid = cc && cc.dataset.cid, c0 = (CONS || []).find(function (x) { return x.id === cid; }); if (!c0) return;
+      if (!confirm('Excluir a consulta de ' + (c0.nome || 'CPF ' + fmtCpf(c0.cpf)) + '? Não dá para desfazer.')) return;
+      b.disabled = true; b.textContent = '...';
+      try { await chamar('nfcConsultaExcluir', { id: cid }); CONS = CONS.filter(function (x) { return x.id !== cid; }); desenhar(); toast('Consulta excluída.', 'ok'); }
+      catch (e) { toast(e.message, 'erro'); b.disabled = false; b.textContent = '🗑'; }
+      return;
+    }
     var card = b.closest('.pedido'), p = PEDIDOS.find(function (x) { return x.id === card.dataset.id; }); if (!p) return;
     if (b.dataset.a === 'end') return copiar(p.recebe + '\n' + endTxt(p.endereco) + (localDe(p) ? '\nLocalização: https://maps.google.com/?q=' + localDe(p).lat + ',' + localDe(p).lon : ''), 'Endereço copiado.');
     if (b.dataset.a === 'link') return copiar(LINK_NFC + encodeURIComponent(p.login), 'Link da fitinha copiado.');
