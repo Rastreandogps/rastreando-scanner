@@ -309,6 +309,16 @@
     animation-name: tipo-led-halo-vermelho;
   }
   .tipo-led.tipo-remocao .led { background: #ef4444; }
+  /* 19/10/2026 (v162): substituição em roxo (era verde, igual à instalação) */
+  .tipo-led.tipo-subst {
+    background: #f5f3ff; color: #6d28d9; border-color: rgba(139,92,246,.45);
+    animation-name: tipo-led-halo-roxo;
+  }
+  .tipo-led.tipo-subst .led { background: #8b5cf6; }
+  @keyframes tipo-led-halo-roxo {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+    50%      { box-shadow: 0 0 9px 1px rgba(139,92,246,.6); }
+  }
 
   @keyframes tipo-led-pisca {
     0%, 100% { opacity: 1;   transform: scale(1); }
@@ -1740,7 +1750,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-19-v161-msg-na-grade';
+const BUILD_VERSION = '2026-10-19-v162-led-substituicao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3829,7 +3839,8 @@ function _classeTipoOS(o) {
 function _badgeTipoLed(o, mini) {
   const t = (o && o.tipo) ? String(o.tipo).trim() : '';
   if (!t) return '';
-  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + (_ehTentativaOS(o) ? ' tent-led' : '') + '"><span class="led"></span>' + esc(_ehTentativaOS(o) ? '🚨 Especial' : _ehEntregaFlash(o) ? '⚡ Entrega' : t) + '</span>';
+  const subst = /substitu/i.test(t) && !_ehTentativaOS(o); // 19/10/2026 (v162): substituição com LED roxo
+  return '<span class="tipo-led' + (mini ? ' mini' : '') + _classeTipoOS(o) + (_ehTentativaOS(o) ? ' tent-led' : '') + (subst ? ' tipo-subst' : '') + '"><span class="led"></span>' + esc(_ehTentativaOS(o) ? '🚨 Especial' : _ehEntregaFlash(o) ? '⚡ Entrega' : t) + '</span>';
 }
 
 // A mesma cor, em números (usada quando o destaque do dia precisa repintar
