@@ -1740,7 +1740,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-17-v159-concluir-sem-data';
+const BUILD_VERSION = '2026-10-19-v161-msg-na-grade';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -6165,7 +6165,8 @@ function enviarResumoDiaTecnico(tech, refId) {
   const linhas = doDia.map(function(o, i) {
     const t = (o.tipo || '').toLowerCase();
     let label = 'Instalação';
-    if (t.includes('manut')) label = 'Manutenção';
+    if (_ehEntregaFlash(o)) label = '⚡ Entrega Rastreando Flash'; // 17/10/2026 (v160)
+    else if (t.includes('manut')) label = 'Manutenção';
     else if (t.includes('retir') || t.includes('remo')) label = 'Retirada';
     let modelos = '';
     if (o.veiculo) {
@@ -7118,6 +7119,8 @@ async function enviarResumoDia(tech) {
         veiculos = [o.veiculo.trim()];
       }
     }
+    // 17/10/2026 (v160): entrega do Rastreando Flash aparece como "Entrega" no resumo (não como Manutenção)
+    if (_ehEntregaFlash(o)) return '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + '\n   ↳ ⚡ Entrega Rastreando Flash ✅';
     const veiculosLinhas = veiculos.map(v => {
       const partes = v.split(' | ');
       const modelo = partes[0] || v;
@@ -7641,7 +7644,16 @@ function _renderCardOSCompacto(o) {
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
     (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
+    _msgGradeHtml(o) +
   '</div>';
+}
+/* 19/10/2026 (v161, pedido do dono): na Grade do administrador, quem já mandou a mensagem ao cliente (o mesmo do card aberto) */
+function _msgGradeHtml(o) {
+  if (o.msgLog) {
+    const d = String(o.msgLog.data || ''), dCurta = /^\d{2}\/\d{2}\/\d{4}$/.test(d) ? d.slice(0, 5) : d;
+    return '<div title="Mensagem enviada por ' + esc(o.msgLog.tecnico) + ' em ' + esc(d) + ' às ' + esc(o.msgLog.hora) + '" style="margin-top:4px;display:inline-block;max-width:100%;background:#eff6ff;color:#1d4ed8;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;line-height:1.35;word-break:break-word;">✅ Msg: ' + esc(o.msgLog.tecnico) + (dCurta ? ' · ' + esc(dCurta) : '') + (o.msgLog.hora ? ' ' + esc(o.msgLog.hora) : '') + '</div>';
+  }
+  return '<div style="margin-top:4px;display:inline-block;background:#fef9c3;color:#854d0e;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;">⚠️ Msg não enviada</div>';
 }
 
 // Card detalhado (o de sempre, com todas as informações)
@@ -8383,7 +8395,9 @@ function abrirResumoUnicaOS(id, tech) {
     return '   ↳ ' + modelo + (o.tipo ? ' — ' + o.tipo + ' ✅' : '');
   }).join('\n');
 
-  const linha = '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
+  const linha = _ehEntregaFlash(o) // 17/10/2026 (v160): entrega do Rastreando Flash = "Entrega"
+    ? '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + '\n   ↳ ⚡ Entrega Rastreando Flash ✅'
+    : '👤 *' + (o.nome || 'Cliente') + '*' + valorStr + (veiculosLinhas ? '\n' + veiculosLinhas : '');
 
   const hoje   = new Date();
   const dataStr = String(hoje.getDate()).padStart(2,'0') + '/' + String(hoje.getMonth()+1).padStart(2,'0') + '/' + hoje.getFullYear();
@@ -9952,7 +9966,7 @@ async function criarOSManutencao(id) {
     ? (nvx.gnv // a OS é do veículo novo (onde vai a instalação), no mesmo formato do agendamento
         ? (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + ' | GNV: ' + (nvx.gnv === 'sim' ? 'Sim' : 'Não') + ' | Rastreio: ' + (nvx.tipoRastreio === 'com' ? 'Com bloqueio' : 'Sem bloqueio')
         : (nvx.modelo || '') + ' | Placa: ' + (nvx.placa || 'a confirmar'))
-    : r.tipo === 'entrega_nfc' ? 'Rastreando Flash · adesivo NFC' // 17/10/2026 (v153)
+    : r.tipo === 'entrega_nfc' ? 'Rastreando Flash · entrega' // 17/10/2026 (v153; v160 sem "NFC")
     : (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' | Placa: ' + (v.placa || ''); }).join(' || ');
   const partesObs = sub
     ? ['SUBSTITUIÇÃO: tirar do ' + (r.veiculos || []).map(function(v) { return (v.modelo || '') + ' (' + (v.placa || '') + ')'; }).join(', ') + ' e instalar no ' + (nvx.modelo || '') + (nvx.ano ? ' ' + nvx.ano : '') + (nvx.placa ? ' (' + nvx.placa + ')' : ' (placa a confirmar)'), 'Cobrar como nova instalação; retirada sem custo']
