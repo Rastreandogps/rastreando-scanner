@@ -1750,7 +1750,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-19-v162-led-substituicao';
+const BUILD_VERSION = '2026-10-19-v163-grade-todos-veiculos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3855,7 +3855,7 @@ function _corTipoRGB(o) {
 // Card compacto do técnico: nome, horário (se houver), endereço e modelo do veículo
 function _renderCardTecnicoCompacto(o) {
   const hora   = getHoraOS(o);
-  const modelo = _modeloPrincipalVeiculo(o.veiculo);
+  const modelo = _modelosVeiculos(o.veiculo);
   return '<div data-os-id="' + esc(o.id) + '" data-glow="' + _corTipoRGB(o) + '" class="os-mini' + _classeTipoOS(o) + _flashCls(o) + '" onclick="abrirModalVerOSTecnico(\'' + esc(o.id) + '\')" style="cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;">' +
     _badgeTipoLed(o, true) +
     (getPeriodoOS(o) ? '<div style="margin-bottom:3px;max-width:100%;">' + _periodoPill(o) + '</div>' : '') +
@@ -7593,6 +7593,11 @@ function _modeloPrincipalVeiculo(veiculo) {
   const primeiro = veiculo.split(' || ')[0] || '';
   return primeiro.split(' | ')[0].trim();
 }
+/* 19/10/2026 (v163, pedido do dono): na Grade aparecem TODOS os veículos da OS (antes só o 1º), ex.: "PRISMA · XJ6" */
+function _modelosVeiculos(veiculo) {
+  if (!veiculo) return '';
+  return String(veiculo).split(' || ').map(function (v) { return v.split(' | ')[0].trim(); }).filter(Boolean).join(' · ');
+}
 
 // Card compacto: nome, horário (se houver), endereço e modelo do veículo (toque abre os detalhes/edição)
 // Totais "Hoje" e "Mês" do técnico na visão do administrador. Não conta o que o cliente pagou direto ao técnico.
@@ -7643,7 +7648,7 @@ function _renderCardOSCompacto(o) {
   else if (tipoAdmin.includes('retir') || tipoAdmin.includes('remo')) cor = '#ef4444';
   else cor = '#3b82f6';
   const hora   = getHoraOS(o);
-  const modelo = _modeloPrincipalVeiculo(o.veiculo);
+  const modelo = _modelosVeiculos(o.veiculo);
   return '<div class="' + _flashCls(o).trim() + '" data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 3px ' + cor + ',0 2px 6px rgba(0,0,0,.12);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
       '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
