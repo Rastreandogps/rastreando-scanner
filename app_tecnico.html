@@ -1750,7 +1750,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-19-v163-grade-todos-veiculos';
+const BUILD_VERSION = '2026-10-19-v164-obs-quebra-linha';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3481,7 +3481,7 @@ function _renderCardOSTodos(o) {
     '</div>' +
     (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-top:8px;">' +
         '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-        '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+        '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
         '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
         '</div>' : '');
 }
@@ -4019,7 +4019,7 @@ function renderCardInline(o) {
     // Observação — linha inteira, fora da coluna estreita do endereço
     (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;">' +
       '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-      '<div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+      '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
       '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;word-break:break-word;">' + esc(o.obs) + '</div></div>' +
       '</div>' : '') +
     // Campo alterar data
@@ -4236,7 +4236,7 @@ function renderTechOSList() {
         // Observação — linha inteira, fora da coluna estreita do endereço
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:12px;">' +
           '<span style="font-size:16px;flex-shrink:0;">📌</span>' +
-          '<div style="flex:1;min-width:0;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
+          '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:3px;">OBSERVAÇÃO</div>' +
           '<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4;word-break:break-word;">' + esc(o.obs) + '</div></div>' +
           '</div>' : '') +
         // ── CAMPO ALTERAR DATA
@@ -4592,7 +4592,7 @@ function renderAdminOSList() {
           '<div class="admin-os-meta">📍 ' + esc(_endParaExibir(o.endereco||'')) + '</div>' +
           (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-top:6px;">' +
             '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
-            '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
+            '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
             '<div style="font-size:12px;font-weight:600;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
           '</div>' : '') +
         '</div>' +
@@ -7775,7 +7775,7 @@ function _renderCardOSDetalhado(o) {
           : '<div style="font-size:10px;color:#b45309;margin-bottom:4px;">⚠️ Mensagem não enviada</div>') +
         (o.obs ? '<div style="display:flex;align-items:flex-start;gap:6px;background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:8px 10px;margin-bottom:6px;">' +
           '<span style="font-size:13px;flex-shrink:0;">📌</span>' +
-          '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
+          '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
           '<div style="font-size:12px;font-weight:600;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
         '</div>' : '') +
         (_notaInfoTexto(o.notaTecnico) ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fefce8;border:2px solid #f59e0b;border-radius:10px;padding:10px 12px;margin-bottom:8px;">' +
@@ -11186,7 +11186,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       // Observações — destaque com botão X
       (o.obs && o.obs.trim() ? '<div style="display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:2px solid #f59e0b;border-radius:10px;padding:6px 10px;margin-bottom:8px;">' +
         '<span style="font-size:14px;flex-shrink:0;">📌</span>' +
-        '<div><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
+        '<div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;"><div style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:.5px;margin-bottom:2px;">OBSERVAÇÃO</div>' +
         '<div style="font-size:12px;font-weight:600;color:#78350f;line-height:1.4;">' + esc(o.obs) + '</div></div>' +
       '</div>' : '') +
       // Nota do técnico no popup
