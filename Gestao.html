@@ -685,6 +685,9 @@ body.modal-aberto{overflow:hidden}
 .ix-lista li:last-child{border-bottom:none}
 .ix-lista b{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#475569;display:flex;align-items:center;justify-content:center;font-size:.78rem}
 .es-btn.es-prot{border-color:#0f172a;background:#fff;color:#0f172a;font-size:.95rem}
+.cc-arq{flex:0 0 auto;align-self:flex-start;margin-left:8px;width:34px;height:34px;border-radius:50%;border:1.5px solid #fecaca;background:#fff;color:#b91c1c;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.cc-arq:hover{background:#fef2f2}
+.cc-arq:disabled{opacity:.5;cursor:wait}
 .es-btn.es-prot:hover{background:#f1f5f9;color:#0f172a}
 .es-btn.es-prot.feito{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 0 0 3px rgba(15,23,42,.22)}
 .es-btn.es-prot.feito:hover{background:#0f172a;color:#fff}
@@ -1599,7 +1602,7 @@ body.modal-aberto{overflow:hidden}
   // ===== Aba Protestados: quem já começou a cobrança (estágio 1+) ou está com o ⚖️ =====
   // Usa os MESMOS cards das abas "1 boleto"/"2+" (é uma cópia: o cliente continua lá também) + os que só o servidor conhece.
   var cobSecao = 'andamento';
-  function emCobranca(c) { return !!c.protestadoEm || ultimoEstagio(c) > 0; }
+  function emCobranca(c) { if (DADOS && DADOS.arquivados && DADOS.arquivados[soDig(c.cpf)]) return false; /* 20/10/2026: excluído do painel */ return !!c.protestadoEm || ultimoEstagio(c) > 0; }
   function listaCobranca() {
     if (!DADOS) return [];
     var vistos = {}, out = [];
@@ -1713,6 +1716,7 @@ body.modal-aberto{overflow:hidden}
             return t ? '<a class="nome nome-wpp" href="https://wa.me/' + t + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp (sem mensagem)">' + esc(c.nome) + '</a>' : '<div class="nome">' + esc(c.nome) + '</div>';
           })() + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagEstagio(c) + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
+          (abaAtual === 'cobranca' ? '<button type="button" class="cc-arq" data-acao="arquivar" data-idx="' + i + '" title="Excluir do painel" aria-label="Excluir ' + esc(c.nome) + ' do painel">🗑</button>' : '') +
         '</div>' +
         ledEnviado +
         '<div class="cc-selos">' + selos + '</div>' +
@@ -1835,6 +1839,9 @@ body.modal-aberto{overflow:hidden}
     });
     $('lista-clientes').querySelectorAll('[data-acao="estagio"]').forEach(function (b) {
       b.addEventListener('click', function () { cliqueEstagio(lista[Number(b.getAttribute('data-idx'))], Number(b.getAttribute('data-n')), b); });
+    });
+    $('lista-clientes').querySelectorAll('[data-acao="arquivar"]').forEach(function (b) {
+      b.addEventListener('click', function (ev) { ev.stopPropagation(); arquivarCobranca(lista[Number(b.getAttribute('data-idx'))], b); });
     });
     $('lista-clientes').querySelectorAll('[data-acao="protesto"]').forEach(function (b) {
       b.addEventListener('click', function () { marcarProtesto(lista[Number(b.getAttribute('data-idx'))], b); });
@@ -2638,6 +2645,18 @@ body.modal-aberto{overflow:hidden}
       var lb = box.querySelector('label'); if (lb) lb.textContent = vals.length > 1 ? 'IMEIs dos aparelhos (' + vals.length + ')' : 'IMEI do aparelho';
       st.className = 'cc-imei-st ok'; st.textContent = v ? (vals.length > 1 ? vals.length + ' IMEIs salvos ✓' : 'salvo ✓') : 'IMEI apagado';
     } catch (e) { st.className = 'cc-imei-st erro'; st.textContent = (e && e.message) || 'Erro ao salvar.'; }
+  }
+  // 20/10/2026 (pedido do dono): tira o cliente do painel de Cobrança/Protestados (ex.: já fez a retirada). Não apaga dados.
+  async function arquivarCobranca(c, b) {
+    if (!c) return;
+    if (!confirm('Excluir ' + c.nome + ' do painel?\n\nEle some da Cobrança e dos Protestados. Os dados (estágios, prints e protesto) ficam guardados.')) return;
+    b.disabled = true;
+    try {
+      await chamar('arquivarCobranca', { cpf: c.cpf, nome: c.nome, arquivar: true });
+      DADOS.arquivados = DADOS.arquivados || {}; DADOS.arquivados[soDig(c.cpf)] = new Date().toISOString();
+      renderLista();
+      toast(primeiroNome(c.nome) + ' saiu do painel.', 'ok');
+    } catch (e) { toast((e && e.message) || 'Não consegui excluir agora.', 'erro'); b.disabled = false; }
   }
   // Protesto: marca / desmarca e guarda os dados do cliente para a futura página de protestados
   async function marcarProtesto(c, btn) {
