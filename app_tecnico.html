@@ -1750,7 +1750,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-19-v164-obs-quebra-linha';
+const BUILD_VERSION = '2026-10-20-v165-msg-no-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3864,6 +3864,7 @@ function _renderCardTecnicoCompacto(o) {
     (_moedaHTML(o) ? '<div>' + _moedaHTML(o) + '</div>' : '') +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
     (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
+    _msgGradeHtml(o) + /* 20/10/2026 (pedido do dono): o técnico também vê se já mandou mensagem */
   '</div>';
 }
 
@@ -3994,7 +3995,7 @@ function renderCardInline(o) {
       '</a>' : '') +
         
       '</div>' +
-      '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
+      '<div style="margin-top:6px;">' + badgeHtml + '</div>' + _msgGradeHtml(o) +
     '</div>' +
     veiculoHtml +
     // Data
@@ -4152,7 +4153,7 @@ function renderTechOSList() {
             '</a>'
             : '') +
           '</div>' +
-          '<div style="margin-top:6px;">' + badgeHtml + '</div>' +
+          '<div style="margin-top:6px;">' + badgeHtml + '</div>' + _msgGradeHtml(o) +
         '</div>' +
 
         // ── VEÍCULOS em destaque (na substituição, antes vem "carro atual ⇄ carro novo")
@@ -6402,6 +6403,11 @@ async function registrarMensagem(osId, tech) {
   const agora = new Date();
   const hora  = String(agora.getHours()).padStart(2,'0') + ':' + String(agora.getMinutes()).padStart(2,'0');
   const data  = String(agora.getDate()).padStart(2,'0') + '/' + String(agora.getMonth()+1).padStart(2,'0') + '/' + agora.getFullYear();
+  /* 20/10/2026: já mostra "Msg enviada" no card na hora (o servidor confirma depois) */
+  try {
+    Object.keys(allOrders || {}).forEach(function (k) { (allOrders[k] || []).forEach(function (o) { if (String(o.id) === String(osId)) o.msgLog = { tecnico: tech, data: data, hora: hora }; }); });
+    setTimeout(function () { try { renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, true); } catch (e) {} }, 300);
+  } catch (e) {}
   await gasRequest({ action: 'logMensagem', id: osId, tech, hora, data, tecnico: tech });
 }
 
