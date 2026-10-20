@@ -1750,7 +1750,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-20-v165-msg-no-tecnico';
+const BUILD_VERSION = '2026-10-20-v166-seta-moto';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -11578,7 +11578,7 @@ function _motoIcone(tech, t, cor) {
     className: '',
     html: '<div style="position:relative;width:34px;height:34px;">' +
       '<div style="position:absolute;bottom:38px;left:50%;transform:translateX(-50%);background:' + cor + ';color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.3);">' + esc(tech) + ' · ' + quando + (mov ? ' · ' + t.pos.kmh + ' km/h' : '') + (prox ? ' → ' + esc((prox.nome || '').split(' ')[0]) : '') + '</div>' +
-      '<div style="width:34px;height:34px;border-radius:50%;background:white;border:3px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.35)' + (t.online ? ';animation:motoPulso 2s ease-out infinite' : ';opacity:.6') + ';display:flex;align-items:center;justify-content:center;font-size:17px;">🏍</div>' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:white;border:3px solid ' + cor + ';box-shadow:0 2px 8px rgba(0,0,0,.35)' + (t.online ? ';animation:motoPulso 2s ease-out infinite' : ';opacity:.6') + ';display:flex;align-items:center;justify-content:center;">' + /* 20/10/2026 (pedido do dono): seta na direção em que a moto anda, no lugar do 🏍 */ '<svg viewBox="0 0 24 24" width="23" height="23" style="transform:rotate(' + (Number(t.pos && t.pos.curso) || 0) + 'deg);transition:transform .4s"><path d="M12 2.5l7 18-7-4-7 4z" fill="' + cor + '" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg></div>' +
     '</div>',
     iconSize: [34, 34], iconAnchor: [17, 17],
   });
