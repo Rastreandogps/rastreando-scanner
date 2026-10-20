@@ -249,6 +249,7 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .painel-filtros select{width:100%;min-width:0;font-size:.9rem;padding:10px 8px}
 .painel-filtros .btn-link{grid-column:1/-1;text-align:center;padding:2px 0}
 @media(min-width:720px){#btn-filtros{display:none}.painel-filtros{display:grid!important;grid-template-columns:repeat(4,1fr);background:transparent;border:none;padding:0;margin:-4px 0 12px}.painel-filtros .btn-link{grid-column:auto;text-align:left}}
+@media(min-width:720px){#cl-painel-filtros{grid-template-columns:repeat(5,1fr)}} /* 20/10/2026: + ordem pelo valor */
 @media(max-width:480px){#resumo-clientes{gap:8px}#resumo-clientes .card{padding:10px 8px}#resumo-clientes .card b{font-size:1.15rem}}
 #resumo-clientes{display:grid;grid-template-columns:repeat(2,1fr)}
 #resumo-clientes .card small{display:block;font-size:.7rem;color:var(--text-3);margin-top:2px}
@@ -1014,6 +1015,11 @@ body.modal-aberto{overflow:hidden}
         <option value="">Retirada: todos</option>
         <option value="sim">🔧 Retirada solicitada</option>
         <option value="nao">Sem retirada</option>
+      </select>
+      <select id="cl-ordem" aria-label="Ordenar pelo valor"><!-- 20/10/2026 -->
+        <option value="">Ordem: padrão</option>
+        <option value="maior">💲 Maior valor primeiro</option>
+        <option value="menor">Menor valor primeiro</option>
       </select>
       <button type="button" class="btn-link" id="cl-limpar-filtros">Limpar filtros</button>
     </div>
@@ -3932,7 +3938,7 @@ body.modal-aberto{overflow:hidden}
   $('cl-btn-filtros').addEventListener('click', function () { $('cl-painel-filtros').hidden = !$('cl-painel-filtros').hidden; });
   $('pg-btn-filtros').addEventListener('click', function () { $('pg-painel-filtros').hidden = !$('pg-painel-filtros').hidden; });
   $('cl-limpar-filtros').addEventListener('click', function () {
-    ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret'].forEach(function (id) { $(id).value = ''; });
+    ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-ordem'].forEach(function (id) { $(id).value = ''; });
     clsFiltro.classe = '';
     if (CLS) renderClassificacao();
   });
@@ -3942,6 +3948,7 @@ body.modal-aberto{overflow:hidden}
   });
   $('cl-pontos').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-ret').addEventListener('change', function () { if (CLS) renderClassificacao(); });
+  $('cl-ordem').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   // 15/10/2026: ao começar a digitar um nome, a lista passa sozinha para "Todos" (quem já pagou também aparece);
   // ao apagar a busca, volta para o que estava antes. Se tocar em outro botão durante a busca, vale o que tocou.
   var clsStatusAntesBusca = null;
@@ -4023,7 +4030,7 @@ body.modal-aberto{overflow:hidden}
     }).join('');
     if (ptsAtual !== '' && porPts[ptsAtual] != null) selPts.value = ptsAtual;
     var fPts = selPts.value;
-    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret']);
+    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-ordem']);
     var fRetCl = $('cl-ret').value;
     var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
     var lista = (clsFiltro.classe === 'proximo' ? [] : CLS.clientes).filter(function (c) {
@@ -4049,6 +4056,12 @@ body.modal-aberto{overflow:hidden}
         if (fVen) { var d = Number(String(c.vencimento || '').slice(8, 10)); if (fVen === 'outro' ? (d === 15 || d === 20) : d !== Number(fVen)) return; }
         lista.push(Object.assign({ proximo: true }, c));
       });
+    }
+    /* 20/10/2026 (pedido do dono): ordenar pelo valor. Vale o que falta receber; quem já pagou tudo entra pelo total do mês */
+    var fOrd = $('cl-ordem').value;
+    if (fOrd) {
+      var valOrd = function (c) { if (c.proximo) return Number(c.valor) || 0; if (c.aReceber > 0) return c.aReceber; return (c.boletos || []).reduce(function (t, b) { return t + (Number(b.valor) || 0); }, 0); };
+      lista.sort(function (a, b) { return fOrd === 'menor' ? valOrd(a) - valOrd(b) : valOrd(b) - valOrd(a); });
     }
     var itens = lista.length ? lista.map(function (c) {
       if (c.proximo) return '<div class="cls-item">' +
