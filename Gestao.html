@@ -2861,6 +2861,7 @@ body.modal-aberto{overflow:hidden}
     try { SALDO = await chamar('saldo'); } catch (e) { SALDO = { erro: (e && e.message) || 'Não foi possível ler o saldo.' }; }
     atualizarSelos();
     var box = $('g-saldo'); if (box) box.innerHTML = htmlSaldo();
+    try { if (abaAtual === 'despesas' && DESP) renderDespesas(); } catch (e) { }
   }
   function htmlSaldo() {
     if (!SALDO) return '<div class="g-saldo-lbl">Saldo em conta (Asaas)</div><div class="g-saldo-v" style="font-size:1rem;color:var(--text-3)">Carregando...</div>';
@@ -3080,6 +3081,7 @@ body.modal-aberto{overflow:hidden}
       if (!GPCT) tarefas.push(chamar('gestaoConfig').then(function (r) { GPCT = r.pct; }).catch(function () { GPCT = { ouro: 98, prata: 75, latao: 65 }; }));
       if (!CLS) tarefas.push(chamar('classificacao').then(function (r) { if (r && !r.vazio) CLS = r; }).catch(function () { }));
       if (!META) tarefas.push(chamar('meta').then(function (r) { META = r; }).catch(function () { }));
+      if (!SALDO) carregarSaldo(); // 20/10/2026: a sobra do mês soma o saldo do Asaas
       DESP = (await Promise.all(tarefas))[0];
     } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar as despesas.') + '</div>'; return; }
     if (!HIST) { try { HIST = await chamar('historico'); } catch (e) { } }
@@ -3201,7 +3203,9 @@ body.modal-aberto{overflow:hidden}
     var totalDesp = emp.total + pes.total, liq = rec.total + outras - totalDesp;
     var sobraModo = rec.fonte === 'app'; /* 20/10/2026: mês atual = "sobra até o fim do mês" (falta receber − despesas ainda em aberto) */
     var varAReceber = Math.max(0, rec.variaveis - rec.variaveisRec);
-    if (sobraModo) liq = rec.falta + varAReceber - (emp.aberto + pes.aberto);
+    /* 20/10/2026 (pedido do dono): a sobra também soma o que já está na conta do Asaas e os confirmados que ainda vão cair */
+    var sdOk = !!(SALDO && !SALDO.erro && SALDO.saldo != null), sdV = sdOk ? Number(SALDO.saldo) || 0 : 0, sdConf = sdOk && SALDO.confirmados ? Number(SALDO.confirmados.liquido) || 0 : 0;
+    if (sobraModo) liq = sdV + sdConf + rec.falta + varAReceber - (emp.aberto + pes.aberto);
     var atual = despMesSel === mesAtualKey();
     var pct = DESP.poupancaPct, guardar = Math.max(0, liq * pct / 100);
     var h = '<div class="dp-mes"><button type="button" data-d-mes="-1"' + (despMesSel <= MES_MIN ? ' disabled' : '') + ' aria-label="Mês anterior">◀</button><b>' + esc(mesTxt(despMesSel)) + '</b>' +
@@ -3232,7 +3236,12 @@ body.modal-aberto{overflow:hidden}
         (function () { var t = somaTipos(); return '<div class="dp-sep"></div>' + DESP_TIPOS.map(function (tp) { return '<div class="l"><span>' + tp[1] + '</span><b>' + brl(t[tp[0]]) + '</b></div>'; }).join('') + '<div class="dp-sep"></div>'; })() +
         '<div class="l"><span>Já pago</span><b class="ok">' + brl(emp.pago + pes.pago) + '</b></div><div class="l"><span>Ainda em aberto</span><b class="ab">' + brl(emp.aberto + pes.aberto) + '</b></div>' +
         (function () { var v = DESP.fixos.concat(DESP.variaveis).filter(function (i) { return despSituacao(i, 'fixos') === 'atr'; }).reduce(function (t, i) { return t + i.valor; }, 0); return v > 0.004 ? '<div class="l"><span>⚠ Já vencido e não pago</span><b class="ab">' + brl(v) + '</b></div>' : ''; })() + '</div>' +
-      '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">' + (sobraModo ? 'Sobra até o fim do mês' : 'Líquido estimado do mês') + '</div><div class="v">' + brl(liq) + '</div><div class="l"><span>' + (sobraModo ? 'Ainda falta receber − despesas ainda em aberto' : (outras > 0 ? 'Receita estimada + outras fontes − despesas' : 'Receita estimada − despesas')) + '</span><b></b></div>' + (outras > 0 ? '<div class="l"><span>💰 Outras fontes (da conciliação)</span><b class="ok">+' + brl(outras) + '</b></div>' : '') + '</div>';
+      '<div class="dp-card dp-liq' + (liq < 0 ? ' neg' : '') + '"><div class="t">' + (sobraModo ? 'Sobra até o fim do mês' : 'Líquido estimado do mês') + '</div><div class="v">' + brl(liq) + '</div>' +
+        (sobraModo ? '<div class="l"><span>🏦 Saldo no Asaas agora</span><b>' + (sdOk ? '+' + brl(sdV) : (SALDO && SALDO.erro ? 'não consegui ler' : 'carregando...')) + '</b></div>' +
+          (sdConf > 0.004 ? '<div class="l"><span>⏳ Confirmados (vão cair na conta)</span><b>+' + brl(sdConf) + '</b></div>' : '') +
+          '<div class="l"><span>💰 Ainda falta receber</span><b>+' + brl(rec.falta + varAReceber) + '</b></div>' +
+          '<div class="l"><span>💸 Despesas ainda em aberto</span><b>−' + brl(emp.aberto + pes.aberto) + '</b></div>'
+        : '<div class="l"><span>' + (outras > 0 ? 'Receita estimada + outras fontes − despesas' : 'Receita estimada − despesas') + '</span><b></b></div>') + (outras > 0 ? '<div class="l"><span>💰 Outras fontes (da conciliação)</span><b class="ok">+' + brl(outras) + '</b></div>' : '') + '</div>';
     // ---- poupança / meta
     var m = META, extra = '';
     if (liq <= 0) extra = '<div class="dp-info">Sem sobra neste mês para guardar.</div>';
@@ -3248,7 +3257,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="dp-poup-lin">Guardar <input type="number" id="dp-pct" min="0" max="100" step="any" value="' + pct + '" inputmode="numeric" aria-label="Porcentagem do líquido a guardar">% do líquido</div>' +
       '<div class="v">' + brl(guardar) + ' <small>neste mês</small></div>' + extra +
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
-    h += sobraModo ? '<div class="cls-info">Sobra até o fim do mês: o que ainda falta receber dos clientes (Ouro, Prata e Latão, pela chance de cada classe) + receitas variáveis ainda não recebidas, menos as despesas lançadas que ainda estão em aberto. O que já entrou e já foi pago não entra. Não inclui gastos que você não lançou.</div>' : '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis + dinheiro de outras fontes registrado na conciliação, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
+    h += sobraModo ? '<div class="cls-info">Sobra até o fim do mês: o saldo que já está na conta do Asaas + os pagamentos confirmados que ainda vão cair + o que ainda falta receber dos clientes (Ouro, Prata e Latão, pela chance de cada classe) + receitas variáveis ainda não recebidas, menos as despesas lançadas que ainda estão em aberto. Dinheiro em outro banco não entra. Não inclui gastos que você não lançou.</div>' : '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis + dinheiro de outras fontes registrado na conciliação, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
     h += htmlCartoes();
