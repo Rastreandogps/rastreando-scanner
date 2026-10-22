@@ -24,8 +24,8 @@
 
   .wrap{padding:12px; max-width:520px; margin:0 auto;}
 
-  .video-box{position:sticky; top:8px; z-index:20; width:fit-content; max-width:100%; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,.6);}
-  video{display:block; height:25vh; width:auto; max-width:92vw;}
+  .video-box{position:sticky; top:8px; z-index:20; width:100%; aspect-ratio:16/7; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  video{display:block; width:100%; height:100%; object-fit:cover;}
   #alvo{position:absolute; width:30px; height:30px; border:3px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.6); touch-action:none; cursor:move;}
   #alvo::after{content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%);}
 
@@ -180,7 +180,6 @@
   let calAzul=null, calRoxo=null;           // {h,s,v}
   let contagem=0, ultimaCorRegistrada=null; // 'azul' | 'roxo'
   let corCandidata=null, framesEstaveis=0;
-  let raioPct=0.03;                         // raio do círculo em % da largura do vídeo
   const FRAMES_PARA_CONFIRMAR=4;            // ~0.8s estável para registrar
   const INTERVALO=200;                      // ms entre leituras
   const TOLERANCIA_H=28;                    // tolerância de matiz (0-360)
@@ -314,6 +313,21 @@
   }
 
   function distH(a,b){ const d=Math.abs(a-b); return Math.min(d,360-d); }
+
+  // Mapeamento tela ↔ quadro da câmera (o vídeo é exibido recortado em widescreen)
+  function getMap(){
+    const r=video.getBoundingClientRect();
+    const vw=video.videoWidth, vh=video.videoHeight;
+    if(!vw || !r.width) return null;
+    const scale=Math.max(r.width/vw, r.height/vh);
+    return {scale, offX:(vw*scale-r.width)/2, offY:(vh*scale-r.height)/2, bw:r.width, bh:r.height};
+  }
+  function boxPctToFrame(pX,pY,m){
+    return { x:(pX/100*m.bw + m.offX)/m.scale, y:(pY/100*m.bh + m.offY)/m.scale };
+  }
+  function frameToBoxPct(fx,fy,m){
+    return { x:(fx*m.scale - m.offX)/m.bw*100, y:(fy*m.scale - m.offY)/m.bh*100 };
+  }
 
   // Varredura: procura azul/roxo em toda a área do retângulo e marca onde achou
   function lerVarredura(){
