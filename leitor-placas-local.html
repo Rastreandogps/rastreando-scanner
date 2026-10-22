@@ -340,6 +340,32 @@
     c.getContext('2d').drawImage(fcv,sx,sy,cw,ch,0,0,c.width,c.height);
     return c;
   }
+  // ---------- Memória de carros PARADOS já lidos ----------
+  // Placa que reaparece no mesmo lugar da imagem, sem se mexer, reaproveita a leitura (sem consulta).
+  // Carro passando pelo mesmo ponto está em movimento: é consultado normalmente.
+  let parados=[]; // {box, placa, tipo, t, rot, zoom}
+  function deslocamento(t){ // quanto a placa andou desde que apareceu, em larguras de placa
+    const a=t.boxIni, b=t.box, w=Math.max(1,b.x2-b.x1);
+    return Math.hypot(((a.x1+a.x2)-(b.x1+b.x2))/2, ((a.y1+a.y2)-(b.y1+b.y2))/2)/w;
+  }
+  function lembrarParado(t){
+    if(deslocamento(t)>0.3) return; // estava se movendo: não é carro parado
+    const agora=Date.now();
+    const m=parados.find(m=>iou(m.box,t.box)>0.4 && m.rot===rot && m.zoom===zoom);
+    if(m){ m.box={...t.box}; m.placa=t.placa; m.tipo=t.tipo; m.t=agora; }
+    else parados.push({box:{...t.box}, placa:t.placa, tipo:t.tipo, t:agora, rot, zoom});
+  }
+  function reaproveitarParado(t){
+    const agora=Date.now();
+    parados=parados.filter(m=>agora-m.t<120000 && m.rot===rot && m.zoom===zoom); // esquece após 2 min sem rever
+    if(t.placa || (t.quadros||0)<2 || deslocamento(t)>0.3) return false;
+    const m=parados.find(m=>iou(m.box,t.box)>0.4);
+    if(!m) return false;
+    t.placa=m.placa; t.tipo=m.tipo; t.herdada=true; m.t=agora; m.box={...t.box};
+    const ja=lidas.find(l=>l.placa===m.placa); if(ja){ ja.vezes=(ja.vezes||1)+1; renderLidas(); } // só soma "2x, 3x..." no histórico
+    return true;
+  }
+
   // Travas contra consulta desperdiçada
   function pareceePlaca(t){
     const w=t.box.x2-t.box.x1, h=t.box.y2-t.box.y1, prop=w/h;
@@ -383,6 +409,7 @@
       let p=opcoes[0], res=null;
       for(const o of opcoes){ const x=confere(o); if(x){ res=x; p=o; if(x.tipo==='match') break; } }
       t.placa=p; t.tipo=res?res.tipo:'';
+      lembrarParado(t);
       registrarLida(p, r.score, res);
       if(res) alarme(res, p, caixa, r.score, c.toDataURL('image/jpeg',0.6));
       $('erro').style.display='none';
@@ -683,7 +710,7 @@
     tracks=tracks.filter(t=>agora-t.visto<1500);
   }
   function novoTrack(b,agora){
-    const t={id:nextId++, box:b, visto:agora, criado:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0, quadros:1, detMax:b.score, resps:[], esperas:{}};
+    const t={id:nextId++, box:b, boxIni:{...b}, visto:agora, criado:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0, quadros:1, detMax:b.score, resps:[], esperas:{}};
     diagMedir(t);
     return t;
   }
@@ -705,6 +732,7 @@
   }
   const MOTIVOS={
     lida:            {txt:'✅ Lida',                                   cor:'#3fb950'},
+    parado:          {txt:'↺ Carro parado já lido (sem consulta)',     cor:'#8b949e'},
     pequena:         {txt:'Placa pequena demais (longe)',             cor:'#d29922'},
     certeza:         {txt:'Detector sem certeza de ser placa',        cor:'#d29922'},
     quadros:         {txt:'Apareceu muito rápido (poucos quadros)',   cor:'#d29922'},
@@ -718,7 +746,7 @@
     local_nada:      {txt:'Local: não chegou a ler',                  cor:'#f85149'}
   };
   function diagMotivo(t){
-    if(t.placa) return 'lida';
+    if(t.placa) return t.herdada ? 'parado' : 'lida';
     if($('modoLeitura').value==='nuvem'){
       if(t.resps.length) return 'nuvem_falhou';
       if((t.largMax||0)<28) return 'pequena';
@@ -750,7 +778,7 @@
       const janela=o=> o.visto>=tMarca-4000 && o.criado<=tMarca+3000;
       const objs=[...diagObjs.filter(janela), ...tracks.filter(janela).map(t=>({motivo:diagMotivo(t), placa:t.placa}))];
       if(!objs.length) m.res='nao_detectado';
-      else if(objs.some(o=>o.motivo==='lida')){ m.res='lido'; m.placa=(objs.find(o=>o.motivo==='lida')||{}).placa; }
+      else if(objs.some(o=>o.motivo==='lida'||o.motivo==='parado')){ m.res='lido'; m.placa=(objs.find(o=>o.motivo==='lida'||o.motivo==='parado')||{}).placa; }
       else { m.res='detectado_nao_lido'; m.motivos=[...new Set(objs.map(o=>o.motivo))]; }
       diagRender();
     },3000);
@@ -857,6 +885,8 @@
         // lê no máximo as 4 maiores placas visíveis (as mais próximas)
         const alvosLeitura=tracks.filter(t=>!t.placa && t.visto===agora).sort((a,b)=>(b.box.x2-b.box.x1)-(a.box.x2-a.box.x1)).slice(0,4);
         if($('modoLeitura').value==='nuvem'){
+          for(const t of alvosLeitura) reaproveitarParado(t);
+          for(let i=alvosLeitura.length-1;i>=0;i--) if(alvosLeitura[i].placa) alvosLeitura.splice(i,1);
           // envia 1 recorte por carro; reenvia (máx. 3) só se a placa cresceu bastante (carro chegou mais perto)
           if(diagLigado()){
             const motivoEspera = nuvemOcupada||agora-ultimoEnvio<1050 ? 'fila' : (!dentroDoLimite() ? 'limite' : null);
