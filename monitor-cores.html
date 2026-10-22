@@ -109,7 +109,7 @@
     <div class="contador-area">
       <div class="cor-atual" id="corBox"></div>
       <div class="contador-info">
-        <div class="label">Sequências Azul → Roxo</div>
+        <div class="label">Sequências Cor 1 → Cor 2</div>
         <div id="contagem">0<small> / 5</small></div>
         <div id="corNome">—</div>
       </div>
@@ -121,12 +121,12 @@
     <div class="titulo-sec">1. Calibrar cores</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;"><b>Ponto fixo:</b> aponte o círculo para a cor. <b>Varredura:</b> deixe a cor visível dentro do retângulo amarelo. Depois toque no botão.</div>
     <div class="cal-row">
-      <button class="btn btn-azul" id="btnCalAzul">Capturar AZUL</button>
-      <button class="btn btn-roxo" id="btnCalRoxo">Capturar ROXO</button>
+      <button class="btn btn-azul" id="btnCalAzul">Capturar COR 1</button>
+      <button class="btn btn-roxo" id="btnCalRoxo">Capturar COR 2</button>
     </div>
     <div class="cal-status">
-      <div class="cal-chip"><div class="sw" id="swAzul"></div><span id="stAzul">Azul: não calibrado</span></div>
-      <div class="cal-chip"><div class="sw" id="swRoxo"></div><span id="stRoxo">Roxo: não calibrado</span></div>
+      <div class="cal-chip"><div class="sw" id="swAzul"></div><span id="stAzul">Cor 1: não calibrada</span></div>
+      <div class="cal-chip"><div class="sw" id="swRoxo"></div><span id="stRoxo">Cor 2: não calibrada</span></div>
     </div>
   </div>
 
@@ -140,7 +140,7 @@
     <div class="cfg-row">
       <label style="display:flex;align-items:center;gap:8px;flex:1;">
         <input type="checkbox" id="chkReset" checked>
-        Roxo repetido zera a contagem
+        Cor 2 repetida zera a contagem
       </label>
     </div>
     <div class="cfg-row">
@@ -164,7 +164,7 @@
 
 <div class="alerta-banner" id="banner">
   <h2>🚨 ALERTA!</h2>
-  <p id="bannerTxt">Intercalações Azul → Roxo atingidas</p>
+  <p id="bannerTxt">Intercalações Cor 1 → Cor 2 atingidas</p>
   <button id="btnOkAlerta">OK, entendi</button>
 </div>
 
@@ -184,6 +184,7 @@
   const INTERVALO=200;                      // ms entre leituras
   const TOLERANCIA_H=28;                    // tolerância de matiz (0-360)
   const meta=()=> Math.max(1, parseInt($('meta').value)||5);
+  const NOME={azul:'COR 1', roxo:'COR 2'}; // nomes genéricos (internamente seguem azul/roxo)
 
   // ---------- Câmera ----------
   async function abrirCamera(){
@@ -383,8 +384,8 @@
   }
 
   // ---------- Calibração ----------
-  // No modo varredura, busca a cor dentro do retângulo (faixas típicas de matiz)
-  const FAIXAS={azul:[150,255], roxo:[255,335]};
+  // No modo varredura, identifica a cor PREDOMINANTE dentro do retângulo
+  // (ignorando a outra cor já calibrada), qualquer que seja o matiz.
   function calibrarPelaArea(qual){
     if(!video.videoWidth) return null;
     cv.width=video.videoWidth; cv.height=video.videoHeight;
@@ -396,15 +397,23 @@
     const w=Math.max(4,Math.round(parseFloat(rc.style.width)/100*m.bw/m.scale));
     const h=Math.max(4,Math.round(parseFloat(rc.style.height)/100*m.bh/m.scale));
     const d=ctx.getImageData(x,y,Math.min(w,cv.width-x),Math.min(h,cv.height-y)).data;
-    const [h1,h2]=FAIXAS[qual];
-    let R=0,G=0,B=0,n=0;
+    const outra = qual==='azul' ? calRoxo : calAzul;
+    const bins=new Array(36).fill(0), px=[];
     for(let i=0;i<d.length;i+=16){
       const r=d[i],g=d[i+1],b=d[i+2];
       const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
       if(mx<=45||(mx-mn)/mx<=0.25) continue;
       const hv=rgb2hsv(r,g,b);
-      if(hv.h>=h1&&hv.h<=h2){ R+=r;G+=g;B+=b;n++; }
+      if(outra && distH(hv.h,outra.h)<=TOLERANCIA_H) continue; // ignora a cor já calibrada
+      bins[Math.floor(hv.h/10)%36]++;
+      px.push([hv.h,r,g,b]);
     }
+    let melhor=0;
+    for(let i=1;i<36;i++) if(bins[i]>bins[melhor]) melhor=i;
+    if(bins[melhor]<8) return null;
+    const alvoH=melhor*10+5;
+    let R=0,G=0,B=0,n=0;
+    for(const p of px){ if(distH(p[0],alvoH)<=15){ R+=p[1]; G+=p[2]; B+=p[3]; n++; } }
     if(n<8) return null;
     return rgb2hsv(R/n,G/n,B/n);
   }
@@ -413,14 +422,14 @@
     let c;
     if(modo==='varredura'){
       c=calibrarPelaArea(qual);
-      if(!c){ alert('Não encontrei a cor '+qual.toUpperCase()+' dentro do retângulo.\nDeixe um número dessa cor visível na área amarela e tente de novo.'); return; }
+      if(!c){ alert('Não encontrei a '+NOME[qual]+' dentro do retângulo.\nDeixe essa cor visível na área amarela e tente de novo.'); return; }
     }else{
       c=lerCorMedia();
       if(!c){ alert('Câmera ainda não está pronta.'); return; }
     }
-    if(qual==='azul'){ calAzul=c; $('swAzul').style.background=c.rgb; $('stAzul').textContent='Azul: OK'; }
-    else{ calRoxo=c; $('swRoxo').style.background=c.rgb; $('stRoxo').textContent='Roxo: OK'; }
-    log(`🎨 ${qual.toUpperCase()} calibrado (matiz ${Math.round(c.h)}°)`);
+    if(qual==='azul'){ calAzul=c; $('swAzul').style.background=c.rgb; $('stAzul').textContent='Cor 1: OK'; }
+    else{ calRoxo=c; $('swRoxo').style.background=c.rgb; $('stRoxo').textContent='Cor 2: OK'; }
+    log(`🎨 ${NOME[qual]} calibrada (matiz ${Math.round(c.h)}°)`);
     if(calAzul && calRoxo) $('btnStart').disabled=false;
   }
   $('btnCalAzul').onclick=()=>calibrar('azul');
@@ -438,7 +447,7 @@
       classe=classificar(c);
     }
     if(rgbShow){ corBox.style.background=rgbShow; }
-    corNome.textContent = classe ? classe.toUpperCase() : '—';
+    corNome.textContent = classe ? NOME[classe] : '—';
     corNome.style.color = classe==='azul' ? 'var(--azul)' : classe==='roxo' ? '#ce93d8' : 'var(--muted)';
 
     if(!monitorando){ corCandidata=null; framesEstaveis=0; return; }
@@ -457,18 +466,18 @@
     if(cor==='roxo'){
       if(ultimaCorRegistrada==='azul'){
         contagem++;
-        log(`🟣 Intercalação azul → roxo: <b>${contagem}/${meta()}</b>`);
+        log(`🟣 Intercalação Cor 1 → Cor 2: <b>${contagem}/${meta()}</b>`);
         if(contagem>=meta()){ disparaAlerta(); }
       }else{
         if($('chkReset').checked){
-          if(contagem>0) log('🟣 Roxo repetido → contagem <b>zerada</b>');
+          if(contagem>0) log('🟣 Cor 2 repetida → contagem <b>zerada</b>');
           contagem=0;
         }else{
-          log('🟣 Roxo repetido (ignorado)');
+          log('🟣 Cor 2 repetida (ignorada)');
         }
       }
     }else{
-      log('🔵 Azul detectado');
+      log('🔵 Cor 1 detectada');
     }
     ultimaCorRegistrada=cor;
     atualizaContagem();
@@ -511,7 +520,7 @@
   }
   function disparaAlerta(){
     log(`🚨 <b>ALERTA! ${meta()} intercalações detectadas</b>`);
-    $('bannerTxt').textContent = `${meta()} intercalações Azul → Roxo detectadas`;
+    $('bannerTxt').textContent = `${meta()} intercalações Cor 1 → Cor 2 detectadas`;
     document.body.classList.add('alerta');
     $('banner').classList.add('show');
     beep();
