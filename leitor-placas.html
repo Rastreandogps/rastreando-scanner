@@ -90,6 +90,7 @@
 
   <div class="video-box">
     <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></canvas>
     <div class="contador" id="contador">0 consultas</div>
     <div class="contador" id="movInd" style="top:auto; bottom:8px; right:8px;">● parado</div>
     <div class="ultima" id="ultima"></div>
@@ -345,8 +346,43 @@
   }
   const valida=p=>FORMATO.test(p);
 
+  // ---------- Caixa de detecção sobre o vídeo ----------
+  const ov=$('overlay'), octx=ov.getContext('2d');
+  let caixas=[], caixasAte=0;
+  function desenharCaixas(){
+    const r=video.getBoundingClientRect();
+    if(ov.width!==Math.round(r.width)||ov.height!==Math.round(r.height)){ ov.width=Math.round(r.width); ov.height=Math.round(r.height); }
+    octx.clearRect(0,0,ov.width,ov.height);
+    if(!caixas.length || Date.now()>caixasAte){ caixas=[]; return; }
+    // vídeo exibido com object-fit:cover → mapeia coordenadas da foto para a tela
+    const vw=cv.width, vh=cv.height;
+    const esc=Math.max(ov.width/vw, ov.height/vh);
+    const offX=(vw*esc-ov.width)/2, offY=(vh*esc-ov.height)/2;
+    for(const c of caixas){
+      const x=c.box.xmin*esc-offX, y=c.box.ymin*esc-offY, w=(c.box.xmax-c.box.xmin)*esc, h=(c.box.ymax-c.box.ymin)*esc;
+      const cor = c.tipo==='match' ? '#ff4d4d' : c.tipo==='parecida' ? '#f0b72f' : '#3fb950';
+      octx.lineWidth=3; octx.strokeStyle=cor; octx.shadowColor='rgba(0,0,0,.8)'; octx.shadowBlur=4;
+      octx.strokeRect(x,y,w,h);
+      // cantos reforçados (estilo "mira")
+      const L=Math.min(14,w/3,h/3); octx.lineWidth=5;
+      octx.beginPath();
+      octx.moveTo(x,y+L); octx.lineTo(x,y); octx.lineTo(x+L,y);
+      octx.moveTo(x+w-L,y); octx.lineTo(x+w,y); octx.lineTo(x+w,y+L);
+      octx.moveTo(x,y+h-L); octx.lineTo(x,y+h); octx.lineTo(x+L,y+h);
+      octx.moveTo(x+w-L,y+h); octx.lineTo(x+w,y+h); octx.lineTo(x+w,y+h-L);
+      octx.stroke();
+      // etiqueta com a placa
+      octx.shadowBlur=0; octx.font='bold 15px monospace';
+      const tw=octx.measureText(c.placa).width+12;
+      octx.fillStyle=cor; octx.fillRect(x, Math.max(0,y-22), tw, 20);
+      octx.fillStyle = c.tipo==='parecida' ? '#000' : '#fff'; octx.fillText(c.placa, x+6, Math.max(15,y-7));
+    }
+  }
+  (function loop(){ desenharCaixas(); requestAnimationFrame(loop); })();
+
   function processar(data, foto){
     const confMin=parseFloat($('confMin').value);
+    const novas=[];
     (data.results||[]).forEach(r=>{
       // descarta "placas fantasma": baixa confiança na leitura ou na detecção da placa
       if((r.score||0) < confMin) return;
@@ -359,9 +395,11 @@
       const principal=opcoes[0];
       let res=null;
       for(const o of opcoes){ res=confere(o); if(res && res.tipo==='match') break; }
+      if(r.box) novas.push({box:r.box, placa:principal, tipo:res?res.tipo:''});
       registrarLida(principal, r.score, res);
       if(res) alarme(res, principal, foto, r.score);
     });
+    if(novas.length){ caixas=novas; caixasAte=Date.now()+Math.max(2500, parseInt($('intervalo').value)+800); }
   }
 
   function registrarLida(placa, score, res){
