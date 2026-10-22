@@ -143,6 +143,16 @@
   <div class="painel">
     <div class="titulo-sec">Configurações</div>
     <div class="cfg-row">
+      <label>Leitura</label>
+      <select id="modoLeitura">
+        <option value="nuvem">Nuvem (mais precisa, 1 consulta por carro)</option>
+        <option value="local">Local (grátis, funciona sem internet)</option>
+      </select>
+    </div>
+    <div class="cfg-row" id="cotaRow" style="justify-content:space-between;">
+      <span>Consultas hoje neste celular: <b id="consultasTxt">0</b></span>
+    </div>
+    <div class="cfg-row">
       <label>Detector</label>
       <select id="detSel">
         <option value="256">Rápido (256)</option>
@@ -171,8 +181,11 @@
         Avisar placas parecidas (1 caractere diferente)
       </label>
     </div>
-    <div class="cfg-row" style="font-size:12px;color:var(--muted);">
+    <div class="cfg-row" style="font-size:12px;color:var(--muted);" id="avisoModo">
       Tudo roda no celular. Nenhuma foto é enviada para a internet.
+    </div>
+    <div class="cfg-row" style="font-size:12px;color:#f0b72f;">
+      💡 Dica: segure o celular deitado (na horizontal). A câmera ganha o dobro de detalhe na largura e lê placas mais longe.
     </div>
     <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
   </div>
@@ -220,6 +233,72 @@
   $('detSel').addEventListener('change',()=>{ ls.set('lpl_det',$('detSel').value); alert('Recarregue a página para trocar o detector.'); });
   $('votos').addEventListener('change',()=>ls.set('lpl_votos',$('votos').value));
   $('confMin').addEventListener('change',()=>ls.set('lpl_conf',$('confMin').value));
+  $('modoLeitura').value=ls.get('lpl_modo','nuvem');
+  function atualizaModo(){
+    const n=$('modoLeitura').value==='nuvem';
+    $('cotaRow').style.display=n?'flex':'none';
+    $('avisoModo').textContent = n
+      ? 'O detector roda no celular e só envia o recorte da placa para leitura quando um carro aparece.'
+      : 'Tudo roda no celular. Nenhuma foto é enviada para a internet.';
+  }
+  $('modoLeitura').addEventListener('change',()=>{ ls.set('lpl_modo',$('modoLeitura').value); atualizaModo(); tracks=[]; });
+
+  // ---------- Leitura na nuvem (Plate Recognizer) só do recorte, 1 vez por carro ----------
+  const API_PR='https://api.platerecognizer.com/v1/plate-reader/';
+  const TOKEN_PADRAO='4c1c2b61fdd2cba0c732f67ff686e96f46a46e0e';
+  const tokenPR=()=> ls.get('lp_token','') || TOKEN_PADRAO; // mesmo token da outra versão
+  const hoje=()=>new Date().toISOString().slice(0,10);
+  let nuvemOcupada=false, ultimoEnvio=0;
+  function contarConsulta(){
+    const c=ls.get('lpl_consultas',{dia:hoje(),n:0});
+    if(c.dia!==hoje()){ c.dia=hoje(); c.n=0; }
+    c.n++; ls.set('lpl_consultas',c); $('consultasTxt').textContent=c.n;
+  }
+  (function(){ const c=ls.get('lpl_consultas',{dia:hoje(),n:0}); $('consultasTxt').textContent = c.dia===hoje()?c.n:0; })();
+
+  function recorteCarro(b){
+    // região em volta da placa (o carro), em resolução real da câmera
+    const w=b.x2-b.x1, cx=(b.x1+b.x2)/2, cy=(b.y1+b.y2)/2;
+    let cw=Math.max(w*5, 360), ch=cw*0.7;
+    cw=Math.min(cw,fcv.width); ch=Math.min(ch,fcv.height);
+    const sx=Math.max(0,Math.min(fcv.width-cw, cx-cw/2)), sy=Math.max(0,Math.min(fcv.height-ch, cy-ch/2));
+    const esc=Math.min(1, 1280/cw);
+    const c=document.createElement('canvas'); c.width=Math.round(cw*esc); c.height=Math.round(ch*esc);
+    c.getContext('2d').drawImage(fcv,sx,sy,cw,ch,0,0,c.width,c.height);
+    return c;
+  }
+  async function enviarNuvem(t){
+    nuvemOcupada=true; ultimoEnvio=Date.now();
+    t.envios=(t.envios||0)+1; t.largEnvio=t.box.x2-t.box.x1; t.ultimoEnvioT=Date.now();
+    const caixa={...t.box};
+    try{
+      const c=recorteCarro(caixa);
+      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));
+      const fd=new FormData();
+      fd.append('upload',blob,'placa.jpg'); fd.append('regions','br');
+      fd.append('config',JSON.stringify({region:'strict'}));
+      const resp=await fetch(API_PR,{method:'POST',headers:{'Authorization':'Token '+tokenPR()},body:fd});
+      if(resp.status===429){ t.envios--; return; }          // limite por segundo: tenta no próximo quadro
+      contarConsulta();
+      if(resp.status===401||resp.status===403) throw new Error('Token do Plate Recognizer inválido.');
+      if(resp.status===402) throw new Error('Cota de consultas do Plate Recognizer acabou. Mude a Leitura para Local.');
+      if(!resp.ok) throw new Error('Erro do servidor ('+resp.status+').');
+      const data=await resp.json();
+      const confMin=parseFloat($('confMin').value);
+      const r=(data.results||[]).sort((a,b)=>(b.score||0)-(a.score||0))[0];
+      if(!r || t.placa) return;
+      const opcoes=[r.plate,...(r.candidates||[]).map(c=>c.plate)].map(limpa).map(corrigeFormato).filter(valida);
+      if(!opcoes.length || (r.score||0)<confMin) return;
+      let p=opcoes[0], res=null;
+      for(const o of opcoes){ const x=confere(o); if(x){ res=x; p=o; if(x.tipo==='match') break; } }
+      t.placa=p; t.tipo=res?res.tipo:'';
+      registrarLida(p, r.score, res);
+      if(res) alarme(res, p, caixa, r.score, c.toDataURL('image/jpeg',0.6));
+      $('erro').style.display='none';
+    }catch(e){
+      mostraErro(e.message.includes('Failed to fetch')?'Sem conexão com o servidor de leitura. Verifique a internet.':e.message);
+    }finally{ nuvemOcupada=false; }
+  }
 
   // ---------- Placas: formato e comparação ----------
   const limpa=s=>(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -372,7 +451,7 @@
     }
     return boxes;
   }
-  const PLACA_MIN=75; // largura mínima (pixels reais) para tentar ler os caracteres
+  const PLACA_MIN=50; // largura mínima (pixels reais) para tentar ler os caracteres no modo local
 
   function setZoom(z){
     zoom=z; ls.set('lpl_zoom',z);
@@ -482,6 +561,15 @@
         const confMin=parseFloat($('confMin').value), agora=Date.now();
         // lê no máximo as 4 maiores placas visíveis (as mais próximas)
         const alvosLeitura=tracks.filter(t=>!t.placa && t.visto===agora).sort((a,b)=>(b.box.x2-b.box.x1)-(a.box.x2-a.box.x1)).slice(0,4);
+        if($('modoLeitura').value==='nuvem'){
+          // envia 1 recorte por carro; reenvia (máx. 3) só se a placa cresceu bastante (carro chegou mais perto)
+          if(!nuvemOcupada && agora-ultimoEnvio>=1050){
+            const t=alvosLeitura.find(t=> (t.box.x2-t.box.x1)>=24 && (t.envios||0)<3 &&
+              (!t.envios || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)));
+            if(t) enviarNuvem(t); // não espera a resposta: o detector continua rodando
+          }
+          alvosLeitura.length=0;
+        }
         for(const t of alvosLeitura){
           if(t.box.x2-t.box.x1 < PLACA_MIN){ t.longe=true; continue; } // pequena demais: nem tenta ler
           t.longe=false;
@@ -494,7 +582,10 @@
         }
       }
       fpsN++; const now=performance.now();
-      if(now-fpsT>1000){ $('fps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps'; fpsN=0; fpsT=now; }
+      if(now-fpsT>1000){
+        $('fps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps · '+video.videoWidth+'×'+video.videoHeight;
+        fpsN=0; fpsT=now;
+      }
     }catch(e){ console.error(e); mostraErro('Erro no motor: '+e.message); }
     requestAnimationFrame(loop);
   }
@@ -509,7 +600,8 @@
     for(const t of tracks){
       const b=t.box, x=(b.x1-roi.x)*k, y=(b.y1-roi.y)*k, w=(b.x2-b.x1)*k, h=(b.y2-b.y1)*k;
       const cor = t.tipo==='match' ? '#ff4d4d' : t.tipo==='parecida' ? '#f0b72f' : t.placa ? '#3fb950' : '#ffffff';
-      octx.globalAlpha = (!t.placa && (t.longe || !t.leituras)) ? 0.35 : 1; // placa distante: caixa apagadinha
+      const nuvem=$('modoLeitura').value==='nuvem';
+      octx.globalAlpha = (!t.placa && (nuvem ? !t.envios : (t.longe || !t.leituras))) ? 0.35 : 1; // aguardando: caixa apagadinha
       octx.lineWidth=3; octx.strokeStyle=cor; octx.shadowColor='rgba(0,0,0,.8)'; octx.shadowBlur=4;
       octx.strokeRect(x,y,w,h);
       const L=Math.min(14,w/3,h/3); octx.lineWidth=5; octx.beginPath();
@@ -525,9 +617,9 @@
         const tw=octx.measureText(t.placa).width+12;
         octx.fillStyle=cor; octx.fillRect(x, Math.max(0,y-22), tw, 20);
         octx.fillStyle = t.tipo==='parecida' ? '#000' : '#fff'; octx.fillText(t.placa, x+6, Math.max(15,y-7));
-      }else if(!t.longe && t.leituras){
-        // lendo: mostra só quantas leituras já juntou (sem chutes na tela)
-        const label='lendo '+'•'.repeat(Math.min(t.leituras,5));
+      }else if(nuvem ? t.envios : (!t.longe && t.leituras)){
+        // lendo: mostra o andamento (sem chutes na tela)
+        const label = nuvem ? 'consultando…' : 'lendo '+'•'.repeat(Math.min(t.leituras,5));
         octx.font='bold 11px monospace';
         const tw=octx.measureText(label).width+8;
         octx.fillStyle='rgba(0,0,0,.6)'; octx.fillRect(x, Math.max(0,y-16), tw, 14);
@@ -609,12 +701,12 @@
       }
     }catch(e){}
   }
-  function alarme(res, lida, box, score){
+  function alarme(res, lida, box, score, fotoPronta){
     const chave=res.alvo+res.tipo, agora=Date.now();
     if(ultimoAlerta[chave] && agora-ultimoAlerta[chave]<COOLDOWN) return;
     ultimoAlerta[chave]=agora;
     const forte=res.tipo==='match';
-    const foto=fotoDoQuadro(box);
+    const foto=fotoPronta||fotoDoQuadro(box);
     achados.unshift({placa:lida, alvo:res.alvo, tipo:res.tipo, t:agora, score, foto, lat:posAtual&&posAtual.lat, lng:posAtual&&posAtual.lng});
     if(achados.length>30) achados.pop();
     ls.set('lp_achados',achados); renderAchados();
@@ -654,6 +746,7 @@
   function mostraErro(m){ const e=$('erro'); e.textContent=m; e.style.display='block'; }
 
   // ---------- Início ----------
+  atualizaModo();
   setZoom(ls.get('lpl_zoom',1));
   abrirCamera();
   try{ await carregarModelos(); }
