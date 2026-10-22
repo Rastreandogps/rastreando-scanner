@@ -189,8 +189,9 @@
       <label>Limite</label>
       <select id="limiteMin">
         <option value="5">no máximo 5 consultas por minuto</option>
-        <option value="10" selected>no máximo 10 consultas por minuto</option>
-        <option value="20">no máximo 20 consultas por minuto</option>
+        <option value="10">no máximo 10 consultas por minuto</option>
+        <option value="20" selected>no máximo 20 consultas por minuto</option>
+        <option value="40">no máximo 40 consultas por minuto</option>
       </select>
     </div>
     <div class="cfg-row">
@@ -304,7 +305,7 @@
   $('votos').addEventListener('change',()=>ls.set('lpl_votos',$('votos').value));
   $('confMin').addEventListener('change',()=>ls.set('lpl_conf',$('confMin').value));
   $('modoLeitura').value=ls.get('lpl_modo','nuvem');
-  $('limiteMin').value=ls.get('lpl_limite','10');
+  $('limiteMin').value=ls.get('lpl_limite','20');
   $('limiteMin').addEventListener('change',()=>ls.set('lpl_limite',$('limiteMin').value));
   function atualizaModo(){
     const n=$('modoLeitura').value==='nuvem';
@@ -342,10 +343,11 @@
   // Travas contra consulta desperdiçada
   function pareceePlaca(t){
     const w=t.box.x2-t.box.x1, h=t.box.y2-t.box.y1, prop=w/h;
-    return w>=28                 // tamanho mínimo
-        && t.detMax>=0.6         // detector com boa certeza de que é placa
-        && t.quadros>=3          // apareceu em pelo menos 3 quadros seguidos (não é ruído)
-        && prop>=1.0 && prop<=6; // formato de placa (carro ou moto)
+    // Ajustado pelo diagnóstico de 22/10: placas reais perdidas vinham com 45-52% de certeza e 1-2 quadros
+    return w>=28                                          // tamanho mínimo
+        && ((t.detMax>=0.4 && t.quadros>=2)               // certeza razoável em 2 quadros seguidos
+            || t.detMax>=0.7)                             // ou certeza alta: basta 1 quadro (carro rápido)
+        && prop>=1.0 && prop<=6;                          // formato de placa (carro ou moto)
   }
   let enviosRecentes=[];
   function dentroDoLimite(){
@@ -720,8 +722,8 @@
     if($('modoLeitura').value==='nuvem'){
       if(t.resps.length) return 'nuvem_falhou';
       if((t.largMax||0)<28) return 'pequena';
-      if((t.detMax||0)<0.6) return 'certeza';
-      if((t.quadros||0)<3) return 'quadros';
+      if((t.detMax||0)<0.4) return 'certeza';
+      if((t.detMax||0)<0.7 && (t.quadros||0)<2) return 'quadros';
       if(t.propMax && (t.propMax<1 || t.propMax>6)) return 'formato';
       if(t.esperas.limite) return 'limite';
       if(t.esperas.fila) return 'fila';
