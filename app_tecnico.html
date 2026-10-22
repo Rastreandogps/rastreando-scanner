@@ -11557,6 +11557,7 @@ function motosLimpar() {
   Object.keys(_motosMarcadores).forEach(function(k) { try { _motosMarcadores[k].remove(); } catch (_) {} });
   Object.keys(_motosAnim).forEach(function(k) { cancelAnimationFrame(_motosAnim[k]); });
   _motosMarcadores = {}; _motosAnim = {};
+  try { _motoSeguir = ''; } catch (_) {} // 22/10/2026: mapa novo = solta o "seguir"
 }
 /* 14/10/2026 (pedido do dono): balão da moto com botões Google Maps e Street View (abre em outra aba) */
 function _motoPopupHTML(t) {
@@ -11567,7 +11568,9 @@ function _motoPopupHTML(t) {
     '<div style="display:flex;gap:6px;margin-top:8px;">' +
       '<a href="' + maps + '" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#4285F4;color:white;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">📍 Google Maps</a>' +
       '<a href="' + sv + '" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 8px;background:#f1f5f9;color:#1a2744;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">👁 Street View</a>' +
-    '</div>';
+    '</div>' +
+    /* 22/10/2026 (pedido do dono): travar o mapa na moto (o mapa acompanha enquanto ela anda) */
+    '<button type="button" data-motoseguir="' + esc(t.tecnico) + '" style="width:100%;margin-top:6px;padding:7px 8px;border-radius:8px;border:0;cursor:pointer;font-size:11.5px;font-weight:800;' + (_motoSeguir === t.tecnico ? 'background:#fee2e2;color:#b91c1c;">✕ Parar de seguir' : 'background:#7c3aed;color:#fff;">📌 Seguir no mapa') + '</button>';
 }
 function _motoIcone(tech, t, cor) {
   const faz = t.ultimoMs ? Math.round((Date.now() - t.ultimoMs) / 60000) : null;
@@ -11607,11 +11610,37 @@ async function motosBuscar() {
         _motoDeslizar(t.tecnico, mk, alvo);
       }
       try { _rotaAparar(t.tecnico, Number(t.pos.lat), Number(t.pos.lon)); } catch (_) {} // 16/10/2026 (v152): sem rastro para trás
+      if (_motoSeguir === t.tecnico) { try { _leafletMapAdmin.panTo(alvo, { animate: true, duration: 1.2 }); } catch (_) {} } // 22/10/2026: mapa travado na moto
     });
     Object.keys(_motosMarcadores).forEach(function(k) { if (!vistos[k]) { try { _motosMarcadores[k].remove(); } catch (_) {} delete _motosMarcadores[k]; } });
   } catch (e) { console.warn('[Motos]', e && e.message); }
   finally { _motosBuscando = false; }
 }
+/* 22/10/2026 (pedido do dono): "Seguir no mapa" — o mapa acompanha a moto escolhida. Arrastar o mapa solta. */
+let _motoSeguir = '';
+function _motoSeguirSelo() {
+  const mapa = document.getElementById('leaflet-map-admin'); if (!mapa) return;
+  let el = document.getElementById('moto-seguir-selo');
+  if (!_motoSeguir) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'moto-seguir-selo';
+    el.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;align-items:center;gap:8px;background:#7c3aed;color:#fff;font-size:12.5px;font-weight:800;padding:7px 8px 7px 14px;border-radius:999px;box-shadow:0 3px 12px rgba(0,0,0,.3)';
+    el.addEventListener('click', function(e) { if (e.target.closest('button')) motoSeguir(''); });
+    L.DomEvent.disableClickPropagation(el);
+    mapa.appendChild(el);
+  }
+  el.innerHTML = '<span>📌 Seguindo ' + esc(_motoSeguir) + '</span><button type="button" title="Parar de seguir" style="width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.25);color:#fff;font-weight:900;cursor:pointer">✕</button>';
+}
+function motoSeguir(tech) {
+  _motoSeguir = tech || '';
+  const map = _leafletMapAdmin;
+  if (map && !map._rgSeguirDrag) { map._rgSeguirDrag = true; map.on('dragstart', function() { if (_motoSeguir) { motoSeguir(''); showToast('Parou de seguir (você mexeu no mapa)'); } }); }
+  const mk = _motoSeguir && _motosMarcadores[_motoSeguir];
+  if (mk && map) { try { map.closePopup(); map.setView(mk.getLatLng(), Math.max(map.getZoom(), 15), { animate: true }); } catch (_) {} }
+  _motoSeguirSelo();
+  if (_motoSeguir) motosBuscar();
+}
+document.addEventListener('click', function(e) { const b = e.target.closest('[data-motoseguir]'); if (!b) return; const t = b.getAttribute('data-motoseguir'); motoSeguir(_motoSeguir === t ? '' : t); });
 /* desliza a moto da posição atual até a nova em ~1,2 s (só estética) */
 function _motoDeslizar(k, mk, alvo) {
   if (_motosAnim[k]) cancelAnimationFrame(_motosAnim[k]);
