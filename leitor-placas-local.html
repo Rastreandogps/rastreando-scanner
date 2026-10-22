@@ -34,6 +34,13 @@
   video{transform-origin:center center; transition:transform .2s;}
   .zbtn{background:rgba(0,0,0,.6); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:4px 8px; font-size:12px; font-weight:700;}
   .zbtn.ativo{background:#1f6feb; border-color:#58a6ff;}
+  #maskLayer{position:absolute; inset:0; display:none; touch-action:none; cursor:crosshair; z-index:6;}
+  #btnMask, #btnLanterna, #btnPos, #zoomBox{z-index:8;} /* botões sempre acima da camada de desenho */
+  body.editMask #maskLayer{display:block;}
+  #maskAviso{position:absolute; left:8px; right:8px; bottom:46px; display:none; background:rgba(240,183,47,.92); color:#000; font-size:12px; font-weight:700; padding:6px 8px; border-radius:8px; text-align:center; pointer-events:none; z-index:7;}
+  body.editMask #maskAviso{display:block;}
+  body.editMask #btnMask, body.editMask #hudMask{background:#f0b72f; color:#000; border-color:#f0b72f;}
+  body.cheia #btnMask{display:none !important;}
   /* ----- Tela cheia (celular deitado) ----- */
   body.cheia{overflow:hidden;}
   body.cheia .video-box{position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; aspect-ratio:auto; border-radius:0; border:none; z-index:40; box-shadow:none;}
@@ -120,6 +127,9 @@
   <div class="video-box">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="overlay"></canvas>
+    <div id="maskLayer"></div>
+    <button id="btnMask" class="zbtn" style="position:absolute; left:8px; top:52px; padding:5px 10px; font-size:13px;">⬛ Ocultar</button>
+    <div id="maskAviso">Arraste para cobrir uma área · toque numa placa para cobri-la · toque numa área cinza para apagar</div>
     <div class="chip" id="fps">— fps</div>
     <div class="chip" id="motor">motor: —</div>
     <button id="btnLanterna" title="Lanterna">🔦</button>
@@ -231,11 +241,19 @@
     </div>
     <div class="cfg-row">
       <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkObt" style="width:20px;height:20px;accent-color:var(--azul);">
+        📸 Obturador rápido (menos borrão; use de dia)
+      </label>
+    </div>
+    <div class="cfg-row" id="obtMsg" style="font-size:12px;color:var(--muted);"></div>
+    <div class="cfg-row">
+      <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" id="chkDiag" style="width:20px;height:20px;accent-color:#8957e5;">
         🔬 Modo diagnóstico (mostra onde cada placa se perdeu)
       </label>
     </div>
     <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
+    <button class="btn btn-sec" id="btnLimparMask" style="margin-top:8px;">⬛ Apagar todas as áreas ocultas</button>
     <button class="btn btn-sec" id="btnRestaurar" style="margin-top:8px;">Restaurar configurações padrão</button>
   </div>
 
@@ -245,6 +263,7 @@
   <div class="hud-top">
     <span class="hud-chip" id="hudFps">— fps</span>
     <div style="display:flex; gap:8px;">
+      <button class="hud-btn" id="hudMask">⬛ Ocultar</button>
       <button class="hud-btn" id="hudGirar" title="Virar a imagem 180°">🔄</button>
       <button class="hud-btn" id="hudLanterna">🔦</button>
       <button class="hud-btn" id="hudSair">✕ Sair da tela cheia</button>
@@ -381,19 +400,19 @@
     enviosRecentes=enviosRecentes.filter(t=>agora-t<60000);
     return enviosRecentes.length<max;
   }
-  async function enviarNuvem(t){
+  async function enviarNuvem(t, foto){
     enviosRecentes.push(Date.now());
-    nuvemOcupada=true; ultimoEnvio=Date.now();
-    t.envios=(t.envios||0)+1; t.largEnvio=t.box.x2-t.box.x1; t.ultimoEnvioT=Date.now();
-    const caixa={...t.box};
+    nuvemOcupada=true; ultimoEnvio=Date.now(); t.pendente=true;
+    t.envios=(t.envios||0)+1; t.ultimoEnvioT=Date.now();
+    const caixa = foto ? foto.caixa : {...t.box};
+    t.largEnvio=caixa.x2-caixa.x1;
     try{
-      const c=recorteCarro(caixa);
+      const c = foto ? foto.canvas : recorteCarro(caixa);
       const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.9));
       const fd=new FormData();
       fd.append('upload',blob,'placa.jpg'); fd.append('regions','br');
-      fd.append('config',JSON.stringify({region:'strict'}));
       const resp=await fetch(API_PR,{method:'POST',headers:{'Authorization':'Token '+tokenPR()},body:fd});
-      if(resp.status===429){ t.envios--; return; }          // limite por segundo: tenta no próximo quadro
+      if(resp.status===429){ t.envios--; if(foto) fila.unshift({t,foto}); return; } // limite por segundo: tenta de novo
       contarConsulta();
       if(resp.status===401||resp.status===403) throw new Error('Token do Plate Recognizer inválido.');
       if(resp.status===402) throw new Error('Cota de consultas do Plate Recognizer acabou. Mude a Leitura para Local.');
@@ -401,11 +420,16 @@
       const data=await resp.json();
       const confMin=parseFloat($('confMin').value);
       const r=(data.results||[]).sort((a,b)=>(b.score||0)-(a.score||0))[0];
-      if(!r){ t.envios=99; t.naoPlaca=true; t.resps.push('nuvem não achou placa no recorte'); return; } // nuvem não viu placa: para de consultar esse objeto
+      if(!r){
+        t.resps.push('nuvem não achou placa no recorte');
+        if((t.detMax||0)<0.7 || t.envios>=3){ t.envios=99; t.naoPlaca=true; } // desiste só se o detector também duvidava
+        else t.tentarDeNovo=true;                                            // provável borrão: tenta outro quadro
+        return;
+      }
       if(t.placa) return;
       const opcoes=[r.plate,...(r.candidates||[]).map(c=>c.plate)].map(limpa).map(corrigeFormato).filter(valida);
-      if(!opcoes.length){ t.resps.push('nuvem leu "'+limpa(r.plate)+'" (fora do formato)'); return; }
-      if((r.score||0)<confMin){ t.resps.push('nuvem leu '+limpa(r.plate)+' com só '+Math.round(r.score*100)+'% de certeza'); return; }
+      if(!opcoes.length){ t.resps.push('nuvem leu "'+limpa(r.plate)+'" (fora do formato)'); t.tentarDeNovo=true; return; }
+      if((r.score||0)<confMin){ t.resps.push('nuvem leu '+limpa(r.plate)+' com só '+Math.round(r.score*100)+'% de certeza'); t.tentarDeNovo=true; return; }
       let p=opcoes[0], res=null;
       for(const o of opcoes){ const x=confere(o); if(x){ res=x; p=o; if(x.tipo==='match') break; } }
       t.placa=p; t.tipo=res?res.tipo:'';
@@ -416,7 +440,21 @@
     }catch(e){
       t.resps.push('erro: '+e.message);
       mostraErro(e.message.includes('Failed to fetch')?'Sem conexão com o servidor de leitura. Verifique a internet.':e.message);
-    }finally{ nuvemOcupada=false; }
+    }finally{
+      nuvemOcupada=false; t.pendente=false;
+      pendentes=pendentes.filter(x=>x!==t);
+      if(t.encerrarDepois) diagEncerrar(t); // saiu da tela enquanto esperava a resposta
+    }
+  }
+
+  // ---------- Fila: guarda a FOTO do carro na hora certa, envia quando a nuvem liberar ----------
+  // Resolve moto/carro rápido que aparece em 1 quadro enquanto a nuvem ainda lê o carro anterior.
+  let fila=[], pendentes=[];
+  function enfileirar(t){
+    if(t.naFila || t.pendente) return;
+    t.naFila=true; t.pendente=true; pendentes.push(t);
+    fila.push({t, foto:{canvas:recorteCarro({...t.box}), caixa:{...t.box}}});
+    if(fila.length>4){ const x=fila.shift(); x.t.naFila=false; x.t.pendente=false; pendentes=pendentes.filter(p=>p!==x.t); }
   }
 
   // ---------- Placas: formato e comparação ----------
@@ -507,14 +545,38 @@
     setStatus('pronto');
   }
 
+  // ---------- Obturador rápido: menos borrão em carro/moto passando (precisa de boa luz) ----------
+  let camTrack=null;
+  async function aplicaObturador(){
+    const on=$('chkObt').checked; ls.set('lpl_obt',on);
+    if(!camTrack) return;
+    const caps=camTrack.getCapabilities ? camTrack.getCapabilities() : {};
+    const msg=$('obtMsg');
+    if(!caps.exposureTime || !caps.exposureMode || !caps.exposureMode.includes('manual')){
+      msg.textContent = on ? 'Seu celular não permite controlar o obturador pelo navegador.' : '';
+      return;
+    }
+    try{
+      if(on){
+        const t=Math.max(caps.exposureTime.min, Math.min(caps.exposureTime.max, 20)); // ~1/500 s
+        await camTrack.applyConstraints({advanced:[{exposureMode:'manual', exposureTime:t}]});
+        msg.textContent='Ativo: imagem fica mais escura, mas a placa sai mais nítida em movimento.';
+      }else{
+        await camTrack.applyConstraints({advanced:[{exposureMode:'continuous'}]});
+        msg.textContent='';
+      }
+    }catch(e){ msg.textContent='Não foi possível ajustar o obturador neste celular.'; }
+  }
+
   // ---------- Câmera ----------
   async function abrirCamera(){
     try{
       const stream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }, audio:false });
       video.srcObject=stream;
-      const track=stream.getVideoTracks()[0];
+      const track=stream.getVideoTracks()[0]; camTrack=track;
       const caps=track.getCapabilities ? track.getCapabilities() : {};
       try{ if(caps.focusMode && caps.focusMode.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+      if($('chkObt').checked) aplicaObturador();
       if(caps.torch){
         const b=$('btnLanterna'); b.style.display='block'; let on=false;
         b.onclick=async()=>{ on=!on; try{ await track.applyConstraints({advanced:[{torch:on}]}); b.style.background=on?'#d29922':'rgba(0,0,0,.65)'; }catch(e){} };
@@ -523,6 +585,59 @@
       setStatus('erro na câmera','err');
       mostraErro('Não foi possível acessar a câmera. Permita o acesso e recarregue a página. ('+e.message+')');
     }
+  }
+
+  // ---------- Áreas ocultas: o que aparecer dentro delas é ignorado (carros estacionados etc.) ----------
+  // Guardadas em coordenadas da câmera (não da tela): ficam no lugar certo com zoom e tela cheia.
+  let mascaras=[]; // {u1,v1,u2,v2}
+  let editMask=false, arrasto=null;
+  function telaParaCamera(clientX, clientY){
+    const r=video.parentElement.getBoundingClientRect(), roi=calcROI();
+    return { u: roi.x + (clientX-r.left)/r.width*roi.w, v: roi.y + (clientY-r.top)/r.height*roi.h };
+  }
+  const dentroMascara=(u,v)=>mascaras.findIndex(m=>u>=m.u1&&u<=m.u2&&v>=m.v1&&v<=m.v2);
+  function setEditMask(on){
+    editMask=on; document.body.classList.toggle('editMask',on);
+    $('btnMask').textContent = on ? '✔ Concluir' : '⬛ Ocultar'+(mascaras.length?' ('+mascaras.length+')':'');
+    $('hudMask').textContent = on ? '✔ Concluir' : '⬛ Ocultar'+(mascaras.length?' ('+mascaras.length+')':'');
+  }
+  $('btnMask').onclick=()=>setEditMask(!editMask);
+  $('hudMask').onclick=()=>setEditMask(!editMask);
+  $('btnLimparMask').onclick=()=>{ mascaras=[]; setEditMask(false); };
+  (function(){
+    const L=$('maskLayer');
+    L.addEventListener('pointerdown',e=>{ if(!video.videoWidth) return; arrasto={a:telaParaCamera(e.clientX,e.clientY), b:null, x0:e.clientX, y0:e.clientY}; L.setPointerCapture(e.pointerId); e.preventDefault(); });
+    L.addEventListener('pointermove',e=>{ if(arrasto){ arrasto.b=telaParaCamera(e.clientX,e.clientY); e.preventDefault(); } });
+    L.addEventListener('pointerup',e=>{
+      if(!arrasto) return;
+      const toque = Math.hypot(e.clientX-arrasto.x0, e.clientY-arrasto.y0) < 15;
+      const p=telaParaCamera(e.clientX,e.clientY);
+      if(toque){
+        const i=dentroMascara(p.u,p.v);
+        if(i>=0) mascaras.splice(i,1);                       // tocou numa área: apaga
+        else{                                                // tocou numa placa: cobre ela (com folga)
+          const t=tracks.find(t=>{ const b=retGirado(t.box,deGirado); return p.u>=b.x1&&p.u<=b.x2&&p.v>=b.y1&&p.v<=b.y2; });
+          if(t){ const b=retGirado(t.box,deGirado), mw=(b.x2-b.x1)*0.4, mh=(b.y2-b.y1)*0.8;
+                 mascaras.push({u1:b.x1-mw, v1:b.y1-mh, u2:b.x2+mw, v2:b.y2+mh}); }
+        }
+      }else{
+        const a=arrasto.a;
+        mascaras.push({u1:Math.min(a.u,p.u), v1:Math.min(a.v,p.v), u2:Math.max(a.u,p.u), v2:Math.max(a.v,p.v)});
+      }
+      arrasto=null; setEditMask(true);
+    });
+  })();
+  function desenharMascaras(){
+    if(!video.videoWidth || (!mascaras.length && !arrasto)) return;
+    const roi=calcROI(), k=ov.width/roi.w;
+    const caixa=(m,temp)=>{
+      const x=(m.u1-roi.x)*k, y=(m.v1-roi.y)*k, w=(m.u2-m.u1)*k, h=(m.v2-m.v1)*k;
+      octx.fillStyle = temp ? 'rgba(240,183,47,.25)' : 'rgba(30,30,30,.6)'; octx.fillRect(x,y,w,h);
+      octx.setLineDash([6,4]); octx.lineWidth=2; octx.strokeStyle='#f0b72f'; octx.strokeRect(x,y,w,h); octx.setLineDash([]);
+      if(!temp && w>50 && h>16){ octx.font='bold 11px sans-serif'; octx.fillStyle='#f0b72f'; octx.fillText('ignorado', x+4, y+13); }
+    };
+    for(const m of mascaras) caixa(m,false);
+    if(arrasto && arrasto.b){ const a=arrasto.a, b=arrasto.b; caixa({u1:Math.min(a.u,b.u),v1:Math.min(a.v,b.v),u2:Math.max(a.u,b.u),v2:Math.max(a.v,b.v)},true); }
   }
 
   // ---------- Pré-processamento ----------
@@ -642,7 +757,19 @@
       if(x2-x1<12||y2-y1<5) continue;
       boxes.push({x1,y1,x2,y2,score:sc});
     }
-    return boxes;
+    // mesma placa detectada duas vezes, ou um pedaço dela dentro da caixa maior: fica só a melhor
+    boxes.sort((a,b)=>b.score-a.score);
+    const final=[];
+    for(const b of boxes){
+      const repetida=final.some(k=>{
+        const ix=Math.max(0,Math.min(k.x2,b.x2)-Math.max(k.x1,b.x1)), iy=Math.max(0,Math.min(k.y2,b.y2)-Math.max(k.y1,b.y1));
+        const menor=Math.min((k.x2-k.x1)*(k.y2-k.y1),(b.x2-b.x1)*(b.y2-b.y1));
+        return menor>0 && ix*iy/menor>0.5;
+      });
+      if(!repetida) final.push(b);
+    }
+    if(!mascaras.length) return final;
+    return final.filter(b=>{ const c=deGirado((b.x1+b.x2)/2,(b.y1+b.y2)/2); return dentroMascara(c.u,c.v)<0; });
   }
   const PLACA_MIN=50; // largura mínima (pixels reais) para tentar ler os caracteres no modo local
 
@@ -706,7 +833,7 @@
     boxes.forEach((b,i)=>{ if(!usados.has(i)) tracks.push(novoTrack(b,agora)); });
     // placa que saiu da imagem: se juntou leituras boas, confirma com o que tem
     for(const t of tracks) if(agora-t.visto>=1500 && !t.placa) finalizar(t, true);
-    for(const t of tracks) if(agora-t.visto>=1500) diagEncerrar(t);
+    for(const t of tracks) if(agora-t.visto>=1500){ if(t.pendente) t.encerrarDepois=true; else diagEncerrar(t); }
     tracks=tracks.filter(t=>agora-t.visto<1500);
   }
   function novoTrack(b,agora){
@@ -776,7 +903,8 @@
     const b=$('btnPassou'); b.textContent='🚗 Registrado! Conferindo…'; setTimeout(()=>b.textContent='🚗 Passou um carro agora',1500);
     setTimeout(()=>{
       const janela=o=> o.visto>=tMarca-4000 && o.criado<=tMarca+3000;
-      const objs=[...diagObjs.filter(janela), ...tracks.filter(janela).map(t=>({motivo:diagMotivo(t), placa:t.placa}))];
+      const vivos=[...tracks, ...pendentes.filter(t=>!tracks.includes(t))];
+      const objs=[...diagObjs.filter(janela), ...vivos.filter(janela).map(t=>({motivo:diagMotivo(t), placa:t.placa}))];
       if(!objs.length) m.res='nao_detectado';
       else if(objs.some(o=>o.motivo==='lida'||o.motivo==='parado')){ m.res='lido'; m.placa=(objs.find(o=>o.motivo==='lida'||o.motivo==='parado')||{}).placa; }
       else { m.res='detectado_nao_lido'; m.motivos=[...new Set(objs.map(o=>o.motivo))]; }
@@ -823,6 +951,8 @@
     for(const o of diagObjs.slice(0,25)) t+=`${new Date(o.criado).toLocaleTimeString('pt-BR')} | ${MOTIVOS[o.motivo].txt}${o.placa?' '+o.placa:''} | ${(o.dur/1000).toFixed(1)}s, ${o.quadros}q, ${o.larg}px, det ${o.det}%${o.envios?', '+o.envios+' envio':''}${o.resps.length?' | '+o.resps.join('; '):''}\n`;
     return t;
   }
+  $('chkObt').checked=ls.get('lpl_obt',false);
+  $('chkObt').addEventListener('change',aplicaObturador);
   $('chkDiag').checked=ls.get('lpl_diag',false);
   function aplicaDiag(){
     const on=diagLigado();
@@ -892,10 +1022,17 @@
             const motivoEspera = nuvemOcupada||agora-ultimoEnvio<1050 ? 'fila' : (!dentroDoLimite() ? 'limite' : null);
             if(motivoEspera) for(const t of alvosLeitura) if(pareceePlaca(t) && !(t.envios>0)) t.esperas[motivoEspera]=(t.esperas[motivoEspera]||0)+1;
           }
-          if(!nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite()){
-            const t=alvosLeitura.find(t=> pareceePlaca(t) && (t.envios||0)<3 &&
-              (!t.envios || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)));
-            if(t) enviarNuvem(t); // não espera a resposta: o detector continua rodando
+          const querEnviar = t => pareceePlaca(t) && (t.envios||0)<3 && !t.pendente &&
+              (!t.envios || (t.tentarDeNovo && agora-t.ultimoEnvioT>400)                       // leitura falhou: tenta outro quadro
+                         || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)); // chegou bem mais perto
+          const podeAgora = !nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite();
+          const candidatos = alvosLeitura.filter(querEnviar);
+          if(podeAgora){
+            if(fila.length){ const x=fila.shift(); x.t.naFila=false; if(!x.t.placa) enviarNuvem(x.t, x.foto); else { x.t.pendente=false; pendentes=pendentes.filter(p=>p!==x.t); } }
+            else if(candidatos.length){ const t=candidatos[0]; t.tentarDeNovo=false; enviarNuvem(t); } // não espera a resposta
+          }else{
+            // nuvem ocupada: guarda a foto dos carros novos para não perder quem passa rápido
+            for(const t of candidatos) if(!t.envios) enfileirar(t);
           }
           alvosLeitura.length=0;
         }
@@ -926,6 +1063,7 @@
     const r=video.getBoundingClientRect();
     if(ov.width!==Math.round(r.width)||ov.height!==Math.round(r.height)){ ov.width=Math.round(r.width); ov.height=Math.round(r.height); }
     octx.clearRect(0,0,ov.width,ov.height);
+    desenharMascaras();
     if(!rodando || !video.videoWidth){ requestAnimationFrame(desenhar); return; }
     const roi=calcROI(), k=ov.width/roi.w;
     for(const t of tracks){
@@ -1078,6 +1216,7 @@
   }
   function parar(){
     for(const t of tracks) diagEncerrar(t);
+    for(const x of fila){ x.t.pendente=false; diagEncerrar(x.t); } fila=[]; pendentes=[];
     rodando=false; tracks=[];
     $('btnStart').textContent='▶ Iniciar leitura'; $('btnStart').classList.remove('parar');
     setStatus('pronto');
