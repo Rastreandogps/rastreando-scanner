@@ -211,6 +211,7 @@
       💡 Dica: segure o celular deitado (na horizontal). A câmera ganha o dobro de detalhe na largura e lê placas mais longe.
     </div>
     <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
+    <button class="btn btn-sec" id="btnRestaurar" style="margin-top:8px;">Restaurar configurações padrão</button>
   </div>
 
 </div>
@@ -487,7 +488,8 @@
 
   // ---------- Celular deitado (com rotação de tela travada) ----------
   // rot = 0 (em pé), 90 (gira a imagem no sentido horário) ou -90 (anti-horário)
-  let rot=0, modoPos=ls.get('lpl_pos','auto'), rotAuto=0;
+  let rot=0, modoPos=String(ls.get('lpl_pos','auto')), rotAuto=0;
+  if(!['auto','0','90','-90'].includes(modoPos)) modoPos='auto';
   const NOMES_POS={auto:'📱 Auto', '0':'📱 Em pé', '-90':'📱 Deitado ↺', '90':'📱 Deitado ↻'};
   const ORDEM_POS=['auto','0','-90','90'];
   function atualizaPos(){
@@ -589,6 +591,7 @@
   const PLACA_MIN=50; // largura mínima (pixels reais) para tentar ler os caracteres no modo local
 
   function setZoom(z){
+    z=parseFloat(z); if(![1,1.5,2,3].includes(z)) z=1;
     zoom=z; ls.set('lpl_zoom',z);
     video.style.transform='scale('+z+')';
     document.querySelectorAll('.zbtn[data-z]').forEach(b=>b.classList.toggle('ativo', parseFloat(b.dataset.z)===z));
@@ -788,6 +791,12 @@
     ).join('');
   }
   $('btnLimpar').onclick=()=>{ lidas=[]; renderLidas(); };
+  // apaga só as configurações deste leitor (mantém placas procuradas e achados)
+  $('btnRestaurar').onclick=()=>{
+    if(!confirm('Voltar todas as configurações ao padrão? As placas procuradas e as encontradas continuam salvas.')) return;
+    ['lpl_zoom','lpl_pos','lpl_det','lpl_votos','lpl_conf','lpl_modo','lpl_limite'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    location.reload();
+  };
 
   // ---------- GPS ----------
   let posAtual=null;
