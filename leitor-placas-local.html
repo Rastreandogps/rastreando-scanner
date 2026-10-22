@@ -105,6 +105,7 @@
     <div class="chip" id="fps">— fps</div>
     <div class="chip" id="motor">motor: —</div>
     <button id="btnLanterna" title="Lanterna">🔦</button>
+    <button id="btnPos" class="zbtn" style="position:absolute; left:60px; top:8px; padding:5px 10px; font-size:13px;">📱 Auto</button>
     <div id="zoomBox" style="position:absolute; left:8px; bottom:8px; display:flex; gap:4px;">
       <button class="zbtn ativo" data-z="1">1x</button>
       <button class="zbtn" data-z="1.5">1,5x</button>
@@ -151,6 +152,14 @@
     </div>
     <div class="cfg-row" id="cotaRow" style="justify-content:space-between;">
       <span>Consultas hoje neste celular: <b id="consultasTxt">0</b></span>
+    </div>
+    <div class="cfg-row" id="limiteRow">
+      <label>Limite</label>
+      <select id="limiteMin">
+        <option value="5">no máximo 5 consultas por minuto</option>
+        <option value="10" selected>no máximo 10 consultas por minuto</option>
+        <option value="20">no máximo 20 consultas por minuto</option>
+      </select>
     </div>
     <div class="cfg-row">
       <label>Detector</label>
@@ -234,9 +243,11 @@
   $('votos').addEventListener('change',()=>ls.set('lpl_votos',$('votos').value));
   $('confMin').addEventListener('change',()=>ls.set('lpl_conf',$('confMin').value));
   $('modoLeitura').value=ls.get('lpl_modo','nuvem');
+  $('limiteMin').value=ls.get('lpl_limite','10');
+  $('limiteMin').addEventListener('change',()=>ls.set('lpl_limite',$('limiteMin').value));
   function atualizaModo(){
     const n=$('modoLeitura').value==='nuvem';
-    $('cotaRow').style.display=n?'flex':'none';
+    $('cotaRow').style.display=n?'flex':'none'; $('limiteRow').style.display=n?'flex':'none';
     $('avisoModo').textContent = n
       ? 'O detector roda no celular e só envia o recorte da placa para leitura quando um carro aparece.'
       : 'Tudo roda no celular. Nenhuma foto é enviada para a internet.';
@@ -267,7 +278,22 @@
     c.getContext('2d').drawImage(fcv,sx,sy,cw,ch,0,0,c.width,c.height);
     return c;
   }
+  // Travas contra consulta desperdiçada
+  function pareceePlaca(t){
+    const w=t.box.x2-t.box.x1, h=t.box.y2-t.box.y1, prop=w/h;
+    return w>=28                 // tamanho mínimo
+        && t.detMax>=0.6         // detector com boa certeza de que é placa
+        && t.quadros>=3          // apareceu em pelo menos 3 quadros seguidos (não é ruído)
+        && prop>=1.0 && prop<=6; // formato de placa (carro ou moto)
+  }
+  let enviosRecentes=[];
+  function dentroDoLimite(){
+    const agora=Date.now(), max=parseInt($('limiteMin').value);
+    enviosRecentes=enviosRecentes.filter(t=>agora-t<60000);
+    return enviosRecentes.length<max;
+  }
   async function enviarNuvem(t){
+    enviosRecentes.push(Date.now());
     nuvemOcupada=true; ultimoEnvio=Date.now();
     t.envios=(t.envios||0)+1; t.largEnvio=t.box.x2-t.box.x1; t.ultimoEnvioT=Date.now();
     const caixa={...t.box};
@@ -286,7 +312,8 @@
       const data=await resp.json();
       const confMin=parseFloat($('confMin').value);
       const r=(data.results||[]).sort((a,b)=>(b.score||0)-(a.score||0))[0];
-      if(!r || t.placa) return;
+      if(!r){ t.envios=99; t.naoPlaca=true; return; } // nuvem não viu placa: para de consultar esse objeto
+      if(t.placa) return;
       const opcoes=[r.plate,...(r.candidates||[]).map(c=>c.plate)].map(limpa).map(corrigeFormato).filter(valida);
       if(!opcoes.length || (r.score||0)<confMin) return;
       let p=opcoes[0], res=null;
@@ -423,10 +450,59 @@
     return {x:(vw-w)/2, y:(vh-h)/2, w, h};
   }
 
+  // ---------- Celular deitado (com rotação de tela travada) ----------
+  // rot = 0 (em pé), 90 (gira a imagem no sentido horário) ou -90 (anti-horário)
+  let rot=0, modoPos=ls.get('lpl_pos','auto'), rotAuto=0;
+  const NOMES_POS={auto:'📱 Auto', '0':'📱 Em pé', '-90':'📱 Deitado ↺', '90':'📱 Deitado ↻'};
+  const ORDEM_POS=['auto','0','-90','90'];
+  function atualizaPos(){
+    rot = modoPos==='auto' ? rotAuto : parseInt(modoPos);
+    $('btnPos').textContent = NOMES_POS[modoPos] + (modoPos==='auto' ? (rot===0?' · em pé':' · deitado') : '');
+  }
+  $('btnPos').onclick=()=>{ modoPos=ORDEM_POS[(ORDEM_POS.indexOf(modoPos)+1)%ORDEM_POS.length]; ls.set('lpl_pos',modoPos); tracks=[]; atualizaPos(); };
+  window.addEventListener('devicemotion',e=>{
+    const g=e.accelerationIncludingGravity; if(!g||g.x==null) return;
+    let novo=rotAuto;
+    if(Math.abs(g.x)>6 && Math.abs(g.x)>Math.abs(g.y)*1.5) novo = g.x>0 ? -90 : 90; // deitado
+    else if(Math.abs(g.y)>6 && Math.abs(g.y)>Math.abs(g.x)*1.5) novo = 0;          // em pé
+    if(novo!==rotAuto){ rotAuto=novo; if(modoPos==='auto'){ tracks=[]; atualizaPos(); } }
+  });
+  atualizaPos();
+
+  // ponto da câmera (u,v) -> ponto na imagem girada (x,y), e o inverso
+  function paraGirado(u,v){
+    const vw=video.videoWidth, vh=video.videoHeight;
+    if(rot===90) return {x:vh-v, y:u};
+    if(rot===-90) return {x:v, y:vw-u};
+    return {x:u, y:v};
+  }
+  function deGirado(x,y){
+    const vw=video.videoWidth, vh=video.videoHeight;
+    if(rot===90) return {u:y, v:vh-x};
+    if(rot===-90) return {u:vw-y, v:x};
+    return {u:x, v:y};
+  }
+  function retGirado(r, conv){ // converte um retângulo e devolve os limites
+    const a=conv(r.x1,r.y1), b=conv(r.x2,r.y2);
+    const xs=[a.x??a.u, b.x??b.u], ys=[a.y??a.v, b.y??b.v];
+    return {x1:Math.min(...xs), y1:Math.min(...ys), x2:Math.max(...xs), y2:Math.max(...ys)};
+  }
+  function desenharQuadroGirado(){
+    const vw=video.videoWidth, vh=video.videoHeight;
+    fcv.width = rot ? vh : vw; fcv.height = rot ? vw : vh;
+    fctx.setTransform(1,0,0,1,0,0);
+    if(rot===90){ fctx.translate(vh,0); fctx.rotate(Math.PI/2); }
+    else if(rot===-90){ fctx.translate(0,vw); fctx.rotate(-Math.PI/2); }
+    fctx.drawImage(video,0,0);
+    fctx.setTransform(1,0,0,1,0,0);
+  }
+
   function prepararDetector(){
-    const vw=video.videoWidth, vh=video.videoHeight, s=detTam;
-    fcv.width=vw; fcv.height=vh; fctx.drawImage(video,0,0);
-    const roi=calcROI();
+    const s=detTam;
+    desenharQuadroGirado();
+    const r0=calcROI();
+    const rr=retGirado({x1:r0.x, y1:r0.y, x2:r0.x+r0.w, y2:r0.y+r0.h}, paraGirado);
+    const roi={x:rr.x1, y:rr.y1, w:rr.x2-rr.x1, h:rr.y2-rr.y1};
     const r=Math.min(s/roi.w,s/roi.h), nw=Math.round(roi.w*r), nh=Math.round(roi.h*r), dw=(s-nw)/2, dh=(s-nh)/2;
     lcv.width=s; lcv.height=s;
     lctx.fillStyle='rgb(114,114,114)'; lctx.fillRect(0,0,s,s);
@@ -507,7 +583,7 @@
         if(v<0.3 && dist<ref*2.2 && proporcao>0.5 && proporcao<2) score=0.3*(1-dist/(ref*2.2))+0.01;
         if(score>bestScore){ bestScore=score; best=i; }
       });
-      if(best!==null){ t.box=boxes[best]; t.visto=agora; usados.add(best); }
+      if(best!==null){ t.box=boxes[best]; t.visto=agora; usados.add(best); t.quadros=(t.quadros||1)+1; t.detMax=Math.max(t.detMax||0, boxes[best].score); }
     }
     boxes.forEach((b,i)=>{ if(!usados.has(i)) tracks.push(novoTrack(b,agora)); });
     // placa que saiu da imagem: se juntou leituras boas, confirma com o que tem
@@ -515,7 +591,7 @@
     tracks=tracks.filter(t=>agora-t.visto<1500);
   }
   function novoTrack(b,agora){
-    return {id:nextId++, box:b, visto:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0};
+    return {id:nextId++, box:b, visto:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0, quadros:1, detMax:b.score};
   }
 
   // Votação letra a letra: cada leitura vota em cada posição, com peso = certeza daquela letra.
@@ -563,8 +639,8 @@
         const alvosLeitura=tracks.filter(t=>!t.placa && t.visto===agora).sort((a,b)=>(b.box.x2-b.box.x1)-(a.box.x2-a.box.x1)).slice(0,4);
         if($('modoLeitura').value==='nuvem'){
           // envia 1 recorte por carro; reenvia (máx. 3) só se a placa cresceu bastante (carro chegou mais perto)
-          if(!nuvemOcupada && agora-ultimoEnvio>=1050){
-            const t=alvosLeitura.find(t=> (t.box.x2-t.box.x1)>=24 && (t.envios||0)<3 &&
+          if(!nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite()){
+            const t=alvosLeitura.find(t=> pareceePlaca(t) && (t.envios||0)<3 &&
               (!t.envios || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)));
             if(t) enviarNuvem(t); // não espera a resposta: o detector continua rodando
           }
@@ -598,9 +674,10 @@
     if(!rodando || !video.videoWidth){ requestAnimationFrame(desenhar); return; }
     const roi=calcROI(), k=ov.width/roi.w;
     for(const t of tracks){
-      const b=t.box, x=(b.x1-roi.x)*k, y=(b.y1-roi.y)*k, w=(b.x2-b.x1)*k, h=(b.y2-b.y1)*k;
+      const b=retGirado(t.box, deGirado), x=(b.x1-roi.x)*k, y=(b.y1-roi.y)*k, w=(b.x2-b.x1)*k, h=(b.y2-b.y1)*k;
       const cor = t.tipo==='match' ? '#ff4d4d' : t.tipo==='parecida' ? '#f0b72f' : t.placa ? '#3fb950' : '#ffffff';
       const nuvem=$('modoLeitura').value==='nuvem';
+      if(t.naoPlaca) continue; // a nuvem já disse que não é placa: nem desenha
       octx.globalAlpha = (!t.placa && (nuvem ? !t.envios : (t.longe || !t.leituras))) ? 0.35 : 1; // aguardando: caixa apagadinha
       octx.lineWidth=3; octx.strokeStyle=cor; octx.shadowColor='rgba(0,0,0,.8)'; octx.shadowBlur=4;
       octx.strokeRect(x,y,w,h);
