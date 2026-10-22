@@ -186,10 +186,12 @@
 
   // ---------- Onde estão os modelos ----------
   // 1º tenta a pasta "modelos" do próprio site; se não existir, baixa do GitHub do autor dos modelos.
+  // 1º: pasta "modelos" do próprio site · 2º: mesmos arquivos via CDN do jsDelivr (lê direto do seu repositório)
+  const CDN='https://cdn.jsdelivr.net/gh/rastreandogps/rastreando-scanner@main/modelos/';
   const MODELOS={
-    det256:['modelos/det256.onnx','https://github.com/ankandrew/open-image-models/releases/download/assets/yolo-v9-t-256-license-plates-end2end.onnx'],
-    det384:['modelos/det384.onnx','https://github.com/ankandrew/open-image-models/releases/download/assets/yolo-v9-t-384-license-plates-end2end.onnx'],
-    ocr:   ['modelos/ocr.onnx',   'https://github.com/ankandrew/fast-plate-ocr/releases/download/arg-plates/cct_xs_v1_global.onnx']
+    det256:['modelos/det256.onnx', CDN+'det256.onnx'],
+    det384:['modelos/det384.onnx', CDN+'det384.onnx'],
+    ocr:   ['modelos/ocr.onnx',    CDN+'ocr.onnx']
   };
   const ALFABETO='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_';
 
@@ -258,8 +260,10 @@
   // ---------- Download dos modelos (com cache no aparelho) ----------
   async function baixar(nome, urls, pesoIni, pesoFim){
     const cache = 'caches' in window ? await caches.open('lp-modelos-v1') : null;
+    const falhas=[];
     for(const url of urls){
       try{
+        $('carregandoTxt').textContent='Baixando '+nome+(url.startsWith('http')?' (servidor reserva)':'')+'…';
         if(cache){ const hit=await cache.match(url); if(hit){ progresso(pesoFim); return await hit.arrayBuffer(); } }
         const resp=await fetch(url);
         if(!resp.ok) throw new Error(resp.status);
@@ -270,9 +274,9 @@
         if(cache){ try{ await cache.put(url,new Response(blob)); }catch(e){} }
         progresso(pesoFim);
         return await blob.arrayBuffer();
-      }catch(e){ console.warn('falhou',url,e.message); }
+      }catch(e){ console.warn('falhou',url,e.message); falhas.push((url.startsWith('http')?'reserva':'site')+': '+(e.message==='Failed to fetch'?'sem acesso':'erro '+e.message)); }
     }
-    throw new Error('Não consegui baixar o modelo "'+nome+'". Verifique a internet.');
+    throw new Error('Não consegui baixar o "'+nome+'" ('+falhas.join(' · ')+'). Se acabou de publicar, aguarde 2 minutos e recarregue.');
   }
   function progresso(p){ $('barra').style.width=Math.round(p*100)+'%'; }
 
@@ -564,7 +568,10 @@
   // ---------- Início ----------
   abrirCamera();
   try{ await carregarModelos(); }
-  catch(e){ $('carregandoTxt').textContent='❌ '+e.message; setStatus('erro','err'); }
+  catch(e){
+    $('carregandoTxt').innerHTML='❌ '+e.message+'<br><button class="btn btn-sec" style="margin-top:10px;" onclick="location.reload()">Tentar de novo</button>';
+    setStatus('erro','err');
+  }
 })();
 </script>
 </body>
