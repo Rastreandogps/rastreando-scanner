@@ -450,7 +450,7 @@
     }
     if(rgbShow){ corBox.style.background=rgbShow; }
     corNome.textContent = classe ? NOME[classe] : '—';
-    corNome.style.color = classe==='azul' ? 'var(--azul)' : classe==='roxo' ? '#ce93d8' : 'var(--muted)';
+    corNome.style.color = classe==='azul' && calAzul ? calAzul.rgb : classe==='roxo' && calRoxo ? calRoxo.rgb : 'var(--muted)';
 
     if(!monitorando){ corCandidata=null; framesEstaveis=0; return; }
     if(!classe){ corCandidata=null; framesEstaveis=0; return; }
@@ -500,7 +500,8 @@
     const seq=$('seq');
     const p=document.createElement('div');
     p.className='pill';
-    p.style.background = cor==='azul' ? 'var(--azul)' : 'var(--roxo)';
+    const cal = cor==='azul' ? calAzul : calRoxo;
+    p.style.background = cal ? cal.rgb : (cor==='azul' ? 'var(--azul)' : 'var(--roxo)');
     seq.appendChild(p);
     while(seq.children.length>20) seq.removeChild(seq.firstChild);
   }
