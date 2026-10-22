@@ -448,10 +448,28 @@
   // ---------- Fila: guarda a FOTO do carro na hora certa, envia quando a nuvem liberar ----------
   // Resolve moto/carro rápido que aparece em 1 quadro enquanto a nuvem ainda lê o carro anterior.
   let fila=[], pendentes=[];
+  // ---------- Melhor foto: mede a nitidez da placa em cada quadro e guarda a mais nítida ----------
+  // A primeira aparição costuma ser a pior (carro entrando, borrado, cortado).
+  const ncv=document.createElement('canvas'); ncv.width=96; ncv.height=32;
+  const nctx=ncv.getContext('2d',{willReadFrequently:true});
+  function nitidez(b){
+    nctx.drawImage(fcv, b.x1, b.y1, Math.max(1,b.x2-b.x1), Math.max(1,b.y2-b.y1), 0,0,96,32);
+    const d=nctx.getImageData(0,0,96,32).data, W=96, H=32, g=new Float32Array(W*H);
+    for(let i=0,j=0;i<d.length;i+=4,j++) g[j]=d[i]*0.3+d[i+1]*0.59+d[i+2]*0.11;
+    let soma=0;
+    for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){ const k=y*W+x; soma+=Math.abs(4*g[k]-g[k-1]-g[k+1]-g[k-W]-g[k+W]); }
+    return soma/((W-2)*(H-2));
+  }
+  function atualizarMelhor(t){
+    if(t.placa || t.pendente) return;
+    const n=nitidez(t.box);
+    if(!t.melhor || n>t.melhor.n*1.05) t.melhor={n, canvas:recorteCarro({...t.box}), caixa:{...t.box}};
+  }
   function enfileirar(t){
     if(t.naFila || t.pendente) return;
     t.naFila=true; t.pendente=true; pendentes.push(t);
-    fila.push({t, foto:{canvas:recorteCarro({...t.box}), caixa:{...t.box}}});
+    fila.push({t, foto: t.melhor || {canvas:recorteCarro({...t.box}), caixa:{...t.box}}});
+    t.melhor=null;
     if(fila.length>4){ const x=fila.shift(); x.t.naFila=false; x.t.pendente=false; pendentes=pendentes.filter(p=>p!==x.t); }
   }
 
@@ -1004,17 +1022,25 @@
             if(motivoEspera) for(const t of alvosLeitura) if(pareceePlaca(t) && !(t.envios>0)) t.esperas[motivoEspera]=(t.esperas[motivoEspera]||0)+1;
           }
           const sobreParado = t => (t.quadros||0)<2 && parados.some(m=>iou(m.box,t.box)>0.4);
+          for(const t of alvosLeitura) if(pareceePlaca(t) || (t.detMax||0)>=0.4) atualizarMelhor(t);
           const querEnviar = t => pareceePlaca(t) && (t.envios||0)<3 && !t.pendente && !sobreParado(t) &&
-              (!t.envios || (t.tentarDeNovo && agora-t.ultimoEnvioT>400)                       // leitura falhou: tenta outro quadro
+              ((!t.envios && ((t.quadros||0)>=3 || agora-t.criado>=350))                        // 3 quadros: já dá para escolher a melhor foto
+                         || (t.tentarDeNovo && agora-t.ultimoEnvioT>400)                       // leitura falhou: tenta outro quadro
                          || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)); // chegou bem mais perto
           const podeAgora = !nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite();
           const candidatos = alvosLeitura.filter(querEnviar);
           if(podeAgora){
             if(fila.length){ const x=fila.shift(); x.t.naFila=false; if(!x.t.placa) enviarNuvem(x.t, x.foto); else { x.t.pendente=false; pendentes=pendentes.filter(p=>p!==x.t); } }
-            else if(candidatos.length){ const t=candidatos[0]; t.tentarDeNovo=false; enviarNuvem(t); } // não espera a resposta
+            else if(candidatos.length){ const t=candidatos[0]; t.tentarDeNovo=false; const f=t.melhor; t.melhor=null; enviarNuvem(t, f); } // envia a foto mais nítida
           }else{
             // nuvem ocupada: guarda a foto dos carros novos para não perder quem passa rápido
             for(const t of candidatos) if(!t.envios) enfileirar(t);
+          }
+          // carro que saiu da tela antes de ser enviado (ou de ter a 2ª tentativa): manda a melhor foto que juntou
+          for(const t of tracks){
+            if(t.placa || t.pendente || !t.melhor || agora-t.visto<250 || (t.envios||0)>=3) continue;
+            if(!(pareceePlaca(t) || (t.detMax||0)>=0.55)) continue;
+            if(!t.envios || t.tentarDeNovo){ t.tentarDeNovo=false; enfileirar(t); }
           }
           alvosLeitura.length=0;
         }
