@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<title>Leitor de Placas</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --txt:#e6edf3; --muted:#8b949e;
+    --ok:#2ea043; --warn:#d29922; --danger:#f85149; --azul:#1f6feb;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg); color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; min-height:100vh; padding-bottom:24px;}
+  body.alerta{animation:flash .35s infinite alternate;}
+  @keyframes flash{from{background:var(--bg);}to{background:#6b0f0f;}}
+
+  header{padding:12px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border);}
+  header h1{font-size:17px; font-weight:700;}
+  header h1 span{color:#58a6ff;}
+  .status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;}
+  .status-dot.on{background:var(--ok); box-shadow:0 0 8px var(--ok);}
+  .status-dot.err{background:var(--danger);}
+  #statusTxt{font-size:12px;color:var(--muted);}
+
+  .wrap{padding:12px; max-width:560px; margin:0 auto;}
+
+  .video-box{position:sticky; top:8px; z-index:20; width:100%; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  video{display:block; width:100%; height:100%; object-fit:cover;}
+  .ultima{position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.7); color:#fff; font-family:monospace; font-size:20px; font-weight:800; letter-spacing:2px; padding:4px 10px; border-radius:6px; border:2px solid #fff; display:none;}
+  .contador{position:absolute; right:8px; top:8px; background:rgba(0,0,0,.65); color:#fff; font-size:11px; padding:3px 8px; border-radius:6px;}
+
+  .painel{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;}
+  .titulo-sec{font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+
+  .btn{padding:14px; border:none; border-radius:10px; font-size:15px; font-weight:700; color:#fff; cursor:pointer; width:100%;}
+  .btn:active{opacity:.7;}
+  .btn-start{background:var(--ok); font-size:17px; padding:16px; margin-top:12px;}
+  .btn-start.parar{background:var(--danger);}
+  .btn-sec{background:#21262d; border:1px solid var(--border); color:var(--txt); font-size:13px; padding:10px;}
+
+  .add-row{display:flex; gap:8px;}
+  .add-row input{flex:1; padding:12px; border-radius:10px; border:1px solid var(--border); background:#0d1117; color:var(--txt); font-size:18px; font-family:monospace; font-weight:700; letter-spacing:2px; text-transform:uppercase;}
+  .add-row button{width:auto; padding:0 18px;}
+
+  .lista-alvos{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .alvo{display:flex; align-items:center; gap:8px; background:#0d1117; border:2px solid #f0b72f; border-radius:8px; padding:6px 6px 6px 12px; font-family:monospace; font-size:17px; font-weight:800; letter-spacing:2px;}
+  .alvo button{background:#30363d; border:none; color:var(--txt); width:26px; height:26px; border-radius:6px; font-size:14px; cursor:pointer;}
+  .vazio{font-size:13px; color:var(--muted);}
+
+  .cfg-row{display:flex; align-items:center; gap:10px; margin-top:10px; font-size:14px;}
+  .cfg-row input[type=password], .cfg-row input[type=text]{flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:#0d1117; color:var(--txt); font-size:14px;}
+  .cfg-row select{flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:#0d1117; color:var(--txt); font-size:14px;}
+  .cfg-row label{white-space:nowrap;}
+
+  #lidas{max-height:260px; overflow-y:auto;}
+  .lida{display:flex; justify-content:space-between; align-items:center; padding:7px 4px; border-bottom:1px solid #21262d; font-size:13px;}
+  .lida .pl{font-family:monospace; font-size:17px; font-weight:800; letter-spacing:2px;}
+  .lida .hr{color:var(--muted); font-size:12px;}
+  .lida.match .pl{color:#ff6b6b;}
+  .lida.parecida .pl{color:var(--warn);}
+
+  .achado{display:flex; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #21262d;}
+  .achado img{width:110px; border-radius:6px; border:1px solid var(--border);}
+  .achado .pl{font-family:monospace; font-size:18px; font-weight:800; letter-spacing:2px; color:#ff6b6b;}
+  .achado .info{font-size:12px; color:var(--muted); margin-top:2px;}
+
+  .erro{background:#3d1214; border:1px solid var(--danger); color:#ffb3b3; padding:10px; border-radius:8px; font-size:13px; margin-top:10px; display:none;}
+
+  .alerta-banner{display:none; position:fixed; inset:0; background:rgba(200,20,20,.94); z-index:50; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
+  .alerta-banner.show{display:flex;}
+  .alerta-banner.parecida{background:rgba(160,110,0,.95);}
+  .alerta-banner h2{font-size:30px; color:#fff;}
+  .alerta-banner .pl{font-family:monospace; font-size:46px; font-weight:900; letter-spacing:4px; color:#fff; background:rgba(0,0,0,.35); padding:6px 18px; border-radius:10px; border:3px solid #fff;}
+  .alerta-banner img{max-width:90vw; max-height:35vh; border-radius:10px; border:3px solid #fff;}
+  .alerta-banner p{color:#ffe0e0; font-size:14px;}
+  .alerta-banner button{padding:16px 40px; border-radius:12px; border:none; background:#fff; color:#b71c1c; font-size:17px; font-weight:800; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚘 Leitor de <span>Placas</span></h1>
+  <div><span class="status-dot" id="dot"></span><span id="statusTxt">parado</span></div>
+</header>
+
+<div class="wrap">
+
+  <div class="video-box">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="contador" id="contador">0 consultas</div>
+    <div class="ultima" id="ultima"></div>
+  </div>
+
+  <button class="btn btn-start" id="btnStart">▶ Iniciar leitura</button>
+  <div class="erro" id="erro"></div>
+
+  <div class="painel">
+    <div class="titulo-sec">Placas procuradas</div>
+    <div class="add-row">
+      <input type="text" id="novaPlaca" maxlength="8" placeholder="ABC1D23" autocomplete="off" autocapitalize="characters">
+      <button class="btn btn-sec" id="btnAdd" style="width:auto;">+ Adicionar</button>
+    </div>
+    <div class="lista-alvos" id="alvos"></div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec"><span>🚨 Encontradas</span></div>
+    <div id="achados"><div class="vazio">Nenhuma placa procurada encontrada ainda.</div></div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec"><span>Placas lidas</span><span id="totLidas" style="text-transform:none;">0</span></div>
+    <div id="lidas"><div class="vazio">As placas lidas aparecem aqui.</div></div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec">Configurações</div>
+    <div class="cfg-row">
+      <label>Token</label>
+      <input type="password" id="token" placeholder="Cole o API Token do Plate Recognizer">
+    </div>
+    <div class="cfg-row">
+      <label>Intervalo</label>
+      <select id="intervalo">
+        <option value="1000">1 foto por segundo</option>
+        <option value="2000" selected>1 foto a cada 2 s</option>
+        <option value="3000">1 foto a cada 3 s</option>
+        <option value="5000">1 foto a cada 5 s</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkParecida" checked style="width:20px;height:20px;accent-color:var(--warn);">
+        Avisar placas parecidas (1 caractere diferente)
+      </label>
+    </div>
+    <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
+  </div>
+
+</div>
+
+<div class="alerta-banner" id="banner">
+  <h2 id="bannerTit">🚨 PLACA ENCONTRADA!</h2>
+  <div class="pl" id="bannerPlaca"></div>
+  <img id="bannerImg" alt="">
+  <p id="bannerInfo"></p>
+  <button id="btnOk">OK, vi</button>
+</div>
+
+<canvas id="cv" style="display:none;"></canvas>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const video=$('video'), cv=$('cv'), ctx=cv.getContext('2d');
+  const API='https://api.platerecognizer.com/v1/plate-reader/';
+
+  let rodando=false, timer=null, ocupado=false, wakeLock=null, consultas=0;
+  let alvos=[], lidas=[], ultimoAlerta={};
+  const COOLDOWN=60000; // não repete alarme da mesma placa por 60s
+
+  // ---------- Armazenamento local ----------
+  const ls={
+    get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+    set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  };
+  alvos=ls.get('lp_alvos',[]);
+  const TOKEN_PADRAO='4c1c2b61fdd2cba0c732f67ff686e96f46a46e0e';
+  $('token').value=ls.get('lp_token','') || TOKEN_PADRAO;
+  $('intervalo').value=ls.get('lp_intervalo','2000');
+  $('token').addEventListener('change',()=>ls.set('lp_token',$('token').value.trim()));
+  $('intervalo').addEventListener('change',()=>{ ls.set('lp_intervalo',$('intervalo').value); if(rodando){ clearInterval(timer); timer=setInterval(capturar, parseInt($('intervalo').value)); } });
+
+  // ---------- Normalização e comparação ----------
+  const limpa=s=>(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  // Troca caracteres que o leitor costuma confundir por um "canônico"
+  const MAPA={O:'0',Q:'0',D:'0',I:'1',L:'1',B:'8',S:'5',Z:'2',G:'6',T:'7'};
+  const canon=s=>limpa(s).split('').map(c=>MAPA[c]||c).join('');
+  function diferenca(a,b){
+    if(a.length!==b.length) return 99;
+    let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++;
+    return d;
+  }
+  function confere(placaLida){
+    const c=canon(placaLida);
+    for(const a of alvos){
+      if(canon(a)===c) return {tipo:'match', alvo:a};
+    }
+    if($('chkParecida').checked){
+      for(const a of alvos){
+        if(diferenca(canon(a),c)===1) return {tipo:'parecida', alvo:a};
+      }
+    }
+    return null;
+  }
+
+  // ---------- Lista de placas procuradas ----------
+  function renderAlvos(){
+    const el=$('alvos');
+    if(!alvos.length){ el.innerHTML='<div class="vazio">Nenhuma placa cadastrada. Adicione acima.</div>'; return; }
+    el.innerHTML='';
+    alvos.forEach((p,i)=>{
+      const d=document.createElement('div'); d.className='alvo';
+      d.innerHTML=`<span>${p}</span><button title="Remover">✕</button>`;
+      d.querySelector('button').onclick=()=>{ alvos.splice(i,1); ls.set('lp_alvos',alvos); renderAlvos(); };
+      el.appendChild(d);
+    });
+  }
+  function addPlaca(){
+    const p=limpa($('novaPlaca').value);
+    if(p.length!==7){ alert('Placa inválida. Use 7 caracteres, ex: ABC1D23 ou ABC1234.'); return; }
+    if(!alvos.includes(p)){ alvos.push(p); ls.set('lp_alvos',alvos); }
+    $('novaPlaca').value=''; renderAlvos();
+  }
+  $('btnAdd').onclick=addPlaca;
+  $('novaPlaca').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlaca(); });
+  renderAlvos();
+
+  // ---------- Câmera ----------
+  async function abrirCamera(){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }, audio:false
+      });
+      video.srcObject=stream;
+      setStatus('câmera pronta');
+    }catch(e){
+      setStatus('erro na câmera','err');
+      mostraErro('Não foi possível acessar a câmera. Permita o acesso e recarregue a página. ('+e.message+')');
+    }
+  }
+
+  // ---------- Captura e envio ----------
+  async function capturar(){
+    if(ocupado || !video.videoWidth) return;
+    ocupado=true;
+    try{
+      const larg=Math.min(1280, video.videoWidth);
+      const esc=larg/video.videoWidth;
+      cv.width=larg; cv.height=Math.round(video.videoHeight*esc);
+      ctx.drawImage(video,0,0,cv.width,cv.height);
+      const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.82));
+      const fd=new FormData();
+      fd.append('upload', blob, 'frame.jpg');
+      fd.append('regions','br');
+      const resp=await fetch(API,{ method:'POST', headers:{'Authorization':'Token '+$('token').value.trim()}, body:fd });
+      consultas++; $('contador').textContent=consultas+' consultas';
+      if(resp.status===401||resp.status===403){ throw new Error('Token inválido ou sem permissão. Confira o token nas configurações.'); }
+      if(resp.status===429){ throw new Error('Limite de consultas por segundo atingido. Aumente o intervalo.'); }
+      if(resp.status===402){ throw new Error('Cota de consultas da sua conta acabou.'); }
+      if(!resp.ok){ throw new Error('Erro do servidor ('+resp.status+').'); }
+      const data=await resp.json();
+      escondeErro();
+      processar(data, cv.toDataURL('image/jpeg',0.6));
+    }catch(e){
+      mostraErro(e.message.includes('Failed to fetch') ? 'Sem conexão com o Plate Recognizer. Verifique a internet.' : e.message);
+      if(/Token|Cota/.test(e.message)) parar();
+    }finally{
+      ocupado=false;
+    }
+  }
+
+  function processar(data, foto){
+    (data.results||[]).forEach(r=>{
+      const principal=limpa(r.plate);
+      if(!principal) return;
+      // verifica placa principal + candidatas alternativas
+      const opcoes=[principal, ...(r.candidates||[]).map(c=>limpa(c.plate))];
+      let res=null;
+      for(const o of opcoes){ res=confere(o); if(res && res.tipo==='match') break; }
+      registrarLida(principal, r.score, res);
+      if(res) alarme(res, principal, foto, r.score);
+    });
+  }
+
+  function registrarLida(placa, score, res){
+    const u=$('ultima'); u.style.display='block'; u.textContent=placa;
+    u.style.borderColor = res ? (res.tipo==='match'?'#ff6b6b':'#d29922') : '#fff';
+    const agora=Date.now();
+    // evita duplicar a mesma placa lida em sequência
+    if(lidas.length && lidas[0].placa===placa && agora-lidas[0].t<8000) return;
+    lidas.unshift({placa, t:agora, score, tipo:res?res.tipo:''});
+    if(lidas.length>200) lidas.pop();
+    renderLidas();
+  }
+  function renderLidas(){
+    const el=$('lidas');
+    $('totLidas').textContent=lidas.length;
+    if(!lidas.length){ el.innerHTML='<div class="vazio">As placas lidas aparecem aqui.</div>'; return; }
+    el.innerHTML=lidas.slice(0,80).map(l=>
+      `<div class="lida ${l.tipo}"><span class="pl">${l.placa}</span><span class="hr">${new Date(l.t).toLocaleTimeString('pt-BR')} · ${Math.round((l.score||0)*100)}%</span></div>`
+    ).join('');
+  }
+
+  // ---------- Alarme ----------
+  let audioCtx=null;
+  function som(forte){
+    try{
+      audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+      let t=audioCtx.currentTime;
+      const n=forte?12:4;
+      for(let i=0;i<n;i++){
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type='square'; o.frequency.value = forte ? (i%2?900:1400) : 700;
+        g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+        o.start(t); o.stop(t+0.22); t+=0.25;
+      }
+    }catch(e){}
+  }
+  function alarme(res, lida, foto, score){
+    const chave=res.alvo+res.tipo, agora=Date.now();
+    if(ultimoAlerta[chave] && agora-ultimoAlerta[chave]<COOLDOWN) return;
+    ultimoAlerta[chave]=agora;
+    const forte=res.tipo==='match';
+    // registra achado
+    const ach=$('achados');
+    if(ach.querySelector('.vazio')) ach.innerHTML='';
+    const d=document.createElement('div'); d.className='achado';
+    d.innerHTML=`<img src="${foto}"><div><div class="pl">${lida}</div>
+      <div class="info">${forte?'Placa procurada':'Parecida com '+res.alvo} · ${new Date().toLocaleTimeString('pt-BR')} · ${Math.round((score||0)*100)}%</div></div>`;
+    ach.prepend(d);
+    // tela de alerta
+    const b=$('banner');
+    b.classList.toggle('parecida', !forte);
+    $('bannerTit').textContent = forte ? '🚨 PLACA ENCONTRADA!' : '⚠️ PLACA PARECIDA';
+    $('bannerPlaca').textContent = lida;
+    $('bannerImg').src = foto;
+    $('bannerInfo').textContent = forte ? `Procurada: ${res.alvo}` : `Lida: ${lida} · Procurada: ${res.alvo} — confira visualmente`;
+    b.classList.add('show');
+    if(forte) document.body.classList.add('alerta');
+    som(forte);
+    if(navigator.vibrate) navigator.vibrate(forte?[600,200,600,200,1000]:[300,150,300]);
+  }
+  $('btnOk').onclick=()=>{ $('banner').classList.remove('show'); document.body.classList.remove('alerta'); };
+
+  // ---------- Controles ----------
+  async function iniciar(){
+    if(!$('token').value.trim()){ mostraErro('Cole o API Token do Plate Recognizer nas Configurações (lá embaixo).'); return; }
+    ls.set('lp_token',$('token').value.trim());
+    if(!alvos.length && !confirm('Nenhuma placa procurada cadastrada. Iniciar mesmo assim (só leitura)?')) return;
+    rodando=true;
+    timer=setInterval(capturar, parseInt($('intervalo').value));
+    $('btnStart').textContent='⏹ Parar leitura'; $('btnStart').classList.add('parar');
+    setStatus('lendo placas','on');
+    try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){}
+    try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+  function parar(){
+    rodando=false; clearInterval(timer);
+    $('btnStart').textContent='▶ Iniciar leitura'; $('btnStart').classList.remove('parar');
+    setStatus('parado');
+    if(wakeLock){ wakeLock.release(); wakeLock=null; }
+  }
+  $('btnStart').onclick=()=> rodando ? parar() : iniciar();
+  $('btnLimpar').onclick=()=>{ lidas=[]; renderLidas(); };
+
+  document.addEventListener('visibilitychange', async ()=>{
+    if(!document.hidden && rodando){ try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
+  });
+
+  function setStatus(t,cls){ $('statusTxt').textContent=t; const d=$('dot'); d.className='status-dot'+(cls?' '+cls:''); }
+  function mostraErro(m){ const e=$('erro'); e.textContent=m; e.style.display='block'; }
+  function escondeErro(){ $('erro').style.display='none'; }
+
+  abrirCamera();
+})();
+</script>
+</body>
+</html>
