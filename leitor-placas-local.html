@@ -31,6 +31,9 @@
   .chip{position:absolute; background:rgba(0,0,0,.65); color:#fff; font-size:11px; padding:3px 8px; border-radius:6px;}
   #fps{right:8px; top:8px;}
   #motor{right:8px; bottom:8px;}
+  video{transform-origin:center center; transition:transform .2s;}
+  .zbtn{background:rgba(0,0,0,.6); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:4px 8px; font-size:12px; font-weight:700;}
+  .zbtn.ativo{background:#1f6feb; border-color:#58a6ff;}
   #btnLanterna{position:absolute; left:8px; top:8px; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:5px 10px; font-size:14px; display:none;}
 
   .carregando{margin-top:12px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; font-size:13px;}
@@ -102,6 +105,12 @@
     <div class="chip" id="fps">— fps</div>
     <div class="chip" id="motor">motor: —</div>
     <button id="btnLanterna" title="Lanterna">🔦</button>
+    <div id="zoomBox" style="position:absolute; left:8px; bottom:8px; display:flex; gap:4px;">
+      <button class="zbtn ativo" data-z="1">1x</button>
+      <button class="zbtn" data-z="1.5">1,5x</button>
+      <button class="zbtn" data-z="2">2x</button>
+      <button class="zbtn" data-z="3">3x</button>
+    </div>
   </div>
 
   <div class="carregando" id="carregando">
@@ -303,7 +312,7 @@
   // ---------- Câmera ----------
   async function abrirCamera(){
     try{
-      const stream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
+      const stream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }, audio:false });
       video.srcObject=stream;
       const track=stream.getVideoTracks()[0];
       const caps=track.getCapabilities ? track.getCapabilities() : {};
@@ -324,17 +333,29 @@
   const pcv=document.createElement('canvas'), pctx=pcv.getContext('2d',{willReadFrequently:true}); // recorte da placa p/ OCR
   pcv.width=128; pcv.height=64;
 
+  // Área analisada = só o que aparece na prévia (e o zoom escolhido).
+  // Assim o detector não desperdiça resolução com céu e chão que ficam fora da tela.
+  let zoom=1;
+  function calcROI(){
+    const vw=video.videoWidth, vh=video.videoHeight;
+    const r=video.parentElement.getBoundingClientRect();
+    const esc=Math.max(r.width/vw, r.height/vh);
+    const w=r.width/esc/zoom, h=r.height/esc/zoom;
+    return {x:(vw-w)/2, y:(vh-h)/2, w, h};
+  }
+
   function prepararDetector(){
     const vw=video.videoWidth, vh=video.videoHeight, s=detTam;
     fcv.width=vw; fcv.height=vh; fctx.drawImage(video,0,0);
-    const r=Math.min(s/vw,s/vh), nw=Math.round(vw*r), nh=Math.round(vh*r), dw=(s-nw)/2, dh=(s-nh)/2;
+    const roi=calcROI();
+    const r=Math.min(s/roi.w,s/roi.h), nw=Math.round(roi.w*r), nh=Math.round(roi.h*r), dw=(s-nw)/2, dh=(s-nh)/2;
     lcv.width=s; lcv.height=s;
     lctx.fillStyle='rgb(114,114,114)'; lctx.fillRect(0,0,s,s);
-    lctx.drawImage(fcv,0,0,vw,vh, Math.round(dw-0.1),Math.round(dh-0.1),nw,nh);
+    lctx.drawImage(fcv,roi.x,roi.y,roi.w,roi.h, Math.round(dw-0.1),Math.round(dh-0.1),nw,nh);
     const d=lctx.getImageData(0,0,s,s).data, n=s*s;
     const f=new Float32Array(3*n);
     for(let i=0,j=0;i<n;i++,j+=4){ f[i]=d[j]/255; f[n+i]=d[j+1]/255; f[2*n+i]=d[j+2]/255; }
-    return {tensor:new ort.Tensor('float32',f,[1,3,s,s]), r, dw, dh};
+    return {tensor:new ort.Tensor('float32',f,[1,3,s,s]), r, dw, dh, roi};
   }
 
   async function detectar(){
@@ -344,12 +365,22 @@
     const data=o.data, n=data.length/7, boxes=[];
     for(let i=0;i<n;i++){
       const sc=data[i*7+6]; if(sc<0.35) continue;
-      const x1=(data[i*7+1]-p.dw)/p.r, y1=(data[i*7+2]-p.dh)/p.r, x2=(data[i*7+3]-p.dw)/p.r, y2=(data[i*7+4]-p.dh)/p.r;
-      if(x2-x1<20||y2-y1<8) continue;
+      const x1=(data[i*7+1]-p.dw)/p.r+p.roi.x, y1=(data[i*7+2]-p.dh)/p.r+p.roi.y;
+      const x2=(data[i*7+3]-p.dw)/p.r+p.roi.x, y2=(data[i*7+4]-p.dh)/p.r+p.roi.y;
+      if(x2-x1<12||y2-y1<5) continue;
       boxes.push({x1,y1,x2,y2,score:sc});
     }
     return boxes;
   }
+  const PLACA_MIN=55; // largura mínima (pixels reais) para tentar ler os caracteres
+
+  function setZoom(z){
+    zoom=z; ls.set('lpl_zoom',z);
+    video.style.transform='scale('+z+')';
+    document.querySelectorAll('.zbtn').forEach(b=>b.classList.toggle('ativo', parseFloat(b.dataset.z)===z));
+    tracks=[];
+  }
+  document.querySelectorAll('.zbtn').forEach(b=>b.onclick=()=>setZoom(parseFloat(b.dataset.z)));
 
   async function lerPlaca(b){
     // pequena margem em volta da placa ajuda o OCR
@@ -402,6 +433,8 @@
         const confMin=parseFloat($('confMin').value), precisa=parseInt($('votos').value);
         for(const t of tracks){
           if(t.visto!==Math.max(...tracks.map(x=>x.visto)) && Date.now()-t.visto>100) continue;
+          if(t.box.x2-t.box.x1 < PLACA_MIN){ t.longe=true; continue; } // pequena demais: nem tenta ler
+          t.longe=false;
           const r=await lerPlaca(t.box);
           const p=corrigeFormato(limpa(r.txt));
           t.ultima=p;
@@ -428,10 +461,9 @@
     if(ov.width!==Math.round(r.width)||ov.height!==Math.round(r.height)){ ov.width=Math.round(r.width); ov.height=Math.round(r.height); }
     octx.clearRect(0,0,ov.width,ov.height);
     if(!rodando || !video.videoWidth){ requestAnimationFrame(desenhar); return; }
-    const vw=video.videoWidth, vh=video.videoHeight;
-    const esc=Math.max(ov.width/vw, ov.height/vh), offX=(vw*esc-ov.width)/2, offY=(vh*esc-ov.height)/2;
+    const roi=calcROI(), k=ov.width/roi.w;
     for(const t of tracks){
-      const b=t.box, x=b.x1*esc-offX, y=b.y1*esc-offY, w=(b.x2-b.x1)*esc, h=(b.y2-b.y1)*esc;
+      const b=t.box, x=(b.x1-roi.x)*k, y=(b.y1-roi.y)*k, w=(b.x2-b.x1)*k, h=(b.y2-b.y1)*k;
       const cor = t.tipo==='match' ? '#ff4d4d' : t.tipo==='parecida' ? '#f0b72f' : t.placa ? '#3fb950' : '#ffffff';
       octx.lineWidth=3; octx.strokeStyle=cor; octx.shadowColor='rgba(0,0,0,.8)'; octx.shadowBlur=4;
       octx.strokeRect(x,y,w,h);
@@ -441,11 +473,21 @@
       octx.moveTo(x,y+h-L); octx.lineTo(x,y+h); octx.lineTo(x+L,y+h);
       octx.moveTo(x+w-L,y+h); octx.lineTo(x+w,y+h); octx.lineTo(x+w,y+h-L);
       octx.stroke();
-      const label=t.placa || (t.ultima ? t.ultima+' ?' : '…');
-      octx.shadowBlur=0; octx.font='bold 15px monospace';
-      const tw=octx.measureText(label).width+12;
-      octx.fillStyle=cor; octx.fillRect(x, Math.max(0,y-22), tw, 20);
-      octx.fillStyle = (t.tipo==='parecida'||!t.placa) ? '#000' : '#fff'; octx.fillText(label, x+6, Math.max(15,y-7));
+      octx.shadowBlur=0;
+      if(t.placa){
+        // placa confirmada: etiqueta cheia na cor do estado
+        octx.font='bold 15px monospace';
+        const tw=octx.measureText(t.placa).width+12;
+        octx.fillStyle=cor; octx.fillRect(x, Math.max(0,y-22), tw, 20);
+        octx.fillStyle = t.tipo==='parecida' ? '#000' : '#fff'; octx.fillText(t.placa, x+6, Math.max(15,y-7));
+      }else{
+        // ainda lendo: etiqueta discreta
+        const label = t.longe ? 'aproxime' : (t.ultima ? t.ultima+'?' : '…');
+        octx.font='bold 11px monospace';
+        const tw=octx.measureText(label).width+8;
+        octx.fillStyle='rgba(0,0,0,.6)'; octx.fillRect(x, Math.max(0,y-16), tw, 14);
+        octx.fillStyle='#fff'; octx.fillText(label, x+4, Math.max(11,y-5));
+      }
     }
     requestAnimationFrame(desenhar);
   }
@@ -566,6 +608,7 @@
   function mostraErro(m){ const e=$('erro'); e.textContent=m; e.style.display='block'; }
 
   // ---------- Início ----------
+  setZoom(ls.get('lpl_zoom',1));
   abrirCamera();
   try{ await carregarModelos(); }
   catch(e){
