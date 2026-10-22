@@ -89,6 +89,7 @@
   <div class="video-box">
     <video id="video" autoplay playsinline muted></video>
     <div class="contador" id="contador">0 consultas</div>
+    <div class="contador" id="movInd" style="top:auto; bottom:8px; right:8px;">● parado</div>
     <div class="ultima" id="ultima"></div>
   </div>
 
@@ -127,6 +128,28 @@
         <option value="2000" selected>1 foto a cada 2 s</option>
         <option value="3000">1 foto a cada 3 s</option>
         <option value="5000">1 foto a cada 5 s</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkMov" checked style="width:20px;height:20px;accent-color:var(--ok);">
+        Economia: só consultar quando houver movimento na imagem
+      </label>
+    </div>
+    <div class="cfg-row">
+      <label>Confiança mínima</label>
+      <select id="confMin">
+        <option value="0.7">70% (lê mais, aceita mais erro)</option>
+        <option value="0.8" selected>80% (equilibrado)</option>
+        <option value="0.9">90% (só leituras muito seguras)</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label>Sensibilidade</label>
+      <select id="sensib">
+        <option value="4">Alta (detecta movimento pequeno)</option>
+        <option value="8" selected>Média</option>
+        <option value="14">Baixa (só movimento grande)</option>
       </select>
     </div>
     <div class="cfg-row">
@@ -231,9 +254,35 @@
     }
   }
 
+  // ---------- Detecção de movimento (economia de consultas) ----------
+  const mcv=document.createElement('canvas'); mcv.width=64; mcv.height=36;
+  const mctx=mcv.getContext('2d',{willReadFrequently:true});
+  let quadroAnterior=null;
+  function houveMovimento(){
+    mctx.drawImage(video,0,0,64,36);
+    const d=mctx.getImageData(0,0,64,36).data;
+    const g=new Uint8Array(64*36);
+    for(let i=0,j=0;i<d.length;i+=4,j++) g[j]=(d[i]*3+d[i+1]*6+d[i+2])/10;
+    let mudou=0;
+    if(quadroAnterior){
+      const lim=parseInt($('sensib').value)*3;
+      for(let j=0;j<g.length;j++) if(Math.abs(g[j]-quadroAnterior[j])>lim) mudou++;
+    }
+    quadroAnterior=g;
+    const pct=mudou/g.length*100;
+    return pct >= parseInt($('sensib').value)/4; // % mínimo da imagem que mudou
+  }
+
   // ---------- Captura e envio ----------
   async function capturar(){
     if(ocupado || !video.videoWidth) return;
+    if($('chkMov').checked){
+      const mov=houveMovimento();
+      const ind=$('movInd');
+      ind.textContent = mov ? '● movimento' : '● parado';
+      ind.style.color = mov ? '#3fb950' : '#8b949e';
+      if(!mov) return; // imagem parada: não gasta consulta
+    }
     ocupado=true;
     try{
       const larg=Math.min(1280, video.videoWidth);
@@ -261,12 +310,32 @@
     }
   }
 
+  // Formato brasileiro: ABC1234 (antiga) ou ABC1D23 (Mercosul)
+  const FORMATO=/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/;
+  // Corrige confusões comuns respeitando a posição (letras nas 3 primeiras, números nas posições 4, 6 e 7)
+  const P_LETRA={'0':'O','1':'I','2':'Z','5':'S','6':'G','8':'B','7':'T'};
+  const P_NUM={O:'0',Q:'0',D:'0',I:'1',L:'1',Z:'2',S:'5',G:'6',B:'8',T:'7'};
+  function corrigeFormato(p){
+    if(p.length!==7) return p;
+    const c=p.split('');
+    for(const i of [0,1,2]) if(P_LETRA[c[i]]) c[i]=P_LETRA[c[i]];
+    for(const i of [3,5,6]) if(P_NUM[c[i]]) c[i]=P_NUM[c[i]];
+    return c.join('');
+  }
+  const valida=p=>FORMATO.test(p);
+
   function processar(data, foto){
+    const confMin=parseFloat($('confMin').value);
     (data.results||[]).forEach(r=>{
-      const principal=limpa(r.plate);
-      if(!principal) return;
-      // verifica placa principal + candidatas alternativas
-      const opcoes=[principal, ...(r.candidates||[]).map(c=>limpa(c.plate))];
+      // descarta "placas fantasma": baixa confiança na leitura ou na detecção da placa
+      if((r.score||0) < confMin) return;
+      if(r.dscore!==undefined && r.dscore < 0.5) return;
+      // descarta placas minúsculas na imagem (ruído de fundo)
+      if(r.box && (r.box.xmax - r.box.xmin) < 25) return;
+      const opcoesBrutas=[r.plate, ...(r.candidates||[]).map(c=>c.plate)].map(limpa).map(corrigeFormato);
+      const opcoes=[...new Set(opcoesBrutas.filter(valida))];
+      if(!opcoes.length) return; // leitura incompleta (ex: F7C11) — ignora
+      const principal=opcoes[0];
       let res=null;
       for(const o of opcoes){ res=confere(o); if(res && res.tipo==='match') break; }
       registrarLida(principal, r.score, res);
@@ -277,10 +346,13 @@
   function registrarLida(placa, score, res){
     const u=$('ultima'); u.style.display='block'; u.textContent=placa;
     u.style.borderColor = res ? (res.tipo==='match'?'#ff6b6b':'#d29922') : '#fff';
+    clearTimeout(registrarLida._t);
+    registrarLida._t=setTimeout(()=>{ u.style.display='none'; }, 4000); // some após 4s
     const agora=Date.now();
-    // evita duplicar a mesma placa lida em sequência
-    if(lidas.length && lidas[0].placa===placa && agora-lidas[0].t<8000) return;
-    lidas.unshift({placa, t:agora, score, tipo:res?res.tipo:''});
+    // placa já está no histórico: não cria nova linha, só conta quantas vezes foi vista
+    const rep=lidas.find(l=>l.placa===placa);
+    if(rep){ rep.vezes=(rep.vezes||1)+1; renderLidas(); return; }
+    lidas.unshift({placa, t:agora, score, tipo:res?res.tipo:'', vezes:1});
     if(lidas.length>200) lidas.pop();
     renderLidas();
   }
@@ -289,7 +361,7 @@
     $('totLidas').textContent=lidas.length;
     if(!lidas.length){ el.innerHTML='<div class="vazio">As placas lidas aparecem aqui.</div>'; return; }
     el.innerHTML=lidas.slice(0,80).map(l=>
-      `<div class="lida ${l.tipo}"><span class="pl">${l.placa}</span><span class="hr">${new Date(l.t).toLocaleTimeString('pt-BR')} · ${Math.round((l.score||0)*100)}%</span></div>`
+      `<div class="lida ${l.tipo}"><span class="pl">${l.placa}</span><span class="hr">${l.vezes>1?'<b style="color:#e6edf3;">'+l.vezes+'x</b> · ':''}${new Date(l.t).toLocaleTimeString('pt-BR')} · ${Math.round((l.score||0)*100)}%</span></div>`
     ).join('');
   }
 
@@ -355,6 +427,14 @@
   }
   $('btnStart').onclick=()=> rodando ? parar() : iniciar();
   $('btnLimpar').onclick=()=>{ lidas=[]; renderLidas(); };
+  // salva preferências
+  $('chkMov').checked=ls.get('lp_mov',true);
+  $('sensib').value=ls.get('lp_sensib','8');
+  $('chkMov').addEventListener('change',()=>{ ls.set('lp_mov',$('chkMov').checked); $('movInd').style.display=$('chkMov').checked?'block':'none'; });
+  $('sensib').addEventListener('change',()=>ls.set('lp_sensib',$('sensib').value));
+  $('confMin').value=ls.get('lp_conf','0.8');
+  $('confMin').addEventListener('change',()=>ls.set('lp_conf',$('confMin').value));
+  $('movInd').style.display=$('chkMov').checked?'block':'none';
 
   document.addEventListener('visibilitychange', async ()=>{
     if(!document.hidden && rodando){ try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} }
