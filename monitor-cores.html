@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<title>Monitor de Cores</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --border:#30363d; --txt:#e6edf3; --muted:#8b949e;
+    --azul:#00bcd4; --roxo:#9c27b0; --ok:#2ea043; --warn:#d29922; --danger:#f85149;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg); color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; min-height:100vh; padding-bottom:20px;}
+  body.alerta{animation:flash .4s infinite alternate;}
+  @keyframes flash{from{background:var(--bg);}to{background:#5a1010;}}
+
+  header{padding:14px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border);}
+  header h1{font-size:17px; font-weight:700;}
+  header h1 span{color:var(--azul);}
+  .status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;}
+  .status-dot.on{background:var(--ok); box-shadow:0 0 8px var(--ok);}
+  #statusTxt{font-size:12px;color:var(--muted);}
+
+  .wrap{padding:12px; max-width:520px; margin:0 auto;}
+
+  .video-box{position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border);}
+  video{width:100%; display:block;}
+  #alvo{position:absolute; width:56px; height:56px; border:3px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.6); touch-action:none; cursor:move;}
+  #alvo::after{content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%);}
+  .hint{position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none;}
+
+  .painel{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;}
+
+  .contador-area{display:flex; align-items:center; gap:14px;}
+  .cor-atual{width:64px; height:64px; border-radius:12px; border:2px solid var(--border); background:#222; flex-shrink:0; transition:background .2s;}
+  .contador-info{flex:1;}
+  .contador-info .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;}
+  #contagem{font-size:40px; font-weight:800; line-height:1;}
+  #contagem small{font-size:16px; color:var(--muted); font-weight:400;}
+  #corNome{font-size:13px; font-weight:600; margin-top:2px;}
+
+  .seq{display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; min-height:22px;}
+  .seq .pill{width:22px; height:22px; border-radius:6px; border:1px solid rgba(255,255,255,.25);}
+
+  .cal-row{display:flex; gap:10px; margin-top:4px;}
+  .btn{flex:1; padding:13px 10px; border:none; border-radius:10px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; transition:opacity .15s;}
+  .btn:active{opacity:.7;}
+  .btn-azul{background:linear-gradient(135deg,#0097a7,#00bcd4);}
+  .btn-roxo{background:linear-gradient(135deg,#7b1fa2,#9c27b0);}
+  .btn-start{background:var(--ok); width:100%; margin-top:10px; padding:16px; font-size:16px;}
+  .btn-start.parar{background:var(--danger);}
+  .btn-reset{background:#21262d; border:1px solid var(--border); color:var(--txt); width:100%; margin-top:8px; padding:11px;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  .cal-status{display:flex; gap:10px; margin-top:10px;}
+  .cal-chip{flex:1; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); background:#0d1117; border:1px solid var(--border); border-radius:8px; padding:8px 10px;}
+  .cal-chip .sw{width:18px; height:18px; border-radius:5px; background:#333; border:1px solid var(--border);}
+
+  .titulo-sec{font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;}
+
+  .cfg-row{display:flex; align-items:center; gap:10px; margin-top:10px; font-size:14px;}
+  .cfg-row label{color:var(--txt);}
+  .cfg-row input[type=number]{width:64px; padding:9px; border-radius:8px; border:1px solid var(--border); background:#0d1117; color:var(--txt); font-size:16px; font-weight:700; text-align:center;}
+  .cfg-row input[type=checkbox]{width:20px; height:20px; accent-color:var(--ok);}
+  .cfg-row input[type=range]{accent-color:var(--azul);}
+
+  #log{font-size:12px; color:var(--muted); max-height:140px; overflow-y:auto; line-height:1.9;}
+  #log b{color:var(--txt);}
+
+  .alerta-banner{display:none; position:fixed; inset:0; background:rgba(216,30,30,.92); z-index:50; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:20px;}
+  .alerta-banner.show{display:flex;}
+  .alerta-banner h2{font-size:34px; color:#fff;}
+  .alerta-banner p{color:#ffd7d7; font-size:15px;}
+  .alerta-banner button{padding:16px 40px; border-radius:12px; border:none; background:#fff; color:#b71c1c; font-size:17px; font-weight:800; cursor:pointer;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 Monitor de <span>Cores</span></h1>
+  <div><span class="status-dot" id="dot"></span><span id="statusTxt">parado</span></div>
+</header>
+
+<div class="wrap">
+
+  <div class="video-box">
+    <video id="video" autoplay playsinline muted></video>
+    <div id="alvo" style="left:50%; top:50%;"></div>
+    <div class="hint">Arraste o círculo até o local onde a cor aparece</div>
+  </div>
+
+  <div class="painel">
+    <div class="contador-area">
+      <div class="cor-atual" id="corBox"></div>
+      <div class="contador-info">
+        <div class="label">Sequências Azul → Roxo</div>
+        <div id="contagem">0<small> / 3</small></div>
+        <div id="corNome">—</div>
+      </div>
+    </div>
+    <div class="seq" id="seq"></div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec">1. Calibrar cores</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Aponte o círculo para a cor na tela do computador e toque no botão correspondente.</div>
+    <div class="cal-row">
+      <button class="btn btn-azul" id="btnCalAzul">Capturar AZUL</button>
+      <button class="btn btn-roxo" id="btnCalRoxo">Capturar ROXO</button>
+    </div>
+    <div class="cal-status">
+      <div class="cal-chip"><div class="sw" id="swAzul"></div><span id="stAzul">Azul: não calibrado</span></div>
+      <div class="cal-chip"><div class="sw" id="swRoxo"></div><span id="stRoxo">Roxo: não calibrado</span></div>
+    </div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec">2. Configurar</div>
+    <div class="cfg-row">
+      <label for="meta">Alertar após</label>
+      <input type="number" id="meta" min="1" max="20" value="5">
+      <span>intercalações</span>
+    </div>
+    <div class="cfg-row">
+      <label style="display:flex;align-items:center;gap:8px;flex:1;">
+        <input type="checkbox" id="chkReset" checked>
+        Roxo repetido zera a contagem
+      </label>
+    </div>
+    <div class="cfg-row">
+      <label for="tam">Tamanho do círculo</label>
+      <input type="range" id="tam" min="15" max="80" value="30" style="flex:1;">
+    </div>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec">3. Monitorar</div>
+    <button class="btn btn-start" id="btnStart" disabled>▶ Iniciar monitoramento</button>
+    <button class="btn btn-reset" id="btnReset">Zerar contagem e histórico</button>
+  </div>
+
+  <div class="painel">
+    <div class="titulo-sec">Histórico</div>
+    <div id="log">Aguardando…</div>
+  </div>
+
+</div>
+
+<div class="alerta-banner" id="banner">
+  <h2>🚨 ALERTA!</h2>
+  <p id="bannerTxt">Intercalações Azul → Roxo atingidas</p>
+  <button id="btnOkAlerta">OK, entendi</button>
+</div>
+
+<canvas id="cv" style="display:none;"></canvas>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const video=$('video'), cv=$('cv'), ctx=cv.getContext('2d',{willReadFrequently:true});
+  const alvo=$('alvo'), corBox=$('corBox'), corNome=$('corNome');
+
+  let stream=null, monitorando=false, timer=null, wakeLock=null;
+  let calAzul=null, calRoxo=null;           // {h,s,v}
+  let contagem=0, ultimaCorRegistrada=null; // 'azul' | 'roxo'
+  let corCandidata=null, framesEstaveis=0;
+  let raioPct=0.03;                         // raio do círculo em % da largura do vídeo
+  const FRAMES_PARA_CONFIRMAR=4;            // ~0.8s estável para registrar
+  const INTERVALO=200;                      // ms entre leituras
+  const TOLERANCIA_H=28;                    // tolerância de matiz (0-360)
+  const meta=()=> Math.max(1, parseInt($('meta').value)||5);
+
+  // ---------- Câmera ----------
+  async function abrirCamera(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false
+      });
+      video.srcObject = stream;
+      setStatus('câmera pronta', false);
+    }catch(e){
+      setStatus('erro na câmera', false);
+      log('❌ Não foi possível acessar a câmera: '+e.message);
+      alert('Permita o acesso à câmera e recarregue a página.\n\nObs: a página precisa estar em HTTPS (GitHub Pages funciona).');
+    }
+  }
+
+  // ---------- Alvo arrastável ----------
+  (function(){
+    let drag=false;
+    function move(ev){
+      if(!drag) return;
+      const t = ev.touches ? ev.touches[0] : ev;
+      const r = video.getBoundingClientRect();
+      let x=Math.min(Math.max(t.clientX-r.left,0),r.width);
+      let y=Math.min(Math.max(t.clientY-r.top,0),r.height);
+      alvo.style.left=(x/r.width*100)+'%';
+      alvo.style.top=(y/r.height*100)+'%';
+      ev.preventDefault();
+    }
+    alvo.addEventListener('pointerdown',e=>{drag=true; alvo.setPointerCapture(e.pointerId);});
+    alvo.addEventListener('pointermove',move);
+    alvo.addEventListener('pointerup',()=>drag=false);
+  })();
+
+  // ---------- Leitura de cor ----------
+  // Lê só os pixels COLORIDOS dentro do círculo (ignora fundo escuro/claro),
+  // o que permite detectar números/textos finos como no histórico do site.
+  function lerCorMedia(){
+    if(!video.videoWidth) return null;
+    cv.width=video.videoWidth; cv.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const px = (parseFloat(alvo.style.left)/100) * cv.width;
+    const py = (parseFloat(alvo.style.top)/100)  * cv.height;
+    const raio = Math.max(4, Math.round(cv.width*raioPct));
+    const x=Math.max(0,Math.round(px-raio)), y=Math.max(0,Math.round(py-raio));
+    const w=Math.min(raio*2, cv.width-x), h=Math.min(raio*2, cv.height-y);
+    if(w<2||h<2) return null;
+    const d=ctx.getImageData(x,y,w,h).data;
+    let R=0,G=0,B=0,n=0, Ra=0,Ga=0,Ba=0,na=0;
+    for(let i=0;i<d.length;i+=8){
+      const r=d[i], g=d[i+1], b=d[i+2];
+      Ra+=r; Ga+=g; Ba+=b; na++;
+      const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+      if(mx>45 && (mx-mn)/mx>0.25){ R+=r; G+=g; B+=b; n++; } // pixel com cor "forte"
+    }
+    if(!na) return null;
+    if(n>5) return rgb2hsv(R/n, G/n, B/n);   // média só dos pixels coloridos
+    return rgb2hsv(Ra/na, Ga/na, Ba/na);     // sem cor forte: média geral (vai cair como "—")
+  }
+
+  function rgb2hsv(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0;
+    if(d!==0){
+      if(max===r) h=((g-b)/d)%6;
+      else if(max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h*=60; if(h<0)h+=360;
+    }
+    return {h, s: max===0?0:d/max, v:max, rgb:`rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`};
+  }
+
+  function distH(a,b){ const d=Math.abs(a-b); return Math.min(d,360-d); }
+
+  function classificar(c){
+    if(!c || c.s<0.22 || c.v<0.15) return null; // sem cor forte = ignora
+    const candidatos=[];
+    if(calAzul) candidatos.push({nome:'azul', d:distH(c.h,calAzul.h)});
+    if(calRoxo) candidatos.push({nome:'roxo', d:distH(c.h,calRoxo.h)});
+    candidatos.sort((a,b)=>a.d-b.d);
+    if(candidatos.length && candidatos[0].d<=TOLERANCIA_H) return candidatos[0].nome;
+    return null;
+  }
+
+  // ---------- Calibração ----------
+  function calibrar(qual){
+    const c=lerCorMedia();
+    if(!c){ alert('Câmera ainda não está pronta.'); return; }
+    if(qual==='azul'){ calAzul=c; $('swAzul').style.background=c.rgb; $('stAzul').textContent='Azul: OK'; }
+    else{ calRoxo=c; $('swRoxo').style.background=c.rgb; $('stRoxo').textContent='Roxo: OK'; }
+    log(`🎨 ${qual.toUpperCase()} calibrado (matiz ${Math.round(c.h)}°)`);
+    if(calAzul && calRoxo) $('btnStart').disabled=false;
+  }
+  $('btnCalAzul').onclick=()=>calibrar('azul');
+  $('btnCalRoxo').onclick=()=>calibrar('roxo');
+
+  // ---------- Loop de monitoramento ----------
+  function tick(){
+    const c=lerCorMedia();
+    if(c){ corBox.style.background=c.rgb; }
+    const classe=classificar(c);
+    corNome.textContent = classe ? classe.toUpperCase() : '—';
+    corNome.style.color = classe==='azul' ? 'var(--azul)' : classe==='roxo' ? '#ce93d8' : 'var(--muted)';
+
+    if(!classe){ corCandidata=null; framesEstaveis=0; return; }
+
+    if(classe===corCandidata){ framesEstaveis++; }
+    else{ corCandidata=classe; framesEstaveis=1; }
+
+    if(framesEstaveis===FRAMES_PARA_CONFIRMAR && classe!==ultimaCorRegistrada){
+      registrarEvento(classe);
+    }
+  }
+
+  function registrarEvento(cor){
+    addPill(cor);
+    if(cor==='roxo'){
+      if(ultimaCorRegistrada==='azul'){
+        contagem++;
+        log(`🟣 Intercalação azul → roxo: <b>${contagem}/${meta()}</b>`);
+        if(contagem>=meta()){ disparaAlerta(); }
+      }else{
+        if($('chkReset').checked){
+          if(contagem>0) log('🟣 Roxo repetido → contagem <b>zerada</b>');
+          contagem=0;
+        }else{
+          log('🟣 Roxo repetido (ignorado)');
+        }
+      }
+    }else{
+      log('🔵 Azul detectado');
+    }
+    ultimaCorRegistrada=cor;
+    atualizaContagem();
+  }
+
+  function atualizaContagem(){
+    $('contagem').innerHTML = `${contagem}<small> / ${meta()}</small>`;
+  }
+  $('meta').addEventListener('input', atualizaContagem);
+
+  // Tamanho do círculo (alvo visual + área de leitura)
+  $('tam').addEventListener('input', ()=>{
+    const r=video.getBoundingClientRect();
+    const px=parseInt($('tam').value);
+    raioPct = (px/2) / Math.max(r.width,1);
+    alvo.style.width=px+'px'; alvo.style.height=px+'px';
+  });
+
+  function addPill(cor){
+    const seq=$('seq');
+    const p=document.createElement('div');
+    p.className='pill';
+    p.style.background = cor==='azul' ? 'var(--azul)' : 'var(--roxo)';
+    seq.appendChild(p);
+    while(seq.children.length>20) seq.removeChild(seq.firstChild);
+  }
+
+  // ---------- Alerta ----------
+  let audioCtx=null;
+  function beep(){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      let t=audioCtx.currentTime;
+      for(let i=0;i<6;i++){
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type='square'; o.frequency.value = i%2 ? 880 : 1320;
+        g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t+0.22);
+        o.start(t); o.stop(t+0.25); t+=0.28;
+      }
+    }catch(e){}
+  }
+  function disparaAlerta(){
+    log(`🚨 <b>ALERTA! ${meta()} intercalações detectadas</b>`);
+    $('bannerTxt').textContent = `${meta()} intercalações Azul → Roxo detectadas`;
+    document.body.classList.add('alerta');
+    $('banner').classList.add('show');
+    beep();
+    if(navigator.vibrate) navigator.vibrate([400,150,400,150,800]);
+    contagem=0; ultimaCorRegistrada=null; atualizaContagem();
+  }
+  $('btnOkAlerta').onclick=()=>{
+    $('banner').classList.remove('show');
+    document.body.classList.remove('alerta');
+  };
+
+  // ---------- Controles ----------
+  $('btnStart').onclick=async ()=>{
+    if(!monitorando){
+      monitorando=true;
+      timer=setInterval(tick, INTERVALO);
+      $('btnStart').textContent='⏹ Parar monitoramento';
+      $('btnStart').classList.add('parar');
+      setStatus('monitorando', true);
+      log('▶ Monitoramento iniciado');
+      try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+      if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+    }else{
+      monitorando=false;
+      clearInterval(timer);
+      $('btnStart').textContent='▶ Iniciar monitoramento';
+      $('btnStart').classList.remove('parar');
+      setStatus('parado', false);
+      log('⏹ Monitoramento parado');
+      if(wakeLock){ wakeLock.release(); wakeLock=null; }
+    }
+  };
+
+  $('btnReset').onclick=()=>{
+    contagem=0; ultimaCorRegistrada=null; corCandidata=null; framesEstaveis=0;
+    $('seq').innerHTML=''; atualizaContagem();
+    log('🔄 Contagem e histórico zerados');
+  };
+
+  function setStatus(txt,on){ $('statusTxt').textContent=txt; $('dot').classList.toggle('on',on); }
+  function log(msg){
+    const el=$('log');
+    if(el.textContent==='Aguardando…') el.innerHTML='';
+    const hora=new Date().toLocaleTimeString('pt-BR');
+    el.innerHTML = `<div>[${hora}] ${msg}</div>` + el.innerHTML;
+    while(el.children.length>40) el.removeChild(el.lastChild);
+  }
+
+  document.addEventListener('visibilitychange', async ()=>{
+    if(!document.hidden && monitorando){
+      try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+    }
+  });
+
+  abrirCamera();
+})();
+</script>
+</body>
+</html>
