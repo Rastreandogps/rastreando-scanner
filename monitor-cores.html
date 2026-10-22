@@ -110,7 +110,7 @@
       <div class="cor-atual" id="corBox"></div>
       <div class="contador-info">
         <div class="label">Sequências Azul → Roxo</div>
-        <div id="contagem">0<small> / 3</small></div>
+        <div id="contagem">0<small> / 5</small></div>
         <div id="corNome">—</div>
       </div>
     </div>
@@ -119,7 +119,7 @@
 
   <div class="painel">
     <div class="titulo-sec">1. Calibrar cores</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Aponte o círculo para a cor na tela do computador e toque no botão correspondente.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;"><b>Ponto fixo:</b> aponte o círculo para a cor. <b>Varredura:</b> deixe a cor visível dentro do retângulo amarelo. Depois toque no botão.</div>
     <div class="cal-row">
       <button class="btn btn-azul" id="btnCalAzul">Capturar AZUL</button>
       <button class="btn btn-roxo" id="btnCalRoxo">Capturar ROXO</button>
@@ -193,6 +193,7 @@
       });
       video.srcObject = stream;
       setStatus('câmera pronta', false);
+      if(!timer) timer=setInterval(tick, INTERVALO); // leitura ao vivo (contagem só após Iniciar)
     }catch(e){
       setStatus('erro na câmera', false);
       log('❌ Não foi possível acessar a câmera: '+e.message);
@@ -280,9 +281,10 @@
     if(!video.videoWidth) return null;
     cv.width=video.videoWidth; cv.height=video.videoHeight;
     ctx.drawImage(video,0,0);
-    const px = (parseFloat(alvo.style.left)/100) * cv.width;
-    const py = (parseFloat(alvo.style.top)/100)  * cv.height;
-    const raio = Math.max(4, Math.round(cv.width*raioPct));
+    const m=getMap(); if(!m) return null;
+    const ctr=boxPctToFrame(parseFloat(alvo.style.left), parseFloat(alvo.style.top), m);
+    const px=ctr.x, py=ctr.y;
+    const raio = Math.max(4, Math.round((alvo.offsetWidth/2)/m.scale));
     const x=Math.max(0,Math.round(px-raio)), y=Math.max(0,Math.round(py-raio));
     const w=Math.min(raio*2, cv.width-x), h=Math.min(raio*2, cv.height-y);
     if(w<2||h<2) return null;
@@ -334,11 +336,12 @@
     if(!video.videoWidth || !calAzul || !calRoxo) return null;
     cv.width=video.videoWidth; cv.height=video.videoHeight;
     ctx.drawImage(video,0,0);
+    const m=getMap(); if(!m) return null;
     const rc=$('rect');
-    const x=Math.round(parseFloat(rc.style.left)/100*cv.width);
-    const y=Math.round(parseFloat(rc.style.top)/100*cv.height);
-    const w=Math.max(4,Math.round(parseFloat(rc.style.width)/100*cv.width));
-    const h=Math.max(4,Math.round(parseFloat(rc.style.height)/100*cv.height));
+    const p0=boxPctToFrame(parseFloat(rc.style.left), parseFloat(rc.style.top), m);
+    const x=Math.max(0,Math.round(p0.x)), y=Math.max(0,Math.round(p0.y));
+    const w=Math.max(4,Math.round(parseFloat(rc.style.width)/100*m.bw/m.scale));
+    const h=Math.max(4,Math.round(parseFloat(rc.style.height)/100*m.bh/m.scale));
     const img=ctx.getImageData(x,y,Math.min(w,cv.width-x),Math.min(h,cv.height-y));
     const d=img.data, dw=img.width, step=4;
     let nA=0,nR=0, cxA=0,cyA=0, cxR=0,cyR=0, rA=[0,0,0], rR=[0,0,0];
@@ -358,13 +361,14 @@
     }else if(nR>=minPx){
       out={classe:'roxo', rgb:`rgb(${(rR[0]/nR)|0},${(rR[1]/nR)|0},${(rR[2]/nR)|0})`}; cx=cxR/nR; cy=cyR/nR;
     }
-    const m=$('marcador');
+    const mk=$('marcador');
     if(out){
-      m.style.display='block';
-      m.style.left=((x+cx)/cv.width*100)+'%';
-      m.style.top =((y+cy)/cv.height*100)+'%';
-      m.style.background=out.rgb;
-    }else m.style.display='none';
+      const p=frameToBoxPct(x+cx, y+cy, m);
+      mk.style.display='block';
+      mk.style.left=p.x+'%';
+      mk.style.top =p.y+'%';
+      mk.style.background=out.rgb;
+    }else mk.style.display='none';
     return out;
   }
 
@@ -379,9 +383,41 @@
   }
 
   // ---------- Calibração ----------
+  // No modo varredura, busca a cor dentro do retângulo (faixas típicas de matiz)
+  const FAIXAS={azul:[150,255], roxo:[255,335]};
+  function calibrarPelaArea(qual){
+    if(!video.videoWidth) return null;
+    cv.width=video.videoWidth; cv.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const m=getMap(); if(!m) return null;
+    const rc=$('rect');
+    const p0=boxPctToFrame(parseFloat(rc.style.left), parseFloat(rc.style.top), m);
+    const x=Math.max(0,Math.round(p0.x)), y=Math.max(0,Math.round(p0.y));
+    const w=Math.max(4,Math.round(parseFloat(rc.style.width)/100*m.bw/m.scale));
+    const h=Math.max(4,Math.round(parseFloat(rc.style.height)/100*m.bh/m.scale));
+    const d=ctx.getImageData(x,y,Math.min(w,cv.width-x),Math.min(h,cv.height-y)).data;
+    const [h1,h2]=FAIXAS[qual];
+    let R=0,G=0,B=0,n=0;
+    for(let i=0;i<d.length;i+=16){
+      const r=d[i],g=d[i+1],b=d[i+2];
+      const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+      if(mx<=45||(mx-mn)/mx<=0.25) continue;
+      const hv=rgb2hsv(r,g,b);
+      if(hv.h>=h1&&hv.h<=h2){ R+=r;G+=g;B+=b;n++; }
+    }
+    if(n<8) return null;
+    return rgb2hsv(R/n,G/n,B/n);
+  }
+
   function calibrar(qual){
-    const c=lerCorMedia();
-    if(!c){ alert('Câmera ainda não está pronta.'); return; }
+    let c;
+    if(modo==='varredura'){
+      c=calibrarPelaArea(qual);
+      if(!c){ alert('Não encontrei a cor '+qual.toUpperCase()+' dentro do retângulo.\nDeixe um número dessa cor visível na área amarela e tente de novo.'); return; }
+    }else{
+      c=lerCorMedia();
+      if(!c){ alert('Câmera ainda não está pronta.'); return; }
+    }
     if(qual==='azul'){ calAzul=c; $('swAzul').style.background=c.rgb; $('stAzul').textContent='Azul: OK'; }
     else{ calRoxo=c; $('swRoxo').style.background=c.rgb; $('stRoxo').textContent='Roxo: OK'; }
     log(`🎨 ${qual.toUpperCase()} calibrado (matiz ${Math.round(c.h)}°)`);
@@ -405,6 +441,7 @@
     corNome.textContent = classe ? classe.toUpperCase() : '—';
     corNome.style.color = classe==='azul' ? 'var(--azul)' : classe==='roxo' ? '#ce93d8' : 'var(--muted)';
 
+    if(!monitorando){ corCandidata=null; framesEstaveis=0; return; }
     if(!classe){ corCandidata=null; framesEstaveis=0; return; }
 
     if(classe===corCandidata){ framesEstaveis++; }
@@ -444,9 +481,7 @@
 
   // Tamanho do círculo (alvo visual + área de leitura)
   $('tam').addEventListener('input', ()=>{
-    const r=video.getBoundingClientRect();
     const px=parseInt($('tam').value);
-    raioPct = (px/2) / Math.max(r.width,1);
     alvo.style.width=px+'px'; alvo.style.height=px+'px';
   });
 
@@ -492,7 +527,6 @@
   $('btnStart').onclick=async ()=>{
     if(!monitorando){
       monitorando=true;
-      timer=setInterval(tick, INTERVALO);
       $('btnStart').textContent='⏹ Parar monitoramento';
       $('btnStart').classList.add('parar');
       setStatus('monitorando', true);
@@ -501,7 +535,6 @@
       if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
     }else{
       monitorando=false;
-      clearInterval(timer);
       $('btnStart').textContent='▶ Iniciar monitoramento';
       $('btnStart').classList.remove('parar');
       setStatus('parado', false);
