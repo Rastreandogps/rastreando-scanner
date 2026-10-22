@@ -64,6 +64,8 @@
   .achado img{width:110px; border-radius:6px; border:1px solid var(--border);}
   .achado .pl{font-family:monospace; font-size:18px; font-weight:800; letter-spacing:2px; color:#ff6b6b;}
   .achado .info{font-size:12px; color:var(--muted); margin-top:2px;}
+  .achado .acoes{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
+  .achado .acoes a, .achado .acoes button{font-size:12px; padding:5px 9px; border-radius:6px; background:#21262d; border:1px solid var(--border); color:var(--txt); text-decoration:none; cursor:pointer;}
 
   .erro{background:#3d1214; border:1px solid var(--danger); color:#ffb3b3; padding:10px; border-radius:8px; font-size:13px; margin-top:10px; display:none;}
 
@@ -91,6 +93,7 @@
     <div class="contador" id="contador">0 consultas</div>
     <div class="contador" id="movInd" style="top:auto; bottom:8px; right:8px;">● parado</div>
     <div class="ultima" id="ultima"></div>
+    <button id="btnLanterna" title="Lanterna" style="position:absolute; left:8px; top:8px; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:5px 10px; font-size:14px; display:none;">🔦</button>
   </div>
 
   <button class="btn btn-start" id="btnStart">▶ Iniciar leitura</button>
@@ -120,6 +123,14 @@
     <div class="cfg-row">
       <label>Token</label>
       <input type="password" id="token" placeholder="Cole o API Token do Plate Recognizer">
+    </div>
+    <div class="cfg-row">
+      <label>Nome do aparelho</label>
+      <input type="text" id="camId" placeholder="ex: Mateus - celular" maxlength="30">
+    </div>
+    <div class="cfg-row" style="justify-content:space-between;">
+      <span>Cota do mês: <b id="cotaTxt">—</b></span>
+      <button class="btn btn-sec" id="btnCota" style="width:auto; padding:8px 14px;">Atualizar</button>
     </div>
     <div class="cfg-row">
       <label>Intervalo</label>
@@ -231,8 +242,8 @@
     });
   }
   function addPlaca(){
-    const p=limpa($('novaPlaca').value);
-    if(p.length!==7){ alert('Placa inválida. Use 7 caracteres, ex: ABC1D23 ou ABC1234.'); return; }
+    const p=corrigeFormato(limpa($('novaPlaca').value));
+    if(!valida(p)){ alert('Placa inválida. Use o formato ABC1D23 (Mercosul) ou ABC1234 (antiga).'); return; }
     if(!alvos.includes(p)){ alvos.push(p); ls.set('lp_alvos',alvos); }
     $('novaPlaca').value=''; renderAlvos();
   }
@@ -248,6 +259,14 @@
       });
       video.srcObject=stream;
       setStatus('câmera pronta');
+      // foco contínuo + lanterna (quando o aparelho suportar)
+      const track=stream.getVideoTracks()[0];
+      const caps=track.getCapabilities ? track.getCapabilities() : {};
+      try{ if(caps.focusMode && caps.focusMode.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+      if(caps.torch){
+        const b=$('btnLanterna'); b.style.display='block'; let on=false;
+        b.onclick=async()=>{ on=!on; try{ await track.applyConstraints({advanced:[{torch:on}]}); b.style.background=on?'#d29922':'rgba(0,0,0,.65)'; }catch(e){} };
+      }
     }catch(e){
       setStatus('erro na câmera','err');
       mostraErro('Não foi possível acessar a câmera. Permita o acesso e recarregue a página. ('+e.message+')');
@@ -293,10 +312,12 @@
       const fd=new FormData();
       fd.append('upload', blob, 'frame.jpg');
       fd.append('regions','br');
+      fd.append('config', JSON.stringify({region:'strict'})); // só aceita o padrão de placa brasileiro
+      fd.append('camera_id', ls.get('lp_cam','celular'));
       const resp=await fetch(API,{ method:'POST', headers:{'Authorization':'Token '+$('token').value.trim()}, body:fd });
       consultas++; $('contador').textContent=consultas+' consultas';
       if(resp.status===401||resp.status===403){ throw new Error('Token inválido ou sem permissão. Confira o token nas configurações.'); }
-      if(resp.status===429){ throw new Error('Limite de consultas por segundo atingido. Aumente o intervalo.'); }
+      if(resp.status===429){ return; } // limite por segundo: só pula esta foto
       if(resp.status===402){ throw new Error('Cota de consultas da sua conta acabou.'); }
       if(!resp.ok){ throw new Error('Erro do servidor ('+resp.status+').'); }
       const data=await resp.json();
@@ -381,18 +402,60 @@
       }
     }catch(e){}
   }
+  // ---------- GPS (posição do achado) ----------
+  let posAtual=null;
+  if(navigator.geolocation){
+    navigator.geolocation.watchPosition(p=>{ posAtual={lat:p.coords.latitude, lng:p.coords.longitude}; }, ()=>{}, {enableHighAccuracy:true, maximumAge:10000});
+  }
+
+  // ---------- Achados (persistem no aparelho) ----------
+  let achados=ls.get('lp_achados',[]);
+  function miniatura(foto){
+    // reduz a foto pra caber no armazenamento do celular
+    try{
+      const img=new Image(); img.src=foto;
+      const c=document.createElement('canvas'); c.width=480; c.height=Math.round(480*cv.height/cv.width);
+      c.getContext('2d').drawImage(cv,0,0,c.width,c.height);
+      return c.toDataURL('image/jpeg',0.55);
+    }catch(e){ return foto; }
+  }
+  function textoAchado(a){
+    const hora=new Date(a.t).toLocaleString('pt-BR');
+    let txt=`🚨 Placa ${a.tipo==='match'?'ENCONTRADA':'PARECIDA'}: ${a.placa}\n`;
+    if(a.tipo!=='match') txt+=`Procurada: ${a.alvo}\n`;
+    txt+=`Quando: ${hora}\n`;
+    if(a.lat) txt+=`Local: https://maps.google.com/?q=${a.lat},${a.lng}`;
+    return txt;
+  }
+  function renderAchados(){
+    const el=$('achados');
+    if(!achados.length){ el.innerHTML='<div class="vazio">Nenhuma placa procurada encontrada ainda.</div>'; return; }
+    el.innerHTML='';
+    achados.forEach((a,i)=>{
+      const d=document.createElement('div'); d.className='achado';
+      d.innerHTML=`<img src="${a.foto}"><div style="flex:1;"><div class="pl">${a.placa}</div>
+        <div class="info">${a.tipo==='match'?'Placa procurada':'Parecida com '+a.alvo} · ${new Date(a.t).toLocaleString('pt-BR')} · ${Math.round((a.score||0)*100)}%</div>
+        <div class="acoes">
+          ${a.lat?`<a href="https://maps.google.com/?q=${a.lat},${a.lng}" target="_blank">📍 Mapa</a>`:''}
+          <a href="https://wa.me/?text=${encodeURIComponent(textoAchado(a))}" target="_blank">💬 WhatsApp</a>
+          <button data-i="${i}" class="rm">✕</button>
+        </div></div>`;
+      d.querySelector('.rm').onclick=()=>{ achados.splice(i,1); ls.set('lp_achados',achados); renderAchados(); };
+      el.appendChild(d);
+    });
+  }
+  renderAchados();
+
   function alarme(res, lida, foto, score){
     const chave=res.alvo+res.tipo, agora=Date.now();
     if(ultimoAlerta[chave] && agora-ultimoAlerta[chave]<COOLDOWN) return;
     ultimoAlerta[chave]=agora;
     const forte=res.tipo==='match';
-    // registra achado
-    const ach=$('achados');
-    if(ach.querySelector('.vazio')) ach.innerHTML='';
-    const d=document.createElement('div'); d.className='achado';
-    d.innerHTML=`<img src="${foto}"><div><div class="pl">${lida}</div>
-      <div class="info">${forte?'Placa procurada':'Parecida com '+res.alvo} · ${new Date().toLocaleTimeString('pt-BR')} · ${Math.round((score||0)*100)}%</div></div>`;
-    ach.prepend(d);
+    // registra achado (com foto reduzida, hora e GPS)
+    achados.unshift({placa:lida, alvo:res.alvo, tipo:res.tipo, t:agora, score, foto:miniatura(foto), lat:posAtual&&posAtual.lat, lng:posAtual&&posAtual.lng});
+    if(achados.length>30) achados.pop();
+    ls.set('lp_achados',achados);
+    renderAchados();
     // tela de alerta
     const b=$('banner');
     b.classList.toggle('parecida', !forte);
@@ -412,7 +475,7 @@
     if(!$('token').value.trim()){ mostraErro('Cole o API Token do Plate Recognizer nas Configurações (lá embaixo).'); return; }
     ls.set('lp_token',$('token').value.trim());
     if(!alvos.length && !confirm('Nenhuma placa procurada cadastrada. Iniciar mesmo assim (só leitura)?')) return;
-    rodando=true;
+    rodando=true; quadroAnterior=null;
     timer=setInterval(capturar, parseInt($('intervalo').value));
     $('btnStart').textContent='⏹ Parar leitura'; $('btnStart').classList.add('parar');
     setStatus('lendo placas','on');
@@ -427,11 +490,34 @@
   }
   $('btnStart').onclick=()=> rodando ? parar() : iniciar();
   $('btnLimpar').onclick=()=>{ lidas=[]; renderLidas(); };
+
+  // ---------- Saldo de consultas (não consome cota) ----------
+  async function verCota(){
+    const tk=$('token').value.trim(); if(!tk) return;
+    $('cotaTxt').textContent='consultando...';
+    try{
+      const r=await fetch('https://api.platerecognizer.com/v1/statistics/',{ headers:{'Authorization':'Token '+tk} });
+      if(!r.ok) throw new Error(r.status);
+      const d=await r.json();
+      const u=d.usage||d;
+      const usadas=u.calls, total=d.total_calls??u.total_calls, reset=u.resets_on;
+      if(usadas===undefined || total===undefined) throw new Error('formato');
+      const resta=Math.max(0,total-usadas);
+      $('cotaTxt').innerHTML=`${usadas} usadas de ${total} · <span style="color:${resta<total*0.1?'#f85149':'#3fb950'}">restam ${resta}</span>`
+        + (reset ? `<br><span style="font-weight:400;color:#8b949e;font-size:12px;">renova em ${new Date(reset).toLocaleDateString('pt-BR')}</span>` : '');
+    }catch(e){
+      $('cotaTxt').textContent='não foi possível consultar (veja no painel do site)';
+    }
+  }
+  $('btnCota').onclick=verCota;
+  verCota();
   // salva preferências
   $('chkMov').checked=ls.get('lp_mov',true);
   $('sensib').value=ls.get('lp_sensib','8');
   $('chkMov').addEventListener('change',()=>{ ls.set('lp_mov',$('chkMov').checked); $('movInd').style.display=$('chkMov').checked?'block':'none'; });
   $('sensib').addEventListener('change',()=>ls.set('lp_sensib',$('sensib').value));
+  $('camId').value=ls.get('lp_cam','celular');
+  $('camId').addEventListener('change',()=>ls.set('lp_cam',$('camId').value.trim()||'celular'));
   $('confMin').value=ls.get('lp_conf','0.8');
   $('confMin').addEventListener('change',()=>ls.set('lp_conf',$('confMin').value));
   $('movInd').style.display=$('chkMov').checked?'block':'none';
