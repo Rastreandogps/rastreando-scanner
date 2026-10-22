@@ -24,11 +24,19 @@
 
   .wrap{padding:12px; max-width:520px; margin:0 auto;}
 
-  .video-box{position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border);}
-  video{width:100%; display:block;}
-  #alvo{position:absolute; width:56px; height:56px; border:3px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.6); touch-action:none; cursor:move;}
+  .video-box{position:sticky; top:8px; z-index:20; width:fit-content; max-width:100%; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,.6);}
+  video{display:block; height:25vh; width:auto; max-width:92vw;}
+  #alvo{position:absolute; width:30px; height:30px; border:3px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 0 2px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.6); touch-action:none; cursor:move;}
   #alvo::after{content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; background:#fff; border-radius:50%; transform:translate(-50%,-50%);}
-  .hint{position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none;}
+
+  #rect{position:absolute; border:2px dashed #ffeb3b; background:rgba(255,235,59,.08); border-radius:6px; touch-action:none; cursor:move; display:none;}
+  #rectHandle{position:absolute; right:-12px; bottom:-12px; width:28px; height:28px; background:#ffeb3b; border-radius:50%; border:2px solid #000; touch-action:none;}
+  #marcador{position:absolute; width:14px; height:14px; border-radius:50%; border:2px solid #fff; transform:translate(-50%,-50%); display:none; pointer-events:none; box-shadow:0 0 6px #000; z-index:5;}
+
+  .modo-row{display:flex; gap:8px; margin-top:10px;}
+  .modo-btn{flex:1; padding:11px 8px; border-radius:10px; border:1px solid var(--border); background:#21262d; color:var(--muted); font-size:13px; font-weight:700; cursor:pointer;}
+  .modo-btn.ativo{background:#0d419d; border-color:#1f6feb; color:#fff;}
+  .hint{position:absolute; bottom:4px; left:0; right:0; text-align:center; font-size:10px; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none;}
 
   .painel{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;}
 
@@ -87,7 +95,14 @@
   <div class="video-box">
     <video id="video" autoplay playsinline muted></video>
     <div id="alvo" style="left:50%; top:50%;"></div>
-    <div class="hint">Arraste o círculo até o local onde a cor aparece</div>
+    <div id="rect" style="left:10%; top:10%; width:70%; height:25%;"><div id="rectHandle"></div></div>
+    <div id="marcador"></div>
+    <div class="hint" id="hint">Arraste o círculo até o local onde a cor aparece</div>
+  </div>
+
+  <div class="modo-row">
+    <button class="modo-btn ativo" id="btnModoPonto">🎯 Ponto fixo</button>
+    <button class="modo-btn" id="btnModoVarr">🔍 Varredura automática</button>
   </div>
 
   <div class="painel">
@@ -204,6 +219,61 @@
     alvo.addEventListener('pointerup',()=>drag=false);
   })();
 
+  // ---------- Modos: ponto fixo x varredura ----------
+  let modo='ponto';
+  function setModo(m){
+    modo=m;
+    $('btnModoPonto').classList.toggle('ativo', m==='ponto');
+    $('btnModoVarr').classList.toggle('ativo', m==='varredura');
+    $('rect').style.display = m==='varredura' ? 'block' : 'none';
+    alvo.style.display      = m==='varredura' ? 'none'  : 'block';
+    $('marcador').style.display='none';
+    $('hint').textContent = m==='varredura'
+      ? 'Ajuste o retângulo sobre a área onde as cores aparecem'
+      : 'Arraste o círculo até o local onde a cor aparece';
+    corCandidata=null; framesEstaveis=0;
+    log(m==='varredura' ? '🔍 Modo varredura automática' : '🎯 Modo ponto fixo');
+  }
+  $('btnModoPonto').onclick=()=>setModo('ponto');
+  $('btnModoVarr').onclick=()=>setModo('varredura');
+
+  // Retângulo arrastável e redimensionável
+  (function(){
+    const rect=$('rect'), handle=$('rectHandle');
+    let acao=null, start=null;
+    const lim=(v,min,max)=>Math.min(Math.max(v,min),max);
+    rect.addEventListener('pointerdown',e=>{
+      if(e.target===handle) return;
+      const r=video.getBoundingClientRect();
+      acao='move';
+      start={x:e.clientX,y:e.clientY,l:parseFloat(rect.style.left),t:parseFloat(rect.style.top),rw:r.width,rh:r.height};
+      rect.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    handle.addEventListener('pointerdown',e=>{
+      const r=video.getBoundingClientRect();
+      acao='size';
+      start={x:e.clientX,y:e.clientY,w:parseFloat(rect.style.width),h:parseFloat(rect.style.height),rw:r.width,rh:r.height};
+      handle.setPointerCapture(e.pointerId); e.preventDefault(); e.stopPropagation();
+    });
+    function mv(e){
+      if(!acao||!start) return;
+      const dx=(e.clientX-start.x)/start.rw*100, dy=(e.clientY-start.y)/start.rh*100;
+      if(acao==='move'){
+        rect.style.left=lim(start.l+dx,0,100-parseFloat(rect.style.width))+'%';
+        rect.style.top =lim(start.t+dy,0,100-parseFloat(rect.style.height))+'%';
+      }else{
+        rect.style.width =lim(start.w+dx,8,100-parseFloat(rect.style.left))+'%';
+        rect.style.height=lim(start.h+dy,5,100-parseFloat(rect.style.top))+'%';
+      }
+      e.preventDefault();
+    }
+    rect.addEventListener('pointermove',mv);
+    handle.addEventListener('pointermove',mv);
+    const fim=()=>{acao=null;};
+    rect.addEventListener('pointerup',fim);
+    handle.addEventListener('pointerup',fim);
+  })();
+
   // ---------- Leitura de cor ----------
   // Lê só os pixels COLORIDOS dentro do círculo (ignora fundo escuro/claro),
   // o que permite detectar números/textos finos como no histórico do site.
@@ -245,6 +315,45 @@
 
   function distH(a,b){ const d=Math.abs(a-b); return Math.min(d,360-d); }
 
+  // Varredura: procura azul/roxo em toda a área do retângulo e marca onde achou
+  function lerVarredura(){
+    if(!video.videoWidth || !calAzul || !calRoxo) return null;
+    cv.width=video.videoWidth; cv.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    const rc=$('rect');
+    const x=Math.round(parseFloat(rc.style.left)/100*cv.width);
+    const y=Math.round(parseFloat(rc.style.top)/100*cv.height);
+    const w=Math.max(4,Math.round(parseFloat(rc.style.width)/100*cv.width));
+    const h=Math.max(4,Math.round(parseFloat(rc.style.height)/100*cv.height));
+    const img=ctx.getImageData(x,y,Math.min(w,cv.width-x),Math.min(h,cv.height-y));
+    const d=img.data, dw=img.width, step=4;
+    let nA=0,nR=0, cxA=0,cyA=0, cxR=0,cyR=0, rA=[0,0,0], rR=[0,0,0];
+    for(let i=0;i<d.length;i+=4*step){
+      const r=d[i], g=d[i+1], b=d[i+2];
+      const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+      if(mx<=45 || (mx-mn)/mx<=0.25) continue;
+      const hsv=rgb2hsv(r,g,b);
+      const idx=i/4, px=idx%dw, py=(idx/dw)|0;
+      if(distH(hsv.h,calAzul.h)<=TOLERANCIA_H){ nA++; cxA+=px; cyA+=py; rA[0]+=r; rA[1]+=g; rA[2]+=b; }
+      else if(distH(hsv.h,calRoxo.h)<=TOLERANCIA_H){ nR++; cxR+=px; cyR+=py; rR[0]+=r; rR[1]+=g; rR[2]+=b; }
+    }
+    const minPx=Math.max(10,(d.length/(4*step))*0.004);
+    let out=null, cx=0, cy=0;
+    if(nA>=minPx && nA>=nR){
+      out={classe:'azul', rgb:`rgb(${(rA[0]/nA)|0},${(rA[1]/nA)|0},${(rA[2]/nA)|0})`}; cx=cxA/nA; cy=cyA/nA;
+    }else if(nR>=minPx){
+      out={classe:'roxo', rgb:`rgb(${(rR[0]/nR)|0},${(rR[1]/nR)|0},${(rR[2]/nR)|0})`}; cx=cxR/nR; cy=cyR/nR;
+    }
+    const m=$('marcador');
+    if(out){
+      m.style.display='block';
+      m.style.left=((x+cx)/cv.width*100)+'%';
+      m.style.top =((y+cy)/cv.height*100)+'%';
+      m.style.background=out.rgb;
+    }else m.style.display='none';
+    return out;
+  }
+
   function classificar(c){
     if(!c || c.s<0.22 || c.v<0.15) return null; // sem cor forte = ignora
     const candidatos=[];
@@ -269,9 +378,16 @@
 
   // ---------- Loop de monitoramento ----------
   function tick(){
-    const c=lerCorMedia();
-    if(c){ corBox.style.background=c.rgb; }
-    const classe=classificar(c);
+    let classe=null, rgbShow=null;
+    if(modo==='varredura'){
+      const r=lerVarredura();
+      if(r){ classe=r.classe; rgbShow=r.rgb; }
+    }else{
+      const c=lerCorMedia();
+      if(c) rgbShow=c.rgb;
+      classe=classificar(c);
+    }
+    if(rgbShow){ corBox.style.background=rgbShow; }
     corNome.textContent = classe ? classe.toUpperCase() : '—';
     corNome.style.color = classe==='azul' ? 'var(--azul)' : classe==='roxo' ? '#ce93d8' : 'var(--muted)';
 
