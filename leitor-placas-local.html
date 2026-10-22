@@ -34,6 +34,20 @@
   video{transform-origin:center center; transition:transform .2s;}
   .zbtn{background:rgba(0,0,0,.6); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:6px; padding:4px 8px; font-size:12px; font-weight:700;}
   .zbtn.ativo{background:#1f6feb; border-color:#58a6ff;}
+  /* ----- Tela cheia (celular deitado) ----- */
+  body.cheia{overflow:hidden;}
+  body.cheia .video-box{position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; aspect-ratio:auto; border-radius:0; border:none; z-index:40; box-shadow:none;}
+  body.cheia .video-box .chip, body.cheia #btnLanterna, body.cheia #btnPos, body.cheia #zoomBox{display:none !important;}
+  #hud{display:none; position:fixed; z-index:45; pointer-events:none; transform-origin:center center;}
+  body.cheia #hud{display:block;}
+  #hud button, #hud .zb{pointer-events:auto;}
+  #hud .hud-top{position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  #hud .hud-chip{background:rgba(0,0,0,.6); color:#fff; font-size:13px; padding:5px 10px; border-radius:8px;}
+  #hud .hud-btn{background:rgba(0,0,0,.6); color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:10px; padding:9px 14px; font-size:15px; font-weight:700;}
+  #hud .hud-bottom{position:absolute; bottom:12px; left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-end; gap:8px;}
+  #hud .zb{display:flex; gap:6px;}
+  #hud .hud-parar{background:var(--danger); border:none; color:#fff; border-radius:12px; padding:12px 20px; font-size:16px; font-weight:800;}
+  #hudPlaca{position:absolute; top:58px; left:50%; transform:translateX(-50%); font-family:monospace; font-size:30px; font-weight:900; letter-spacing:3px; color:#fff; background:rgba(46,160,67,.85); padding:4px 16px; border-radius:10px; border:2px solid #fff; display:none;}
   #btnLanterna{position:absolute; left:8px; top:8px; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:5px 10px; font-size:14px; display:none;}
 
   .carregando{margin-top:12px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; font-size:13px;}
@@ -199,6 +213,27 @@
     <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
   </div>
 
+</div>
+
+<div id="hud">
+  <div class="hud-top">
+    <span class="hud-chip" id="hudFps">— fps</span>
+    <div style="display:flex; gap:8px;">
+      <button class="hud-btn" id="hudGirar" title="Virar a imagem 180°">🔄</button>
+      <button class="hud-btn" id="hudLanterna">🔦</button>
+      <button class="hud-btn" id="hudSair">✕ Sair da tela cheia</button>
+    </div>
+  </div>
+  <div id="hudPlaca"></div>
+  <div class="hud-bottom">
+    <div class="zb">
+      <button class="zbtn" data-z="1">1x</button>
+      <button class="zbtn" data-z="1.5">1,5x</button>
+      <button class="zbtn" data-z="2">2x</button>
+      <button class="zbtn" data-z="3">3x</button>
+    </div>
+    <button class="hud-parar" id="hudParar">⏹ Parar</button>
+  </div>
 </div>
 
 <div class="alerta-banner" id="banner">
@@ -458,6 +493,7 @@
   function atualizaPos(){
     rot = modoPos==='auto' ? rotAuto : parseInt(modoPos);
     $('btnPos').textContent = NOMES_POS[modoPos] + (modoPos==='auto' ? (rot===0?' · em pé':' · deitado') : '');
+    if(typeof atualizaTelaCheia==='function') atualizaTelaCheia();
   }
   $('btnPos').onclick=()=>{ modoPos=ORDEM_POS[(ORDEM_POS.indexOf(modoPos)+1)%ORDEM_POS.length]; ls.set('lpl_pos',modoPos); tracks=[]; atualizaPos(); };
   window.addEventListener('devicemotion',e=>{
@@ -468,6 +504,29 @@
     if(novo!==rotAuto){ rotAuto=novo; if(modoPos==='auto'){ tracks=[]; atualizaPos(); } }
   });
   atualizaPos();
+
+  // ---------- Tela cheia quando o celular está deitado e lendo ----------
+  var saiuManual=false; // var: pode ser lido antes desta linha
+  function girarComoTela(el){ // faz o elemento aparecer "em pé" para quem segura o celular deitado
+    el.style.inset='auto';
+    el.style.width=window.innerHeight+'px'; el.style.height=window.innerWidth+'px';
+    el.style.top='50%'; el.style.left='50%';
+    el.style.transform='translate(-50%,-50%) rotate('+(-rot)+'deg)';
+  }
+  function atualizaTelaCheia(){
+    if(rot===0) saiuManual=false;
+    const cheia = rot!==0 && rodando && !saiuManual;
+    document.body.classList.toggle('cheia', cheia);
+    const banner=$('banner');
+    if(cheia){ girarComoTela($('hud')); girarComoTela(banner); }
+    else{ ['inset','width','height','top','left','transform'].forEach(k=>banner.style[k]=''); }
+  }
+  window.addEventListener('resize', atualizaTelaCheia);
+  $('hudSair').onclick=()=>{ saiuManual=true; atualizaTelaCheia(); };
+  $('hudLanterna').onclick=()=>$('btnLanterna').click();
+  // sensor errou o lado? inverte para o outro lado deitado (fica fixo até voltar no 📱 para Auto)
+  $('hudGirar').onclick=()=>{ modoPos = rot===90 ? '-90' : '90'; ls.set('lpl_pos',modoPos); tracks=[]; atualizaPos(); };
+  $('hudParar').onclick=()=>$('btnStart').click();
 
   // ponto da câmera (u,v) -> ponto na imagem girada (x,y), e o inverso
   function paraGirado(u,v){
@@ -532,10 +591,10 @@
   function setZoom(z){
     zoom=z; ls.set('lpl_zoom',z);
     video.style.transform='scale('+z+')';
-    document.querySelectorAll('.zbtn').forEach(b=>b.classList.toggle('ativo', parseFloat(b.dataset.z)===z));
+    document.querySelectorAll('.zbtn[data-z]').forEach(b=>b.classList.toggle('ativo', parseFloat(b.dataset.z)===z));
     tracks=[];
   }
-  document.querySelectorAll('.zbtn').forEach(b=>b.onclick=()=>setZoom(parseFloat(b.dataset.z)));
+  document.querySelectorAll('.zbtn[data-z]').forEach(b=>b.onclick=()=>setZoom(parseFloat(b.dataset.z)));
 
   async function lerPlaca(b){
     // pequena margem em volta da placa ajuda o OCR
@@ -660,6 +719,7 @@
       fpsN++; const now=performance.now();
       if(now-fpsT>1000){
         $('fps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps · '+video.videoWidth+'×'+video.videoHeight;
+        $('hudFps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps · '+($('modoLeitura').value==='nuvem'?'nuvem':'local');
         fpsN=0; fpsT=now;
       }
     }catch(e){ console.error(e); mostraErro('Erro no motor: '+e.message); }
@@ -709,7 +769,11 @@
   desenhar();
 
   // ---------- Histórico ----------
+  let hudT=null;
   function registrarLida(placa, score, res){
+    const hp=$('hudPlaca'); hp.textContent=placa; hp.style.display='block';
+    hp.style.background = res ? (res.tipo==='match'?'rgba(220,40,40,.9)':'rgba(200,140,0,.9)') : 'rgba(46,160,67,.85)';
+    clearTimeout(hudT); hudT=setTimeout(()=>hp.style.display='none', 4000);
     const rep=lidas.find(l=>l.placa===placa);
     if(rep){ rep.vezes=(rep.vezes||1)+1; renderLidas(); return; }
     lidas.unshift({placa, t:Date.now(), score, tipo:res?res.tipo:'', vezes:1});
@@ -809,12 +873,14 @@
     try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){}
     try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){}
     loop();
+    atualizaTelaCheia();
   }
   function parar(){
     rodando=false; tracks=[];
     $('btnStart').textContent='▶ Iniciar leitura'; $('btnStart').classList.remove('parar');
     setStatus('pronto');
     if(wakeLock){ wakeLock.release(); wakeLock=null; }
+    atualizaTelaCheia();
   }
   $('btnStart').onclick=()=> rodando ? parar() : iniciar();
   document.addEventListener('visibilitychange', async ()=>{ if(!document.hidden && rodando){ try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){} } });
