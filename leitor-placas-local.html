@@ -92,6 +92,10 @@
   .achado .acoes{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
   .achado .acoes a, .achado .acoes button{font-size:12px; padding:5px 9px; border-radius:6px; background:#21262d; border:1px solid var(--border); color:var(--txt); text-decoration:none; cursor:pointer;}
 
+  .dg{display:flex; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid #21262d; font-size:12px;}
+  .dg img{width:90px; height:45px; object-fit:cover; border-radius:4px; border:1px solid var(--border); background:#000;}
+  .dg .m{font-weight:700;}
+  .dg .d{color:var(--muted);}
   .erro{background:#3d1214; border:1px solid var(--danger); color:#ffb3b3; padding:10px; border-radius:8px; font-size:13px; margin-top:10px; display:none;}
 
   .alerta-banner{display:none; position:fixed; inset:0; background:rgba(200,20,20,.94); z-index:50; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:20px;}
@@ -143,6 +147,20 @@
       <button class="btn btn-sec" id="btnAdd" style="width:auto;">+ Adicionar</button>
     </div>
     <div class="lista-alvos" id="alvos"></div>
+  </div>
+
+  <div class="painel" id="diagPainel" style="display:none; border-color:#8957e5;">
+    <div class="titulo-sec"><span>🔬 Diagnóstico</span><span id="diagResumoCurto" style="text-transform:none;"></span></div>
+    <button class="btn" id="btnPassou" style="background:#8957e5; font-size:17px; padding:16px;">🚗 Passou um carro agora</button>
+    <div style="font-size:12px; color:var(--muted); margin-top:6px;">Toque sempre que um carro passar com a placa visível. O app confere se ele detectou e leu aquele carro.</div>
+    <div id="diagResumo" style="margin-top:12px; font-size:13px; line-height:1.7;"></div>
+    <div class="titulo-sec" style="margin-top:12px;"><span>Últimos objetos detectados</span></div>
+    <div id="diagLista" style="max-height:320px; overflow-y:auto;"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn btn-sec" id="diagCopiar">📋 Copiar relatório</button>
+      <button class="btn btn-sec" id="diagWpp">💬 WhatsApp</button>
+      <button class="btn btn-sec" id="diagZerar" style="width:auto;">Zerar</button>
+    </div>
   </div>
 
   <div class="painel">
@@ -210,6 +228,12 @@
     <div class="cfg-row" style="font-size:12px;color:#f0b72f;">
       💡 Dica: segure o celular deitado (na horizontal). A câmera ganha o dobro de detalhe na largura e lê placas mais longe.
     </div>
+    <div class="cfg-row">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="chkDiag" style="width:20px;height:20px;accent-color:#8957e5;">
+        🔬 Modo diagnóstico (mostra onde cada placa se perdeu)
+      </label>
+    </div>
     <button class="btn btn-sec" id="btnLimpar" style="margin-top:12px;">Limpar histórico de leituras</button>
     <button class="btn btn-sec" id="btnRestaurar" style="margin-top:8px;">Restaurar configurações padrão</button>
   </div>
@@ -233,6 +257,7 @@
       <button class="zbtn" data-z="2">2x</button>
       <button class="zbtn" data-z="3">3x</button>
     </div>
+    <button class="hud-btn" id="hudPassou" style="display:none; background:#8957e5; border:none;">🚗 Passou</button>
     <button class="hud-parar" id="hudParar">⏹ Parar</button>
   </div>
 </div>
@@ -348,10 +373,11 @@
       const data=await resp.json();
       const confMin=parseFloat($('confMin').value);
       const r=(data.results||[]).sort((a,b)=>(b.score||0)-(a.score||0))[0];
-      if(!r){ t.envios=99; t.naoPlaca=true; return; } // nuvem não viu placa: para de consultar esse objeto
+      if(!r){ t.envios=99; t.naoPlaca=true; t.resps.push('nuvem não achou placa no recorte'); return; } // nuvem não viu placa: para de consultar esse objeto
       if(t.placa) return;
       const opcoes=[r.plate,...(r.candidates||[]).map(c=>c.plate)].map(limpa).map(corrigeFormato).filter(valida);
-      if(!opcoes.length || (r.score||0)<confMin) return;
+      if(!opcoes.length){ t.resps.push('nuvem leu "'+limpa(r.plate)+'" (fora do formato)'); return; }
+      if((r.score||0)<confMin){ t.resps.push('nuvem leu '+limpa(r.plate)+' com só '+Math.round(r.score*100)+'% de certeza'); return; }
       let p=opcoes[0], res=null;
       for(const o of opcoes){ const x=confere(o); if(x){ res=x; p=o; if(x.tipo==='match') break; } }
       t.placa=p; t.tipo=res?res.tipo:'';
@@ -359,6 +385,7 @@
       if(res) alarme(res, p, caixa, r.score, c.toDataURL('image/jpeg',0.6));
       $('erro').style.display='none';
     }catch(e){
+      t.resps.push('erro: '+e.message);
       mostraErro(e.message.includes('Failed to fetch')?'Sem conexão com o servidor de leitura. Verifique a internet.':e.message);
     }finally{ nuvemOcupada=false; }
   }
@@ -645,16 +672,144 @@
         if(v<0.3 && dist<ref*2.2 && proporcao>0.5 && proporcao<2) score=0.3*(1-dist/(ref*2.2))+0.01;
         if(score>bestScore){ bestScore=score; best=i; }
       });
-      if(best!==null){ t.box=boxes[best]; t.visto=agora; usados.add(best); t.quadros=(t.quadros||1)+1; t.detMax=Math.max(t.detMax||0, boxes[best].score); }
+      if(best!==null){ t.box=boxes[best]; t.visto=agora; usados.add(best); t.quadros=(t.quadros||1)+1; t.detMax=Math.max(t.detMax||0, boxes[best].score); diagMedir(t); }
     }
     boxes.forEach((b,i)=>{ if(!usados.has(i)) tracks.push(novoTrack(b,agora)); });
     // placa que saiu da imagem: se juntou leituras boas, confirma com o que tem
     for(const t of tracks) if(agora-t.visto>=1500 && !t.placa) finalizar(t, true);
+    for(const t of tracks) if(agora-t.visto>=1500) diagEncerrar(t);
     tracks=tracks.filter(t=>agora-t.visto<1500);
   }
   function novoTrack(b,agora){
-    return {id:nextId++, box:b, visto:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0, quadros:1, detMax:b.score};
+    const t={id:nextId++, box:b, visto:agora, criado:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0, quadros:1, detMax:b.score, resps:[], esperas:{}};
+    diagMedir(t);
+    return t;
   }
+
+  // ================= MODO DIAGNÓSTICO =================
+  let diagObjs=[], diagMarcas=[], diagFps=[];
+  const diagLigado=()=>$('chkDiag').checked;
+  function diagMedir(t){
+    if(!diagLigado()) return;
+    const w=t.box.x2-t.box.x1, h=t.box.y2-t.box.y1;
+    if(!t.largMax || w>t.largMax*1.15){
+      t.largMax=Math.max(t.largMax||0,w); t.propMax=w/h;
+      try{ // miniatura do maior tamanho em que a placa apareceu
+        const mw=w*0.6, mh=h*0.8, c=document.createElement('canvas'); c.width=160; c.height=80;
+        c.getContext('2d').drawImage(fcv, Math.max(0,t.box.x1-mw), Math.max(0,t.box.y1-mh), w+2*mw, h+2*mh, 0,0,160,80);
+        t.thumb=c.toDataURL('image/jpeg',0.5);
+      }catch(e){}
+    }
+  }
+  const MOTIVOS={
+    lida:            {txt:'✅ Lida',                                   cor:'#3fb950'},
+    pequena:         {txt:'Placa pequena demais (longe)',             cor:'#d29922'},
+    certeza:         {txt:'Detector sem certeza de ser placa',        cor:'#d29922'},
+    quadros:         {txt:'Apareceu muito rápido (poucos quadros)',   cor:'#d29922'},
+    formato:         {txt:'Formato não parece placa',                 cor:'#d29922'},
+    fila:            {txt:'Esperou na fila (1 consulta por segundo)', cor:'#f85149'},
+    limite:          {txt:'Barrado pelo limite por minuto',           cor:'#f85149'},
+    nao_enviado:     {txt:'Não chegou a ser enviado',                 cor:'#f85149'},
+    nuvem_falhou:    {txt:'Enviado, mas a leitura falhou',            cor:'#f85149'},
+    local_longe:     {txt:'Local: pequena demais para ler',           cor:'#d29922'},
+    local_inconcl:   {txt:'Local: leituras não bateram',              cor:'#f85149'},
+    local_nada:      {txt:'Local: não chegou a ler',                  cor:'#f85149'}
+  };
+  function diagMotivo(t){
+    if(t.placa) return 'lida';
+    if($('modoLeitura').value==='nuvem'){
+      if(t.resps.length) return 'nuvem_falhou';
+      if((t.largMax||0)<28) return 'pequena';
+      if((t.detMax||0)<0.6) return 'certeza';
+      if((t.quadros||0)<3) return 'quadros';
+      if(t.propMax && (t.propMax<1 || t.propMax>6)) return 'formato';
+      if(t.esperas.limite) return 'limite';
+      if(t.esperas.fila) return 'fila';
+      return 'nao_enviado';
+    }
+    if(t.leituras) return 'local_inconcl';
+    if(t.longe) return 'local_longe';
+    return 'local_nada';
+  }
+  function diagEncerrar(t){
+    if(!diagLigado() || t.diagFeito) return;
+    t.diagFeito=true;
+    diagObjs.unshift({id:t.id, criado:t.criado, visto:t.visto, motivo:diagMotivo(t), placa:t.placa, larg:Math.round(t.largMax||0),
+      det:Math.round((t.detMax||0)*100), quadros:t.quadros, envios:Math.min(t.envios||0,3), resps:t.resps.slice(), thumb:t.thumb, dur:t.visto-t.criado});
+    if(diagObjs.length>300) diagObjs.pop();
+    diagRender();
+  }
+  // Botão "passou um carro": 3 s depois confere o que o app fez com os objetos daquele momento
+  function diagMarcar(){
+    const tMarca=Date.now();
+    const m={t:tMarca, res:'aguardando'}; diagMarcas.unshift(m); diagRender();
+    const b=$('btnPassou'); b.textContent='🚗 Registrado! Conferindo…'; setTimeout(()=>b.textContent='🚗 Passou um carro agora',1500);
+    setTimeout(()=>{
+      const janela=o=> o.visto>=tMarca-4000 && o.criado<=tMarca+3000;
+      const objs=[...diagObjs.filter(janela), ...tracks.filter(janela).map(t=>({motivo:diagMotivo(t), placa:t.placa}))];
+      if(!objs.length) m.res='nao_detectado';
+      else if(objs.some(o=>o.motivo==='lida')){ m.res='lido'; m.placa=(objs.find(o=>o.motivo==='lida')||{}).placa; }
+      else { m.res='detectado_nao_lido'; m.motivos=[...new Set(objs.map(o=>o.motivo))]; }
+      diagRender();
+    },3000);
+  }
+  function diagConfig(){
+    const fpsMed=diagFps.length?(diagFps.reduce((a,b)=>a+b,0)/diagFps.length).toFixed(1):'—';
+    return `Leitura: ${$('modoLeitura').value} · Detector: ${detTam} · Zoom: ${zoom}x · Posição: ${modoPos}${modoPos==='auto'?(rot?' (deitado)':' (em pé)'):''}\n`+
+           `Câmera: ${video.videoWidth}×${video.videoHeight} · fps médio: ${fpsMed} · Confirmar: ${$('votos').value} · Confiança: ${Math.round($('confMin').value*100)}% · Limite: ${$('limiteMin').value}/min`;
+  }
+  function diagContagem(){
+    const c={}; for(const o of diagObjs) c[o.motivo]=(c[o.motivo]||0)+1; return c;
+  }
+  function diagRender(){
+    if(!diagLigado()) return;
+    const marcas=diagMarcas.filter(m=>m.res!=='aguardando');
+    const lidos=marcas.filter(m=>m.res==='lido').length, nd=marcas.filter(m=>m.res==='nao_detectado').length, dnl=marcas.filter(m=>m.res==='detectado_nao_lido').length;
+    const c=diagContagem();
+    let h='';
+    if(diagMarcas.length) h+=`<b>Carros marcados: ${diagMarcas.length}</b> → <span style="color:#3fb950">lidos ${lidos}</span> · <span style="color:#f85149">nem detectados ${nd}</span> · <span style="color:#d29922">detectados mas não lidos ${dnl}</span><br>`;
+    h+=`<b>Objetos detectados: ${diagObjs.length}</b><br>`;
+    for(const k of Object.keys(MOTIVOS)) if(c[k]) h+=`<span style="color:${MOTIVOS[k].cor}">● ${MOTIVOS[k].txt}: ${c[k]}</span><br>`;
+    $('diagResumo').innerHTML=h;
+    $('diagResumoCurto').textContent = diagMarcas.length ? `${lidos}/${marcas.length} lidos` : '';
+    $('diagLista').innerHTML=diagObjs.slice(0,40).map(o=>{
+      const M=MOTIVOS[o.motivo];
+      return `<div class="dg">${o.thumb?`<img src="${o.thumb}">`:'<img>'}<div>
+        <div class="m" style="color:${M.cor}">${o.placa?o.placa+' · ':''}${M.txt}</div>
+        <div class="d">${new Date(o.criado).toLocaleTimeString('pt-BR')} · ${(o.dur/1000).toFixed(1)}s na tela · ${o.quadros} quadros · placa ${o.larg}px · detector ${o.det}%${o.envios?` · ${o.envios} envio(s)`:''}</div>
+        ${o.resps.length?`<div class="d">${o.resps.join(' · ')}</div>`:''}
+      </div></div>`;
+    }).join('') || '<div class="vazio">Nenhum objeto ainda. Inicie a leitura e aponte para os carros.</div>';
+  }
+  function diagTexto(){
+    const marcas=diagMarcas.filter(m=>m.res!=='aguardando'), c=diagContagem();
+    let t=`🔬 DIAGNÓSTICO LEITOR DE PLACAS — ${new Date().toLocaleString('pt-BR')}\n${diagConfig()}\n\n`;
+    t+=`CARROS MARCADOS: ${marcas.length}\n`;
+    t+=`- lidos: ${marcas.filter(m=>m.res==='lido').length}\n- nem detectados: ${marcas.filter(m=>m.res==='nao_detectado').length}\n- detectados mas não lidos: ${marcas.filter(m=>m.res==='detectado_nao_lido').length}\n`;
+    for(const m of marcas.filter(m=>m.res==='detectado_nao_lido')) t+=`  · ${new Date(m.t).toLocaleTimeString('pt-BR')}: ${m.motivos.map(k=>MOTIVOS[k].txt).join(' / ')}\n`;
+    t+=`\nOBJETOS DETECTADOS: ${diagObjs.length}\n`;
+    for(const k of Object.keys(MOTIVOS)) if(c[k]) t+=`- ${MOTIVOS[k].txt}: ${c[k]}\n`;
+    t+=`\nDETALHE (últimos 25):\n`;
+    for(const o of diagObjs.slice(0,25)) t+=`${new Date(o.criado).toLocaleTimeString('pt-BR')} | ${MOTIVOS[o.motivo].txt}${o.placa?' '+o.placa:''} | ${(o.dur/1000).toFixed(1)}s, ${o.quadros}q, ${o.larg}px, det ${o.det}%${o.envios?', '+o.envios+' envio':''}${o.resps.length?' | '+o.resps.join('; '):''}\n`;
+    return t;
+  }
+  $('chkDiag').checked=ls.get('lpl_diag',false);
+  function aplicaDiag(){
+    const on=diagLigado();
+    $('diagPainel').style.display=on?'block':'none';
+    $('hudPassou').style.display=on?'inline-block':'none';
+    if(on) diagRender();
+  }
+  $('chkDiag').addEventListener('change',()=>{ ls.set('lpl_diag',$('chkDiag').checked); aplicaDiag(); });
+  $('btnPassou').onclick=diagMarcar;
+  $('hudPassou').onclick=diagMarcar;
+  $('diagZerar').onclick=()=>{ diagObjs=[]; diagMarcas=[]; diagFps=[]; diagRender(); };
+  $('diagCopiar').onclick=async()=>{
+    const txt=diagTexto();
+    try{ await navigator.clipboard.writeText(txt); alert('Relatório copiado. Cole na conversa.'); }
+    catch(e){ prompt('Copie o relatório:', txt); }
+  };
+  $('diagWpp').onclick=()=>window.open('https://wa.me/?text='+encodeURIComponent(diagTexto()),'_blank');
 
   // Votação letra a letra: cada leitura vota em cada posição, com peso = certeza daquela letra.
   // Assim, se cada quadro borrado errar uma letra diferente, a maioria ainda acerta a placa.
@@ -701,6 +856,10 @@
         const alvosLeitura=tracks.filter(t=>!t.placa && t.visto===agora).sort((a,b)=>(b.box.x2-b.box.x1)-(a.box.x2-a.box.x1)).slice(0,4);
         if($('modoLeitura').value==='nuvem'){
           // envia 1 recorte por carro; reenvia (máx. 3) só se a placa cresceu bastante (carro chegou mais perto)
+          if(diagLigado()){
+            const motivoEspera = nuvemOcupada||agora-ultimoEnvio<1050 ? 'fila' : (!dentroDoLimite() ? 'limite' : null);
+            if(motivoEspera) for(const t of alvosLeitura) if(pareceePlaca(t) && !(t.envios>0)) t.esperas[motivoEspera]=(t.esperas[motivoEspera]||0)+1;
+          }
           if(!nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite()){
             const t=alvosLeitura.find(t=> pareceePlaca(t) && (t.envios||0)<3 &&
               (!t.envios || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)));
@@ -721,6 +880,7 @@
       }
       fpsN++; const now=performance.now();
       if(now-fpsT>1000){
+        diagFps.push(fpsN*1000/(now-fpsT)); if(diagFps.length>120) diagFps.shift();
         $('fps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps · '+video.videoWidth+'×'+video.videoHeight;
         $('hudFps').textContent=(fpsN*1000/(now-fpsT)).toFixed(1)+' fps · '+($('modoLeitura').value==='nuvem'?'nuvem':'local');
         fpsN=0; fpsT=now;
@@ -885,6 +1045,7 @@
     atualizaTelaCheia();
   }
   function parar(){
+    for(const t of tracks) diagEncerrar(t);
     rodando=false; tracks=[];
     $('btnStart').textContent='▶ Iniciar leitura'; $('btnStart').classList.remove('parar');
     setStatus('pronto');
@@ -898,6 +1059,7 @@
   function mostraErro(m){ const e=$('erro'); e.textContent=m; e.style.display='block'; }
 
   // ---------- Início ----------
+  aplicaDiag();
   atualizaModo();
   setZoom(ls.get('lpl_zoom',1));
   abrirCamera();
