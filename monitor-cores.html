@@ -54,8 +54,8 @@
   .cal-row{display:flex; gap:10px; margin-top:4px;}
   .btn{flex:1; padding:13px 10px; border:none; border-radius:10px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; transition:opacity .15s;}
   .btn:active{opacity:.7;}
-  .btn-azul{background:linear-gradient(135deg,#0097a7,#00bcd4);}
-  .btn-roxo{background:linear-gradient(135deg,#7b1fa2,#9c27b0);}
+  .btn-azul,.btn-roxo{background:#30363d; border:2px dashed #6e7681; transition:background .3s, color .3s;}
+  .btn-cal-ok{border:2px solid rgba(255,255,255,.35); box-shadow:0 0 12px rgba(0,0,0,.4);}
   .btn-start{background:var(--ok); width:100%; margin-top:10px; padding:16px; font-size:16px;}
   .btn-start.parar{background:var(--danger);}
   .btn-reset{background:#21262d; border:1px solid var(--border); color:var(--txt); width:100%; margin-top:8px; padding:11px;}
@@ -123,10 +123,6 @@
     <div class="cal-row">
       <button class="btn btn-azul" id="btnCalAzul">Capturar COR 1</button>
       <button class="btn btn-roxo" id="btnCalRoxo">Capturar COR 2</button>
-    </div>
-    <div class="cal-status">
-      <div class="cal-chip"><div class="sw" id="swAzul"></div><span id="stAzul">Cor 1: não calibrada</span></div>
-      <div class="cal-chip"><div class="sw" id="swRoxo"></div><span id="stRoxo">Cor 2: não calibrada</span></div>
     </div>
   </div>
 
@@ -427,8 +423,14 @@
       c=lerCorMedia();
       if(!c){ alert('Câmera ainda não está pronta.'); return; }
     }
-    if(qual==='azul'){ calAzul=c; $('swAzul').style.background=c.rgb; $('stAzul').textContent='Cor 1: OK'; }
-    else{ calRoxo=c; $('swRoxo').style.background=c.rgb; $('stRoxo').textContent='Cor 2: OK'; }
+    if(qual==='azul') calAzul=c; else calRoxo=c;
+    const btn = qual==='azul' ? $('btnCalAzul') : $('btnCalRoxo');
+    const m = c.rgb.match(/\d+/g).map(Number);
+    const lum = (0.299*m[0] + 0.587*m[1] + 0.114*m[2]);
+    btn.style.background = c.rgb;
+    btn.style.color = lum > 150 ? '#111' : '#fff';
+    btn.classList.add('btn-cal-ok');
+    btn.textContent = NOME[qual] + ' ✓';
     log(`🎨 ${NOME[qual]} calibrada (matiz ${Math.round(c.h)}°)`);
     if(calAzul && calRoxo) $('btnStart').disabled=false;
   }
