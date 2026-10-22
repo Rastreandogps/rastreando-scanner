@@ -152,9 +152,9 @@
     <div class="cfg-row">
       <label>Confirmar após</label>
       <select id="votos">
-        <option value="2">2 leituras iguais (mais rápido)</option>
-        <option value="3" selected>3 leituras iguais (equilibrado)</option>
-        <option value="4">4 leituras iguais (mais seguro)</option>
+        <option value="2">2 leituras (mais rápido)</option>
+        <option value="3" selected>3 leituras (equilibrado)</option>
+        <option value="4">4 leituras (mais seguro)</option>
       </select>
     </div>
     <div class="cfg-row">
@@ -372,7 +372,7 @@
     }
     return boxes;
   }
-  const PLACA_MIN=55; // largura mínima (pixels reais) para tentar ler os caracteres
+  const PLACA_MIN=75; // largura mínima (pixels reais) para tentar ler os caracteres
 
   function setZoom(z){
     zoom=z; ls.set('lpl_zoom',z);
@@ -399,7 +399,7 @@
       const ch=ALFABETO[bi]; if(ch!=='_'){ txt+=ch; confs.push(bv); }
     }
     const conf=confs.length?Math.min(...confs):0;
-    return {txt, conf};
+    return {txt, conf, confs};
   }
 
   // ---------- Rastreamento simples + votação ----------
@@ -410,16 +410,65 @@
     const inter=ix*iy, ua=(a.x2-a.x1)*(a.y2-a.y1)+(b.x2-b.x1)*(b.y2-b.y1)-inter;
     return ua>0?inter/ua:0;
   }
+  const centro=b=>({x:(b.x1+b.x2)/2, y:(b.y1+b.y2)/2, w:b.x2-b.x1});
+  // Casa cada placa do quadro atual com a do quadro anterior.
+  // Além da sobreposição, aceita deslocamento grande (carro passando perto anda muito na imagem).
   function casar(boxes){
     const agora=Date.now();
     const usados=new Set();
     for(const t of tracks){
-      let best=null,bi=0.3;
-      boxes.forEach((b,i)=>{ if(usados.has(i)) return; const v=iou(t.box,b); if(v>bi){bi=v;best=i;} });
+      let best=null, bestScore=0;
+      const ct=centro(t.box);
+      boxes.forEach((b,i)=>{
+        if(usados.has(i)) return;
+        const v=iou(t.box,b);
+        const cb=centro(b), dist=Math.hypot(cb.x-ct.x, cb.y-ct.y), ref=Math.max(ct.w,cb.w);
+        const proporcao=cb.w/ct.w;
+        let score=v;
+        if(v<0.3 && dist<ref*2.2 && proporcao>0.5 && proporcao<2) score=0.3*(1-dist/(ref*2.2))+0.01;
+        if(score>bestScore){ bestScore=score; best=i; }
+      });
       if(best!==null){ t.box=boxes[best]; t.visto=agora; usados.add(best); }
     }
-    boxes.forEach((b,i)=>{ if(!usados.has(i)) tracks.push({id:nextId++, box:b, votos:{}, visto:agora, placa:null, tipo:'', ultima:''}); });
-    tracks=tracks.filter(t=>agora-t.visto<1200);
+    boxes.forEach((b,i)=>{ if(!usados.has(i)) tracks.push(novoTrack(b,agora)); });
+    // placa que saiu da imagem: se juntou leituras boas, confirma com o que tem
+    for(const t of tracks) if(agora-t.visto>=1500 && !t.placa) finalizar(t, true);
+    tracks=tracks.filter(t=>agora-t.visto<1500);
+  }
+  function novoTrack(b,agora){
+    return {id:nextId++, box:b, visto:agora, placa:null, tipo:'', slots:[{},{},{},{},{},{},{}], leituras:0, somaConf:0, melhorConf:0};
+  }
+
+  // Votação letra a letra: cada leitura vota em cada posição, com peso = certeza daquela letra.
+  // Assim, se cada quadro borrado errar uma letra diferente, a maioria ainda acerta a placa.
+  function votar(t, p, confs){
+    for(let i=0;i<7;i++){ const s=t.slots[i]; s[p[i]]=(s[p[i]]||0)+confs[i]; }
+    t.leituras++; const m=Math.min(...confs); t.somaConf+=m; t.melhorConf=Math.max(t.melhorConf,m);
+  }
+  function consenso(t){
+    let txt='', apoio=1;
+    for(const s of t.slots){
+      let bc='', bv=0, tot=0;
+      for(const c in s){ tot+=s[c]; if(s[c]>bv){bv=s[c]; bc=c;} }
+      if(!bc) return null;
+      txt+=bc; apoio=Math.min(apoio, bv/tot);
+    }
+    return {txt, apoio};
+  }
+  function finalizar(t, saindo){
+    if(t.placa || !t.leituras) return;
+    const c=consenso(t); if(!c) return;
+    const p=corrigeFormato(c.txt); if(!valida(p)) return;
+    const precisa=parseInt($('votos').value), media=t.somaConf/t.leituras;
+    const ok = (t.leituras>=precisa && c.apoio>=0.6)            // várias leituras concordando
+            || (saindo && t.leituras>=2 && c.apoio>=0.7 && media>=0.85) // carro saiu: 2 leituras boas bastam
+            || (saindo && t.melhorConf>=0.97);                  // carro saiu: 1 leitura muito nítida
+    if(!ok) return;
+    t.placa=p;
+    const res=confere(p);
+    t.tipo=res?res.tipo:'';
+    registrarLida(p, media, res);
+    if(res) alarme(res, p, t.box, media);
   }
 
   // ---------- Loop principal ----------
@@ -430,23 +479,18 @@
       if(video.videoWidth){
         const boxes=await detectar();
         casar(boxes);
-        const confMin=parseFloat($('confMin').value), precisa=parseInt($('votos').value);
-        for(const t of tracks){
-          if(t.visto!==Math.max(...tracks.map(x=>x.visto)) && Date.now()-t.visto>100) continue;
+        const confMin=parseFloat($('confMin').value), agora=Date.now();
+        // lê no máximo as 4 maiores placas visíveis (as mais próximas)
+        const alvosLeitura=tracks.filter(t=>!t.placa && t.visto===agora).sort((a,b)=>(b.box.x2-b.box.x1)-(a.box.x2-a.box.x1)).slice(0,4);
+        for(const t of alvosLeitura){
           if(t.box.x2-t.box.x1 < PLACA_MIN){ t.longe=true; continue; } // pequena demais: nem tenta ler
           t.longe=false;
           const r=await lerPlaca(t.box);
           const p=corrigeFormato(limpa(r.txt));
           t.ultima=p;
-          if(r.conf<confMin || !valida(p)) continue;
-          t.votos[p]=(t.votos[p]||0)+1;
-          if(!t.placa && t.votos[p]>=precisa){
-            t.placa=p;
-            const res=confere(p);
-            t.tipo=res?res.tipo:'';
-            registrarLida(p, r.conf, res);
-            if(res) alarme(res, p, t.box, r.conf);
-          }
+          if(p.length!==7 || r.conf<confMin*0.8) continue; // leitura ruim não vota
+          votar(t, p, r.confs);
+          finalizar(t, false);
         }
       }
       fpsN++; const now=performance.now();
@@ -465,6 +509,7 @@
     for(const t of tracks){
       const b=t.box, x=(b.x1-roi.x)*k, y=(b.y1-roi.y)*k, w=(b.x2-b.x1)*k, h=(b.y2-b.y1)*k;
       const cor = t.tipo==='match' ? '#ff4d4d' : t.tipo==='parecida' ? '#f0b72f' : t.placa ? '#3fb950' : '#ffffff';
+      octx.globalAlpha = (!t.placa && (t.longe || !t.leituras)) ? 0.35 : 1; // placa distante: caixa apagadinha
       octx.lineWidth=3; octx.strokeStyle=cor; octx.shadowColor='rgba(0,0,0,.8)'; octx.shadowBlur=4;
       octx.strokeRect(x,y,w,h);
       const L=Math.min(14,w/3,h/3); octx.lineWidth=5; octx.beginPath();
@@ -480,14 +525,15 @@
         const tw=octx.measureText(t.placa).width+12;
         octx.fillStyle=cor; octx.fillRect(x, Math.max(0,y-22), tw, 20);
         octx.fillStyle = t.tipo==='parecida' ? '#000' : '#fff'; octx.fillText(t.placa, x+6, Math.max(15,y-7));
-      }else{
-        // ainda lendo: etiqueta discreta
-        const label = t.longe ? 'aproxime' : (t.ultima ? t.ultima+'?' : '…');
+      }else if(!t.longe && t.leituras){
+        // lendo: mostra só quantas leituras já juntou (sem chutes na tela)
+        const label='lendo '+'•'.repeat(Math.min(t.leituras,5));
         octx.font='bold 11px monospace';
         const tw=octx.measureText(label).width+8;
         octx.fillStyle='rgba(0,0,0,.6)'; octx.fillRect(x, Math.max(0,y-16), tw, 14);
         octx.fillStyle='#fff'; octx.fillText(label, x+4, Math.max(11,y-5));
       }
+      octx.globalAlpha=1;
     }
     requestAnimationFrame(desenhar);
   }
