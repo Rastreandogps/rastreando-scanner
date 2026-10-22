@@ -128,12 +128,11 @@
     <video id="video" autoplay playsinline muted></video>
     <canvas id="overlay"></canvas>
     <div id="maskLayer"></div>
-    <button id="btnMask" class="zbtn" style="position:absolute; left:8px; top:52px; padding:5px 10px; font-size:13px;">⬛ Ocultar</button>
+    <button id="btnMask" class="zbtn" style="position:absolute; left:60px; top:8px; padding:5px 10px; font-size:13px;">⬛ Ocultar</button>
     <div id="maskAviso">Arraste para cobrir uma área · toque numa placa para cobri-la · toque numa área cinza para apagar</div>
     <div class="chip" id="fps">— fps</div>
     <div class="chip" id="motor">motor: —</div>
     <button id="btnLanterna" title="Lanterna">🔦</button>
-    <button id="btnPos" class="zbtn" style="position:absolute; left:60px; top:8px; padding:5px 10px; font-size:13px;">📱 Auto</button>
     <div id="zoomBox" style="position:absolute; left:8px; bottom:8px; display:flex; gap:4px;">
       <button class="zbtn ativo" data-z="1">1x</button>
       <button class="zbtn" data-z="1.5">1,5x</button>
@@ -237,7 +236,7 @@
       Tudo roda no celular. Nenhuma foto é enviada para a internet.
     </div>
     <div class="cfg-row" style="font-size:12px;color:#f0b72f;">
-      💡 Dica: segure o celular deitado (na horizontal). A câmera ganha o dobro de detalhe na largura e lê placas mais longe.
+      💡 Dica: com a rotação automática do Android ligada, segure o celular deitado (na horizontal). A câmera ganha o dobro de detalhe na largura e lê placas mais longe.
     </div>
     <div class="cfg-row">
       <label style="display:flex;align-items:center;gap:8px;">
@@ -264,7 +263,6 @@
     <span class="hud-chip" id="hudFps">— fps</span>
     <div style="display:flex; gap:8px;">
       <button class="hud-btn" id="hudMask">⬛ Ocultar</button>
-      <button class="hud-btn" id="hudGirar" title="Virar a imagem 180°">🔄</button>
       <button class="hud-btn" id="hudLanterna">🔦</button>
       <button class="hud-btn" id="hudSair">✕ Sair da tela cheia</button>
     </div>
@@ -657,48 +655,31 @@
     return {x:(vw-w)/2, y:(vh-h)/2, w, h};
   }
 
-  // ---------- Celular deitado (com rotação de tela travada) ----------
-  // rot = 0 (em pé), 90 (gira a imagem no sentido horário) ou -90 (anti-horário)
-  let rot=0, modoPos=String(ls.get('lpl_pos','auto')), rotAuto=0;
-  if(!['auto','0','90','-90'].includes(modoPos)) modoPos='auto';
-  const NOMES_POS={auto:'📱 Auto', '0':'📱 Em pé', '-90':'📱 Deitado ↺', '90':'📱 Deitado ↻'};
-  const ORDEM_POS=['auto','0','-90','90'];
-  function atualizaPos(){
-    rot = modoPos==='auto' ? rotAuto : parseInt(modoPos);
-    $('btnPos').textContent = NOMES_POS[modoPos] + (modoPos==='auto' ? (rot===0?' · em pé':' · deitado') : '');
-    if(typeof atualizaTelaCheia==='function') atualizaTelaCheia();
-  }
-  $('btnPos').onclick=()=>{ modoPos=ORDEM_POS[(ORDEM_POS.indexOf(modoPos)+1)%ORDEM_POS.length]; ls.set('lpl_pos',modoPos); tracks=[]; atualizaPos(); };
-  window.addEventListener('devicemotion',e=>{
-    const g=e.accelerationIncludingGravity; if(!g||g.x==null) return;
-    let novo=rotAuto;
-    if(Math.abs(g.x)>6 && Math.abs(g.x)>Math.abs(g.y)*1.5) novo = g.x>0 ? -90 : 90; // deitado
-    else if(Math.abs(g.y)>6 && Math.abs(g.y)>Math.abs(g.x)*1.5) novo = 0;          // em pé
-    if(novo!==rotAuto){ rotAuto=novo; if(modoPos==='auto'){ tracks=[]; atualizaPos(); } }
-  });
-  atualizaPos();
+  // ---------- Posição do celular: quem gira é o próprio Android ----------
+  // Com a rotação automática do Android ligada, a página e a câmera já viram juntas.
+  // O app não gira mais nada por conta própria (rot fica sempre 0).
+  let rot=0, modoPos='android';
+  const deitado=()=> window.innerWidth > window.innerHeight;
+  function atualizaPos(){ /* mantido por compatibilidade: a posição vem do Android */ if(typeof atualizaTelaCheia==='function') atualizaTelaCheia(); }
 
   // ---------- Tela cheia quando o celular está deitado e lendo ----------
   var saiuManual=false; // var: pode ser lido antes desta linha
-  function girarComoTela(el){ // faz o elemento aparecer "em pé" para quem segura o celular deitado
-    el.style.inset='auto';
-    el.style.width=window.innerHeight+'px'; el.style.height=window.innerWidth+'px';
-    el.style.top='50%'; el.style.left='50%';
-    el.style.transform='translate(-50%,-50%) rotate('+(-rot)+'deg)';
-  }
   function atualizaTelaCheia(){
-    if(rot===0) saiuManual=false;
-    const cheia = rot!==0 && rodando && !saiuManual;
+    if(!deitado()) saiuManual=false;
+    const cheia = deitado() && rodando && !saiuManual;
     document.body.classList.toggle('cheia', cheia);
-    const banner=$('banner');
-    if(cheia){ girarComoTela($('hud')); girarComoTela(banner); }
-    else{ ['inset','width','height','top','left','transform'].forEach(k=>banner.style[k]=''); }
+    const hud=$('hud');
+    if(cheia){ hud.style.inset='0'; hud.style.width=''; hud.style.height=''; hud.style.transform='none'; }
   }
-  window.addEventListener('resize', atualizaTelaCheia);
+  let ultimaOrient=deitado();
+  function aoGirar(){
+    if(deitado()!==ultimaOrient){ ultimaOrient=deitado(); tracks=[]; parados=[]; mascaras=[]; if(typeof setEditMask==='function') setEditMask(false); } // cena mudou: recomeça
+    atualizaTelaCheia();
+  }
+  window.addEventListener('resize', aoGirar);
+  if(screen.orientation) screen.orientation.addEventListener('change', aoGirar);
   $('hudSair').onclick=()=>{ saiuManual=true; atualizaTelaCheia(); };
   $('hudLanterna').onclick=()=>$('btnLanterna').click();
-  // sensor errou o lado? inverte para o outro lado deitado (fica fixo até voltar no 📱 para Auto)
-  $('hudGirar').onclick=()=>{ modoPos = rot===90 ? '-90' : '90'; ls.set('lpl_pos',modoPos); tracks=[]; atualizaPos(); };
   $('hudParar').onclick=()=>$('btnStart').click();
 
   // ponto da câmera (u,v) -> ponto na imagem girada (x,y), e o inverso
@@ -913,7 +894,7 @@
   }
   function diagConfig(){
     const fpsMed=diagFps.length?(diagFps.reduce((a,b)=>a+b,0)/diagFps.length).toFixed(1):'—';
-    return `Leitura: ${$('modoLeitura').value} · Detector: ${detTam} · Zoom: ${zoom}x · Posição: ${modoPos}${modoPos==='auto'?(rot?' (deitado)':' (em pé)'):''}\n`+
+    return `Leitura: ${$('modoLeitura').value} · Detector: ${detTam} · Zoom: ${zoom}x · Posição: ${deitado()?'deitado':'em pé'}\n`+
            `Câmera: ${video.videoWidth}×${video.videoHeight} · fps médio: ${fpsMed} · Confirmar: ${$('votos').value} · Confiança: ${Math.round($('confMin').value*100)}% · Limite: ${$('limiteMin').value}/min`;
   }
   function diagContagem(){
@@ -1022,7 +1003,8 @@
             const motivoEspera = nuvemOcupada||agora-ultimoEnvio<1050 ? 'fila' : (!dentroDoLimite() ? 'limite' : null);
             if(motivoEspera) for(const t of alvosLeitura) if(pareceePlaca(t) && !(t.envios>0)) t.esperas[motivoEspera]=(t.esperas[motivoEspera]||0)+1;
           }
-          const querEnviar = t => pareceePlaca(t) && (t.envios||0)<3 && !t.pendente &&
+          const sobreParado = t => (t.quadros||0)<2 && parados.some(m=>iou(m.box,t.box)>0.4);
+          const querEnviar = t => pareceePlaca(t) && (t.envios||0)<3 && !t.pendente && !sobreParado(t) &&
               (!t.envios || (t.tentarDeNovo && agora-t.ultimoEnvioT>400)                       // leitura falhou: tenta outro quadro
                          || ((t.box.x2-t.box.x1)>=t.largEnvio*1.35 && agora-t.ultimoEnvioT>600)); // chegou bem mais perto
           const podeAgora = !nuvemOcupada && agora-ultimoEnvio>=1050 && dentroDoLimite();
