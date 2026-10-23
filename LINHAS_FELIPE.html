@@ -167,6 +167,17 @@
   tbody tr.perdido-row:hover { background: #fbdbd7 !important; }
   tbody tr.perdido-row td:nth-child(2) strong { color: #c0392b; }
 
+  /* linha cancelada (marcada na planilha, coluna J) */
+  tbody tr.cancelado-row,
+  tbody tr.cancelado-row:hover { background: #3a3a3a !important; color: #9a9a9a; }
+  tbody tr.cancelado-row td { border-bottom-color: #4a4a4a; }
+  tbody tr.cancelado-row td:nth-child(2) strong { color: #bdbdbd; text-decoration: line-through; }
+  tbody tr.cancelado-row .link-sms { color: #9a9a9a; border-bottom: none; pointer-events: none; }
+  tbody tr.cancelado-row .badge-troca,
+  tbody tr.cancelado-row .imei-antigo { background: transparent; color: #9a9a9a; }
+  tbody tr.cancelado-row .chk-perdido { cursor: not-allowed; opacity: 0.35; }
+  .badge-cancelado { background: #1f1f1f; color: #e0e0e0; }
+
   .sync-status {
     display: inline-block;
     margin-top: 8px;
@@ -512,6 +523,7 @@ const VALOR_POR_LINHA = 300;
 const pendentes = ["FELIPE 1500","FELIPE 1708","FELIPE 1732","FELIPE 1807","FELIPE 1989","FELIPE 2003","FELIPE 2110","FELIPE 2201"];
 const corpo = document.getElementById('tabela-corpo');
 const STORAGE_KEY = 'gps_linhas_perdidas';
+const STORAGE_CANC = 'gps_linhas_canceladas';
 
 // Identificação do aparelho (cada celular/navegador tem o seu, e ele não muda)
 const ID_KEY = 'gps_id_aparelho';
@@ -602,7 +614,7 @@ dados.forEach(linha => {
     <td>${dias} dias</td>
     <td>${imei}</td>
     <td>${expira}</td>
-    <td><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
+    <td class="td-status"><span class="badge ${isPendente ? 'badge-pendente' : 'badge-pago'}">${isPendente ? 'PENDENTE' : 'PAGO'}</span></td>
     <td>${substituicoes[nome] ? `<span class="badge badge-troca">&#8635; ${substituicoes[nome].numero}</span>` : '<span class="sem-troca">&mdash;</span>'}</td>
     <td>${substituicoes[nome] ? `<span class="imei-antigo">${substituicoes[nome].imei}</span>` : '<span class="sem-troca">&mdash;</span>'}</td>
   `;
@@ -630,10 +642,33 @@ function aplicarPerdidos(lista) {
   document.querySelectorAll('.chk-perdido').forEach(chk => {
     const nome = chk.dataset.nome;
     if (enviando.has(nome)) return; // respeita o clique que ainda está subindo
-    chk.checked = setPerdidos.has(nome);
+    chk.checked = !chk.disabled && setPerdidos.has(nome);
     chk.closest('tr').classList.toggle('perdido-row', chk.checked);
   });
   salvarPerdidos(Array.from(setPerdidos));
+}
+
+// linhas canceladas: só a planilha (coluna J) decide; aqui só mostra escuro e trava
+function aplicarCancelados(lista) {
+  const setCanc = new Set(lista);
+  document.querySelectorAll('.chk-perdido').forEach(chk => {
+    const tr = chk.closest('tr');
+    const td = tr.querySelector('.td-status');
+    if (!td.dataset.original) td.dataset.original = td.innerHTML;
+    const canc = setCanc.has(chk.dataset.nome);
+    tr.classList.toggle('cancelado-row', canc);
+    chk.disabled = canc;
+    if (canc) {
+      chk.checked = false;
+      tr.classList.remove('perdido-row');
+      td.innerHTML = '<span class="badge badge-cancelado">CANCELADO</span>';
+    } else {
+      td.innerHTML = td.dataset.original;
+    }
+  });
+  try { localStorage.setItem(STORAGE_CANC, JSON.stringify(Array.from(setCanc))); } catch (e) {}
+  const total = document.querySelectorAll('.chk-perdido').length;
+  document.querySelectorAll('.card .num')[0].textContent = total - setCanc.size;
 }
 
 async function chamarApi(params) {
@@ -653,6 +688,7 @@ async function baixarPerdidos(silencioso, registrarAcesso) {
         : { acao: 'ler' }
     );
     if (j && j.ok) {
+      if (j.cancelados) aplicarCancelados(j.cancelados);
       aplicarPerdidos(j.perdidos || []);
       mostrarStatus(true, '🟢 Sincronizado com a planilha');
     }
@@ -668,6 +704,7 @@ async function enviarPerdido(nome, perdido) {
   try {
     const j = await chamarApi({ acao: 'marcar', nome: nome, perdido: perdido ? '1' : '0' });
     enviando.delete(nome);
+    if (j && j.cancelados) aplicarCancelados(j.cancelados);
     if (j && j.ok) {
       aplicarPerdidos(j.perdidos || []);
       mostrarStatus(true, '🟢 Salvo — todos já estão vendo');
@@ -683,6 +720,7 @@ async function enviarPerdido(nome, perdido) {
 corpo.addEventListener('change', (e) => {
   if (!e.target.classList.contains('chk-perdido')) return;
   const chk = e.target;
+  if (chk.disabled) return;
   chk.closest('tr').classList.toggle('perdido-row', chk.checked);
 
   const marcados = Array.from(document.querySelectorAll('.chk-perdido:checked'))
@@ -715,6 +753,9 @@ document.querySelectorAll('.card .num')[0].textContent = totalLinhas;
 document.querySelectorAll('.card .num')[1].textContent = qtdPaga;
 document.querySelectorAll('.card .num')[2].textContent = qtdPendente;
 document.querySelectorAll('.card .num')[3].textContent = fmt(totalPendente);
+
+// mostra na hora os cancelados que este aparelho já conhece (a planilha confirma em seguida)
+try { aplicarCancelados(JSON.parse(localStorage.getItem(STORAGE_CANC)) || []); } catch (e) {}
 
 // Botão de enviar linhas perdidas pelo WhatsApp — abre modal de confirmação antes
 const NUMERO_WHATSAPP = '5521980886087'; // 21 98088-6087
