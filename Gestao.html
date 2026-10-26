@@ -736,6 +736,11 @@ body.modal-aberto{overflow:hidden}
 .btn-troca:hover{background:#ede9fe}
 .cc-acoes .btn-troca{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
 .cls-acoes .btn-troca{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
+/* 26/10/2026 (dono): nova instalação para cliente que já é da Rastreando (vira pedido pendente no APP Técnico) */
+.btn-novains{border:1.5px solid #86efac;border-radius:var(--radius-sm);background:#f0fdf4;color:#166534;font-family:var(--font-body);font-weight:700;cursor:pointer}
+.btn-novains:hover{background:#dcfce7}
+.cc-acoes .btn-novains{flex:1.2;margin:0;padding:12px 10px;font-size:.9rem}
+.cls-acoes .btn-novains{width:auto;flex:0 0 auto;margin:0;padding:8px 14px;font-size:.82rem}
 .cc-tent{padding:0 16px 12px}
 .btn-tent{width:100%;padding:11px 12px;border:1.5px solid #fca5a5;border-radius:var(--radius-sm);background:#fef2f2;color:#b91c1c;font-family:var(--font-body);font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .btn-tent:hover{background:#fee2e2}
@@ -1237,6 +1242,23 @@ body.modal-aberto{overflow:hidden}
     <div class="rt-link-dica">Preenchido: o técnico vai pela localização do veículo. Em branco: usa o endereço do cadastro do Asaas.</div>
     <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos de manutenção, card roxo "Substituição"): lá você escolhe o técnico, a data e o valor.</div>
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="tr-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="tr-cancelar">Cancelar</button></div>
+  </div>
+</div>
+<div class="modal-fundo" id="ni-fundo" hidden><!-- 26/10/2026 (dono): nova instalação para cliente que já é da Rastreando -->
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="ni-titulo">
+    <h3 id="ni-titulo">➕ Nova instalação</h3>
+    <div class="rt-cli" id="ni-cli"></div>
+    <div class="tr-sub">Veículo que vai receber o rastreador</div>
+    <div class="tr-novo"><input type="text" class="tr-nmodelo" id="ni-modelo" maxlength="45" placeholder="Modelo (ex.: Volvo FH 540)" autocomplete="off"><input type="text" id="ni-placa" maxlength="8" placeholder="Placa" autocomplete="off"><input type="text" id="ni-ano" maxlength="4" inputmode="numeric" placeholder="Ano" autocomplete="off"></div>
+    <div class="tr-opc">
+      <select id="ni-bloq" aria-label="Com ou sem bloqueio"><option value="">Bloqueio?</option><option value="com">Com bloqueio</option><option value="sem">Sem bloqueio</option></select>
+      <select id="ni-gnv" aria-label="Tem GNV?"><option value="nao">Sem GNV</option><option value="sim">Com GNV</option></select>
+    </div>
+    <div class="rt-link-dica">Placa e ano são opcionais (o técnico confirma na hora). Nome, telefone e endereço vêm do cadastro do cliente.</div>
+    <label for="ni-desc">Observação (opcional)</label>
+    <textarea id="ni-desc" maxlength="500" placeholder="Ex.: caminhão fica na garagem da empresa; falar com o Carlos"></textarea>
+    <div class="cls-info" style="margin-top:8px">O pedido vai para o APP Técnico como <b>pendente</b> (Pedidos, card verde "Nova instalação"): lá você escolhe o técnico, a data e o valor.</div>
+    <div class="modal-bt"><button type="button" class="btn btn-ok" id="ni-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="ni-cancelar">Cancelar</button></div>
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1755,6 +1777,7 @@ body.modal-aberto{overflow:hidden}
           '<button type="button" class="btn-retirada" data-idx="' + i + '" data-acao="retirada">🔧 Criar ordem de retirada</button>' +
           '<button type="button" class="btn-manut" data-idx="' + i + '" data-acao="manutencao">🛠️ Manutenção</button>' +
           '<button type="button" class="btn-troca" data-idx="' + i + '" data-acao="troca">🔁 Troca de veículo</button>' +
+          '<button type="button" class="btn-novains" data-idx="' + i + '" data-acao="novains">➕ Nova instalação</button>' +
           '<button type="button" class="btn-chip' + (c.chipCancelado ? ' ativo' : '') + '" data-idx="' + i + '" data-acao="chip" title="' + (c.chipCancelado ? 'Desmarcar chip cancelado' : 'Marcar chip cancelado') + '" aria-pressed="' + (c.chipCancelado ? 'true' : 'false') + '">' + CHIP_SVG + '<span>' + (c.chipCancelado ? 'Chip cancelado' : 'Chip') + '</span></button>' +
         '</div>' +
         (c.ultimoEnvio || retornoCliente ? '<div class="cc-limpar">' +
@@ -1865,6 +1888,9 @@ body.modal-aberto{overflow:hidden}
         abrirModalTentativa(c);
       });
     });
+    $('lista-clientes').querySelectorAll('[data-acao="novains"]').forEach(function (b) {
+      b.addEventListener('click', function () { abrirModalNovaIns(lista[Number(b.getAttribute('data-idx'))]); });
+    });
     $('lista-clientes').querySelectorAll('[data-acao="troca"]').forEach(function (b) {
       b.addEventListener('click', function () { abrirModalTroca(lista[Number(b.getAttribute('data-idx'))]); });
     });
@@ -1944,6 +1970,8 @@ body.modal-aberto{overflow:hidden}
     }
     var bm = ev.target.closest('.cls-man');
     if (bm) { var cm = clienteParaRetirada(bm.getAttribute('data-cpf')); if (cm) abrirModalManut(cm); else toast('Cliente não encontrado.', 'erro'); return; }
+    var bi = ev.target.closest('.cls-ins');
+    if (bi) { var ci = clienteParaRetirada(bi.getAttribute('data-cpf')); if (ci) abrirModalNovaIns(ci); else toast('Cliente não encontrado.', 'erro'); return; }
     var bt = ev.target.closest('.cls-trc');
     if (bt) { var ct = clienteParaRetirada(bt.getAttribute('data-cpf')); if (ct) abrirModalTroca(ct); else toast('Cliente não encontrado.', 'erro'); return; }
     var b = ev.target.closest('.cls-ret');
@@ -2073,6 +2101,39 @@ body.modal-aberto{overflow:hidden}
       toast(msg, 'erro');
     }
   }
+
+  // ---------- NOVA INSTALAÇÃO (26/10/2026: cliente que já é da Rastreando; vira pedido PENDENTE "INSTALAÇÃO" no APP Técnico) ----------
+  var niCliente = null;
+  function abrirModalNovaIns(c) {
+    if (!c) return;
+    niCliente = c;
+    $('ni-cli').innerHTML = '<b>' + esc(c.nome) + '</b> · ' + esc(c.cpf || '') + (c.telefone ? ' · ' + esc(c.telefone) : '');
+    ['ni-modelo', 'ni-placa', 'ni-ano', 'ni-bloq', 'ni-desc'].forEach(function (id) { $(id).value = ''; });
+    $('ni-gnv').value = 'nao';
+    $('ni-enviar').disabled = false;
+    $('ni-fundo').hidden = false;
+    document.body.classList.add('modal-aberto');
+    setTimeout(function () { $('ni-modelo').focus(); }, 30);
+  }
+  function fecharModalNovaIns() { $('ni-fundo').hidden = true; document.body.classList.remove('modal-aberto'); niCliente = null; }
+  $('ni-cancelar').addEventListener('click', fecharModalNovaIns);
+  $('ni-fundo').addEventListener('click', function (ev) { if (ev.target === this && _fundoDown === this) fecharModalNovaIns(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !$('ni-fundo').hidden) fecharModalNovaIns(); });
+  $('ni-enviar').addEventListener('click', async function () {
+    if (!niCliente) return;
+    var c = niCliente;
+    var novo = { modelo: $('ni-modelo').value.trim(), placa: $('ni-placa').value.trim(), ano: $('ni-ano').value.trim(), gnv: $('ni-gnv').value, tipoRastreio: $('ni-bloq').value };
+    if (novo.modelo.length < 2) { toast('Informe o modelo do veículo.', 'erro'); $('ni-modelo').focus(); return; }
+    if (novo.ano && !/^\d{4}$/.test(novo.ano)) { toast('O ano precisa ter 4 números (ex.: 2020).', 'erro'); $('ni-ano').focus(); return; }
+    if (!novo.tipoRastreio) { toast('Escolha com ou sem bloqueio.', 'erro'); $('ni-bloq').focus(); return; }
+    var btn = $('ni-enviar'); btn.disabled = true;
+    try {
+      var r = await chamar('ins_criar', { cpf: c.cpf, nome: c.nome, telefone: c.telefone || '', novo: novo, descricao: $('ni-desc').value.trim() });
+      fecharModalNovaIns();
+      avisarAppTecnico(r.protocolo);
+      toast('Nova instalação enviada ao APP Técnico (' + r.protocolo + ').' + (r.temEndereco ? '' : ' Sem endereço no cadastro: complete lá.'), 'ok');
+    } catch (e) { btn.disabled = false; toast((e && e.message) || 'Erro ao enviar.', 'erro'); }
+  });
 
   // ---------- ORDEM DE MANUTENÇÃO (vira pedido PENDENTE de manutenção no APP Técnico) ----------
   var mnCliente = null;
@@ -4069,7 +4130,7 @@ body.modal-aberto{overflow:hidden}
           '<span class="cls-selo proximo">' + CLS_NOME.proximo + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
           '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + (c.valorEmDia != null && c.valorEmDia !== c.valor ? '<br>em dia: ' + brl(c.valorEmDia) : '') + '</div></div></div>' +
         '<div class="cls-bols"><div><span>1º boleto vence ' + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
-        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button><button type="button" class="btn-novains cls-ins" data-cpf="' + esc(soDig(c.cpf)) + '">➕ Nova instalação</button></div>' +
       '</div>';
       var hist = c.historico.map(function (h) {
         var cls = h.atraso === 0 ? 'h3' : h.atraso <= 7 ? 'h2' : h.atraso <= 15 ? 'h1' : 'h0';
@@ -4086,7 +4147,7 @@ body.modal-aberto{overflow:hidden}
           '<div style="text-align:right"><b>' + brl(c.aReceber) + '</b><div class="sub">a receber</div></div></div>' +
         (hist ? '<div class="cls-hist">' + hist + '</div>' : '') +
         '<div class="cls-bols">' + bols + '</div>' +
-        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button></div>' +
+        '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button><button type="button" class="btn-novains cls-ins" data-cpf="' + esc(soDig(c.cpf)) + '">➕ Nova instalação</button></div>' +
       '</div>';
     }).join('') : '<div class="vazio">Nenhum cliente neste filtro.' + ((termo || fVen) && clsFiltro.status !== 'todos' ? '<br><small>Está filtrando só por "' + (clsFiltro.status === 'pagos' ? 'Já pagos' : 'A receber') + '". Toque em <b>Todos</b> para buscar entre todos os clientes.</small>' : '') + '</div>';
     var dg = CLS.geradoEm ? new Date(CLS.geradoEm) : null;
