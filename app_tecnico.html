@@ -744,6 +744,7 @@
   .tec-chip .tec-qtd{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;font-size:10px}
   .tec-chip .tec-fav{position:absolute;top:1px;left:1px;width:18px;height:18px;font-size:10px;margin:0}
 }
+.cal-nav{width:34px;height:34px;border-radius:50%;border:1px solid #e2e8f0;background:#f8fafc;color:#1e293b;font-size:22px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 0 3px}.cal-nav:active{transform:scale(.94)}
 </style>
 </head>
 <body>
@@ -832,7 +833,7 @@
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
       <div class="cal-header">
-        <div class="cal-title" id="cal-month-label"></div>
+        <div style="display:flex;align-items:center;gap:4px;"><button type="button" class="cal-nav" onclick="techMesMudar(-1)" aria-label="Mês anterior">‹</button><div class="cal-title" id="cal-month-label" onclick="techMesMudar(0)" style="cursor:pointer;" title="Voltar para o mês atual"></div><button type="button" class="cal-nav" onclick="techMesMudar(1)" aria-label="Próximo mês">›</button></div>
         <div style="display:flex;gap:6px;font-size:12px;">
           <span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;">● Agendado</span>
           <span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:20px;">● Pendente</span>
@@ -3226,8 +3227,12 @@ function setAdminSyncStatus(s) {
 // ════════════════════════════════
 // CALENDÁRIO
 // ════════════════════════════════
+/* 28/10/2026 (dono): setas para o técnico ver outros meses (agendamentos do mês que vem) */
+let _techMesOff = 0;
+function techMesMudar(n){ _techMesOff = n===0 ? 0 : _techMesOff + n; renderTechCalendar(); }
 function renderTechCalendar() {
-  const now   = new Date();
+  const hojeReal = new Date();
+  const now   = new Date(hojeReal.getFullYear(), hojeReal.getMonth() + _techMesOff, _techMesOff ? 1 : hojeReal.getDate());
   const year  = now.getFullYear();
   const month = now.getMonth();
   document.getElementById('cal-month-label').textContent = MONTHS[month] + ' ' + year;
@@ -3257,7 +3262,7 @@ function renderTechCalendar() {
   for (let i = 0; i < first; i++) grid.innerHTML += '<div class="cal-day other-month"></div>';
 
   for (let d = 1; d <= total; d++) {
-    const isToday  = d === now.getDate();
+    const isToday  = d === hojeReal.getDate() && month === hojeReal.getMonth() && year === hojeReal.getFullYear();
     const ids      = dateMap[d] || [];
     // Bolinha amarela aparece APENAS no dia de hoje se houver pendentes
     // (nunca em dias passados, nunca em dias futuros — fica sempre "hoje")
