@@ -9,15 +9,16 @@
       var s=String(u||''), m=s.match(/^https?:\/\/wa\.me\/(\d*)\/?(?:\?(.*))?$/i); if(!m) return u;
       var txt=null; (m[2]||'').split('&').forEach(function(par){ var i=par.indexOf('='); if(i>0 && par.slice(0,i)==='text') txt=decodeURIComponent(par.slice(i+1).replace(/\+/g,' ')); });
       var q=(m[1]?'phone='+m[1]+(txt!=null?'&':''):'')+(txt!=null?'text='+encodeURIComponent(txt):'');
-      /* no computador vai direto para o WhatsApp Web (a página intermediária do WhatsApp é que estragava os emojis);
-         no celular continua abrindo o aplicativo */
-      return (ehCelular()?'https://api.whatsapp.com/send?':'https://web.whatsapp.com/send?')+q;
+      /* no celular continua abrindo o aplicativo.
+         01/11/2026 (dono): no computador abre o WhatsApp INSTALADO (whatsapp://), não mais o WhatsApp Web. Mantém os emojis. */
+      return (ehCelular()?'https://api.whatsapp.com/send?':'whatsapp://send?')+q;
     }catch(e){ return u }
   }
   function ehCelular(){ var ua=navigator.userAgent||''; return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1) }
   window.waLink=conv;
-  var wo=window.open; window.open=function(u){ var a=Array.prototype.slice.call(arguments); a[0]=conv(u); return wo.apply(window,a) };
-  document.addEventListener('click',function(e){ var a=e.target&&e.target.closest&&e.target.closest('a[href*="wa.me/"]'); if(a) a.href=conv(a.href) },true);
+  /* whatsapp:// abre o programa do computador; numa aba nova ficaria uma aba em branco, então vai pela própria página (ela não sai do lugar) */
+  var wo=window.open; window.open=function(u){ var a=Array.prototype.slice.call(arguments); a[0]=conv(u); if(/^whatsapp:/i.test(a[0])){ location.href=a[0]; return null } return wo.apply(window,a) };
+  document.addEventListener('click',function(e){ var a=e.target&&e.target.closest&&e.target.closest('a[href*="wa.me/"]'); if(a){ a.href=conv(a.href); if(/^whatsapp:/i.test(a.href)) a.removeAttribute('target') } },true);
 })();
 </script>
 <meta charset="UTF-8">
@@ -5801,8 +5802,10 @@ function enviarLembreteHoje(id, tech) {
   try { aba = window.open('', '_blank'); } catch (e) { aba = null; }
 
   const irProWhats = function() {
-    if (aba && !aba.closed) { try { aba.location.href = linkWhats; return; } catch (e) {} }
-    window.location.href = linkWhats;
+    const u = window.waLink ? waLink(linkWhats) : linkWhats;
+    if (/^whatsapp:/i.test(u)) { try { if (aba) aba.close(); } catch (e) {} window.location.href = u; return; } // 01/11/2026: computador abre o WhatsApp instalado
+    if (aba && !aba.closed) { try { aba.location.href = u; return; } catch (e) {} }
+    window.location.href = u;
   };
 
   // ESPERA a gravação terminar antes de sair pro WhatsApp. No celular, o
