@@ -1606,7 +1606,8 @@ body.modal-aberto{overflow:hidden}
         var e = somaGrupo('empresa'), p = somaGrupo('pessoal');
         var atr = 0; // despesas do mês atual que já venceram e ainda não foram pagas
         DESP.fixos.concat(DESP.variaveis).forEach(function (i) { if ((i.grupo === 'empresa' || i.grupo === 'pessoal') && despAtrasadaAgora(i)) atr += i.valor; });
-        SELO_DESP = { total: e.total + p.total, pago: e.pago + p.pago, aberto: e.aberto + p.aberto, atrasado: atr };
+        var ant = despAtrSoma(); // contas de meses anteriores ainda não pagas
+        SELO_DESP = { total: e.total + p.total, pago: e.pago + p.pago, aberto: e.aberto + p.aberto + ant, atrasado: atr + ant };
       }
       if (SELO_DESP) {
         var temAtr = SELO_DESP.atrasado > 0.004, btnDesp = document.querySelector('.tabs button[data-tab="despesas"]');
@@ -1625,6 +1626,7 @@ body.modal-aberto{overflow:hidden}
       carregarRetiradas();
       if (!CLS) { try { var r = await chamar('classificacao'); if (r && !r.vazio && !CLS) CLS = r; } catch (e) { } }
       if (!DESP) { try { var d = await chamar('desp_mes', { mes: mesAtualKey() }); if (!DESP && d && d.fixos) DESP = d; } catch (e) { } }
+      if (!DESP_ATR) await carregarDespAtr();
       atualizarSelos();
     }, 1500);
   }
@@ -3080,6 +3082,9 @@ body.modal-aberto{overflow:hidden}
 
   // ---------- 💸 DESPESAS ----------
   var DESP = null, despMesSel = null, despForm = null, MES_MIN = '2026-09';
+  var DESP_ATR = null; // 02/11/2026: contas não pagas de meses anteriores (entram no mês atual como atrasadas)
+  function despAtrSoma() { return (DESP_ATR || []).filter(function (x) { return x.lista !== 'cartoes'; }).reduce(function (t, x) { return t + x.valor; }, 0); }
+  async function carregarDespAtr() { try { var r = await chamar('desp_atrasadas'); DESP_ATR = (r && r.itens) || []; } catch (e) { } }
   function mesAtualKey() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function despAchar(id) {
     var listas = ['fixos', 'variaveis', 'receitas', 'cartoes'];
@@ -3150,6 +3155,7 @@ body.modal-aberto{overflow:hidden}
       if (!CLS) tarefas.push(chamar('classificacao').then(function (r) { if (r && !r.vazio) CLS = r; }).catch(function () { }));
       if (!META) tarefas.push(chamar('meta').then(function (r) { META = r; }).catch(function () { }));
       if (!SALDO) carregarSaldo(); // 20/10/2026: a sobra do mês soma o saldo do Asaas
+      if (despMesSel === mesAtualKey()) tarefas.push(carregarDespAtr());
       DESP = (await Promise.all(tarefas))[0];
     } catch (e) { box.innerHTML = '<div class="vazio">' + esc((e && e.message) || 'Não foi possível carregar as despesas.') + '</div>'; return; }
     if (!HIST) { try { HIST = await chamar('historico'); } catch (e) { } }
@@ -3265,6 +3271,22 @@ body.modal-aberto{overflow:hidden}
     if (t.var > 0.004) p.push('<span style="white-space:nowrap">variáveis <b>' + brl(t.var) + '</b></span>');
     return p.length ? '<div class="l dp-det"><span>' + p.join(' · ') + '</span></div>' : '';
   }
+  // 02/11/2026: bloco com as contas não pagas dos meses anteriores (pagar aqui marca como paga no mês de origem)
+  function htmlDespAtrasadas() {
+    var tot = despAtrSoma();
+    var lin = DESP_ATR.map(function (x) {
+      var mesN = mesTxt(x.mes), venc = x.dia ? 'venceu dia ' + String(x.dia).padStart(2, '0') + ' de ' + mesN : 'de ' + mesN;
+      var tipo = x.lista === 'cartoes' ? 'cartão' : x.parc ? 'parcela ' + x.parc.n + '/' + x.parc.total : (x.grupo === 'empresa' ? 'empresa' : x.grupo === 'pessoal' ? 'pessoal' : '');
+      return '<div class="dp-lin atrasada">' +
+        '<button type="button" class="dp-bola" data-d-atr-pago="' + esc(x.mes + '|' + x.id) + '" aria-label="Marcar como paga">' + '</button>' +
+        '<div class="dp-abre" style="cursor:default"><span class="n"><b>' + esc(x.nome) + '</b><small><span class="dp-venc atr">⚠ ' + esc(venc) + '</span>' + (tipo ? ' · ' + esc(tipo) : '') + '</small></span><span class="vl">' + brl(x.valor) + '</span></div>' +
+      '</div>';
+    }).join('');
+    return '<div class="dp-grupo' + (despFechados.atrant ? ' fechado' : '') + '" style="border-color:#FCA5A5">' +
+      '<button type="button" class="dp-gcab" data-d-grupo="atrant"><span class="seta">▼</span><h3>⚠ Atrasadas de meses anteriores</h3>' +
+      '<span class="dp-gres"><b>' + brl(tot) + '</b><span class="ab">' + DESP_ATR.length + (DESP_ATR.length === 1 ? ' conta' : ' contas') + '</span></span></button>' +
+      '<div class="dp-corpo">' + lin + '<div class="cls-info" style="margin-top:6px">Contas que ficaram sem pagar nos meses passados. Ao marcar como paga, ela sai daqui e fica paga no mês dela.' + (DESP_ATR.some(function (x) { return x.lista === 'cartoes'; }) ? ' Cartões aparecem só para lembrar (não entram nas contas).' : '') + '</div></div></div>';
+  }
   function renderDespesas() {
     var emp = somaGrupo('empresa'), pes = somaGrupo('pessoal'), rec = despReceita();
     var outras = Number(DESP.outrasFontes || 0); // dinheiro de outras fontes registrado na conciliação deste mês
@@ -3273,7 +3295,8 @@ body.modal-aberto{overflow:hidden}
     var varAReceber = Math.max(0, rec.variaveis - rec.variaveisRec);
     /* 20/10/2026 (pedido do dono): a sobra também soma o que já está na conta do Asaas e os confirmados que ainda vão cair */
     var sdOk = !!(SALDO && !SALDO.erro && SALDO.saldo != null), sdV = sdOk ? Number(SALDO.saldo) || 0 : 0, sdConf = sdOk && SALDO.confirmados ? Number(SALDO.confirmados.liquido) || 0 : 0;
-    if (sobraModo) liq = sdV + sdConf + rec.falta + varAReceber - (emp.aberto + pes.aberto);
+    var atrAnt = despMesSel === mesAtualKey() ? despAtrSoma() : 0; // contas de meses anteriores não pagas
+    if (sobraModo) liq = sdV + sdConf + rec.falta + varAReceber - (emp.aberto + pes.aberto) - atrAnt;
     var atual = despMesSel === mesAtualKey();
     var pct = DESP.poupancaPct, guardar = Math.max(0, liq * pct / 100);
     var h = '<div class="dp-mes"><button type="button" data-d-mes="-1"' + (despMesSel <= MES_MIN ? ' disabled' : '') + ' aria-label="Mês anterior">◀</button><b>' + esc(mesTxt(despMesSel)) + '</b>' +
@@ -3308,7 +3331,8 @@ body.modal-aberto{overflow:hidden}
         (sobraModo ? '<div class="l"><span>🏦 Saldo no Asaas agora</span><b>' + (sdOk ? '+' + brl(sdV) : (SALDO && SALDO.erro ? 'não consegui ler' : 'carregando...')) + '</b></div>' +
           (sdConf > 0.004 ? '<div class="l"><span>⏳ Confirmados (vão cair na conta)</span><b>+' + brl(sdConf) + '</b></div>' : '') +
           '<div class="l"><span>💰 Ainda falta receber</span><b>+' + brl(rec.falta + varAReceber) + '</b></div>' +
-          '<div class="l"><span>💸 Despesas ainda em aberto</span><b>−' + brl(emp.aberto + pes.aberto) + '</b></div>'
+          '<div class="l"><span>💸 Despesas ainda em aberto</span><b>−' + brl(emp.aberto + pes.aberto) + '</b></div>' +
+          (atrAnt > 0.004 ? '<div class="l"><span>⚠ Atrasadas de meses anteriores</span><b class="ab">−' + brl(atrAnt) + '</b></div>' : '')
         : '<div class="l"><span>' + (outras > 0 ? 'Receita estimada + outras fontes − despesas' : 'Receita estimada − despesas') + '</span><b></b></div>') + (outras > 0 ? '<div class="l"><span>💰 Outras fontes (da conciliação)</span><b class="ok">+' + brl(outras) + '</b></div>' : '') + '</div>';
     // ---- poupança / meta
     var m = META, extra = '';
@@ -3327,6 +3351,7 @@ body.modal-aberto{overflow:hidden}
       '<button type="button" class="btn-link" data-d-ir-metas style="padding-left:0">Ver a aba Metas</button></div></div>';
     h += sobraModo ? '<div class="cls-info">Sobra até o fim do mês: o saldo que já está na conta do Asaas + os pagamentos confirmados que ainda vão cair + o que ainda falta receber dos clientes (Ouro, Prata e Latão, pela chance de cada classe) + receitas variáveis ainda não recebidas, menos as despesas lançadas que ainda estão em aberto. Dinheiro em outro banco não entra. Não inclui gastos que você não lançou.</div>' : '<div class="cls-info">Estimativa: potencial do mês × a porcentagem que você estima receber (campo no card de receita) + receitas variáveis + dinheiro de outras fontes registrado na conciliação, menos as despesas lançadas aqui. Não inclui gastos que você não lançou.</div>';
     // ---- listas
+    if (atual && DESP_ATR && DESP_ATR.length) h += htmlDespAtrasadas();
     h += htmlDespGrupo('empresa', '🏢 Despesas da empresa') + htmlDespGrupo('pessoal', '🏠 Despesas pessoais');
     h += htmlCartoes();
     h += htmlDespBloco('receita', '💰 Receitas variáveis', DESP.receitas.map(function (i) { return { i: i, lista: 'receitas' }; }), rec.variaveis, rec.variaveis - rec.variaveisRec, 'a receber', '+ Adicionar', 'Nenhuma receita variável neste mês (ex.: venda de equipamento).');
@@ -3530,6 +3555,14 @@ body.modal-aberto{overflow:hidden}
       var d = despAchar(b.getAttribute('data-d-del')); if (!d) return;
       var msg = d.lista === 'fixos' ? 'Remover "' + d.item.nome + '" deste mês e dos próximos meses?' : 'Remover "' + d.item.nome + '"?';
       if (confirm(msg)) despOp({ op: 'remove', id: d.item.id }, 'Removido.');
+      return;
+    }
+    if (b.hasAttribute('data-d-atr-pago')) { // 02/11/2026: paga conta atrasada de mês anterior (grava no mês dela)
+      var pa = b.getAttribute('data-d-atr-pago').split('|'), mesA = pa[0], idA = pa.slice(1).join('|');
+      var itA = (DESP_ATR || []).find(function (x) { return x.mes === mesA && x.id === idA; }); if (!itA) return;
+      DESP_ATR = DESP_ATR.filter(function (x) { return x !== itA; }); renderDespesas(); atualizarSelos();
+      try { await chamar('desp_op', { mes: mesA, op: 'pago', id: idA, pago: true }); toast('Paga: ' + itA.nome + ' (' + mesTxt(mesA) + ').', 'ok'); }
+      catch (e) { toast((e && e.message) || 'Não foi possível salvar.', 'erro'); await carregarDespAtr(); renderDespesas(); atualizarSelos(); }
       return;
     }
     if (b.hasAttribute('data-d-pago')) { // marca pago / em aberto na hora e confirma com o servidor
