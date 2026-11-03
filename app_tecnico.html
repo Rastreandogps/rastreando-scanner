@@ -9168,7 +9168,8 @@ function _titTel(t) { t = String(t || '').replace(/\D/g, ''); return t.length ==
 function _titDoc(c) { c = String(c || '').replace(/\D/g, ''); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c.length === 14 ? c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : c; }
 function _titQuando(iso) { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
 function _titBadge() {
-  const n = _titPedidos.filter(p => p.status === 'novo').length;
+  // 03/11/2026 (dono): o contador mostra TUDO que está em aberto (Novo + Em contato), não só o novo. Só some quando concluir ou cancelar.
+  const n = _titPedidos.filter(p => p.status === 'novo' || p.status === 'contato').length;
   const b = document.getElementById('badge-titularidade');
   if (!b) return;
   b.textContent = n > 9 ? '9+' : String(n);
