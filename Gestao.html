@@ -3995,17 +3995,26 @@ body.modal-aberto{overflow:hidden}
     var media6 = ult6.length ? ult6.reduce(function (t, m) { return t + m.entradas; }, 0) / ult6.length : null;
     var fotos = (HIST || []).slice().sort(function (a, b) { return String(a.chave).localeCompare(String(b.chave)); }).slice(-13);
     var ultFoto = fotos.length ? fotos[fotos.length - 1] : null;
+    // saídas: exata quando a foto do mês tem "saem"; senão, a estimada do Asaas (mês seguinte ao último boleto)
+    var exatas = {}; (HIST || []).forEach(function (h) { if (h.crescimento && h.crescimento.saem != null) exatas[h.chave] = h.crescimento.saem; });
+    var saidaDe = function (m) { return exatas[m.chave] != null ? exatas[m.chave] : (m.saidasEst || 0); };
+    var media6s = ult6.length ? ult6.reduce(function (t, m) { return t + saidaDe(m); }, 0) / ult6.length : null;
+    var nExatas = meses.filter(function (m) { return exatas[m.chave] != null; }).length;
     var cards = '<div class="mt-cards">' +
       '<div class="g-card"><b>' + (atual ? atual.entradas : '—') + '</b><span>Entraram este mês</span><small>' + (atual ? esc(atual.mes) : '') + '</small></div>' +
-      '<div class="g-card"><b>' + (media6 == null ? '—' : media6.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) + '</b><span>Média por mês</span><small>últimos ' + ult6.length + ' meses fechados</small></div>' +
+      '<div class="g-card"><b>' + (media6 == null ? '—' : media6.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) + '</b><span>Entradas por mês</span><small>média de ' + ult6.length + ' meses fechados</small></div>' +
+      '<div class="g-card"><b class="ruim">' + (media6s == null ? '—' : media6s.toLocaleString('pt-BR', { maximumFractionDigits: 1 })) + '</b><span>Saídas por mês</span><small>média de ' + ult6.length + ' meses' + (nExatas ? '' : ' (estimada)') + '</small></div>' +
+      '<div class="g-card"><b' + (media6 != null && media6s != null && media6 - media6s < 0 ? ' class="ruim"' : ' class="bom"') + '>' + (media6 == null || media6s == null ? '—' : (media6 - media6s > 0 ? '+' : '') + (media6 - media6s).toLocaleString('pt-BR', { maximumFractionDigits: 1 })) + '</b><span>Saldo por mês</span><small>entradas − saídas</small></div>' +
       '<div class="g-card"><b class="bom">' + (M.clientesAtivos != null ? M.clientesAtivos : '—') + '</b><span>Clientes ativos hoje</span><small>' + (M.assinaturas != null ? M.assinaturas + ' assinaturas' : '') + '</small></div>' +
       '<div class="g-card"><b' + (ultFoto && ultFoto.inadimplencia.taxaClientes > 15 ? ' class="ruim"' : '') + '>' + (ultFoto ? pct2(ultFoto.inadimplencia.taxaClientes) : '—') + '</b><span>Inadimplência</span><small>' + (ultFoto ? 'foto de ' + esc(ultFoto.mes) : 'sem foto do mês') + '</small></div>' +
       '</div>';
-    var g1 = '<div class="mt-graf"><div class="mt-cab"><b>Entradas de clientes por mês</b><span>1ª assinatura de cada cliente no Asaas</span></div>' +
-      graficoLinha([{ v: meses.map(function (m) { return m.entradas; }), cor: '#1B3A6B' }, { v: meses.map(function (m) { return m.aindaAtivos; }), cor: '#059669', tracejada: true }],
-        { id: 'ent', labels: meses.map(function (m) { return mesLb(m.chave); }), titulo: 'Entradas de clientes por mês' }) +
-      '<div class="mt-legenda"><span><i style="background:#1B3A6B"></i>Clientes que entraram</span><span><i style="background:#059669"></i>Desses, ainda ativos hoje</span></div>' +
-      '<div class="cls-info" style="margin:6px 4px 4px">O mês atual ainda está em andamento. Bolinha verde = subiu em relação ao mês anterior; vermelha = caiu.</div></div>';
+    var g1 = '<div class="mt-graf"><div class="mt-cab"><b>Entradas e saídas de clientes</b><span>por mês, pelo Asaas</span></div>' +
+      graficoLinha([{ v: meses.map(function (m) { return m.entradas; }), cor: '#1B3A6B' }, { v: meses.map(saidaDe), cor: '#DC2626', tracejada: true }, { v: meses.map(function (m) { return m.aindaAtivos; }), cor: '#059669', tracejada: true }],
+        { id: 'ent', labels: meses.map(function (m) { return mesLb(m.chave); }), titulo: 'Entradas e saídas de clientes por mês' }) +
+      '<div class="mt-legenda"><span><i style="background:#1B3A6B"></i>Entraram</span><span><i style="background:#DC2626"></i>Saíram' + (nExatas < meses.length ? ' (estimado)' : '') + '</span><span><i style="background:#059669"></i>Dos que entraram, ainda ativos hoje</span></div>' +
+      '<div class="cls-info" style="margin:6px 4px 4px">O mês atual ainda está em andamento. Bolinha verde = subiu em relação ao mês anterior; vermelha = caiu. ' +
+      'Saídas: o Asaas não guarda a data do cancelamento, então a estimativa usa o mês seguinte ao último boleto de cada cliente (erro de até 1 mês). ' +
+      (nExatas ? 'Nos meses com foto salva (' + nExatas + '), o número é exato.' : 'A partir da foto do mês, o número passa a ser exato.') + '</div></div>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
