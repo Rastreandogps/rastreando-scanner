@@ -184,6 +184,13 @@ body{background:var(--bg,#F5F7FA)}
 .cc-titulo .nome{font-weight:700;font-size:1rem;color:var(--text);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cc-titulo .sub{font-size:.76rem;color:var(--text-3);margin-top:1px}
 .cc-valor{text-align:right;flex-shrink:0}
+/* 03/11/2026 (dono): botão de enviar no topo do card (some quando o card está aberto, porque lá embaixo já tem o botão grande) */
+.cc-wpp-topo{flex:0 0 auto;padding:8px 12px;border-radius:999px;font-size:.8rem;margin-left:auto;box-shadow:0 2px 6px rgba(37,211,102,.35)}
+.cc-wpp-topo svg{width:16px;height:16px}
+.cc-wpp-topo.ja{background:#fff;color:#128C7E;border:1.5px solid #25D366;box-shadow:none}
+.cc-wpp-topo.ja svg{fill:#25D366}
+.cliente-card.aberto .cc-wpp-topo{display:none}
+@media(max-width:560px){.cc-wpp-topo span{display:none}.cc-wpp-topo{padding:8px 10px}}
 .cc-valor b{display:block;font-family:var(--font-display);font-weight:800;font-size:1.15rem;color:var(--navy)}
 .cc-valor span{font-size:.72rem;color:var(--text-3)}
 .cc-selos{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 8px}
@@ -1736,6 +1743,7 @@ body.modal-aberto{overflow:hidden}
       return;
     }
 
+    var WPP_SVG = '<svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.51 5.843L.057 23.428a.75.75 0 0 0 .915.915l5.585-1.453A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.726 9.726 0 0 1-4.964-1.36l-.356-.211-3.685.958.977-3.567-.232-.368A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>'; /* 03/11/2026: ícone reaproveitado no botão do topo do card */
     $('lista-clientes').innerHTML = lista.map(function (c, i) {
       var fats = c.faturas.map(function (f) {
         return '<div><span>Venceu ' + dataBR(f.vencimento) + '</span><span>' + brl(f.valor) + ' · ' + f.dias + 'd</span></div>';
@@ -1766,6 +1774,8 @@ body.modal-aberto{overflow:hidden}
             var t = soDig(c.telefone); if (t && t.length <= 11) t = '55' + t;
             return t ? '<a class="nome nome-wpp" href="https://wa.me/' + t + '" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp (sem mensagem)">' + esc(c.nome) + '</a>' : '<div class="nome">' + esc(c.nome) + '</div>';
           })() + (c.chipCancelado ? CHIP_SVG.replace('<svg ', '<svg class="chip-ico" role="img" aria-label="Chip cancelado" ') : '') + (c.protestadoEm ? '<span class="tag-protesto">⚖️ Protestado</span>' : '') + htmlTagEstagio(c) + htmlTagRetirada(c.cpf) + '</div><div class="sub">' + c.faturas.length + (c.faturas.length === 1 ? ' fatura vencida' : ' faturas vencidas') + (c.protestadoEm ? ' · protestado em ' + dataBR(String(c.protestadoEm).slice(0, 10)) : '') + '</div></div>' +
+          /* 03/11/2026 (dono): disparar a mensagem com o card fechado, no espaço ao lado do nome */
+          (c.telefone ? '<button type="button" class="btn-wpp-cliente cc-wpp-topo' + (c.ultimoEnvio ? ' ja' : '') + '" data-idx="' + i + '" title="' + (c.ultimoEnvio ? 'Enviar de novo' : 'Enviar mensagem') + '" aria-label="' + (c.ultimoEnvio ? 'Enviar de novo' : 'Enviar mensagem') + '">' + WPP_SVG + '<span>Enviar</span></button>' : '') +
           '<div class="cc-valor"><b>' + brl(c.valorTotal) + '</b><span>em aberto</span></div>' +
           (abaAtual === 'cobranca' ? '<button type="button" class="cc-arq" data-acao="arquivar" data-idx="' + i + '" title="Excluir do painel" aria-label="Excluir ' + esc(c.nome) + ' do painel">🗑</button>' : '') +
         '</div>' +
