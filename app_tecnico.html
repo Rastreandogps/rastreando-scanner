@@ -1752,7 +1752,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-10-26-v167-nova-instalacao';
+const BUILD_VERSION = '2026-11-05-v168-pedido-assistente';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -9968,7 +9968,7 @@ function _cardManutencao(r) {
     '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ' + esc(r.enderecoTexto || '') + '</div>' +
     (r.referencia ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">📌 ' + esc(r.referencia) + '</div>' : '') +
     (sub || nfc || ins ? '' : '<div style="margin:6px 0 8px;">' + veiculosHtml + '</div>') +
-    (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
+    (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + (_periodoRemocao(r.periodo) ? ' — ' + esc(_periodoRemocao(r.periodo)) : '') + '. Confira antes de criar a OS.</div>' : '') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
       '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
       '<div style="min-width:0;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
@@ -10080,9 +10080,10 @@ function _cardRemocao(r) {
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:600;margin:2px 2px 2px 0;">🚗 ' + (i+1) + '. ' + esc(v.modelo || '') + ' — ' + esc(v.placa || '') + (v.imei ? ' · IMEI ' + esc(v.imei) : '') + '</span>';
   }).join('') || '<span style="color:var(--muted);font-size:12px;">Não informado</span>';
   const qtdLista = (r.veiculos || []).length;
-  const daGestao = r.origem === 'gestao';
+  const doAssist = r.origem === 'assistente'; // 05/11/2026: pedido aberto pelo assistente de IA (app/Telegram)
+  const daGestao = r.origem === 'gestao' || doAssist;
   const tipoTxt = daGestao
-    ? qtdLista + (qtdLista === 1 ? ' veículo informado pela Gestão' : ' veículos informados pela Gestão')
+    ? qtdLista + (qtdLista === 1 ? ' veículo informado ' : ' veículos informados ') + (doAssist ? 'pelo assistente' : 'pela Gestão')
     : r.veiculosTipo === 'todos'
     ? 'Todos os veículos da assinatura (' + qtdLista + ')'
     : r.veiculosTipo === 'alguns'
@@ -10108,6 +10109,7 @@ function _cardRemocao(r) {
         'O técnico liga e cobra. Pagou: <b>R$ ' + TENT_VALOR_COBRANCA + ' por placa</b> (depois de confirmar no Asaas). Retirou: <b>R$ ' + TENT_VALOR_RETIRADA + ' por veículo</b>.' +
         (r.linkPagamento ? '<br>🔗 Link que vai para o cliente: <a href="' + esc(r.linkPagamento) + '" target="_blank" style="color:#b91c1c;word-break:break-all;">' + esc(r.linkPagamento) + '</a>' : '') +
       '</div>'
+      : doAssist ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#5b21b6;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:8px;padding:4px 9px;margin-bottom:8px;">✨ Pedido pelo assistente' + (/Telegram/.test(r.motivo || '') ? ' (Telegram)' : '') + '</div>'
       : daGestao ? '<div style="display:inline-block;font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 9px;margin-bottom:8px;">🧾 Criado pela Gestão · inadimplência</div>' : '') +
     (telCad ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📞 ' + esc(telCad) + ' <span style="font-size:11px;">(cadastro)</span></div>' : '') +
     (telOutro ? '<div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📱 ' + esc(telOutro) + ' <span style="font-size:11px;">(outro WhatsApp informado)</span></div>' : '') +
@@ -10117,7 +10119,7 @@ function _cardRemocao(r) {
     '<div style="font-size:12px;font-weight:700;color:#b91c1c;margin:8px 0 2px;">' + esc(tipoTxt) + '</div>' +
     '<div style="margin-bottom:8px;">' + veiculosHtml + '</div>' +
     (motivo ? '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">💬 Motivo: ' + esc(motivo) + '</div>' : '') +
-    (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + ' — ' + esc(_periodoRemocao(r.periodo)) + '. Confira antes de criar a OS.</div>' : '') +
+    (r.data ? '<div style="font-size:11.5px;color:#0f766e;background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:5px 9px;margin-bottom:10px;">📅 Cliente pediu ' + formatDateBR(r.data) + (_periodoRemocao(r.periodo) ? ' — ' + esc(_periodoRemocao(r.periodo)) : '') + '. Confira antes de criar a OS.</div>' : '') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:10px;">' +
       '<div style="min-width:0;"><label style="' + lbl + '">Técnico</label><select id="rm-tec-' + id + '" style="' + inp + 'font-weight:600;">' + optsTec + '</select></div>' +
       '<div style="min-width:0;"><label style="' + lbl + '">Data</label><input type="date" id="rm-data-' + id + '" value="' + esc(r.data || '') + '" style="' + inp + '"></div>' +
