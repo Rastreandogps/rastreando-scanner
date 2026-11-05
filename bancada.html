@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17201d">
+<title>Scanner de Bancada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<style>
+/* Layout: uma coluna estreita de bancada — leitor no topo, pares em lista, saída no fim. */
+:root{
+  --bg:#f3f5f4; --card:#ffffff; --fg:#17201d; --mut:#5d6b66; --line:#d9e0dd;
+  --chip:#0f7a5c; --chip-bg:#e3f3ec; --dev:#2c55c7; --dev-bg:#e6ecfb;
+  --warn:#a85f00; --warn-bg:#fff2dc; --bad:#c22c2c; --bad-bg:#fde8e8; --accent:#17201d;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101614; --card:#18201d; --fg:#e7eeeb; --mut:#93a39d; --line:#2b3632;
+  --chip:#4cc79c; --chip-bg:#163027; --dev:#86a6ff; --dev-bg:#1a2442;
+  --warn:#f0b257; --warn-bg:#33270f; --bad:#ff8a8a; --bad-bg:#3a1a1a; --accent:#e7eeeb; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --card:#18201d; --fg:#e7eeeb; --mut:#93a39d; --line:#2b3632;
+  --chip:#4cc79c; --chip-bg:#163027; --dev:#86a6ff; --dev-bg:#1a2442;
+  --warn:#f0b257; --warn-bg:#33270f; --bad:#ff8a8a; --bad-bg:#3a1a1a; --accent:#e7eeeb; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0;letter-spacing:-.2px;text-wrap:balance}
+.sub{color:var(--mut);font-size:13px;margin:2px 0 0}
+.count{font-family:var(--f-mono);font-size:13px;color:var(--mut);white-space:nowrap}
+.count b{color:var(--fg);font-size:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.next{display:flex;align-items:center;gap:10px;font-weight:600}
+.tag{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+.tag.chip{color:var(--chip);background:var(--chip-bg)} .tag.dev{color:var(--dev);background:var(--dev-bg)}
+.cam{position:relative;margin-top:12px;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:62vh;max-width:100%;margin-inline:auto}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .mira{position:absolute;inset:38% 8%;border:2px solid rgba(255,255,255,.85);border-radius:8px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:11px 14px;cursor:pointer;min-height:44px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--dev);outline-offset:2px}
+button.pri{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+button.grow{flex:1 1 140px}
+button.lin{background:transparent;border:none;color:var(--mut);padding:6px 8px;min-height:auto;font-weight:500}
+.manual{display:flex;gap:8px;margin-top:10px}
+.manual input{flex:1;min-width:0;font:inherit;font-family:var(--f-mono);border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--fg)}
+.aviso{margin-top:10px;font-size:13.5px;border-radius:10px;padding:9px 12px}
+.aviso.ok{color:var(--chip);background:var(--chip-bg)} .aviso.warn{color:var(--warn);background:var(--warn-bg)} .aviso.bad{color:var(--bad);background:var(--bad-bg)}
+.lista{display:flex;flex-direction:column;gap:8px}
+.par{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.par.aberto{border-style:dashed}
+.num{font-family:var(--f-mono);font-weight:600;color:var(--mut);font-size:14px}
+.linhas{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cod{display:flex;align-items:center;gap:8px;min-width:0}
+.cod span.v{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cod span.falta{color:var(--mut);font-size:13px;font-style:italic}
+.cod .x{font-size:11px;color:var(--warn)}
+.vazio{color:var(--mut);font-size:14px;text-align:center;padding:18px 8px;border:1px dashed var(--line);border-radius:12px}
+.vazio ol{text-align:left;margin:8px auto 0;padding-left:20px;max-width:360px}
+h2{font-size:15px;margin:0 0 8px}
+textarea{width:100%;font-family:var(--f-mono);font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--fg);resize:vertical;min-height:90px}
+.out{display:flex;flex-direction:column;gap:12px}
+.confirma{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Scanner de Bancada</h1>
+      <p class="sub">Leia o chip e o aparelho de cada par, um depois do outro.</p>
+    </div>
+    <div class="count"><b id="nPares">0</b> pares prontos</div>
+  </header>
+
+  <section class="card" aria-live="polite">
+    <div class="next" id="proximo"></div>
+    <div class="cam" id="camBox" hidden>
+      <video id="video" playsinline muted></video>
+      <div class="mira"></div>
+    </div>
+    <div class="btns">
+      <button class="pri grow" id="bCam" type="button">📷 Abrir scanner</button>
+      <button class="grow" id="bFoto" type="button">🖼️ Foto</button>
+      <input id="foto" type="file" accept="image/*" capture="environment" hidden>
+    </div>
+    <form class="manual" id="fManual">
+      <label for="manual" hidden>Digitar código</label>
+      <input id="manual" inputmode="numeric" autocomplete="off" placeholder="Ou digite / cole o IMEI ou ICCID">
+      <button type="submit">Somar</button>
+    </form>
+    <div id="aviso" class="aviso" hidden></div>
+  </section>
+
+  <section>
+    <div class="lista" id="lista"></div>
+  </section>
+
+  <section class="card out" id="saida" hidden>
+    <div>
+      <h2>Texto para o Claude</h2>
+      <textarea id="txtClaude" readonly></textarea>
+      <div class="btns"><button class="pri grow" id="cpClaude" type="button">Copiar texto para o Claude</button></div>
+    </div>
+    <div>
+      <h2>ICCIDs para o Smart SIM</h2>
+      <textarea id="txtSmart" readonly></textarea>
+      <div class="btns"><button class="grow" id="cpSmart" type="button">Copiar ICCIDs (separados por vírgula)</button></div>
+    </div>
+    <div>
+      <button class="lin" id="bLimpar" type="button">Começar uma lista nova</button>
+      <div class="confirma" id="confLimpar" hidden>
+        <span>Apagar os pares desta lista?</span>
+        <button type="button" id="limparSim">Apagar</button>
+        <button type="button" id="limparNao">Manter</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const CHAVE = "rg_bancada_pares";
+  let pares = [];           // [{chip:"", imei:""}]
+  try { const s = JSON.parse(localStorage.getItem(CHAVE) || "[]"); if (Array.isArray(s)) pares = s.filter(p => p && (p.chip || p.imei)); } catch (e) {}
+  const salvar = () => { try { localStorage.setItem(CHAVE, JSON.stringify(pares)); } catch (e) {} };
+
+  /* dígito verificador (Luhn): IMEI tem; ICCID também */
+  function luhn(d) {
+    let s = 0, dobra = false;
+    for (let i = d.length - 1; i >= 0; i--) { let n = +d[i]; if (dobra) { n *= 2; if (n > 9) n -= 9; } s += n; dobra = !dobra; }
+    return s % 10 === 0;
+  }
+  /* separa o que foi lido: IMEI = 15 dígitos com verificador; ICCID = começa com 89, 18 a 20 dígitos */
+  function classificar(bruto) {
+    const runs = String(bruto || "").toUpperCase().replace(/F$/, "").match(/\d{14,22}/g) || [];
+    const achados = [];
+    for (const r of runs) {
+      if (r.length === 15 && luhn(r)) achados.push({ tipo: "imei", v: r, ok: true });
+      else if (/^89\d{16,18}$/.test(r)) achados.push({ tipo: "chip", v: r, ok: luhn(r) });
+      else if (r.length === 15) achados.push({ tipo: "imei", v: r, ok: false });
+    }
+    return achados;
+  }
+  const jaTem = (v) => pares.some(p => p.chip === v || p.imei === v);
+  function aberto() { const u = pares[pares.length - 1]; return u && !(u.chip && u.imei) ? u : null; }
+
+  /* soma uma leitura no par aberto (ou começa um par novo) */
+  function somar(a) {
+    if (jaTem(a.v)) { aviso("bad", (a.tipo === "chip" ? "Este chip" : "Este aparelho") + " já está na lista."); bip(false); return false; }
+    let p = aberto();
+    if (!p || p[a.tipo]) { p = { chip: "", imei: "" }; pares.push(p); }
+    p[a.tipo] = a.v; if (!a.ok) p[a.tipo + "Conf"] = true;
+    salvar(); desenhar();
+    const n = pares.indexOf(p) + 1;
+    if (a.ok) aviso("ok", (a.tipo === "chip" ? "Chip" : "Aparelho") + " do par " + n + " lido.");
+    else aviso("warn", (a.tipo === "chip" ? "ICCID" : "IMEI") + " do par " + n + " com dígito verificador estranho. Confira na etiqueta.");
+    bip(true); return true;
+  }
+  function processar(textos) {
+    const lista = []; textos.forEach(t => classificar(t).forEach(a => { if (!lista.some(x => x.v === a.v)) lista.push(a); }));
+    if (!lista.length) { aviso("bad", "Não achei IMEI nem ICCID nesse código. Tente de novo ou digite."); bip(false); return 0; }
+    lista.sort((a, b) => (a.tipo === "chip" ? -1 : 1) - (b.tipo === "chip" ? -1 : 1)); // na mesma foto: chip primeiro
+    let n = 0; lista.forEach(a => { if (somar(a)) n++; }); return n;
+  }
+
+  /* ---------- tela ---------- */
+  function desenhar() {
+    const prontos = pares.filter(p => p.chip && p.imei).length;
+    $("nPares").textContent = prontos;
+    const ab = aberto();
+    const falta = ab ? (ab.chip ? "dev" : "chip") : "chip";
+    $("proximo").innerHTML = "Próximo: <span class='tag " + falta + "'>" + (falta === "chip" ? "Cartão do chip (ICCID)" : "Aparelho (IMEI)") + "</span>" +
+      "<span style='color:var(--mut);font-weight:500;font-size:13px'>par " + (ab ? pares.indexOf(ab) + 1 : pares.length + 1) + "</span>";
+    const L = $("lista");
+    if (!pares.length) {
+      L.innerHTML = "<div class='vazio'>Nenhum par ainda.<ol><li>Coloque cada chip em cima do seu rastreador.</li><li>Leia o cartão do chip, depois o aparelho.</li><li>Repita até o último e copie o texto lá embaixo.</li></ol></div>";
+    } else {
+      L.innerHTML = pares.map((p, i) => {
+        const lin = (tipo, rot) => p[tipo]
+          ? "<div class='cod'><span class='tag " + (tipo === "chip" ? "chip" : "dev") + "'>" + rot + "</span><span class='v'>" + p[tipo] + "</span>" + (p[tipo + "Conf"] ? "<span class='x'>conferir</span>" : "") + "</div>"
+          : "<div class='cod'><span class='tag " + (tipo === "chip" ? "chip" : "dev") + "'>" + rot + "</span><span class='falta'>falta ler</span></div>";
+        return "<div class='par" + (p.chip && p.imei ? "" : " aberto") + "'><span class='num'>" + String(i + 1).padStart(2, "0") + "</span><div class='linhas'>" + lin("chip", "ICCID") + lin("imei", "IMEI") + "</div>" +
+          "<button class='lin' type='button' data-del='" + i + "' aria-label='Apagar o par " + (i + 1) + "'>Apagar</button></div>";
+      }).join("");
+    }
+    const ok = pares.filter(p => p.chip && p.imei);
+    $("saida").hidden = !pares.length;
+    $("txtClaude").value = ok.length ? "Bancada — " + ok.length + " pares (ICCID ; IMEI)\n" + ok.map((p, i) => (i + 1) + ") " + p.chip + " ; " + p.imei).join("\n") +
+      (ok.length < pares.length ? "\n(atenção: " + (pares.length - ok.length) + " par incompleto não entrou)" : "") : "";
+    $("txtSmart").value = ok.map(p => p.chip).join(",");
+  }
+  $("lista").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-del]"); if (!b) return;
+    pares.splice(+b.dataset.del, 1); salvar(); desenhar(); aviso("ok", "Par apagado.");
+  });
+
+  let tAv; function aviso(tipo, txt) { const a = $("aviso"); a.className = "aviso " + tipo; a.textContent = txt; a.hidden = false; clearTimeout(tAv); tAv = setTimeout(() => { a.hidden = true; }, 6000); }
+  let tT; function toast(txt) { const t = $("toast"); t.textContent = txt; t.classList.add("on"); clearTimeout(tT); tT = setTimeout(() => t.classList.remove("on"), 2200); }
+  let ac; function bip(bom) {
+    try { if (navigator.vibrate) navigator.vibrate(bom ? 60 : [80, 60, 80]); } catch (e) {}
+    try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.value = bom ? 1320 : 260; g.gain.value = .08; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + (bom ? .09 : .22)); } catch (e) {}
+  }
+
+  /* ---------- leitura: BarcodeDetector do celular, ZXing de reserva ---------- */
+  let detector = null;
+  try { if ("BarcodeDetector" in window) detector = new BarcodeDetector({ formats: ["code_128", "code_39", "ean_13", "itf", "qr_code", "data_matrix", "pdf417"] }); } catch (e) { detector = null; }
+  function zxReader() {
+    if (!window.ZXing) return null;
+    const h = new Map(); h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    return new ZXing.BrowserMultiFormatReader(h);
+  }
+
+  // foto
+  $("bFoto").onclick = () => $("foto").click();
+  $("foto").onchange = async () => {
+    const f = $("foto").files && $("foto").files[0]; $("foto").value = ""; if (!f) return;
+    aviso("ok", "Lendo a foto…");
+    const textos = [];
+    try { if (detector) { const bmp = await createImageBitmap(f); (await detector.detect(bmp)).forEach(c => textos.push(c.rawValue)); } } catch (e) {}
+    if (!textos.length) {
+      const r = zxReader(); const url = URL.createObjectURL(f);
+      try { if (r) { const res = await r.decodeFromImageUrl(url); if (res) textos.push(res.getText()); } } catch (e) {}
+      URL.revokeObjectURL(url);
+    }
+    if (!textos.length) { aviso("bad", "Não consegui ler o código na foto. Chegue mais perto, com o código reto e bem iluminado."); bip(false); return; }
+    processar(textos);
+  };
+
+  // câmera ao vivo
+  let stream = null, loop = null, zx = null, ultimo = { v: "", em: 0 };
+  async function ligarCam() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 } }, audio: false });
+    } catch (e) {
+      aviso("warn", "A câmera não abriu. Libere a câmera para este site nas permissões do navegador e toque em Abrir scanner de novo.");
+      return;
+    }
+    const v = $("video"); v.srcObject = stream; $("camBox").hidden = false; await v.play().catch(() => {});
+    $("bCam").textContent = "⏹ Parar câmera";
+    try { const tr = stream.getVideoTracks()[0]; const c = tr.getCapabilities && tr.getCapabilities(); if (c && c.focusMode && c.focusMode.includes("continuous")) tr.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+    const achou = (txt) => {
+      const agora = Date.now();
+      if (txt === ultimo.v && agora - ultimo.em < 3000) return; // mesmo código ainda na frente da câmera
+      ultimo = { v: txt, em: agora };
+      const a = classificar(txt); if (!a.length) return;
+      if (a.every(x => jaTem(x.v))) return; // já lido: não apita de novo
+      processar([txt]);
+    };
+    if (detector) {
+      const passo = async () => { if (!stream) return; try { (await detector.detect(v)).forEach(c => achou(c.rawValue)); } catch (e) {} loop = setTimeout(passo, 220); };
+      passo();
+    } else if ((zx = zxReader())) {
+      zx.decodeFromVideoElementContinuously(v, (res) => { if (res) achou(res.getText()); });
+    } else { aviso("bad", "Este navegador não lê código de barras pela câmera. Use a foto ou digite."); }
+    try { if (navigator.wakeLock) await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+  function desligarCam() {
+    clearTimeout(loop); loop = null; try { if (zx) zx.reset(); } catch (e) {} zx = null;
+    if (stream) stream.getTracks().forEach(t => t.stop()); stream = null;
+    $("camBox").hidden = true; $("bCam").textContent = "📷 Abrir scanner";
+  }
+  $("bCam").onclick = () => (stream ? desligarCam() : ligarCam());
+
+  // digitado / colado
+  $("fManual").addEventListener("submit", (e) => {
+    e.preventDefault(); const t = $("manual").value.trim(); if (!t) return;
+    if (processar([t])) $("manual").value = "";
+  });
+
+  // copiar
+  async function copiar(id, msg) {
+    const el = $(id); if (!el.value) { toast("Ainda não tem par completo."); return; }
+    try { await navigator.clipboard.writeText(el.value); toast(msg); }
+    catch (e) { el.focus(); el.select(); toast("Texto selecionado: copie pelo menu do celular."); }
+  }
+  $("cpClaude").onclick = () => copiar("txtClaude", "Copiado. Cole na conversa com o Claude.");
+  $("cpSmart").onclick = () => copiar("txtSmart", "ICCIDs copiados. Cole no campo ICCID do Smart SIM.");
+
+  // lista nova (confirmação dentro da página)
+  $("bLimpar").onclick = () => { $("confLimpar").hidden = false; };
+  $("limparNao").onclick = () => { $("confLimpar").hidden = true; };
+  $("limparSim").onclick = () => { desligarCam(); pares = []; salvar(); $("confLimpar").hidden = true; desenhar(); toast("Lista nova."); };
+
+  desenhar();
+})();
+</script>
+
+</body>
+</html>
