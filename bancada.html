@@ -41,9 +41,10 @@ h1{font-size:22px;margin:0;letter-spacing:-.2px;text-wrap:balance}
 .next{display:flex;align-items:center;gap:10px;font-weight:600}
 .tag{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:3px 8px;border-radius:6px}
 .tag.chip{color:var(--chip);background:var(--chip-bg)} .tag.dev{color:var(--dev);background:var(--dev-bg)}
-.cam{position:relative;margin-top:12px;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:62vh;max-width:100%;margin-inline:auto}
+.cam{position:relative;margin-top:12px;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:5/2;max-width:100%;transition:box-shadow .15s}
+.cam.dup{box-shadow:0 0 0 4px var(--bad)}
 .cam video{width:100%;height:100%;object-fit:cover;display:block}
-.cam .mira{position:absolute;inset:38% 8%;border:2px solid rgba(255,255,255,.85);border-radius:8px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
+.cam .mira{position:absolute;inset:14% 6%;border:2px solid rgba(255,255,255,.85);border-radius:8px;box-shadow:0 0 0 999px rgba(0,0,0,.28)}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:11px 14px;cursor:pointer;min-height:44px}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--dev);outline-offset:2px}
@@ -157,11 +158,19 @@ textarea{width:100%;font-family:var(--f-mono);font-size:13px;border:1px solid va
     return achados;
   }
   const jaTem = (v) => pares.some(p => p.chip === v || p.imei === v);
+  /* 05/11/2026 (pedido do dono): código repetido avisa em vermelho, com vibração leve (sem apito) */
+  let tDup;
+  function jaLido(a) {
+    const i = pares.findIndex(p => p.chip === a.v || p.imei === a.v);
+    aviso("bad", "Já lido: " + (a.tipo === "chip" ? "chip" : "aparelho") + " do par " + (i + 1) + " (…" + a.v.slice(-5) + ").");
+    try { if (navigator.vibrate) navigator.vibrate(35); } catch (e) {}
+    const c = $("camBox"); c.classList.add("dup"); clearTimeout(tDup); tDup = setTimeout(() => c.classList.remove("dup"), 900);
+  }
   function aberto() { const u = pares[pares.length - 1]; return u && !(u.chip && u.imei) ? u : null; }
 
   /* soma uma leitura no par aberto (ou começa um par novo) */
   function somar(a) {
-    if (jaTem(a.v)) { aviso("bad", (a.tipo === "chip" ? "Este chip" : "Este aparelho") + " já está na lista."); bip(false); return false; }
+    if (jaTem(a.v)) { jaLido(a); return false; }
     let p = aberto();
     if (!p || p[a.tipo]) { p = { chip: "", imei: "" }; pares.push(p); }
     p[a.tipo] = a.v; if (!a.ok) p[a.tipo + "Conf"] = true;
@@ -259,7 +268,7 @@ textarea{width:100%;font-family:var(--f-mono);font-size:13px;border:1px solid va
       if (txt === ultimo.v && agora - ultimo.em < 3000) return; // mesmo código ainda na frente da câmera
       ultimo = { v: txt, em: agora };
       const a = classificar(txt); if (!a.length) return;
-      if (a.every(x => jaTem(x.v))) return; // já lido: não apita de novo
+      if (a.every(x => jaTem(x.v))) { jaLido(a[0]); return; } // 05/11/2026: já lido = alerta vermelho + vibração leve
       processar([txt]);
     };
     if (detector) {
