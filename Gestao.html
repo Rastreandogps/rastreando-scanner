@@ -907,6 +907,7 @@ body.modal-aberto{overflow:hidden}
     </select>
     <button type="button" class="btn btn-sec btn-linha" id="btn-filtros">🎚️ Filtros</button>
     <button type="button" class="btn btn-sec btn-linha" id="btn-atualizar">🔄 Atualizar</button>
+    <button type="button" class="btn btn-sec btn-linha" id="btn-excluidos" title="Clientes tirados do painel com Excluir do painel">🗂️ Excluídos</button>
   </div>
   <div class="painel-filtros" id="painel-filtros" hidden>
     <select id="f-classe" aria-label="Filtrar por classificação">
@@ -1067,6 +1068,14 @@ body.modal-aberto{overflow:hidden}
   </div>
 </section>
 
+<div class="modal-fundo" id="ex-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="ex-titulo">
+    <h3 id="ex-titulo">🗂️ Excluídos do painel</h3>
+    <div class="cls-info">Clientes que você tirou da Cobrança/Protestados. Enquanto estiverem aqui, <b>não aparecem na cobrança mesmo se atrasarem</b>. Quem quita tudo sai daqui sozinho (as etapas e o protesto são zerados e guardados no histórico).</div>
+    <div id="ex-lista" style="margin-top:10px">Carregando…</div>
+    <div class="modal-bt"><button type="button" class="btn-link" id="ex-fechar">Fechar</button></div>
+  </div>
+</div>
 <div class="modal-fundo" id="cc-fundo" hidden>
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="cc-titulo">
     <h3 id="cc-titulo">⚙️ Conciliação do mês</h3>
@@ -2757,6 +2766,30 @@ body.modal-aberto{overflow:hidden}
       st.className = 'cc-imei-st ok'; st.textContent = v ? (vals.length > 1 ? vals.length + ' IMEIs salvos ✓' : 'salvo ✓') : 'IMEI apagado';
     } catch (e) { st.className = 'cc-imei-st erro'; st.textContent = (e && e.message) || 'Erro ao salvar.'; }
   }
+  // 06/11/2026 (pedido do dono): lista dos "Excluídos do painel" com "Voltar ao painel"
+  async function abrirExcluidos() {
+    var box = $('ex-lista'); box.textContent = 'Carregando…'; $('ex-fundo').hidden = false;
+    try {
+      var r = await chamar('arquivadosLista', {});
+      var l = (r && r.itens) || [];
+      if (!l.length) { box.innerHTML = '<div class="cls-info">Nenhum cliente excluído do painel.</div>'; return; }
+      box.innerHTML = l.map(function (x) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #E2E8F0"><div><b>' + esc(x.nome || x.cpf) + '</b><div class="sub">' + esc(x.cpf) + (x.em ? ' · excluído em ' + dataBR(x.em.slice(0, 10)) : '') + (x.motivo ? ' · ' + esc(x.motivo) : '') + '</div></div>' +
+          '<button type="button" class="btn btn-sec btn-linha ex-volta" data-cpf="' + esc(x.cpf) + '" data-nome="' + esc(x.nome || '') + '" style="width:auto">↩️ Voltar ao painel</button></div>';
+      }).join('');
+    } catch (e) { box.textContent = (e && e.message) || 'Não consegui carregar.'; }
+  }
+  $('btn-excluidos').addEventListener('click', abrirExcluidos);
+  $('ex-fechar').addEventListener('click', function () { $('ex-fundo').hidden = true; });
+  $('ex-lista').addEventListener('click', async function (ev) {
+    var b = ev.target.closest('.ex-volta'); if (!b) return;
+    b.disabled = true;
+    try {
+      await chamar('arquivarCobranca', { cpf: b.getAttribute('data-cpf'), nome: b.getAttribute('data-nome'), arquivar: false });
+      if (DADOS && DADOS.arquivados) delete DADOS.arquivados[soDig(b.getAttribute('data-cpf'))];
+      renderLista(); toast(primeiroNome(b.getAttribute('data-nome')) + ' voltou ao painel.', 'ok'); abrirExcluidos();
+    } catch (e) { toast((e && e.message) || 'Não consegui agora.', 'erro'); b.disabled = false; }
+  });
   // 20/10/2026 (pedido do dono): tira o cliente do painel de Cobrança/Protestados (ex.: já fez a retirada). Não apaga dados.
   async function arquivarCobranca(c, b) {
     if (!c) return;
@@ -4266,7 +4299,7 @@ body.modal-aberto{overflow:hidden}
       '<div class="t">' + CLS_NOME.proximo + ' · ' + PX.length + (PX.length === 1 ? ' cliente' : ' clientes') + '</div>' +
       (function () { var t = 0, l = 0; PX.forEach(function (c) { t += Number(c.valor) || 0; l += Number(c.valorEmDia != null ? c.valorEmDia : c.valor) || 0; });
         return '<div class="l rec"><span>Mensalidades (pagando em dia)</span><b>' + brl(l) + '</b></div><div class="l"><span>Valor cheio</span><b>' + brl(t) + '</b></div>'; })() +
-      '<div class="nota">Assinatura nova com o 1º boleto no mês que vem. Só para consulta: não entra em nenhuma conta, e a medalha (Latão) vem no mês do 1º boleto. Sem descontar a taxa do Asaas.</div>' +
+      '<div class="nota">Assinatura nova (ou reativada) com o 1º boleto no mês que vem. Só para consulta: não entra em nenhuma conta, e a medalha (Latão) vem no mês do 1º boleto. Sem descontar a taxa do Asaas.</div>' +
     '</button>';
     $('cl-classe').value = clsFiltro.classe || ''; // mantém o filtro de medalha igual ao dos cartões
     // pontuação: só aparecem as pontuações que existem hoje, da maior para a menor, com a quantidade de clientes
@@ -4315,9 +4348,9 @@ body.modal-aberto{overflow:hidden}
     var itens = lista.length ? lista.map(function (c) {
       if (c.proximo) return '<div class="cls-item">' +
         '<div class="topo"><div><div class="nome">' + esc(c.nome) + '</div>' + htmlMigrar(c) + '<div class="sub">' + esc(c.cpf) + (c.telefone ? ' · ' + esc(c.telefone) : '') + '</div>' +
-          '<span class="cls-selo proximo">' + CLS_NOME.proximo + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
+          '<span class="cls-selo proximo">' + CLS_NOME.proximo + (c.voltou ? ' · ↩️ reativado' : '') + '</span>' + htmlTagRetirada(c.cpf) + '</div>' +
           '<div style="text-align:right"><b>' + brl(c.valor) + '</b><div class="sub">mensalidade' + (c.assinaturas > 1 ? ' (' + c.assinaturas + ' assinaturas)' : '') + (c.valorEmDia != null && c.valorEmDia !== c.valor ? '<br>em dia: ' + brl(c.valorEmDia) : '') + '</div></div></div>' +
-        '<div class="cls-bols"><div><span>1º boleto vence ' + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
+        '<div class="cls-bols"><div><span>' + (c.voltou ? 'Próximo boleto vence ' : '1º boleto vence ') + (c.vencimento ? dataBR(c.vencimento) : '—') + ' · fora das contas deste mês</span><b></b></div></div>' +
         '<div class="cls-acoes"><button type="button" class="btn-manut cls-man" data-cpf="' + esc(soDig(c.cpf)) + '">🛠️ Manutenção</button><button type="button" class="btn-troca cls-trc" data-cpf="' + esc(soDig(c.cpf)) + '">🔁 Troca de veículo</button><button type="button" class="btn-retirada cls-ret" data-cpf="' + esc(soDig(c.cpf)) + '">🔧 Criar ordem de retirada</button><button type="button" class="btn-novains cls-ins" data-cpf="' + esc(soDig(c.cpf)) + '">➕ Nova instalação</button></div>' +
       '</div>';
       var hist = c.historico.map(function (h) {
