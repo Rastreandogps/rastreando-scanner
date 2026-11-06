@@ -53,6 +53,9 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 .header{background:var(--navy);padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .header-logo{width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(255,255,255,.2)}
 .header-logo img{width:100%;height:100%;object-fit:cover}
+.header-logo{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.header-logo.girando img{animation:logoGira .8s linear infinite}
+@keyframes logoGira{to{transform:rotate(360deg)}}
 .header-brand{font-family:var(--font-display);font-weight:700;font-size:.95rem;color:#fff}
 .header-sub{font-size:.75rem;color:rgba(255,255,255,.6);margin-top:1px}
 .stage{max-width:600px;margin:0 auto;padding:20px 16px 60px}
@@ -1561,6 +1564,18 @@ body.modal-aberto{overflow:hidden}
   });
   $('editor-um').style.display = 'none';
 
+  // 06/11/2026 (pedido do dono): tocar na logo gira e atualiza a página, voltando na MESMA aba e no mesmo ponto
+  (function () {
+    var lg = document.querySelector('.header-logo'); if (!lg) return;
+    lg.setAttribute('role', 'button'); lg.setAttribute('title', 'Atualizar'); lg.setAttribute('aria-label', 'Atualizar a página');
+    lg.addEventListener('click', function () {
+      if (lg.classList.contains('girando')) return;
+      lg.classList.add('girando');
+      try { sessionStorage.setItem('gestaoVolta', JSON.stringify({ aba: abaAtual, y: window.scrollY || 0, t: Date.now() })); } catch (e) { /* sem memória: volta na aba inicial */ }
+      setTimeout(function () { location.reload(); }, 450);
+    });
+  })();
+
   // ---------- ABA FAVORITA (abre sempre nela) ----------
   var ABAS_GESTAO = ['gestao', 'dois', 'um', 'cobranca', 'pagos', 'retornos', 'classif', 'despesas', 'metas', 'indicacoes', 'metricas'];
   var abaInicialAplicada = false;
@@ -1604,6 +1619,13 @@ body.modal-aberto{overflow:hidden}
   function aplicarAbaInicial() {
     if (abaInicialAplicada) return;
     abaInicialAplicada = true;
+    var volta = null; try { volta = JSON.parse(sessionStorage.getItem('gestaoVolta') || 'null'); sessionStorage.removeItem('gestaoVolta'); } catch (e) { volta = null; }
+    if (volta && volta.aba && ABAS_GESTAO.indexOf(volta.aba) >= 0 && Date.now() - (volta.t || 0) < 60000) { // 06/11/2026: voltou do toque na logo
+      var bv = document.querySelector('.tabs button[data-tab="' + volta.aba + '"]');
+      if (bv && volta.aba !== abaAtual) bv.click();
+      if (volta.y) setTimeout(function () { window.scrollTo(0, volta.y); }, 900);
+      return;
+    }
     var f = favAba();
     if (!f || f === abaAtual) return;
     var bt = document.querySelector('.tabs button[data-tab="' + f + '"]');
