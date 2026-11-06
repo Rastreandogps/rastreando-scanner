@@ -897,7 +897,7 @@ body.modal-aberto{overflow:hidden}
   </details>
 
   <div class="toolbar" id="toolbar-clientes">
-    <input type="text" id="busca" placeholder="Nome ou CPF">
+    <input type="text" id="busca" placeholder="Nome, CPF ou telefone">
     <select id="ordenar">
       <option value="valor">Maior valor</option>
       <option value="dias">Mais atrasado</option>
@@ -976,7 +976,7 @@ body.modal-aberto{overflow:hidden}
 
   <div id="aba-pagos" hidden>
     <div class="toolbar toolbar-fil">
-      <input type="text" id="pg-busca" placeholder="Buscar por nome ou CPF...">
+      <input type="text" id="pg-busca" placeholder="Buscar por nome, CPF ou telefone...">
       <button type="button" class="btn btn-sec" id="pg-btn-filtros">🎚️ Filtros</button>
     </div>
     <div class="painel-filtros" id="pg-painel-filtros" hidden>
@@ -1022,7 +1022,7 @@ body.modal-aberto{overflow:hidden}
 
   <div id="aba-classif" hidden>
     <div class="toolbar toolbar-fil">
-      <input type="text" id="cl-busca" placeholder="Buscar por nome ou CPF...">
+      <input type="text" id="cl-busca" placeholder="Buscar por nome, CPF ou telefone...">
       <button type="button" class="btn btn-sec" id="cl-btn-filtros">🎚️ Filtros</button>
     </div>
     <div class="painel-filtros" id="cl-painel-filtros" hidden>
@@ -1308,6 +1308,8 @@ body.modal-aberto{overflow:hidden}
   function brl(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
   function dataBR(iso) { var p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(iso || ''); }
   function soDig(s) { return String(s || '').replace(/\D/g, ''); }
+  // 06/11/2026 (dono): busca também pelo telefone (com ou sem 55, DDD, traço ou espaço). A partir de 8 números.
+  function bateTel(tel, dig) { var t = soDig(tel), d = String(dig || '').replace(/^55(?=\d{10,11}$)/, '').replace(/^0+/, ''); if (d.length < 8 || !t) return false; t = t.replace(/^55(?=\d{10,11}$)/, ''); return t.indexOf(d) >= 0 || (d.length >= 10 && t.slice(-8) === d.slice(-8) && t.slice(0, 2) === d.slice(0, 2)); }
   function primeiroNome(n) { return String(n || '').trim().split(/\s+/)[0] || ''; }
 
   var _toastT = null;
@@ -1691,7 +1693,7 @@ body.modal-aberto{overflow:hidden}
     $('btn-filtros').classList.toggle('ativo', nFiltros > 0);
 
     var termoTxt = semAcento($('busca').value.trim()), termoDig = soDig($('busca').value);
-    var casaBusca = function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termoTxt) >= 0; };
+    var casaBusca = function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || bateTel(c.telefone, termoDig) || semAcento(c.nome).indexOf(termoTxt) >= 0; };
     if (termoTxt) lista = lista.filter(casaBusca);
     var fCls = $('f-classe').value, fVen = $('f-venc').value;
     if (fCls) lista = lista.filter(function (c) { return fCls === 'sem' ? !c.medalha : (c.medalha && c.medalha.classe === fCls); });
@@ -4099,7 +4101,7 @@ body.modal-aberto{overflow:hidden}
       if (fDia) return c.boletos.some(function (b) { return b.status === 'pago' && b.pagamento === fDia; });
       return c.recebido > 0 && c.aReceber === 0;
     });
-    if (termo) lista = lista.filter(function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0; });
+    if (termo) lista = lista.filter(function (c) { return (termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || bateTel(c.telefone, termoDig) || semAcento(c.nome).indexOf(termo) >= 0; });
     if (fCls) lista = lista.filter(function (c) { return c.classe === fCls; });
     if (fVen) lista = lista.filter(function (c) {
       var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
@@ -4264,7 +4266,7 @@ body.modal-aberto{overflow:hidden}
       if (fPts !== '' && String(c.pontos) !== fPts) return false;
       if (fRetCl === 'sim' && !retiradaDe(c.cpf)) return false;
       if (fRetCl === 'nao' && retiradaDe(c.cpf)) return false;
-      if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
+      if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || bateTel(c.telefone, termoDig) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
       if (fVen) {
         var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
         if (fVen === 'outro' ? !dias.some(function (d) { return d !== 15 && d !== 20; }) : dias.indexOf(Number(fVen)) < 0) return false;
