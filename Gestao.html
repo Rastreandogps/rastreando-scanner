@@ -337,6 +337,8 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .mig svg{width:15px;height:15px}
 .mig.fila{background:#f59e0b;box-shadow:0 2px 6px rgba(245,158,11,.35)}
 .mig.ok{background:#16a34a;box-shadow:0 2px 6px rgba(22,163,74,.35)}
+.platg{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:700;vertical-align:middle;line-height:18px}
+.platg.nob{background:#fee2e2;color:#b91c1c}.platg.mar{background:#fef3c7;color:#92400e}
 .mig[disabled]{opacity:.6;cursor:wait}
 .cls-item .nome{display:inline}
 .cls-item .nome{font-weight:700}
@@ -1046,6 +1048,13 @@ body.modal-aberto{overflow:hidden}
         <option value="">Retirada: todos</option>
         <option value="sim">🔧 Retirada solicitada</option>
         <option value="nao">Sem retirada</option>
+      </select>
+      <select id="cl-plat" aria-label="Filtrar por plataforma">
+        <option value="">Plataforma: todas</option>
+        <option value="nova">🟢 Plataforma nova</option>
+        <option value="nob">🔴 Ainda na NOB</option>
+        <option value="marcio">🟡 Ainda no Márcio</option>
+        <option value="nenhuma">Sem plataforma achada</option>
       </select>
       <select id="cl-ordem" aria-label="Ordenar pelo valor"><!-- 20/10/2026 -->
         <option value="">Ordem: padrão</option>
@@ -4166,7 +4175,7 @@ body.modal-aberto{overflow:hidden}
   $('cl-btn-filtros').addEventListener('click', function () { $('cl-painel-filtros').hidden = !$('cl-painel-filtros').hidden; });
   $('pg-btn-filtros').addEventListener('click', function () { $('pg-painel-filtros').hidden = !$('pg-painel-filtros').hidden; });
   $('cl-limpar-filtros').addEventListener('click', function () {
-    ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-ordem'].forEach(function (id) { $(id).value = ''; });
+    ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-plat', 'cl-ordem'].forEach(function (id) { $(id).value = ''; });
     clsFiltro.classe = '';
     if (CLS) renderClassificacao();
   });
@@ -4176,6 +4185,7 @@ body.modal-aberto{overflow:hidden}
   });
   $('cl-pontos').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-ret').addEventListener('change', function () { if (CLS) renderClassificacao(); });
+  $('cl-plat').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   $('cl-ordem').addEventListener('change', function () { if (CLS) renderClassificacao(); });
   // 15/10/2026: ao começar a digitar um nome, a lista passa sozinha para "Todos" (quem já pagou também aparece);
   // ao apagar a busca, volta para o que estava antes. Se tocar em outro botão durante a busca, vale o que tocou.
@@ -4190,11 +4200,20 @@ body.modal-aberto{overflow:hidden}
   $('cl-venc').addEventListener('change', function () { if (CLS) renderClassificacao(); });
 
   /* 17/10/2026 (pedido do dono): migração para a plataforma própria — azul = migrar, laranja = na fila do Tempo Real, verde = já está na plataforma */
-  var MIG = { plat: {}, fila: {}, lido: false, lendo: false };
+  var MIG = { plat: {}, fila: {}, lido: false, lendo: false, antigas: {} };
+  /* 06/11/2026 (pedido do dono): em qual plataforma está o cliente — 🟢 nova · 🔴 NOB · 🟡 Márcio (mapa lido do Chrome, CPF) */
+  function platDe(cpf) { var d = soDig(cpf), l = (MIG.antigas[d] || []).slice(); if (MIG.plat[d] && l.indexOf('nova') < 0) l.push('nova'); return l; }
+  function htmlPlat(c) {
+    var l = platDe(c.cpf), h = '';
+    if (l.indexOf('nob') >= 0) h += '<span class="platg nob" title="Ainda tem veículo na NOB (Felipe)">NOB</span>';
+    if (l.indexOf('marcio') >= 0) h += '<span class="platg mar" title="Ainda tem veículo na plataforma do Márcio">Márcio</span>';
+    return h;
+  }
   var SVG_BONECO = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 14 0"/><path d="M19 8v6M16 11h6"/></svg>';
   var SVG_BONECO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"/><path d="M3 21a7 7 0 0 1 14 0"/><path d="M16 11l2 2 4-4"/></svg>';
   var SVG_RELOGIO = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
-  function htmlMigrar(c) {
+  function htmlMigrar(c) { return htmlMigrarBotao(c) + htmlPlat(c); }
+  function htmlMigrarBotao(c) {
     var d = soDig(c.cpf);
     if (MIG.plat[d]) return '<button type="button" class="mig ok" data-mig="ok" title="Já está na plataforma (CPF vinculado no Tempo Real)">' + SVG_BONECO_OK + '</button>';
     if (MIG.fila[d]) return '<button type="button" class="mig fila" data-mig="fila" data-cpf="' + esc(d) + '" title="Na fila do Tempo Real: falta criar o cadastro lá">' + SVG_RELOGIO + '</button>';
@@ -4206,6 +4225,7 @@ body.modal-aberto{overflow:hidden}
       var r = await chamar('cli_status', {});
       MIG.plat = {}; MIG.fila = {};
       (r.plataforma || []).forEach(function (x) { MIG.plat[x] = 1; }); (r.fila || []).forEach(function (x) { MIG.fila[x] = 1; });
+      try { var pf = await chamar('plataformas', {}); MIG.antigas = (pf && pf.cpfs) || {}; } catch (e2) { /* sem o mapa: só o bonequinho */ }
       MIG.lido = true; if (CLS) renderClassificacao();
     } catch (e) { /* sem o status: todos aparecem azuis */ }
     finally { MIG.lendo = false; }
@@ -4258,14 +4278,15 @@ body.modal-aberto{overflow:hidden}
     }).join('');
     if (ptsAtual !== '' && porPts[ptsAtual] != null) selPts.value = ptsAtual;
     var fPts = selPts.value;
-    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-ordem']);
-    var fRetCl = $('cl-ret').value;
+    marcarBotaoFiltros('cl-btn-filtros', ['cl-classe', 'cl-venc', 'cl-pontos', 'cl-ret', 'cl-plat', 'cl-ordem']);
+    var fRetCl = $('cl-ret').value, fPlat = $('cl-plat').value;
     var termo = semAcento($('cl-busca').value.trim()), termoDig = soDig($('cl-busca').value), fVen = $('cl-venc').value;
     var lista = (clsFiltro.classe === 'proximo' ? [] : CLS.clientes).filter(function (c) {
       if (clsFiltro.classe && c.classe !== clsFiltro.classe) return false;
       if (fPts !== '' && String(c.pontos) !== fPts) return false;
       if (fRetCl === 'sim' && !retiradaDe(c.cpf)) return false;
       if (fRetCl === 'nao' && retiradaDe(c.cpf)) return false;
+      if (fPlat) { var pl = platDe(c.cpf); if (fPlat === 'nenhuma' ? pl.length : pl.indexOf(fPlat) < 0) return false; }
       if (termo && !((termoDig && soDig(c.cpf).indexOf(termoDig) >= 0) || bateTel(c.telefone, termoDig) || semAcento(c.nome).indexOf(termo) >= 0)) return false;
       if (fVen) {
         var dias = c.boletos.map(function (b) { return Number(String(b.vencimento).slice(8, 10)); });
