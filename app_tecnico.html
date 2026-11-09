@@ -1752,7 +1752,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-09-v169-os-varios-veiculos';
+const BUILD_VERSION = '2026-11-09-v170-data-da-nota';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2678,7 +2678,7 @@ async function espelharNoFirestore(payload) {
     case 'salvarNotaTecnico':
       if (!ref) return;
       await ref.set({
-        notaTecnico: payload.nota ? { texto: payload.nota, tecnico: payload.tech || '' } : '',
+        notaTecnico: payload.nota ? { texto: payload.nota, tecnico: payload.tech || '', quando: _quandoNota() } : '', // 09/11/2026 (v170): data discreta da nota
         atualizadoEm: agora
       }, { merge: true });
       break;
@@ -10582,6 +10582,7 @@ async function descartarObs(id, tech, btn) {
   }
 }
 
+function _quandoNota() { const d = new Date(), p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
 function _notaInfoTexto(nota) {
   return _notaInfo(nota).texto || '';
 }
@@ -10636,7 +10637,7 @@ async function salvarNotaCard(btn) {
   if (res.ok) {
     // Atualizar na memória local
     const o = (allOrders[tech] || []).find(function(x) { return x.id === id; });
-    if (o) o.notaTecnico = nota;
+    if (o) o.notaTecnico = nota ? { texto: nota, tecnico: tech || '', quando: _quandoNota() } : ''; // 09/11/2026 (v170)
     showToast(nota ? 'Nota salva! 🗒️' : 'Nota removida', 'success');
     renderCalDayCards(_calDayAtivoDataTech ? _idsDoDiaTecnico(_calDayAtivoDataTech) : null, true);
   } else {
