@@ -1752,7 +1752,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-05-v168-pedido-assistente';
+const BUILD_VERSION = '2026-11-09-v169-os-varios-veiculos';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -8239,6 +8239,7 @@ async function limparProxima(id, tech, modo) {
 let _subEtapa = null; // { id, tech, origem: 'card' | 'mapa' | 'admin' }
 function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
   if (_ehTentativaOS(o)) return _abrirTentativa(o, id, tech, origem); // 15/10/2026
+  if (_osMultiElegivel(o)) return _abrirMultiVeic(o, id, tech, origem); // 09/11/2026 (v169)
   const t = _trocaVeiculoDeOS(o) || (o && String(o.tipo || '').toLowerCase().includes('substitu') ? { de: 'veículo antigo', deModelo: 'veículo antigo', para: 'veículo novo' } : null);
   if (!t) return false;
   _subEtapa = { id: id, tech: tech, origem: origem };
@@ -8272,6 +8273,80 @@ function _abrirSubEtapaSePrecisar(o, id, tech, origem) {
 function fecharSubEtapa() {
   document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll();
   _subEtapa = null; pendingConcluir = null; _concluirDoMapa = false;
+}
+/* ═══ OS COM 2+ VEÍCULOS (09/11/2026, v169, pedido do dono) ═══
+   Ao concluir, pergunta quais veículos foram feitos. Todos: conclui como sempre. Só alguns: a OS se divide —
+   uma OS CONCLUÍDA só com os feitos (valor dividido igual por veículo; entra no cofrinho do dia) e a OS original
+   continua ABERTA com os que faltam e o resto do valor, com a anotação "Já feito em dd/mm: …".
+   Ordem segura: 1º muda a original (se não puder gravar, nada acontece); 2º cria a parte feita (se não puder,
+   desfaz a 1ª); 3º grava o valor e conclui a parte feita. */
+function _osMultiElegivel(o) {
+  if (!o || o.status === 'concluido') return false;
+  if (_ehTentativaOS(o) || _trocaVeiculoDeOS(o) || String(o.tipo || '').toLowerCase().includes('substitu') || _ehEntregaFlash(o)) return false;
+  return _veiculosDaOS(o).length >= 2;
+}
+function _abrirMultiVeic(o, id, tech, origem) {
+  _subEtapa = { id: id, tech: tech, origem: origem, multi: true };
+  const vs = _veiculosDaOS(o), val = _valorNumOS(o);
+  document.getElementById('sub-etapa-nome').textContent = o.nome || '';
+  document.getElementById('sub-etapa-veic').textContent = (val && _podeVerValor()) ? 'Valor da OS ' + _fmtMoeda(val) + ' · ' + _fmtMoeda(val / vs.length) + ' por veículo' : '';
+  document.getElementById('sub-etapa-veic').style.whiteSpace = 'pre-line';
+  document.getElementById('sub-etapa-tit').textContent = '🚗 Quais veículos foram feitos?';
+  document.getElementById('sub-etapa-txt').textContent = 'Desmarque o que NÃO foi feito. O que ficar desmarcado continua numa OS aberta.';
+  document.getElementById('sub-etapa-bts').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:6px;">' + vs.map(function (v) {
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;">' +
+        '<input type="checkbox" class="multi-ck" data-i="' + v.i + '" checked style="width:20px;height:20px;accent-color:#16a34a;">' +
+        '<span style="flex:1;min-width:0;"><b>' + esc(v.modelo) + '</b>' + (v.placa ? ' <span style="color:var(--muted);font-size:12px;">' + esc(v.placa) + '</span>' : '') + '</span></label>';
+    }).join('') + '</div>' +
+    '<button type="button" onclick="_multiConcluir()" style="width:100%;margin-top:10px;padding:12px;background:#16a34a;color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">✅ Concluir os marcados</button>';
+  document.getElementById('modal-sub-etapa').classList.add('open'); lockScroll();
+  return true;
+}
+async function _multiConcluir() {
+  const se = _subEtapa; if (!se || !se.multi) return;
+  const o = _osFresca(se.id, se.tech) || {};
+  const partes = String(o.veiculo || '').split(' || ').map(function (v) { return v.trim(); }).filter(Boolean);
+  const marc = [];
+  document.querySelectorAll('#sub-etapa-bts .multi-ck').forEach(function (ck) { if (ck.checked) marc.push(Number(ck.getAttribute('data-i'))); });
+  if (!marc.length) { showToast('Marque pelo menos um veículo.', 'error'); return; }
+  document.getElementById('modal-sub-etapa').classList.remove('open'); unlockScroll(); _subEtapa = null;
+  const segue = function (id) {
+    if (se.origem === 'admin') return _adminConcluirOSDireto(id, se.tech);
+    pendingConcluir = { id: id, tech: se.tech };
+    if (se.origem === 'mapa') _concluirDoMapa = true;
+    return confirmarConcluir();
+  };
+  if (marc.length >= partes.length) return segue(se.id); // todos feitos: conclui como sempre
+  const feitos = partes.filter(function (_, i) { return marc.indexOf(i) >= 0; }), resto = partes.filter(function (_, i) { return marc.indexOf(i) < 0; });
+  const vs = _veiculosDaOS(o), nomesFeitos = marc.map(function (i) { const v = vs[i] || {}; return (v.modelo || 'Veículo ' + (i + 1)) + (v.placa ? ' (' + v.placa + ')' : ''); }).join(', ');
+  const total = _valorNumOS(o), parte = Math.round(total * feitos.length / partes.length * 100) / 100, sobra = Math.round((total - parte) * 100) / 100;
+  const hoje = _isoHoje(), hojeBR = hoje.split('-').reverse().slice(0, 2).join('/');
+  let dataISO = '';
+  if (o.data && String(o.data).trim() && o.data !== 'undefined') { const d = parseDate(o.data); if (d) dataISO = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  const hora = getHoraOS(o), per = getPeriodoOS(o), obsBase = String(o.obs || '').trim();
+  const pOrig = { action: 'editOrder', id: se.id, tech: se.tech, nome: o.nome || '', telefone: o.telefone || '', endereco: o.endereco || '', tipo: o.tipo || 'Manutenção', data: dataISO,
+    veiculo: resto.join(' || '), obs: embutirHora((obsBase ? obsBase + ' | ' : '') + 'Já feito em ' + hojeBR + ': ' + nomesFeitos, hora, per, o.ind || '', o.pc || '', o.cpf || '') };
+  const pVolta = Object.assign({}, pOrig, { veiculo: o.veiculo || '', obs: embutirHora(obsBase, hora, per, o.ind || '', o.pc || '', o.cpf || '') });
+  const novaId = genId();
+  const pNova = { action: 'saveOrder', tech: se.tech, id: novaId, nome: o.nome || '', telefone: o.telefone || '', endereco: o.endereco || '', tipo: o.tipo || 'Manutenção', data: dataISO || hoje,
+    veiculo: feitos.join(' || '), obs: embutirHora('Parte feita (' + feitos.length + ' de ' + partes.length + ' veículos) da OS de ' + (o.nome || 'cliente') + '.' + (obsBase ? ' ' + obsBase : ''), hora, per, o.ind || '', o.pc || '', o.cpf || '') };
+  showToast('Separando a OS...', '');
+  if (currentRole === 'admin') setAdminSyncStatus('syncing'); else setSyncStatus('syncing');
+  try { await espelharNoFirestore(pOrig); } catch (e) { console.warn('[multi] original', e); showToast('Não consegui separar a OS (sem permissão para gravar). Nada foi alterado. Avise o administrador.', 'error'); if (currentRole === 'admin') setAdminSyncStatus('ok'); else setSyncStatus('ok'); return; }
+  try { await espelharNoFirestore(pNova); } catch (e) {
+    console.warn('[multi] nova', e);
+    try { await espelharNoFirestore(pVolta); } catch (e2) { console.warn('[multi] desfazer', e2); }
+    showToast('Não consegui separar a OS. Nada foi alterado. Avise o administrador.', 'error'); if (currentRole === 'admin') setAdminSyncStatus('ok'); else setSyncStatus('ok'); return;
+  }
+  enviarParaPlanilha(pOrig); enviarParaPlanilha(pNova); // Planilha recebe a cópia por trás, como no resto do app
+  if (total > 0) {
+    await gasRequest({ action: 'salvarValorInstalacao', id: se.id, tech: se.tech, valor: String(sobra) });
+    await gasRequest({ action: 'salvarValorInstalacao', id: novaId, tech: se.tech, valor: String(parte) });
+  }
+  [allOrders && allOrders[se.tech], _firestoreTodasOrdens, window._adminOrdersCache].forEach(function (l) { (l || []).forEach(function (x) { if (x && x.id === se.id) { x.veiculo = pOrig.veiculo; if (total > 0) x.valorInstalacao = String(sobra); } }); });
+  showToast(feitos.length + (feitos.length === 1 ? ' veículo concluído' : ' veículos concluídos') + '. ' + resto.length + (resto.length === 1 ? ' continua' : ' continuam') + ' na OS aberta.', 'success');
+  return segue(novaId);
 }
 async function _subEtapaEscolher(escolha) {
   const se = _subEtapa; if (!se) return;
