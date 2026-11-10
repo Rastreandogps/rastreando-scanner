@@ -638,6 +638,12 @@ body.modal-aberto{overflow:hidden}
 .g-saldo.azul .g-saldo-v{grid-column:1;grid-row:2}
 .g-saldo.azul .g-saldo-h{grid-column:1;grid-row:3}
 .g-saldo.azul .g-cres{grid-column:2;grid-row:1 / span 3;margin:0;padding:0 0 0 14px;border-top:none;border-left:1px solid rgba(255,255,255,.28)}
+/* 10/11/2026 (dono): plano anual / 2+ assinaturas numa faixa própria embaixo, largura toda, botões claros e legíveis */
+.g-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22)}
+.g-saldo.azul .g-chips{grid-column:1 / -1;grid-row:4}
+.g-chip{flex:1 1 auto;min-height:40px;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;text-align:center;white-space:nowrap}
+.g-chip:active{background:rgba(255,255,255,.28)}
+.g-chip.alerta{background:#FDE68A;border-color:#FDE68A;color:#78350F}
 .g-saldo.azul .g-aviso{grid-column:1 / -1;font-size:.7rem;font-style:italic;opacity:.75;line-height:1.35;margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
 @media(max-width:560px){
   .g-topo{grid-template-columns:1fr;gap:8px}
@@ -3072,9 +3078,9 @@ body.modal-aberto{overflow:hidden}
   /* 10/11/2026 (dono): quantos no plano anual e quantos com 2+ assinaturas ativas (toque abre a lista) */
   function chipsAssin() {
     var p = [];
-    if (BASE.anuais != null) p.push('<button type="button" class="btn-link" data-as="anuais" style="padding:0;font-size:.82rem">📅 ' + BASE.anuais + ' no plano anual</button>');
-    if (BASE.emDobro) p.push('<button type="button" class="btn-link" data-as="emDobro" style="padding:0;font-size:.82rem;color:#b45309">⚠️ ' + BASE.emDobro + (BASE.emDobro === 1 ? ' cliente' : ' clientes') + ' com 2+ assinaturas</button>');
-    return p.length ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">' + p.join('') + '</div>' : '';
+    if (BASE.anuais != null) p.push('<button type="button" class="g-chip" data-as="anuais">📅 ' + BASE.anuais + ' no plano anual ›</button>');
+    if (BASE.emDobro) p.push('<button type="button" class="g-chip alerta" data-as="emDobro">⚠️ ' + BASE.emDobro + (BASE.emDobro === 1 ? ' cliente' : ' clientes') + ' com 2+ assinaturas ›</button>');
+    return p.length ? '<div class="g-chips">' + p.join('') + '</div>' : '';
   }
   async function abrirAssin(tipo) {
     $('as-titulo').textContent = tipo === 'anuais' ? '📅 Plano anual' : '⚠️ Clientes com 2 ou mais assinaturas ativas';
