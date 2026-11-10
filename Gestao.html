@@ -3086,7 +3086,7 @@ body.modal-aberto{overflow:hidden}
         return '<div style="padding:8px 0;border-bottom:1px solid var(--border,#e5e7eb)"><b>' + esc(c.nome || '') + '</b>' + (c.cpf ? ' · ' + esc(c.cpf) : '') + (c.tipo ? ' <span style="opacity:.7">(' + esc(c.tipo) + ')</span>' : '') +
           (c.assinaturas || []).map(function (a) { return '<div style="opacity:.85">• ' + brl(a.valor) + ' · ' + esc(a.ciclo || '') + ' · próx. venc. ' + dt(a.proximoVencimento) + (a.descricao ? ' · ' + esc(a.descricao) : '') + (a.criadaEm ? ' · criada ' + dt(a.criadaEm) : '') + '</div>'; }).join('') + '</div>';
       }).join('');
-      var nota = tipo === 'anuais' ? 'Conta como anual: ciclo anual no Asaas ou próximo vencimento a mais de 45 dias (plano anual do app ou pago adiantado).' : 'Pode estar certo (ex.: veículos em assinaturas separadas) ou ser cobrança em dobro. Confira no Asaas.';
+      var nota = tipo === 'anuais' ? 'Conta como anual: plano anual comprado pelo app (pago nos últimos 12 meses) ou assinatura com ciclo anual no Asaas.' : 'Pode estar certo (ex.: veículos em assinaturas separadas) ou ser cobrança em dobro. Confira no Asaas.';
       $('as-corpo').innerHTML = '<div style="opacity:.75;margin-bottom:6px">' + esc(nota) + '</div>' + (linhas || '<div>Nenhum.</div>');
     } catch (e) { $('as-corpo').textContent = (e && e.message) || 'Não foi possível ler.'; }
   }
