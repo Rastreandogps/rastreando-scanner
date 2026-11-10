@@ -1226,6 +1226,14 @@ body.modal-aberto{overflow:hidden}
     <div class="modal-bt"><button type="button" class="btn btn-ok" id="rt-enviar" style="width:auto">Enviar ao APP Técnico</button><button type="button" class="btn-link" id="rt-cancelar">Cancelar</button></div>
   </div>
 </div>
+<!-- 10/11/2026 (dono): lista dos clientes no plano anual / com 2+ assinaturas ativas -->
+<div class="modal-fundo" id="as-fundo" hidden>
+  <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="as-titulo">
+    <h3 id="as-titulo">Assinaturas</h3>
+    <div id="as-corpo" style="max-height:60vh;overflow:auto;font-size:.92rem"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="btn-link" id="as-fechar">Fechar</button></div>
+  </div>
+</div>
 <div class="modal-fundo" id="mn-fundo" hidden>
   <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="mn-titulo">
     <h3 id="mn-titulo">🛠️ Ordem de manutenção</h3>
@@ -3059,8 +3067,31 @@ body.modal-aberto{overflow:hidden}
         '<span>' + c.entram + ' entram · ' + c.saem + ' saíram</span>' +
         '</div>' + (new Date().getDate() <= 5 ? '<div class="g-aviso">Até o dia 5 a diferença aparece maior: os boletos do dia 20 ainda não foram gerados.</div>' : '');
     }
-    return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · às ' + new Date(BASE.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</div>' + cres;
+    return '<div class="g-saldo-lbl">👥 Assinantes ativos</div><div class="g-saldo-v">' + BASE.clientes + '</div><div class="g-saldo-h">' + BASE.assinaturas + (BASE.assinaturas === 1 ? ' assinatura' : ' assinaturas') + ' · às ' + new Date(BASE.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '</div>' + chipsAssin() + cres;
   }
+  /* 10/11/2026 (dono): quantos no plano anual e quantos com 2+ assinaturas ativas (toque abre a lista) */
+  function chipsAssin() {
+    var p = [];
+    if (BASE.anuais != null) p.push('<button type="button" class="btn-link" data-as="anuais" style="padding:0;font-size:.82rem">📅 ' + BASE.anuais + ' no plano anual</button>');
+    if (BASE.emDobro) p.push('<button type="button" class="btn-link" data-as="emDobro" style="padding:0;font-size:.82rem;color:#b45309">⚠️ ' + BASE.emDobro + (BASE.emDobro === 1 ? ' cliente' : ' clientes') + ' com 2+ assinaturas</button>');
+    return p.length ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">' + p.join('') + '</div>' : '';
+  }
+  async function abrirAssin(tipo) {
+    $('as-titulo').textContent = tipo === 'anuais' ? '📅 Plano anual' : '⚠️ Clientes com 2 ou mais assinaturas ativas';
+    $('as-corpo').innerHTML = 'Carregando...'; $('as-fundo').hidden = false; document.body.classList.add('modal-aberto');
+    try {
+      var r = await chamar('assinaturas_detalhe', {}), g = r[tipo] || { lista: [] };
+      var dt = function (x) { return x ? String(x).split('-').reverse().join('/') : '—'; };
+      var linhas = (g.lista || []).map(function (c) {
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--border,#e5e7eb)"><b>' + esc(c.nome || '') + '</b>' + (c.cpf ? ' · ' + esc(c.cpf) : '') + (c.tipo ? ' <span style="opacity:.7">(' + esc(c.tipo) + ')</span>' : '') +
+          (c.assinaturas || []).map(function (a) { return '<div style="opacity:.85">• ' + brl(a.valor) + ' · ' + esc(a.ciclo || '') + ' · próx. venc. ' + dt(a.proximoVencimento) + (a.descricao ? ' · ' + esc(a.descricao) : '') + (a.criadaEm ? ' · criada ' + dt(a.criadaEm) : '') + '</div>'; }).join('') + '</div>';
+      }).join('');
+      var nota = tipo === 'anuais' ? 'Conta como anual: ciclo anual no Asaas ou próximo vencimento a mais de 45 dias (plano anual do app ou pago adiantado).' : 'Pode estar certo (ex.: veículos em assinaturas separadas) ou ser cobrança em dobro. Confira no Asaas.';
+      $('as-corpo').innerHTML = '<div style="opacity:.75;margin-bottom:6px">' + esc(nota) + '</div>' + (linhas || '<div>Nenhum.</div>');
+    } catch (e) { $('as-corpo').textContent = (e && e.message) || 'Não foi possível ler.'; }
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-as]'); if (b) { e.preventDefault(); abrirAssin(b.dataset.as); } });
+  $('as-fechar').addEventListener('click', function () { $('as-fundo').hidden = true; document.body.classList.remove('modal-aberto'); });
   async function abrirGestao() {
     carregarSaldo();
     if (!GPCT) {
