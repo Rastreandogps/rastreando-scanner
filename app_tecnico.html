@@ -830,6 +830,11 @@
         <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
       </svg>
     </button>
+    <!-- 📦 Caixa de Bagulho (12/11/2026): o técnico só vê as dele -->
+    <button class="tab-btn" onclick="showTechTab('bagulho')" id="tt-bagulho" title="Caixa de Bagulho" style="position:relative;">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><line x1="12" y1="13" x2="12" y2="21"/></svg>
+      <span id="bag-badge-tech" style="display:none;position:absolute;top:3px;left:calc(50% + 5px);background:#ea580c;color:white;border-radius:10px;min-width:16px;height:16px;padding:0 3px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
+    </button>
   </div>
   <div id="tech-tab-calendar" class="screen active">
     <div class="calendar-wrap">
@@ -877,6 +882,11 @@
       </div>
       <div id="leaflet-map-tech" style="width:100%;height:100%;"></div>
     </div>
+  </div>
+  <div id="tech-tab-bagulho" class="screen" style="padding:16px;max-width:680px;margin:0 auto;">
+    <div class="section-title">📦 Caixa de Bagulho</div>
+    <div style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">Suas OS que o administrador tirou da lista (cliente não responde, não deu para ir...). Só para consulta.</div>
+    <div id="bag-lista-tech"></div>
   </div>
   <div id="tech-tab-done" class="screen" style="padding-top:20px;background:#e8eef8;min-height:100vh;">
     <!-- Card de faturamento mensal -->
@@ -961,6 +971,17 @@
         <line x1="16" y1="6" x2="16" y2="22"/>
       </svg>
     <span id="favaba-mapa" onclick="event.stopPropagation();toggleFavAba('mapa')" style="position:absolute;top:2px;right:2px;font-size:8px;cursor:pointer;color:#94a3b8;line-height:1;" title="Fixar aba favorita">☆</span></button>
+    <!-- 📦 Caixa de Bagulho (12/11/2026) -->
+    <button class="tab-btn admin-tab" onclick="showAdminTab('bagulho')" id="at-bagulho" style="position:relative;" title="Caixa de Bagulho">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><line x1="12" y1="13" x2="12" y2="21"/></svg>
+      <span id="bag-badge-admin" style="display:none;position:absolute;top:3px;left:calc(50% + 5px);background:#ea580c;color:white;border-radius:10px;min-width:16px;height:16px;padding:0 3px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span></button>
+  </div>
+  <!-- 📦 CAIXA DE BAGULHO (admin) -->
+  <div id="admin-tab-bagulho" class="screen" style="padding:16px;max-width:680px;margin:0 auto;">
+    <div class="section-title">📦 Caixa de Bagulho</div>
+    <div style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">OS paradas, fora da lista principal. Garimpe de vez em quando: volte para a lista o que reviver e exclua o que não serve mais.</div>
+    <input id="bag-busca-admin" type="search" placeholder="🔍 Buscar nome, veículo, endereço, técnico..." oninput="renderBagulho()" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:10px;">
+    <div id="bag-lista-admin"></div>
   </div>
 
   <!-- MAPA ADMIN -->
@@ -2373,11 +2394,12 @@ function showTechTab(tab) {
   // Garantir overlay sumido
   const _ov = document.getElementById('destaque-overlay');
   if (_ov) _ov.style.display = 'none';
-  ['calendar','done','mapa'].forEach(t => {
+  ['calendar','done','mapa','bagulho'].forEach(t => {
     document.getElementById('tech-tab-' + t).classList.toggle('active', t === tab);
     document.getElementById('tt-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'done') renderDoneList();
+  if (tab === 'bagulho') renderBagulho();
   // Mapa técnico: auto-carrega na primeira visita ou após 30 min
   if (tab === 'mapa') {
     const expirado = _mapaTechCarregadoEm && (Date.now() - _mapaTechCarregadoEm > MAPA_VALIDADE_MS);
@@ -2392,16 +2414,17 @@ function showTechTab(tab) {
 }
 
 function showAdminTab(tab) {
-  ['new-os','agendamentos','view-tech','done-os','acessos','mapa'].forEach(t => {
+  ['new-os','agendamentos','view-tech','done-os','acessos','mapa','bagulho'].forEach(t => {
     const el = document.getElementById('admin-tab-' + t);
     if (el) el.classList.toggle('active', t === tab);
   });
-  ['at-new','at-agendamentos','at-view','at-done','at-acessos','at-mapa'].forEach((id, i) => {
-    const tabs = ['new-os','agendamentos','view-tech','done-os','acessos','mapa'];
+  ['at-new','at-agendamentos','at-view','at-done','at-acessos','at-mapa','at-bagulho'].forEach((id, i) => {
+    const tabs = ['new-os','agendamentos','view-tech','done-os','acessos','mapa','bagulho'];
     const el = document.getElementById(id);
     if (el) el.classList.toggle('active', tabs[i] === tab);
   });
   if (tab === 'done-os') loadAdminDoneOrders();
+  if (tab === 'bagulho') renderBagulho();
   if (tab === 'view-tech') {
     renderResumoGeral();
     // Auto-selecionar técnico favorito
@@ -2435,7 +2458,7 @@ function showAdminTab(tab) {
 const ORDEM_ACOES_RAPIDAS = new Set([
   'saveOrder', 'editOrder', 'updateStatus', 'updateDate', 'salvarNotaTecnico',
   'salvarOrdemDia', 'limparObs', 'salvarValorInstalacao', 'deleteOrder', 'logMensagem',
-  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa', 'salvarValorRetirada', 'marcarTentativa'
+  'logLembreteHoje', 'marcarProxima', 'marcarSubEtapa', 'salvarValorRetirada', 'marcarTentativa', 'bagulho'
 ]);
 
 const FILA_PLANILHA_KEY = 'app_tecnico_fila_planilha_pendente';
@@ -2489,7 +2512,7 @@ async function gasRequest(payload) {
   if (db && ORDEM_ACOES_RAPIDAS.has(payload.action)) {
     try {
       await espelharNoFirestore(payload); // grava de verdade, na hora
-      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa' && payload.action !== 'salvarValorRetirada' && payload.action !== 'marcarTentativa') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
+      if (payload.action !== 'marcarProxima' && payload.action !== 'marcarSubEtapa' && payload.action !== 'salvarValorRetirada' && payload.action !== 'marcarTentativa' && payload.action !== 'bagulho') enviarParaPlanilha(payload); // Planilha recebe a cópia por trás (a "próxima" fica só no Firestore)
       return { ok: true };
     } catch (e) {
       console.warn('[Firestore] Gravação direta falhou, tentando do jeito de sempre (direto na Planilha):', payload.action, e);
@@ -2656,6 +2679,12 @@ async function espelharNoFirestore(payload) {
         if ('rotaIni' in payload) up.rotaIni = String(payload.rotaIni || '').slice(0, 30); // 17/10/2026 (v155): entrega Rastreando Flash — técnico iniciou a rota
         if ('tentLink' in payload) up.tentLink = /^https?:\/\//.test(String(payload.tentLink || '')) ? String(payload.tentLink).slice(0, 400) : '';
         await ref.set(up, { merge: true }); }
+      break;
+
+    case 'bagulho': // 12/11/2026: 📦 Caixa de Bagulho (só no Firestore; só o admin)
+      if (!ref) return;
+      if (payload.sair) await ref.set({ bagulho: firebase.firestore.FieldValue.delete(), atualizadoEm: agora }, { merge: true });
+      else await ref.set({ bagulho: { em: Date.now(), motivo: String(payload.motivo || '').slice(0, 60), obs: String(payload.obs || '').slice(0, 200), tecnico: String(payload.tech || '') }, atualizadoEm: agora }, { merge: true });
       break;
 
     case 'salvarValorRetirada': // 15/10/2026: valor da retirada da substituição (você paga ao técnico; só no Firestore)
@@ -2887,7 +2916,8 @@ function docFirestoreParaOrdem(doc) {
     tentRetirados:   Array.isArray(d.tentRetirados) ? d.tentRetirados : [],
     tentPagoDia:     d.tentPagoDia || '',
     rotaIni:         d.rotaIni || '', // 17/10/2026 (v155)
-    tentPagoQtd:     Number(d.tentPagoQtd) || 0 // 16/10/2026 (v151)
+    tentPagoQtd:     Number(d.tentPagoQtd) || 0, // 16/10/2026 (v151)
+    bagulho:         (d.bagulho && d.bagulho.em) ? d.bagulho : null // 12/11/2026: 📦 Caixa de Bagulho (só o admin manda)
   };
 }
 /* 13/10/2026: a "próxima OS" marcada pelo técnico só vale no dia em que foi marcada. No dia seguinte a marca é
@@ -2914,10 +2944,13 @@ function iniciarListenerOSTecnico(nomeTecnico) {
       _techFirestoreOk = true; // daqui em diante a tela do técnico segue só o Firebase
       const ativos = [];
       const concluidos = [];
+      const _bagTec = [];
       snapshot.forEach(function(doc) {
         const o = docFirestoreParaOrdem(doc);
+        if (o.bagulho) { _bagTec.push(o); return; } // 12/11/2026: 📦 Caixa de Bagulho
         (o.status === 'concluido' ? concluidos : ativos).push(o);
       });
+      _bagSet(_bagTec);
       allOrders[nomeTecnico]  = normalizarOrdens(ativos);
       doneOrders[nomeTecnico] = normalizarOrdens(concluidos);
       renderTechCalendar();
@@ -2987,7 +3020,9 @@ function iniciarListenerOSAdmin() {
   _unsubOSAdmin = db.collection('ordens_servico').onSnapshot(function(snapshot) {
     // Mantém sempre uma cópia fresca de todas as ordens — é o que permite
     // trocar de técnico na hora, sem esperar a Planilha responder.
-    _firestoreTodasOrdens = snapshot.docs.map(docFirestoreParaOrdem);
+    { const _todas = snapshot.docs.map(docFirestoreParaOrdem); // 12/11/2026: 📦 as da Caixa de Bagulho saem de tudo (lista, mapa, rota) e ficam só na caixa
+      _bagSet(_todas.filter(function (o) { return o.bagulho; }));
+      _firestoreTodasOrdens = _todas.filter(function (o) { return !o.bagulho; }); }
     _indConciliar(); // OS de indicação concluída → marca "instalada" (Gestão → Indicações)
     // Ignora o "eco" da própria escrita feita nesta mesma tela — ela já se
     // atualiza sozinha pelo caminho de sempre; isso é só pra pegar mudanças
@@ -4621,6 +4656,7 @@ function renderAdminOSList() {
       '<div style="display:flex;gap:8px;padding-top:4px;border-top:1px solid var(--border);">' +
         '<button class="btn-save-date" onclick="adminReatribuir(this)" style="flex:1;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;">✔ Confirmar técnico</button>' +
         '<button onclick="abrirModalEdit(\'' + o.id + '\',\'' + o._tech + '\')" style="flex:1;padding:8px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">✏️ Editar</button>' +
+        '<button onclick="abrirBagulho(\'' + o.id + '\',\'' + o._tech + '\')" title="Mandar para a Caixa de Bagulho" style="padding:8px 10px;background:#fff7ed;color:#ea580c;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📦</button>' +
         '<button class="btn-delete" onclick="adminDelete(this)" data-id="' + o.id + '" data-tech="' + o._tech + '" title="Excluir" style="padding:8px 12px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
       '</div>' +
 
@@ -5296,9 +5332,81 @@ function _selPeriodoHTML(id, valor, estilo) {
 function _lerPeriodo(id) { const el = document.getElementById(id); return el ? (el.value || '') : ''; }
 function _horaValida(h) { return /^\d{1,2}:\d{2}$/.test(String(h || '')) ? h : ''; }
 function normalizarOrdens(x) {
-  if (Array.isArray(x)) { x.forEach(normalizarHoraOS); }
-  else if (x && typeof x === 'object') { Object.keys(x).forEach(function(k){ if (Array.isArray(x[k])) x[k].forEach(normalizarHoraOS); }); }
+  const _fora = function (l) { return (_bagIds && _bagIds.size) ? l.filter(function (o) { return !(o && _bagIds.has(String(o.id))); }) : l; }; // 12/11/2026: 📦 Caixa de Bagulho
+  if (Array.isArray(x)) { x = _fora(x); x.forEach(normalizarHoraOS); }
+  else if (x && typeof x === 'object') { Object.keys(x).forEach(function(k){ if (Array.isArray(x[k])) { x[k] = _fora(x[k]); x[k].forEach(normalizarHoraOS); } }); }
   return x;
+}
+/* ═══ 📦 CAIXA DE BAGULHO (12/11/2026, dono) ═══
+   OS paradas (cliente não responde, não deu para ir…) saem da lista principal, do mapa e da rota e ficam guardadas aqui.
+   Só o ADMIN manda para a caixa (motivo obrigatório), volta para a lista ou exclui de vez. O técnico só VÊ as dele. */
+var _bagOrdens = [], _bagIds = new Set();
+try { JSON.parse(localStorage.getItem('rg_bag_ids') || '[]').forEach(function (i) { _bagIds.add(String(i)); }); } catch (e) {}
+const BAG_MOTIVOS = ['Cliente não responde', 'Não deu para ir ao local', 'Cliente desistiu', 'Endereço errado / não encontrado', 'Outro'];
+function _bagSet(lista) {
+  _bagOrdens = (lista || []).slice().sort(function (a, b) { return Number((b.bagulho || {}).em || 0) - Number((a.bagulho || {}).em || 0); });
+  _bagIds = new Set(_bagOrdens.map(function (o) { return String(o.id); }));
+  try { localStorage.setItem('rg_bag_ids', JSON.stringify(Array.from(_bagIds))); } catch (e) {}
+  ['bag-badge-admin', 'bag-badge-tech'].forEach(function (id) { const b = document.getElementById(id); if (b) { b.textContent = _bagOrdens.length || ''; b.style.display = _bagOrdens.length ? 'block' : 'none'; } });
+  try { renderBagulho(); } catch (e) {}
+}
+function _bagData(ms) { try { return new Date(Number(ms)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }); } catch (e) { return ''; } }
+function renderBagulho() {
+  const admin = currentRole === 'admin';
+  const el = document.getElementById(admin ? 'bag-lista-admin' : 'bag-lista-tech'); if (!el) return;
+  const q = String((document.getElementById('bag-busca-admin') || {}).value || '').toLowerCase().trim();
+  const lista = _bagOrdens.filter(function (o) { return !q || (o.nome + ' ' + o.veiculo + ' ' + o.endereco + ' ' + o.telefone + ' ' + o.tecnico + ' ' + ((o.bagulho || {}).motivo || '')).toLowerCase().indexOf(q) >= 0; });
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">' + (q ? 'Nada com essa busca.' : '📦 A caixa está vazia.') + '</div>'; return; }
+  el.innerHTML = lista.map(function (o) {
+    const b = o.bagulho || {}, tel = String(o.telefone || '').replace(/\D/g, '');
+    return '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div style="min-width:0;"><div style="font-weight:800;font-size:15px;color:#1a2744;">' + esc(o.nome || 'Sem nome') + '</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-top:2px;">' + esc([o.tipo, o.veiculo].filter(Boolean).join(' · ')) + '</div></div>' +
+      '<span style="flex-shrink:0;background:#f1f5f9;color:#475569;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;">' + esc(o.tecnico || '') + '</span></div>' +
+      (o.endereco ? '<div style="font-size:12px;color:#334155;margin-top:6px;">📍 ' + esc(o.endereco) + '</div>' : '') +
+      (o.data ? '<div style="font-size:12px;color:#334155;margin-top:2px;">📅 Data da OS: ' + esc(o.data) + '</div>' : '') +
+      '<div style="margin-top:8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:7px 10px;font-size:12px;color:#9a3412;"><b>📦 ' + esc(b.motivo || 'Sem motivo') + '</b>' + (b.obs ? ' — ' + esc(b.obs) : '') + '<div style="font-size:11px;color:#c2410c;margin-top:2px;">Na caixa desde ' + esc(_bagData(b.em)) + '</div></div>' +
+      (admin ? '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">' +
+        '<button onclick="bagVoltar(\'' + esc(o.id) + '\',\'' + esc(o.tecnico) + '\',this)" style="flex:1;min-width:120px;padding:8px;background:#ecfdf5;color:#047857;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Voltar para a lista</button>' +
+        (tel.length >= 10 ? '<a href="https://wa.me/55' + tel.replace(/^55(?=\d{10,11}$)/, '') + '" target="_blank" rel="noopener" style="flex:1;min-width:90px;text-align:center;padding:8px;background:#f0fdf4;color:#15803d;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">💬 WhatsApp</a>' : '') +
+        '<button onclick="requestDelete(\'' + esc(o.id) + '\',\'' + esc(o.tecnico) + '\')" style="padding:8px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Excluir de vez</button></div>' : '') +
+      '</div>';
+  }).join('');
+}
+function abrirBagulho(id, tech) {
+  if (currentRole !== 'admin') return;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML = '<div style="background:white;border-radius:16px;padding:20px;max-width:360px;width:100%;">' +
+    '<div style="font-size:17px;font-weight:800;color:#1a2744;margin-bottom:4px;">📦 Mandar para a Caixa de Bagulho</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">A OS sai da lista, do mapa e da rota. Dá para voltar depois.</div>' +
+    '<div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:6px;">Motivo *</div>' +
+    BAG_MOTIVOS.map(function (m, i) { return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;font-size:13px;cursor:pointer;"><input type="radio" name="bag-mot" value="' + i + '"> ' + esc(m) + '</label>'; }).join('') +
+    '<textarea id="bag-obs" rows="2" placeholder="Detalhe (obrigatório em Outro)" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:13px;margin-top:2px;"></textarea>' +
+    '<div id="bag-erro" style="color:#dc2626;font-size:12px;min-height:16px;margin-top:4px;"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:8px;"><button id="bag-cancel" style="flex:1;padding:10px;border:1px solid var(--border);background:white;border-radius:10px;font-weight:700;cursor:pointer;">Cancelar</button>' +
+    '<button id="bag-ok" style="flex:1;padding:10px;border:none;background:#ea580c;color:white;border-radius:10px;font-weight:800;cursor:pointer;">📦 Mandar</button></div></div>';
+  document.body.appendChild(ov);
+  ov.querySelector('#bag-cancel').onclick = function () { ov.remove(); };
+  ov.querySelector('#bag-ok').onclick = async function () {
+    const sel = ov.querySelector('input[name="bag-mot"]:checked'), obs = String(ov.querySelector('#bag-obs').value || '').trim().slice(0, 200), err = ov.querySelector('#bag-erro');
+    if (!sel) { err.textContent = 'Escolha o motivo.'; return; }
+    const motivo = BAG_MOTIVOS[Number(sel.value)];
+    if (motivo === 'Outro' && !obs) { err.textContent = 'Em "Outro", escreva o motivo.'; return; }
+    this.disabled = true; this.textContent = 'Mandando...';
+    const r = await gasRequest({ action: 'bagulho', id: id, tech: tech, motivo: motivo, obs: obs });
+    if (!r || !r.ok) { err.textContent = 'Não consegui: ' + ((r && r.error) || 'sem conexão com o Firebase'); this.disabled = false; this.textContent = '📦 Mandar'; return; }
+    ov.remove(); _bagIds.add(String(id));
+    showToast('📦 OS mandada para a Caixa de Bagulho.', 'success'); marcarMapaDesatualizado();
+    try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
+  };
+}
+async function bagVoltar(id, tech, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Voltando...'; }
+  const r = await gasRequest({ action: 'bagulho', id: id, tech: tech, sair: true });
+  if (!r || !r.ok) { showToast('Não consegui: ' + ((r && r.error) || 'sem conexão com o Firebase'), 'error'); if (btn) { btn.disabled = false; btn.textContent = '↩️ Voltar para a lista'; } return; }
+  _bagIds.delete(String(id)); showToast('↩️ A OS voltou para a lista do ' + tech + '.', 'success'); marcarMapaDesatualizado();
+  try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
 }
 function getHoraOS(o) {
   return (o && o.hora) ? o.hora : '';
@@ -7867,6 +7975,7 @@ function _renderCardOSDetalhado(o) {
         '<div style="display:flex;gap:6px;">' +
           '<button class="admin-view-edit-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#eff6ff;color:var(--admin);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar</button>' +
           _flashBtnAdm(o, tech, '<button class="admin-concluir-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:7px;background:#10b981;color:white;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅</button>') +
+          '<button onclick="event.stopPropagation();abrirBagulho(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" title="Mandar para a Caixa de Bagulho" style="padding:7px 10px;background:#fff7ed;color:#ea580c;border:none;border-radius:8px;font-size:13px;cursor:pointer;">📦</button>' +
           '<button class="admin-del-tech-btn" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="padding:7px 12px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;cursor:pointer;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
         '</div>' +
 
