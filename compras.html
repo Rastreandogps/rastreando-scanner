@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compras do mercado</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛒</text></svg>">
+<meta name="theme-color" content="#0b1016">
+<style>
+  :root{--bg:#0b1016;--card:#151c25;--linha:#222c38;--txt:#eef2f6;--sub:#8a97a6;--eu:#3b82f6;--ela:#ec4899}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       padding:calc(14px + env(safe-area-inset-top)) 14px calc(30px + env(safe-area-inset-bottom))}
+  h1{font-size:22px;margin:4px 0 12px}
+  .quem{display:flex;gap:8px;margin-bottom:10px}
+  .quem button{flex:1;padding:12px;border-radius:12px;border:2px solid var(--linha);background:var(--card);color:var(--txt);font-size:16px;font-weight:600}
+  .quem button.on.eu{border-color:var(--eu);background:#1e3a66}
+  .quem button.on.ela{border-color:var(--ela);background:#5a1e3f}
+  .resumo{color:var(--sub);font-size:14px;margin:4px 2px 12px}
+  .resumo b.eu{color:var(--eu)} .resumo b.ela{color:var(--ela)}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;align-items:center;gap:12px;padding:13px 12px;margin-bottom:6px;background:var(--card);border-radius:12px;border-left:5px solid transparent;user-select:none;cursor:pointer}
+  li .bx{width:26px;height:26px;border-radius:7px;border:2px solid #5b6776;flex:none;display:grid;place-items:center;font-size:16px;font-weight:700}
+  li .nm{flex:1}
+  li .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px}
+  li.eu{border-left-color:var(--eu)} li.eu .bx{background:var(--eu);border-color:var(--eu)} li.eu .tag{background:#1e3a66;color:#bcd4ff}
+  li.ela{border-left-color:var(--ela)} li.ela .bx{background:var(--ela);border-color:var(--ela)} li.ela .tag{background:#5a1e3f;color:#ffc4e2}
+  li.eu .nm,li.ela .nm{color:var(--sub);text-decoration:line-through}
+  .add{display:flex;gap:8px;margin:14px 0}
+  .add input{flex:1;padding:12px;border-radius:12px;border:2px solid var(--linha);background:var(--card);color:var(--txt);font-size:16px}
+  .add button,.limpar{padding:12px 16px;border-radius:12px;border:0;background:#2b3644;color:var(--txt);font-size:16px;font-weight:600}
+  .lix{flex:none;border:0;background:transparent;color:#6b7785;font-size:18px;padding:4px 6px;border-radius:8px}
+  .lix.conf{background:#7f1d1d;color:#fff;font-size:13px;font-weight:700;padding:6px 10px}
+  .limpar{width:100%;background:transparent;border:1px solid var(--linha);color:var(--sub);font-size:14px;margin-top:6px}
+  .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1em}
+  .ok{display:none;gap:8px;margin-top:6px} .ok.on{display:flex} .ok button{flex:1}
+</style>
+</head>
+<body>
+<h1>🛒 Compras do mercado</h1>
+<div class="quem">
+  <button id="bEu" class="eu">🙋‍♂️ Sou o Mateus</button>
+  <button id="bEla" class="ela">😍 Sou a Daniele gostosa</button>
+</div>
+<div class="resumo" id="resumo"></div>
+<form class="add" id="fAdd"><input id="novo" placeholder="✏️ Escrever um item…" autocomplete="off" enterkeyhint="done"><button>Adicionar</button></form>
+<div class="aviso" id="aviso"></div>
+<ul id="lista"></ul>
+<button class="limpar" id="bLimpar">Desmarcar tudo (nova compra)</button>
+<div class="ok" id="okLimpar"><button class="limpar" id="sim">Sim, desmarcar</button><button class="limpar" id="nao">Cancelar</button></div>
+
+<script>
+const API = 'https://rastreamentoapi-7a524tmnrq-rj.a.run.app';
+const LISTA = (location.hash.slice(1) || 'md7k2x9qv4wm8c3r').toLowerCase();
+let ESTADO = { itens: [], v: -1 };
+let quem = ''; try { quem = localStorage.getItem('rg_compras_quem') || ''; } catch (e) {}
+const $ = (id) => document.getElementById(id);
+let ocupado = false;
+
+async function api(corpo) {
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ acao: 'compras', lista: LISTA }, corpo)) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || 'Sem conexão.');
+  return j;
+}
+function aplicar(j) { if (j && Array.isArray(j.itens) && (j.v || 0) >= ESTADO.v) { ESTADO = { itens: j.itens, v: j.v || 0 }; render(); } }
+
+function render() {
+  $('bEu').classList.toggle('on', quem === 'eu');
+  $('bEla').classList.toggle('on', quem === 'ela');
+  const L = $('lista'); L.textContent = '';
+  const falta = ESTADO.itens.filter(i => !i.q), feitos = ESTADO.itens.filter(i => i.q);
+  [...falta, ...feitos].forEach((it) => {
+    const li = document.createElement('li'); if (it.q) li.className = it.q;
+    const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = it.q ? '✓' : '';
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = it.n;
+    li.append(bx, nm);
+    if (it.q) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = it.q === 'eu' ? 'Mateus' : 'Daniele'; li.append(t); }
+    const lx = document.createElement('button'); lx.className = 'lix'; lx.type = 'button'; lx.textContent = '🗑️';
+    lx.onclick = (ev) => { ev.stopPropagation();
+      if (!lx.classList.contains('conf')) { lx.classList.add('conf'); lx.textContent = 'Excluir?'; setTimeout(() => { lx.classList.remove('conf'); lx.textContent = '🗑️'; }, 3000); return; }
+      ESTADO.itens = ESTADO.itens.filter(i => i.n !== it.n); render(); mandar({ op: 'del', nome: it.n }); };
+    li.append(lx);
+    li.onclick = () => marcar(it);
+    L.append(li);
+  });
+  const nEu = feitos.filter(i => i.q === 'eu').length, nEla = feitos.filter(i => i.q === 'ela').length;
+  $('resumo').innerHTML = 'Faltam <b>' + falta.length + '</b> · <b class="eu">Mateus ' + nEu + '</b> · <b class="ela">Daniele ' + nEla + '</b>';
+}
+function aviso(t) { $('aviso').textContent = t || ''; }
+
+async function mandar(corpo) {
+  ocupado = true;
+  try { const j = await api(corpo); if (j.jaPego) aviso('Esse ' + (j.jaPego === 'eu' ? 'o Mateus' : 'a Daniele') + ' já pegou.'); else aviso('✓ salvo'); aplicar(j); }
+  catch (e) { aviso('Não salvou (' + e.message + '). Toque de novo.'); }
+  ocupado = false;
+}
+function marcar(it) {
+  if (!quem) { aviso('Primeiro toque em quem é você, lá em cima.'); return; }
+  if (it.q && it.q !== quem) { aviso('Esse ' + (it.q === 'eu' ? 'o Mateus' : 'a Daniele') + ' já pegou.'); return; }
+  it.q = it.q === quem ? '' : quem; render(); mandar({ op: 'marcar', nome: it.n, quem });
+}
+function escolher(q) { quem = q; try { localStorage.setItem('rg_compras_quem', q); } catch (e) {} aviso(''); render(); }
+$('bEu').onclick = () => escolher('eu');
+$('bEla').onclick = () => escolher('ela');
+$('fAdd').onsubmit = (e) => { e.preventDefault(); const v = $('novo').value.trim(); if (!v) return;
+  $('novo').value = ''; if (!ESTADO.itens.some(i => i.n.toLowerCase() === v.toLowerCase())) ESTADO.itens.unshift({ n: v, q: '' }); render(); mandar({ op: 'add', nome: v }); };
+$('bLimpar').onclick = () => { $('okLimpar').classList.add('on'); $('bLimpar').style.display = 'none'; };
+$('nao').onclick = () => { $('okLimpar').classList.remove('on'); $('bLimpar').style.display = ''; };
+$('sim').onclick = () => { ESTADO.itens.forEach(i => i.q = ''); $('nao').onclick(); render(); mandar({ op: 'limpar' }); };
+
+async function atualizar() { if (ocupado || document.hidden) return; try { aplicar(await api({})); } catch (e) { /* tenta de novo */ } }
+render(); atualizar(); setInterval(atualizar, 3000);
+document.addEventListener('visibilitychange', atualizar);
+</script>
+</body>
+</html>
