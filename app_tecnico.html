@@ -11273,6 +11273,18 @@ function _criarMapa(divId) {
   return map;
 }
 
+/* 14/11/2026 (dono): explica por que a OS não entrou no mapa */
+function _motivoSemLocal(end) {
+  const e = String(end || '').trim();
+  if (!e) return 'a OS está sem endereço.';
+  let est = null, cep = '';
+  try { est = _enderecoEstruturado(e); } catch (_) {}
+  try { cep = _cepDoEndereco(e) || ''; } catch (_) {}
+  const temNum = /\d/.test(e.replace(/\b\d{5}-?\d{3}\b/g, ''));
+  if (!est && !cep) return 'o endereço só tem a cidade ou o bairro ("' + e + '"). Falta a rua e o número.';
+  if (!temNum && !cep) return 'falta o número da casa ("' + e + '").';
+  return 'o mapa não achou esse endereço ("' + e + '"). Confira o nome da rua ou coloque o CEP.';
+}
 async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   const total = listaOS.length;
   const _pontosAqui = _pontosRotaPara(modo); // 14/10/2026: pontos marcados pelo escritório que entram nesta rota
@@ -11302,7 +11314,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     if (labelEl)    labelEl.textContent    = 'Localizando ' + (i + 1) + ' de ' + total + '...';
     if (progressEl) progressEl.style.width = pct + '%';
 
-    if (!o.endereco || o.endereco.trim() === '') continue;
+    if (!o.endereco || o.endereco.trim() === '') { _semLocal.push({ nome: (o.nome || '').split(' ')[0] || '?', motivo: _motivoSemLocal('') }); continue; }
 
     // 2. Usar cache se disponível — não chama Nominatim (13/10/2026: centro de cidade guardado por engano é ignorado)
     let coord = cacheCoord[o.endereco] || null;
@@ -11316,7 +11328,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
       }
     }
 
-    if (!coord) { _semLocal.push((o.nome || '').split(' ')[0] || '?'); continue; }
+    if (!coord) { _semLocal.push({ nome: (o.nome || '').split(' ')[0] || '?', motivo: _motivoSemLocal(o.endereco) }); continue; }
     const _aprox = coord.nivel === 'bairro';
 
     let cor;
@@ -11515,6 +11527,20 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
     catch(_) {}
   }
 
+  // 14/11/2026 (dono): quadro fixo no mapa com o MOTIVO de cada OS que ficou fora
+  try {
+    const _ct = map.getContainer(), _velho = _ct.querySelector('.semloc'); if (_velho) _velho.remove();
+    if (_semLocal.length) {
+      const d = document.createElement('div'); d.className = 'semloc';
+      d.style.cssText = 'position:absolute;top:10px;left:56px;right:10px;z-index:1000;background:#fff;border:1.5px solid #F59E0B;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:10px 36px 10px 12px;font-size:13.5px;line-height:1.35;color:#1F2937;max-height:40%;overflow:auto';
+      d.innerHTML = '<button type="button" aria-label="Fechar" style="position:absolute;top:6px;right:6px;width:28px;height:28px;border:0;border-radius:50%;background:#F3F4F6;font-size:16px;cursor:pointer">×</button>'
+        + '<div style="font-weight:700;color:#B45309;margin-bottom:4px">⚠️ ' + _semLocal.length + ' OS fora do mapa</div>'
+        + _semLocal.map(x => '<div style="margin-top:4px"><b>' + esc(x.nome) + ':</b> ' + esc(x.motivo) + '</div>').join('');
+      d.querySelector('button').onclick = () => d.remove();
+      if (window.L && L.DomEvent) { L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d); }
+      _ct.appendChild(d);
+    }
+  } catch (_) {}
   // Informar resultado (só as OS; os pontos 🎯 não contam)
   const naoEncontrados = total - _nOSPlotadas;
   if (total === 0) {
@@ -11522,7 +11548,7 @@ async function _plotarOS(map, listaOS, labelEl, progressEl, loadingWrap, modo) {
   } else if (_nOSPlotadas === 0) {
     showToast('Nenhum endereço localizado no mapa.', 'error');
   } else if (naoEncontrados > 0) {
-    showToast(_nOSPlotadas + ' de ' + total + ' OS plotadas no mapa.' + (_semLocal.length ? ' Sem localização: ' + _semLocal.slice(0, 5).join(', ') + (_semLocal.length > 5 ? '…' : '') + ' (confira o endereço).' : ''), '');
+    showToast(_nOSPlotadas + ' de ' + total + ' OS plotadas no mapa.' + (_semLocal.length ? ' Veja o motivo no quadro do mapa.' : ''), '');
   } else {
     showToast('Todas as ' + total + ' OS plotadas! ✅', 'success');
   }
