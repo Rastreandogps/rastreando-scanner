@@ -1678,7 +1678,7 @@
 
 
 <!-- OVERLAY admin para toque fora -->
-<div id="destaque-overlay" onclick="_calDayAtivo=null;limparDestaqueCalendario();"
+<div id="destaque-overlay" onclick="_ovCalClique(event)"
   style="display:none;position:fixed;inset:0;z-index:50;background:transparent;-webkit-tap-highlight-color:transparent;"></div>
   
 <!-- MODAL: NOVA OS DO FORMULÁRIO -->
@@ -1773,7 +1773,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-09-v170-data-da-nota';
+const BUILD_VERSION = '2026-11-14-v171-calendario-um-clique';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3584,6 +3584,21 @@ function _destacarDiaTodos(ids) {
     if (match && !primeiro) primeiro = card;
   });
   return primeiro;
+}
+
+// 14/11/2026 (dono): com um dia selecionado, a camada invisível "toque fora" ficava por cima do
+// calendário e engolia o 1º clique em outro dia (precisava clicar 2 vezes). Agora, se o toque
+// caiu em cima de outro dia, ele já é selecionado no mesmo clique.
+function _ovCalClique(e) {
+  const SEL = '.cal-clickable-admin, .cal-clickable-todos';
+  const ov = document.getElementById('destaque-overlay');
+  if (ov) ov.style.display = 'none';
+  const sob = function() { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest ? el.closest(SEL) : null; };
+  const dia = sob();
+  const eraOMesmo = !!(dia && dia.classList.contains('cal-day-selected'));
+  _calDayAtivo = null;
+  limparDestaqueCalendario();
+  if (dia && !eraOMesmo) { const d2 = sob(); if (d2) d2.click(); }
 }
 
 function limparDestaqueCalendario() {
