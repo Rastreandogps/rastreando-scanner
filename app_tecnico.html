@@ -1773,7 +1773,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-14-v171-calendario-um-clique';
+const BUILD_VERSION = '2026-11-18-v172-bagulho-grade';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2684,7 +2684,7 @@ async function espelharNoFirestore(payload) {
     case 'bagulho': // 12/11/2026: 📦 Caixa de Bagulho (só no Firestore; só o admin)
       if (!ref) return;
       if (payload.sair) await ref.set({ bagulho: firebase.firestore.FieldValue.delete(), atualizadoEm: agora }, { merge: true });
-      else await ref.set({ bagulho: { em: Date.now(), motivo: String(payload.motivo || '').slice(0, 60), obs: String(payload.obs || '').slice(0, 200), tecnico: String(payload.tech || '') }, atualizadoEm: agora }, { merge: true });
+      else await ref.set({ bagulho: { em: Number(payload.em) || Date.now(), motivo: String(payload.motivo || '').slice(0, 60), obs: String(payload.obs || '').slice(0, 200), tecnico: String(payload.tech || '') }, atualizadoEm: agora }, { merge: true });
       break;
 
     case 'salvarValorRetirada': // 15/10/2026: valor da retirada da substituição (você paga ao técnico; só no Firestore)
@@ -5280,7 +5280,7 @@ function _pcChipHTML(o, tech) {
     (on ? '☑ Pago pelo cliente' : '☐ Pago pelo cliente') + '</button>';
 }
 function _acharOSEmMemoria(id, tech) {
-  const listas = [allOrders && allOrders[tech], _adminOrdersCache, _doneAdminCache && _doneAdminCache[tech], allDoneOrders && allDoneOrders[tech]];
+  const listas = [allOrders && allOrders[tech], _adminOrdersCache, _doneAdminCache && _doneAdminCache[tech], allDoneOrders && allDoneOrders[tech], _bagOrdens]; /* 18/11: + Caixa de Bagulho */
   for (let i = 0; i < listas.length; i++) {
     const o = (listas[i] || []).find(function(x) { return x.id === id; });
     if (o) return o;
@@ -5359,7 +5359,7 @@ var _bagOrdens = [], _bagIds = new Set();
 try { JSON.parse(localStorage.getItem('rg_bag_ids') || '[]').forEach(function (i) { _bagIds.add(String(i)); }); } catch (e) {}
 const BAG_MOTIVOS = ['Cliente não responde', 'Não deu para ir ao local', 'Cliente desistiu', 'Endereço errado / não encontrado', 'Outro'];
 function _bagSet(lista) {
-  _bagOrdens = (lista || []).slice().sort(function (a, b) { return Number((b.bagulho || {}).em || 0) - Number((a.bagulho || {}).em || 0); });
+  _bagOrdens = (lista || []).map(function (o) { try { return normalizarHoraOS(Object.assign({}, o)); } catch (e) { return o; } }).sort(function (a, b) { return Number((b.bagulho || {}).em || 0) - Number((a.bagulho || {}).em || 0); }); /* 18/11: cópia normalizada, para o card aberto e os botões */
   _bagIds = new Set(_bagOrdens.map(function (o) { return String(o.id); }));
   try { localStorage.setItem('rg_bag_ids', JSON.stringify(Array.from(_bagIds))); } catch (e) {}
   ['bag-badge-admin', 'bag-badge-tech'].forEach(function (id) { const b = document.getElementById(id); if (b) { b.textContent = _bagOrdens.length || ''; b.style.display = _bagOrdens.length ? 'block' : 'none'; } });
@@ -5372,6 +5372,17 @@ function renderBagulho() {
   const q = String((document.getElementById('bag-busca-admin') || {}).value || '').toLowerCase().trim();
   const lista = _bagOrdens.filter(function (o) { return !q || (o.nome + ' ' + o.veiculo + ' ' + o.endereco + ' ' + o.telefone + ' ' + o.tecnico + ' ' + ((o.bagulho || {}).motivo || '')).toLowerCase().indexOf(q) >= 0; });
   if (!lista.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">' + (q ? 'Nada com essa busca.' : '📦 A caixa está vazia.') + '</div>'; return; }
+  if (admin) { /* 18/11/2026 (dono): na Caixa de Bagulho o administrador vê em GRADE, igual às OS do técnico; tocar abre o card completo (todos os botões, inclusive trocar o técnico) */
+    const grupos = {}; lista.forEach(function (o) { const t = o.tecnico || 'Sem técnico'; (grupos[t] = grupos[t] || []).push(o); });
+    el.innerHTML = Object.keys(grupos).sort().map(function (t) {
+      return '<div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 8px;">' + esc(t) + ' · ' + grupos[t].length + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">' +
+        grupos[t].map(function (o) { const b = o.bagulho || {};
+          return _renderCardOSCompacto(o).replace(/<\/div>$/, '<div title="' + esc((b.motivo || '') + (b.obs ? ' — ' + b.obs : '')) + '" style="margin-top:4px;display:inline-block;max-width:100%;background:#fff7ed;color:#9a3412;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px;line-height:1.35;word-break:break-word;">📦 ' + esc(b.motivo === 'Outro' && b.obs ? b.obs : (b.motivo || 'Na caixa')) + '</div></div>');
+        }).join('') + '</div>';
+    }).join('');
+    return;
+  }
   el.innerHTML = lista.map(function (o) {
     const b = o.bagulho || {}, tel = String(o.telefone || '').replace(/\D/g, '');
     return '<div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;">' +
@@ -5415,6 +5426,13 @@ function abrirBagulho(id, tech) {
     showToast('📦 OS mandada para a Caixa de Bagulho.', 'success'); marcarMapaDesatualizado();
     try { await loadAllOrders(); if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado); } catch (e) {}
   };
+}
+function _bagFaixaModal(o) { /* 18/11/2026: faixa da Caixa de Bagulho em cima do card aberto */
+  const b = o.bagulho || {};
+  return '<div style="margin-bottom:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px;">' +
+    '<div style="font-size:13px;color:#9a3412;"><b>📦 Na Caixa de Bagulho · ' + esc(b.motivo || 'Sem motivo') + '</b>' + (b.obs ? ' — ' + esc(b.obs) : '') + '</div>' +
+    '<div style="font-size:11px;color:#c2410c;margin-top:2px;">Desde ' + esc(_bagData(b.em)) + '. Trocar o técnico aqui embaixo muda a OS para a caixa do outro técnico.</div>' +
+    '<button onclick="fecharModalVerOS();bagVoltar(\'' + esc(o.id) + '\',\'' + esc(o.tecnico) + '\',null)" style="margin-top:8px;width:100%;padding:8px;background:#ecfdf5;color:#047857;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Voltar para a lista do ' + esc(o.tecnico || 'técnico') + '</button></div>';
 }
 async function bagVoltar(id, tech, btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Voltando...'; }
@@ -6070,7 +6088,8 @@ async function adminReatribuirDireto(id, techOld, techNew) {
   setAdminSyncStatus('syncing');
 
   // Buscar a OS em todas as fontes disponíveis
-  let os = (allOrders[techOld] || []).find(o => o.id === id);
+  let os = (allOrders[techOld] || []).find(o => o.id === id) || (_bagOrdens || []).find(o => o.id === id); /* 18/11: + Caixa de Bagulho */
+  const _daCaixa = !!(os && os.bagulho);
   if (!os) {
     // Tentar buscar direto do GAS
     const fetch = await gasRequest({ action: 'getOrders', tech: techOld });
@@ -6102,8 +6121,12 @@ async function adminReatribuirDireto(id, techOld, techNew) {
 
   // 2. Apagar da aba antiga
   const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
+  if (_daCaixa) { /* 18/11: continua na Caixa de Bagulho, agora do novo técnico */
+    try { await gasRequest({ action: 'bagulho', id: id, tech: techNew, motivo: (os.bagulho || {}).motivo || 'Outro', obs: (os.bagulho || {}).obs || '', em: (os.bagulho || {}).em || '' }); /* mantém a data em que entrou na caixa */ } catch (e) {}
+    try { fecharModalVerOS(); } catch (e) {}
+  }
   if (r2.ok) {
-    showToast('OS movida para ' + techNew + '! ✅', 'success');
+    showToast('OS movida para ' + techNew + '! ✅' + (_daCaixa ? ' (continua na Caixa de Bagulho)' : ''), 'success');
     await loadAllOrders();
     if (adminTechSelecionado) adminVerTecnico(adminTechSelecionado);
   } else {
@@ -7778,7 +7801,7 @@ function _atualizarTotaisAdminTech(doneAdmin) {
 }
 
 function _renderCardOSCompacto(o) {
-  const tech = adminTechSelecionado;
+  const tech = (o && o.bagulho && o.tecnico) || adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela */
   const tipoAdmin = (o.tipo || '').toLowerCase();
   let cor;
   if (tipoAdmin.includes('manut')) cor = '#f59e0b';
@@ -7841,7 +7864,7 @@ function _renderCardOSDetalhado(o) {
       borderLed = 'rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
       bgCard = !dataOk ? 'background:#fffbeb;border:1px solid rgba(245,158,11,.25);' : '';
     }
-    const tech = adminTechSelecionado;
+    const tech = (o && o.bagulho && o.tecnico) || adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela */
 
     return (
       '<div class="os-det-adm' + _flashCls(o) + '" data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
@@ -8757,7 +8780,8 @@ async function abrirModalEdit(id, tech) {
   // ao abrir o Editar mesmo a OS já tendo um valor salvo.
   let o = _adminOrdersCache.find(x => x.id === id) ||
           (_doneAdminCache[tech] || []).find(x => x.id === id) ||
-          (allOrders[tech] || []).find(x => x.id === id);
+          (allOrders[tech] || []).find(x => x.id === id) ||
+          (_bagOrdens || []).find(x => x.id === id); /* 18/11: Caixa de Bagulho */
   if (!o) {
     // Fallback: buscar direto do GAS
     const r = await gasRequest({ action: 'getOrders', tech });
@@ -8804,10 +8828,10 @@ function fecharModalEdit() {
 
 // Abre um popup mostrando o card completo da OS (usado ao tocar num card da Grade)
 function abrirModalVerOS(id, tech) {
-  let o = _adminOrdersCache.find(x => x.id === id) || (allOrders[tech] || []).find(x => x.id === id);
+  let o = _adminOrdersCache.find(x => x.id === id) || (allOrders[tech] || []).find(x => x.id === id) || (_bagOrdens || []).find(x => x.id === id); /* 18/11: + Caixa de Bagulho */
   if (!o) { showToast('OS não encontrada', 'error'); return; }
   const conteudo = document.getElementById('modal-ver-os-conteudo');
-  if (conteudo) { conteudo.innerHTML = _renderCardOSDetalhado(o); conteudo.dataset.tecOs = ''; }
+  if (conteudo) { conteudo.innerHTML = (o.bagulho ? _bagFaixaModal(o) : '') + _renderCardOSDetalhado(o); conteudo.dataset.tecOs = ''; }
   document.getElementById('modal-ver-os').classList.add('open');
   lockScroll();
 }
