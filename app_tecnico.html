@@ -1773,7 +1773,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v172-bagulho-grade';
+const BUILD_VERSION = '2026-11-18-v173-bagulho-sem-tecnico';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4480,7 +4480,7 @@ document.addEventListener('click', function(e) {
     const id     = sel.getAttribute('data-id');
     const techOld= sel.getAttribute('data-tech');
     const techNew= sel.value;
-    if (id && techOld && techNew && techOld !== techNew) {
+    if (id && techNew && techOld !== techNew && (techOld || (_bagOrdens || []).some(function (x) { return x.id === id; }))) { /* 18/11: OS da caixa sem técnico também troca */
       adminReatribuirDireto(id, techOld, techNew);
     } else if (techOld === techNew) {
       showToast('Técnico já é ' + techNew, '');
@@ -5374,7 +5374,7 @@ function renderBagulho() {
   if (!lista.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">' + (q ? 'Nada com essa busca.' : '📦 A caixa está vazia.') + '</div>'; return; }
   if (admin) { /* 18/11/2026 (dono): na Caixa de Bagulho o administrador vê em GRADE, igual às OS do técnico; tocar abre o card completo (todos os botões, inclusive trocar o técnico) */
     const grupos = {}; lista.forEach(function (o) { const t = o.tecnico || 'Sem técnico'; (grupos[t] = grupos[t] || []).push(o); });
-    el.innerHTML = Object.keys(grupos).sort().map(function (t) {
+    el.innerHTML = Object.keys(grupos).sort(function (a, b) { return (a === 'Sem técnico' ? -1 : b === 'Sem técnico' ? 1 : a.localeCompare(b)); }).map(function (t) {
       return '<div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 8px;">' + esc(t) + ' · ' + grupos[t].length + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">' +
         grupos[t].map(function (o) { const b = o.bagulho || {};
@@ -5432,7 +5432,8 @@ function _bagFaixaModal(o) { /* 18/11/2026: faixa da Caixa de Bagulho em cima do
   return '<div style="margin-bottom:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px;">' +
     '<div style="font-size:13px;color:#9a3412;"><b>📦 Na Caixa de Bagulho · ' + esc(b.motivo || 'Sem motivo') + '</b>' + (b.obs ? ' — ' + esc(b.obs) : '') + '</div>' +
     '<div style="font-size:11px;color:#c2410c;margin-top:2px;">Desde ' + esc(_bagData(b.em)) + '. Trocar o técnico aqui embaixo muda a OS para a caixa do outro técnico.</div>' +
-    '<button onclick="fecharModalVerOS();bagVoltar(\'' + esc(o.id) + '\',\'' + esc(o.tecnico) + '\',null)" style="margin-top:8px;width:100%;padding:8px;background:#ecfdf5;color:#047857;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Voltar para a lista do ' + esc(o.tecnico || 'técnico') + '</button></div>';
+    (o.tecnico ? '<button onclick="fecharModalVerOS();bagVoltar(\'' + esc(o.id) + '\',\'' + esc(o.tecnico) + '\',null)" style="margin-top:8px;width:100%;padding:8px;background:#ecfdf5;color:#047857;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Voltar para a lista do ' + esc(o.tecnico) + '</button>'
+      : '<div style="margin-top:8px;font-size:12px;font-weight:700;color:#9a3412;">👷 Sem técnico: escolha o técnico em "Técnico:" no card abaixo e toque no ✔ antes de usar os outros botões.</div>') + '</div>';
 }
 async function bagVoltar(id, tech, btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Voltando...'; }
@@ -6120,7 +6121,7 @@ async function adminReatribuirDireto(id, techOld, techNew) {
   if (os.valorInstalacao) await gasRequest({ action: 'salvarValorInstalacao', id: os.id, tech: techNew, valor: os.valorInstalacao });
 
   // 2. Apagar da aba antiga
-  const r2 = await gasRequest({ action: 'deleteOrder', id, tech: techOld });
+  const r2 = techOld ? await gasRequest({ action: 'deleteOrder', id, tech: techOld }) : { ok: true }; /* 18/11: sem técnico = não há de onde apagar (e apagar com técnico vazio apagaria a OS) */
   if (_daCaixa) { /* 18/11: continua na Caixa de Bagulho, agora do novo técnico */
     try { await gasRequest({ action: 'bagulho', id: id, tech: techNew, motivo: (os.bagulho || {}).motivo || 'Outro', obs: (os.bagulho || {}).obs || '', em: (os.bagulho || {}).em || '' }); /* mantém a data em que entrou na caixa */ } catch (e) {}
     try { fecharModalVerOS(); } catch (e) {}
@@ -7801,7 +7802,7 @@ function _atualizarTotaisAdminTech(doneAdmin) {
 }
 
 function _renderCardOSCompacto(o) {
-  const tech = (o && o.bagulho && o.tecnico) || adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela */
+  const tech = (o && o.bagulho) ? (o.tecnico || '') : adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela (ou nenhum) */
   const tipoAdmin = (o.tipo || '').toLowerCase();
   let cor;
   if (tipoAdmin.includes('manut')) cor = '#f59e0b';
@@ -7864,7 +7865,7 @@ function _renderCardOSDetalhado(o) {
       borderLed = 'rgba(59,130,246,.4),0 0 28px rgba(59,130,246,.55),0 0 55px rgba(59,130,246,.2)';
       bgCard = !dataOk ? 'background:#fffbeb;border:1px solid rgba(245,158,11,.25);' : '';
     }
-    const tech = (o && o.bagulho && o.tecnico) || adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela */
+    const tech = (o && o.bagulho) ? (o.tecnico || '') : adminTechSelecionado; /* 18/11: OS da Caixa de Bagulho usa o técnico dela (ou nenhum) */
 
     return (
       '<div class="os-det-adm' + _flashCls(o) + '" data-os-id="' + o.id + '" data-os-tech="' + esc(tech) + '" style="' + bgCard + 'border-radius:14px;padding:14px;margin-bottom:16px;' +
@@ -7950,6 +7951,7 @@ function _renderCardOSDetalhado(o) {
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:8px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);">' +
           '<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">Técnico:</span>' +
           '<select class="admin-view-reassign-sel" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" style="flex:1;padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;outline:none;background:white;">' +
+            (!tech ? '<option value="" selected>— Sem técnico —</option>' : '') + /* 18/11: OS da caixa sem técnico */
             TECH_NAMES.map(n => '<option value="' + n + '"' + (n === tech ? ' selected' : '') + '>' + n + '</option>').join('') +
           '</select>' +
           '<button class="admin-view-reassign-btn" style="padding:5px 10px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✔</button>' +
