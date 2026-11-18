@@ -1773,7 +1773,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v176-caixa-na-agenda';
+const BUILD_VERSION = '2026-11-18-v177-msg-a-caminho';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -9024,10 +9024,13 @@ function _tlLink() { return _tl && _tl.codigo ? RG_COMP_URL + '?c=' + encodeURIC
 function _tlMensagem() {
   const primeiro = String((_tl.os && _tl.os.nome) || '').trim().split(/\s+/)[0] || '';
   const nome = primeiro ? primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase() : '';
-  return 'Olá' + (nome ? ', ' + nome : '') + '! Aqui é da Rastreando GPS. 👋\n\n' +
-    'O técnico *' + _tl.tech + '* está a caminho. 🚗\n' +
-    'Acompanhe em tempo real por aqui:\n' + _tlLink() + '\n\n' +
-    '(O link vale por 1 hora.)';
+  /* 18/11/2026 (dono): texto mais separado (opção 1) */
+  const ate = (_tl && _tl.expiraMs) ? ' (até ' + _tlHora(_tl.expiraMs) + ')' : '';
+  return 'Olá' + (nome ? ', ' + nome : '') + '! 👋\n' +
+    'Aqui é da Rastreando GPS.\n\n' +
+    '🚗 O técnico *' + _tl.tech + '* está a caminho.\n\n' +
+    '📍 Acompanhe em tempo real:\n' + _tlLink() + '\n\n' +
+    '⏰ Link válido por 1 hora' + ate + '.';
 }
 
 function _tlCorpo(html) { document.getElementById('tl-corpo').innerHTML = html; }
