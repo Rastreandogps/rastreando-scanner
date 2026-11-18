@@ -981,6 +981,7 @@
     <div class="section-title">📦 Caixa de Bagulho</div>
     <div style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">OS paradas, fora da lista principal. Garimpe de vez em quando: volte para a lista o que reviver e exclua o que não serve mais.</div>
     <input id="bag-busca-admin" type="search" placeholder="🔍 Buscar nome, veículo, endereço, técnico..." oninput="renderBagulho()" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;margin-bottom:10px;">
+    <div id="bag-subabas" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;"></div>
     <div id="bag-lista-admin"></div>
   </div>
 
@@ -1773,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v177-msg-a-caminho';
+const BUILD_VERSION = '2026-11-18-v178-bagulho-subabas';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5358,6 +5359,7 @@ function normalizarOrdens(x) {
 /* ═══ 📦 CAIXA DE BAGULHO (12/11/2026, dono) ═══
    OS paradas (cliente não responde, não deu para ir…) saem da lista principal, do mapa e da rota e ficam guardadas aqui.
    Só o ADMIN manda para a caixa (motivo obrigatório), volta para a lista ou exclui de vez. O técnico só VÊ as dele. */
+var _bagSub = 'cx'; /* 18/11: sub-aba da caixa (cx | ret) */
 var _bagOrdens = [], _bagIds = new Set(), _bagTodos = new Set(); /* 18/11: _bagIds = escondidas da agenda; _bagTodos = todas da caixa */
 try { JSON.parse(localStorage.getItem('rg_bag_ids') || '[]').forEach(function (i) { _bagIds.add(String(i)); }); } catch (e) {}
 const BAG_MOTIVOS = ['Cliente não responde', 'Não deu para ir ao local', 'Cliente desistiu', 'Endereço errado / não encontrado', 'Outro'];
@@ -5374,11 +5376,23 @@ function renderBagulho() {
   const admin = currentRole === 'admin';
   const el = document.getElementById(admin ? 'bag-lista-admin' : 'bag-lista-tech'); if (!el) return;
   const q = String((document.getElementById('bag-busca-admin') || {}).value || '').toLowerCase().trim();
-  const lista = _bagOrdens.filter(function (o) { return !q || (o.nome + ' ' + o.veiculo + ' ' + o.endereco + ' ' + o.telefone + ' ' + o.tecnico + ' ' + ((o.bagulho || {}).motivo || '')).toLowerCase().indexOf(q) >= 0; });
+  let lista = _bagOrdens.filter(function (o) { return !q || (o.nome + ' ' + o.veiculo + ' ' + o.endereco + ' ' + o.telefone + ' ' + o.tecnico + ' ' + ((o.bagulho || {}).motivo || '')).toLowerCase().indexOf(q) >= 0; });
+  if (admin) { /* 18/11/2026 (dono): sub-abas — "Retirada pedida" (20–29 dias: cliente ainda ATIVO, chip e assinatura ativos, pode pagar) separada do resto */
+    const ehRet = function (o) { return /^retirada pedida/i.test(String((o.bagulho || {}).motivo || '')); };
+    const nRet = lista.filter(ehRet).length, nCx = lista.length - nRet;
+    if (_bagSub === 'ret' && !nRet && nCx) _bagSub = 'cx';
+    const sa = document.getElementById('bag-subabas');
+    if (sa) {
+      const chip = function (k, txt, n, cor) { const on = _bagSub === k; return '<button onclick="_bagSub=\'' + k + '\';renderBagulho()" style="padding:7px 12px;border-radius:20px;border:1.5px solid ' + (on ? cor : 'var(--border)') + ';background:' + (on ? cor : 'transparent') + ';color:' + (on ? '#fff' : 'var(--text)') + ';font-size:12px;font-weight:800;cursor:pointer;">' + txt + ' · ' + n + '</button>'; };
+      sa.innerHTML = chip('cx', '📦 Caixa', nCx, '#9a3412') + chip('ret', '⏳ Retirada pedida (ativos)', nRet, '#1d4ed8');
+    }
+    lista = lista.filter(function (o) { return _bagSub === 'ret' ? ehRet(o) : !ehRet(o); });
+    if (!lista.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">' + (q ? 'Nada com essa busca.' : _bagSub === 'ret' ? '⏳ Ninguém com retirada pedida agora.' : '📦 A caixa está vazia.') + '</div>'; return; }
+  }
   if (!lista.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">' + (q ? 'Nada com essa busca.' : '📦 A caixa está vazia.') + '</div>'; return; }
   if (admin) { /* 18/11/2026 (dono): na Caixa de Bagulho o administrador vê em GRADE, igual às OS do técnico; tocar abre o card completo (todos os botões, inclusive trocar o técnico) */
     const grupos = {}; lista.forEach(function (o) { const t = o.tecnico || 'Sem técnico'; (grupos[t] = grupos[t] || []).push(o); });
-    el.innerHTML = Object.keys(grupos).sort(function (a, b) { return (a === 'Sem técnico' ? -1 : b === 'Sem técnico' ? 1 : a.localeCompare(b)); }).map(function (t) {
+    el.innerHTML = (_bagSub === 'ret' ? '<div style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;margin-bottom:12px;">⏳ Clientes com 20 a 29 dias de atraso: ainda <b>ativos</b> (assinatura e chip). Se pagarem, a OS sai sozinha. No dia 30, ao encerrar, a OS passa para a aba 📦 Caixa.</div>' : '') + Object.keys(grupos).sort(function (a, b) { return (a === 'Sem técnico' ? -1 : b === 'Sem técnico' ? 1 : a.localeCompare(b)); }).map(function (t) {
       return '<div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 8px;">' + esc(t) + ' · ' + grupos[t].length + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">' +
         grupos[t].map(function (o) { const b = o.bagulho || {};
