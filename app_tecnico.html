@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v178-bagulho-subabas';
+const BUILD_VERSION = '2026-11-18-v179-bagulho-excluir';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -5454,7 +5454,8 @@ function _bagFaixaModal(o) { /* 18/11/2026 (dono): a OS da caixa pode estar tamb
     (o.tecnico ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
         (naAgenda ? bt('#9a3412', '#ffedd5', "fecharModalVerOS();_bagTirarDaAgenda('" + id + "','" + t + "')", '🙈 Tirar da agenda') : bt('#1d4ed8', '#dbeafe', "fecharModalVerOS();_bagPorNaAgenda('" + id + "','" + t + "')", '📅 Pôr na agenda do ' + t)) +
         bt('#047857', '#ecfdf5', "fecharModalVerOS();bagVoltar('" + id + "','" + t + "',null)", '📤 Tirar da Caixa') + '</div>'
-      : '<div style="margin-top:8px;font-size:12px;font-weight:700;color:#9a3412;">👷 Sem técnico: escolha o técnico em "Técnico:" no card abaixo e toque no ✔. Ela vai para a agenda dele e continua aqui na caixa.</div>') + '</div>';
+      : '<div style="margin-top:8px;font-size:12px;font-weight:700;color:#9a3412;">👷 Sem técnico: escolha o técnico em "Técnico:" no card abaixo e toque no ✔. Ela vai para a agenda dele e continua aqui na caixa.</div>') +
+    '<button onclick="fecharModalVerOS();requestDelete(\'' + id + '\',\'' + t + '\',true)" style="margin-top:8px;width:100%;padding:8px;background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Excluir de vez (some da caixa e da agenda)</button></div>'; /* 18/11: na grade o Excluir de vez fica aqui */
 }
 async function _bagPorNaAgenda(id, tech) {
   const r = await gasRequest({ action: 'bagulho', id: id, tech: tech, agendaSet: true });
