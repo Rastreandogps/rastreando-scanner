@@ -1773,7 +1773,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v174-tecnico-em-massa';
+const BUILD_VERSION = '2026-11-18-v175-grade-veiculos-placa';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -3919,7 +3919,7 @@ function _renderCardTecnicoCompacto(o) {
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (_moedaHTML(o) ? '<div>' + _moedaHTML(o) + '</div>' : '') +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
-    (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
+    (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? _veiculosGradeHtml(o.veiculo) : '') +
     _msgGradeHtml(o) + /* 20/10/2026 (pedido do dono): o técnico também vê se já mandou mensagem */
   '</div>';
 }
@@ -7755,6 +7755,17 @@ function _modeloPrincipalVeiculo(veiculo) {
   return primeiro.split(' | ')[0].trim();
 }
 /* 19/10/2026 (v163, pedido do dono): na Grade aparecem TODOS os veículos da OS (antes só o 1º), ex.: "PRISMA · XJ6" */
+/* 18/11/2026 (dono): na Grade, cada veículo da OS numa linha, com a placa (antes só os modelos juntos) */
+function _veiculosGradeHtml(veiculo) {
+  const vs = String(veiculo || '').split(' || ').map(function (v) {
+    const partes = v.split(' | ').map(function (x) { return x.trim(); });
+    const pl = (partes.find(function (x) { return /^placa:/i.test(x); }) || '').replace(/^placa:\s*/i, '').trim();
+    return { m: partes[0] || '', pl: pl };
+  }).filter(function (v) { return v.m || v.pl; });
+  return vs.map(function (v) {
+    return '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(v.m || 'Veículo') + (v.pl ? ' <span style="color:#475569;font-weight:700;white-space:nowrap;">' + esc(v.pl) + '</span>' : '') + '</div>';
+  }).join('');
+}
 function _modelosVeiculos(veiculo) {
   if (!veiculo) return '';
   return String(veiculo).split(' || ').map(function (v) { return v.split(' | ')[0].trim(); }).filter(Boolean).join(' · ');
@@ -7820,7 +7831,7 @@ function _renderCardOSCompacto(o) {
     (hora ? '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:#fff;background:var(--primary);padding:3px 10px;border-radius:20px;letter-spacing:.2px;"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' + esc(hora) + '</div>' : '') +
     '<div style="font-size:12px;font-weight:700;color:var(--primary);line-height:1.3;word-break:break-word;">' + esc(o.nome) + '</div>' +
     (o.endereco ? '<div style="font-size:10px;color:var(--muted);line-height:1.3;word-break:break-word;">📍 ' + esc(_endParaExibir(o.endereco)) + '</div>' : '') +
-    (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? '<div style="font-size:10px;color:var(--accent);font-weight:600;line-height:1.3;word-break:break-word;">🚗 ' + esc(modelo) + '</div>' : '') +
+    (_trocaVeiculoDeOS(o) ? _htmlTrocaVeiculo(o, true) : modelo ? _veiculosGradeHtml(o.veiculo) : '') +
     _msgGradeHtml(o) +
   '</div>';
 }
