@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-18-v179-bagulho-excluir';
+const BUILD_VERSION = '2026-11-19-v180-barra-rodape';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10667,6 +10667,7 @@ function _atualizarBarra() {
   const barra = document.getElementById('barra-reagendar');
   const count = document.getElementById('barra-reagendar-count');
   if (!barra) return;
+  try { document.body.style.paddingBottom = _selecaoAtiva.size > 0 ? '150px' : ''; } catch (e) {} /* 19/11: os últimos cards não ficam atrás da barra */
   if (_selecaoAtiva.size > 0) {
     barra.style.display = 'flex';
     try { /* 18/11/2026 (dono): também manda para outro técnico em massa */
@@ -12668,13 +12669,13 @@ try {
 } catch (e) {}
 </script>
 <!-- BARRA FLUTUANTE: REAGENDAR EM MASSA -->
-<div id="barra-reagendar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;
-  background:#1a2744;color:white;border-radius:16px;padding:14px 18px;box-shadow:0 8px 32px rgba(0,0,0,.4);
-  align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;min-width:300px;max-width:92vw;">
+<div id="barra-reagendar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:#1a2744;color:white;border-radius:14px 14px 0 0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 18px rgba(0,0,0,.3);
+  align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;font-size:12px;"><!-- 19/11/2026 (dono): barra presa no rodapé, baixa, para conseguir marcar os cards -->
   <span id="barra-reagendar-count" style="font-size:13px;font-weight:700;white-space:nowrap;">0 selecionadas</span>
   <input type="date" id="barra-reagendar-data" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;">
   <select id="barra-reagendar-tec" title="Mandar para o técnico" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;"><option value="">👷 Manter técnico</option></select>
-  <span id="barra-reagendar-caixa-wrap" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:700;opacity:.85;white-space:nowrap;">📦 Continuam na Caixa e vão para a agenda</span>
+  <span id="barra-reagendar-caixa-wrap" style="display:none;align-items:center;gap:4px;font-size:10.5px;font-weight:700;opacity:.8;white-space:nowrap;">📦 Continuam na Caixa</span>
   <button onclick="reagendarSelecionadas()" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Aplicar</button>
   <button onclick="limparSelecao()" style="padding:8px 12px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">✕</button>
 </div>
