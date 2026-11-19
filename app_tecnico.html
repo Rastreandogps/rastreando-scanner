@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-19-v180-barra-rodape';
+const BUILD_VERSION = '2026-11-19-v181-concluida-sai-caixa';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -2662,7 +2662,7 @@ async function espelharNoFirestore(payload) {
 
     case 'updateStatus':
       if (!ref) return;
-      await ref.set(Object.assign({ status: payload.status || 'ativo', atualizadoEm: agora }, payload.status === 'concluido' ? { proxima: false } : {}), { merge: true });
+      await ref.set(Object.assign({ status: payload.status || 'ativo', atualizadoEm: agora }, payload.status === 'concluido' ? { proxima: false, bagulho: firebase.firestore.FieldValue.delete() } : {}), { merge: true }); // 19/11/2026 (dono): concluída sai da Caixa de Bagulho
       break;
 
     case 'marcarSubEtapa': // 15/10/2026: substituição feita em 2 partes (só no Firestore, como a "próxima")
@@ -2950,6 +2950,7 @@ function iniciarListenerOSTecnico(nomeTecnico) {
       const _bagTec = [];
       snapshot.forEach(function(doc) {
         const o = docFirestoreParaOrdem(doc);
+        if (o.bagulho && o.status === 'concluido') { try { doc.ref.set({ bagulho: firebase.firestore.FieldValue.delete() }, { merge: true }); } catch (e) {} o.bagulho = null; } // 19/11/2026 (dono): concluída sai da caixa (inclusive as antigas)
         if (o.bagulho) { _bagTec.push(o); if (!o.bagulho.agenda) return; } // 12/11/2026: 📦 Caixa de Bagulho · 18/11: 'na agenda' aparece também no calendário
         (o.status === 'concluido' ? concluidos : ativos).push(o);
       });
@@ -3023,7 +3024,7 @@ function iniciarListenerOSAdmin() {
   _unsubOSAdmin = db.collection('ordens_servico').onSnapshot(function(snapshot) {
     // Mantém sempre uma cópia fresca de todas as ordens — é o que permite
     // trocar de técnico na hora, sem esperar a Planilha responder.
-    { const _todas = snapshot.docs.map(docFirestoreParaOrdem); // 12/11/2026: 📦 as da Caixa de Bagulho saem de tudo (lista, mapa, rota) e ficam só na caixa
+    { const _todas = snapshot.docs.map(function (d) { const o = docFirestoreParaOrdem(d); if (o.bagulho && o.status === 'concluido') { try { d.ref.set({ bagulho: firebase.firestore.FieldValue.delete() }, { merge: true }); } catch (e) {} o.bagulho = null; } return o; }); // 19/11/2026 (dono): concluída sai da caixa // 12/11/2026: 📦 as da Caixa de Bagulho saem de tudo (lista, mapa, rota) e ficam só na caixa
       _bagSet(_todas.filter(function (o) { return o.bagulho; }));
       _firestoreTodasOrdens = _todas.filter(function (o) { return !o.bagulho || o.bagulho.agenda === true; }); } // 18/11: 'na agenda' fica no calendário E na caixa
     _indConciliar(); // OS de indicação concluída → marca "instalada" (Gestão → Indicações)
