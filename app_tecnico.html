@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-19-v181-concluida-sai-caixa';
+const BUILD_VERSION = '2026-11-19-v182-voltar-caixa-massa';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10676,6 +10676,7 @@ function _atualizarBarra() {
       if (st && st.options.length < 2) TECH_NAMES.forEach(function (n) { const op = document.createElement('option'); op.value = n; op.textContent = '👷 ' + n; st.appendChild(op); });
       const temCaixa = Array.from(_selecaoAtiva).some(function (k) { return (_bagTodos && _bagTodos.has(String(k.split('|')[0]))); });
       const w = document.getElementById('barra-reagendar-caixa-wrap'); if (w) w.style.display = temCaixa ? 'flex' : 'none';
+      const bv = document.getElementById('barra-bag-voltar'); if (bv) bv.style.display = (temCaixa && currentRole === 'admin') ? 'inline-block' : 'none';
     } catch (e) {}
     if (count) count.textContent = _selecaoAtiva.size + ' OS selecionada' + (_selecaoAtiva.size > 1 ? 's' : '');
     // Restaurar estado dos checkboxes após re-render
@@ -10711,6 +10712,35 @@ async function _moverOSQuieto(id, techOld, techNew, dataISONova) {
   return { ok: true, bag: os.bagulho || null };
 }
 
+/* 19/11/2026 (dono): as OS da Caixa selecionadas saem da agenda/app do técnico e voltam para a caixa SEM técnico e SEM data
+   (o mesmo que a rotina das 20h faz, só que na hora e só nas marcadas). Concluídas e OS fora da caixa são puladas. */
+async function bagVoltarSemTecnicoSelecionadas() {
+  if (currentRole !== 'admin') { showToast('Só o administrador mexe nas OS da Caixa de Bagulho.', 'error'); return; }
+  const db = getFirestoreDb(); if (!db) { showToast('Sem conexão com o Firebase. Tente de novo.', 'error'); return; }
+  const itens = Array.from(_selecaoAtiva).map(function (k) { const p = k.split('|'); return { id: p[0], tech: p[1] }; })
+    .filter(function (it) { return _bagTodos && _bagTodos.has(String(it.id)); });
+  if (!itens.length) { showToast('Nenhuma das marcadas é da Caixa de Bagulho.', 'error'); return; }
+  const pulou = _selecaoAtiva.size - itens.length;
+  if (!confirm('Voltar ' + itens.length + ' OS para a Caixa de Bagulho SEM técnico e SEM data?\n\nElas saem do app do técnico.' + (pulou ? '\n(' + pulou + ' marcada(s) fora da caixa ficam como estão.)' : ''))) return;
+  setSyncStatus('syncing'); let ok = 0, conc = 0; const falhas = [];
+  for (const it of itens) {
+    try {
+      const ref = db.collection('ordens_servico').doc(String(it.id)), sn = await ref.get();
+      if (!sn.exists) { falhas.push(it.id); continue; }
+      const o = sn.data() || {};
+      if (o.status === 'concluido') { conc++; continue; }
+      const tec = o.tecnico || it.tech || '';
+      if (tec) enviarParaPlanilha({ action: 'deleteOrder', id: it.id, tech: tec }); // sai da lista do técnico na Planilha (a OS continua no Firestore, na caixa)
+      await ref.set({ tecnico: '', data: '', atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(), bagulho: { agenda: false, tecnico: '', voltouEm: Date.now(), ultimoTecnico: tec } }, { merge: true });
+      try { await _syncHorarioOcupado(it.id); await _syncOSPublica(it.id); } catch (e) {}
+      _bagIds.add(String(it.id)); ok++;
+    } catch (e) { falhas.push(it.id); }
+  }
+  showToast('📦 ' + ok + ' OS voltaram para a Caixa sem técnico' + (conc ? ' · ' + conc + ' concluída(s) ficaram' : '') + (falhas.length ? ' · ' + falhas.length + ' com erro' : '') + ' ✅', falhas.length ? 'error' : 'success');
+  limparSelecao(); marcarMapaDesatualizado();
+  try { await loadAllOrders(); if (adminTechSelecionado) await adminVerTecnico(adminTechSelecionado); } catch (e) {}
+  setTimeout(_atualizarBarra, 100);
+}
 async function reagendarSelecionadas() {
   const dataVal = document.getElementById('barra-reagendar-data').value;
   const techNovo = ((document.getElementById('barra-reagendar-tec') || {}).value) || '';
@@ -12677,6 +12707,7 @@ try {
   <input type="date" id="barra-reagendar-data" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;">
   <select id="barra-reagendar-tec" title="Mandar para o técnico" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;"><option value="">👷 Manter técnico</option></select>
   <span id="barra-reagendar-caixa-wrap" style="display:none;align-items:center;gap:4px;font-size:10.5px;font-weight:700;opacity:.8;white-space:nowrap;">📦 Continuam na Caixa</span>
+  <button id="barra-bag-voltar" onclick="bagVoltarSemTecnicoSelecionadas()" style="display:none;padding:8px 12px;background:#f59e0b;color:#1a2744;border:none;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;">📦 Voltar p/ Caixa (sem técnico)</button><!-- 19/11/2026 (dono) -->
   <button onclick="reagendarSelecionadas()" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Aplicar</button>
   <button onclick="limparSelecao()" style="padding:8px 12px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">✕</button>
 </div>
