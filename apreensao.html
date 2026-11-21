@@ -32,6 +32,10 @@
   li .tag{flex:none;font-size:12px;font-weight:800;padding:4px 9px;border-radius:20px;background:#14532d;color:#bbf7d0}
   li .selo{display:inline-block;background:#4ade80;color:#052e12;font-weight:900;font-size:13px;letter-spacing:.5px;padding:3px 9px;border-radius:6px;margin-bottom:3px}
   li .nm2{font-size:14px;color:#86efac;margin-top:2px}
+  li{position:relative}
+  li .hora{display:inline-block;margin-left:6px;font-size:13px;font-weight:800;color:#bbf7d0;background:#14532d;padding:2px 8px;border-radius:20px;vertical-align:top}
+  li .ult{display:inline-block;margin-left:6px;background:#f59e0b;color:#3b1d00;font-weight:900;font-size:11px;padding:3px 7px;border-radius:6px;vertical-align:top}
+  li.ultima{outline:2px solid #f59e0b}
   li.preso{border-left-color:var(--ok);background:#10231a}
   li.preso .bx{background:var(--ok);border-color:var(--ok)}
   li.preso .bem{text-decoration:none;color:#86efac}
@@ -88,6 +92,8 @@ let ocupado = false, iniciando = false, ultOk = 0;
 let PEND = {};
 try { const e = JSON.parse(localStorage.getItem('apr_estado') || 'null'); if (e && Array.isArray(e.itens)) { ESTADO = e; ultOk = e.em || 0; } } catch (e) {}
 try { PEND = JSON.parse(localStorage.getItem('apr_pend') || '{}') || {}; } catch (e) { PEND = {}; }
+// fila: chassi → { q: presa sim/não, em: hora do toque }
+Object.keys(PEND).forEach(k => { if (typeof PEND[k] !== 'object') PEND[k] = { q: !!PEND[k], em: Date.now() }; });
 function guardarPend() { try { localStorage.setItem('apr_pend', JSON.stringify(PEND)); } catch (e) {} }
 const $ = (id) => document.getElementById(id);
 
@@ -98,7 +104,10 @@ async function api(corpo) {
   return j;
 }
 function presos() { const s = new Set(); (ESTADO.itens || []).forEach(it => { if (it.q && CHAVES.includes(it.n)) s.add(it.n); });
-  Object.keys(PEND).forEach(k => { if (PEND[k]) s.add(k); else s.delete(k); }); return s; }
+  Object.keys(PEND).forEach(k => { if (PEND[k].q) s.add(k); else s.delete(k); }); return s; }
+// hora em que a máquina foi marcada (a do toque guardado no celular vale até enviar)
+function horaDe(k) { if (PEND[k]) return PEND[k].q ? PEND[k].em : 0; const it = (ESTADO.itens || []).find(x => x.n === k); return (it && it.q && it.em) || 0; }
+const hhmm = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
 // 1ª abertura: deixa a lista do servidor só com as 15 máquinas (sem repetir; não desmarca nada)
 async function garantirLista(j) {
@@ -119,7 +128,10 @@ let confirmando = -1, tConf = 0;
 function render() {
   const P = presos(), L = $('lista'); L.textContent = '';
   // achadas (presas) em cima, depois as que faltam; dentro de cada grupo, pela numeração
-  const ordem = MAQ.map((_, i) => i).sort((x, y) => (P.has(CHAVES[y]) - P.has(CHAVES[x])) || (x - y));
+  // as apreendidas ficam na ordem em que foram marcadas (a última marcada é a última verde)
+  const H = MAQ.map((_, i) => P.has(CHAVES[i]) ? horaDe(CHAVES[i]) : 0);
+  const ordem = MAQ.map((_, i) => i).sort((x, y) => (P.has(CHAVES[y]) - P.has(CHAVES[x])) || (H[x] - H[y]) || (x - y));
+  let ultima = -1, hMax = 0; ordem.forEach(i => { if (P.has(CHAVES[i]) && H[i] > hMax) { hMax = H[i]; ultima = i; } });
   ordem.forEach((i, pos) => { const m = MAQ[i];
     const preso = P.has(CHAVES[i]);
     const li = document.createElement('li'); if (preso) li.classList.add('preso'); if (confirmando === i) li.classList.add('conf');
@@ -129,8 +141,11 @@ function render() {
     const c = document.createElement('div'); c.className = 'ch'; c.textContent = m[1];
     if (preso) {
       const sl = document.createElement('div'); sl.className = 'selo'; sl.textContent = 'APREENDIDO';
+      if (H[i]) { const hr = document.createElement('span'); hr.className = 'hora'; hr.textContent = '🕒 ' + hhmm(H[i]); sl.hr = hr; }
+      if (i === ultima) { li.classList.add('ultima'); const u = document.createElement('span'); u.className = 'ult'; u.textContent = 'ÚLTIMA'; sl.ult = u; }
       const nm = document.createElement('div'); nm.className = 'nm2'; nm.textContent = frase(m[0]);
-      tx.append(sl, c, nm);
+      const lin = document.createElement('div'); lin.append(sl); if (sl.hr) lin.append(sl.hr); if (sl.ult) lin.append(sl.ult);
+      tx.append(lin, c, nm);
     } else {
       const b = document.createElement('div'); b.className = 'bem'; b.textContent = m[0];
       tx.append(b, c);
@@ -147,7 +162,7 @@ function render() {
 }
 function frase(t) {
   const fixo = { case: 'Case', af: 'AF', sp: 'SP', terraflex: 'Terraflex' };
-  const r = t.toLowerCase().split(' ').map(w => fixo[w] || w.replace(/^terraflex/, 'Terraflex')).join(' ');
+  const r = t.toLowerCase().split(' ').map(w => fixo[w] || w.replace(/^terraflex(.*)$/, (x, r) => 'Terraflex' + r.toUpperCase())).join(' ');
   return r.charAt(0).toUpperCase() + r.slice(1);
 }
 function aviso(t) { $('aviso').textContent = t || ''; }
@@ -159,11 +174,11 @@ async function sincronizar() {
   try {
     let j = await api({}); j = await garantirLista(j);
     for (const k of Object.keys(PEND)) {
-      const quer = PEND[k];
+      const quer = PEND[k].q, em = PEND[k].em;
       for (let t = 0; t < 2; t++) {
         const it = (j.itens || []).find(x => x.n === k);
         if (!it || !!it.q === quer) break;
-        j = await api({ op: 'marcar', nome: k, quem: 'eu' });
+        j = await api({ op: 'marcar', nome: k, quem: 'eu', em });
       }
       const it = (j.itens || []).find(x => x.n === k);
       if (it && !!it.q === quer) { delete PEND[k]; guardarPend(); }
@@ -184,7 +199,7 @@ function tocar(i) {
   if (preso) {                       // desmarcar pede um segundo toque
     if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR o chassi ' + MAQ[i][1] + '.'); render(); return; }
   }
-  confirmando = -1; PEND[k] = !preso; guardarPend();
+  confirmando = -1; PEND[k] = { q: !preso, em: Date.now() }; guardarPend();
   aviso(navigator.onLine === false ? 'Guardado no celular. Envia quando a internet voltar.' : 'Enviando…');
   render(); estadoRede(); sincronizar();
 }
@@ -223,11 +238,13 @@ async function gerarPdf(achadas) {
     doc.text('Situação em ' + dh + ' · ' + (achadas ? falta.length + ' de ' + MAQ.length + ' apreendidas · ' + (MAQ.length - falta.length) + ' faltando' : falta.length + ' de ' + MAQ.length + ' faltando · ' + (MAQ.length - falta.length) + ' apreendidas'), 15, y); y += 9;
     doc.setTextColor(0); doc.setFillColor(230, 230, 230); doc.rect(15, y - 5, 180, 8, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text('Nº', 18, y); doc.text('CHASSI', 30, y); doc.text('BEM', 92, y); y += 8;
+    doc.text('Nº', 18, y); doc.text('CHASSI', 30, y); doc.text('BEM', 92, y); if (achadas) doc.text('HORA', 180, y); y += 8;
+    if (achadas) falta.sort((a, b) => (horaDe(CHAVES[a]) - horaDe(CHAVES[b])) || (a - b));
     falta.forEach((i, k) => {
       if (y > 280) { doc.addPage(); y = 18; }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(String(k + 1), 18, y); doc.text(MAQ[i][1], 30, y);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(MAQ[i][0], 92, y);
+      if (achadas && horaDe(CHAVES[i])) doc.text(hhmm(horaDe(CHAVES[i])), 180, y);
       doc.setDrawColor(210); doc.line(15, y + 3, 195, y + 3); y += 9;
     });
     const nome = (achadas ? 'maquinas-encontradas-' : 'maquinas-nao-encontradas-') + agora.toISOString().slice(0, 16).replace(/[-:T]/g, '') + '.pdf';
