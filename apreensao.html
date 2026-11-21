@@ -35,7 +35,6 @@
   li{position:relative}
   li .hora{display:inline-block;margin-left:6px;font-size:13px;font-weight:800;color:#bbf7d0;background:#14532d;padding:2px 8px;border-radius:20px;vertical-align:top}
   li .ult{display:inline-block;margin-left:6px;background:#f59e0b;color:#3b1d00;font-weight:900;font-size:11px;padding:3px 7px;border-radius:6px;vertical-align:top}
-  li.ultima{outline:2px solid #f59e0b}
   li.preso{border-left-color:var(--ok);background:#10231a}
   li.preso .bx{background:var(--ok);border-color:var(--ok)}
   li.preso .bem{text-decoration:none;color:#86efac}
@@ -154,7 +153,6 @@ function render() {
     if (preso) {
       const sl = document.createElement('div'); sl.className = 'selo'; sl.textContent = 'APREENDIDO';
       if (H[i]) { const hr = document.createElement('span'); hr.className = 'hora'; hr.textContent = '🕒 ' + hhmm(H[i]); sl.hr = hr; }
-      if (i === ultima) { li.classList.add('ultima'); const u = document.createElement('span'); u.className = 'ult'; u.textContent = 'ÚLTIMA'; sl.ult = u; }
       const nm = document.createElement('div'); nm.className = 'nm2'; nm.textContent = frase(m[0]);
       const lin = document.createElement('div'); lin.append(sl); if (sl.hr) lin.append(sl.hr); if (sl.ult) lin.append(sl.ult);
       tx.append(lin, c, nm);
