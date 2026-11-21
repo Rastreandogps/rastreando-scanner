@@ -41,6 +41,13 @@
   li.preso .bem{text-decoration:none;color:#86efac}
   li.preso .ch{color:#86efac}
   li.conf{outline:2px solid #f59e0b}
+  .busca{position:sticky;top:0;z-index:5;display:flex;gap:8px;background:var(--bg);padding:8px 0}
+  .busca input{flex:1;min-width:0;padding:13px 12px;border-radius:12px;border:2px solid #3b82f6;background:var(--card);color:var(--txt);font:700 18px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase}
+  .busca input::placeholder{font:500 15px system-ui,sans-serif;text-transform:none;color:var(--sub)}
+  .busca button{display:none;flex:none;width:48px;border:0;border-radius:12px;background:#2b3644;color:var(--txt);font-size:18px}
+  .busca.tem button{display:block}
+  ul.filtrando{min-height:100vh}
+  .nada{color:var(--sub);text-align:center;padding:18px 8px;font-size:15px}
   .rede{display:none;background:#78350f;color:#fde68a;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin:0 0 8px}
   .rede.on{display:block}
   .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1.2em}
@@ -58,6 +65,7 @@
 <div class="tipos" id="tipos"></div>
 <div class="rede" id="rede"></div>
 <div class="aviso" id="aviso"></div>
+<div class="busca" id="buscaBox"><input id="busca" type="text" placeholder="🔎 Buscar chassi (ex.: 23938)" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search"><button id="buscaX" type="button" aria-label="Limpar">✕</button></div>
 <ul id="lista"></ul>
 <button class="pdf" id="bPdf" type="button">📄 Gerar PDF das não encontradas</button>
 <button class="pdf ok2" id="bPdfOk" type="button">📄 Gerar PDF das encontradas</button>
@@ -132,7 +140,11 @@ function render() {
   const H = MAQ.map((_, i) => P.has(CHAVES[i]) ? horaDe(CHAVES[i]) : 0);
   const ordem = MAQ.map((_, i) => i).sort((x, y) => (P.has(CHAVES[y]) - P.has(CHAVES[x])) || (H[x] - H[y]) || (x - y));
   let ultima = -1, hMax = 0; ordem.forEach(i => { if (P.has(CHAVES[i]) && H[i] > hMax) { hMax = H[i]; ultima = i; } });
+  const f = filtro(); L.classList.toggle('filtrando', !!f); $('buscaBox').classList.toggle('tem', !!f);
+  let vistos = 0;
   ordem.forEach((i, pos) => { const m = MAQ[i];
+    if (f && !(m[1].includes(f) || m[0].toUpperCase().replace(/[^A-Z0-9]/g, '').includes(f))) return;
+    vistos++;
     const preso = P.has(CHAVES[i]);
     const li = document.createElement('li'); if (preso) li.classList.add('preso'); if (confirmando === i) li.classList.add('conf');
     const n = document.createElement('span'); n.className = 'n'; n.textContent = pos + 1;
@@ -154,12 +166,16 @@ function render() {
     li.onclick = () => tocar(i);
     L.append(li);
   });
+  if (f && !vistos) { const d = document.createElement('li'); d.className = 'nada'; d.style.cursor = 'default'; d.textContent = 'Nenhum chassi da lista tem "' + f + '". Confira o que digitou.'; L.append(d); }
   const tot = MAQ.length, np = P.size;
   $('barra').style.width = (np / tot * 100) + '%';
   $('resumo').innerHTML = np === tot ? '🎉 <b>Todas as ' + tot + ' apreendidas!</b>' : '<b>' + np + ' de ' + tot + '</b> · faltam ' + (tot - np);
   const tipos = {}; MAQ.forEach((m, i) => { const t = tipos[m[2]] || (tipos[m[2]] = { tot: 0, p: 0 }); t.tot++; if (P.has(CHAVES[i])) t.p++; });
   $('tipos').innerHTML = Object.keys(tipos).map(k => '<div class="' + (tipos[k].p === tipos[k].tot ? 'fim' : '') + '">' + k + '<br><b>' + tipos[k].p + ' / ' + tipos[k].tot + '</b></div>').join('');
 }
+function filtro() { return $('busca').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+// a busca sobe para o topo da tela: os resultados ficam logo abaixo dela, acima do teclado
+function buscaTopo() { try { $('buscaBox').scrollIntoView({ block: 'start' }); } catch (e) {} }
 function frase(t) {
   const fixo = { case: 'Case', af: 'AF', sp: 'SP', terraflex: 'Terraflex' };
   const r = t.toLowerCase().split(' ').map(w => fixo[w] || w.replace(/^terraflex(.*)$/, (x, r) => 'Terraflex' + r.toUpperCase())).join(' ');
@@ -200,6 +216,7 @@ function tocar(i) {
     if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR o chassi ' + MAQ[i][1] + '.'); render(); return; }
   }
   confirmando = -1; PEND[k] = { q: !preso, em: Date.now() }; guardarPend();
+  if (filtro()) { $('busca').value = ''; $('busca').blur(); }
   aviso(navigator.onLine === false ? 'Guardado no celular. Envia quando a internet voltar.' : 'Enviando…');
   render(); estadoRede(); sincronizar();
 }
@@ -256,6 +273,10 @@ async function gerarPdf(achadas) {
   } catch (e) { aviso('Não consegui gerar o PDF (' + e.message + '). Tente de novo.'); }
   finally { bt.disabled = false; bt.textContent = txt; }
 }
+$('busca').addEventListener('input', () => { confirmando = -1; render(); buscaTopo(); });
+$('busca').addEventListener('focus', () => { setTimeout(buscaTopo, 50); setTimeout(buscaTopo, 400); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (document.activeElement === $('busca')) buscaTopo(); });
+$('buscaX').onclick = () => { $('busca').value = ''; render(); $('busca').focus(); };
 $('bPdf').onclick = () => gerarPdf(false);
 $('bPdfOk').onclick = () => gerarPdf(true);
 render(); estadoRede(); atualizar(); setInterval(atualizar, 3000);
