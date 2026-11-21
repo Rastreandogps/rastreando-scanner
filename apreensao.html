@@ -30,6 +30,8 @@
   li .bem{font-size:12px;font-weight:500;color:var(--sub);text-transform:uppercase}
   li .ch{font:700 20px/1.25 ui-monospace,Menlo,Consolas,monospace;color:#fff;letter-spacing:.3px;word-break:break-all;margin-top:3px}
   li .tag{flex:none;font-size:12px;font-weight:800;padding:4px 9px;border-radius:20px;background:#14532d;color:#bbf7d0}
+  li .selo{display:inline-block;background:#4ade80;color:#052e12;font-weight:900;font-size:13px;letter-spacing:.5px;padding:3px 9px;border-radius:6px;margin-bottom:3px}
+  li .nm2{font-size:14px;color:#86efac;margin-top:2px}
   li.preso{border-left-color:var(--ok);background:#10231a}
   li.preso .bx{background:var(--ok);border-color:var(--ok)}
   li.preso .bem{text-decoration:none;color:#86efac}
@@ -109,17 +111,29 @@ function render() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
     const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = preso ? '✓' : '';
     const tx = document.createElement('div'); tx.className = 'tx';
-    const b = document.createElement('div'); b.className = 'bem'; b.textContent = (preso ? '✅ PRESA · ' : '') + m[0];
     const c = document.createElement('div'); c.className = 'ch'; c.textContent = m[1];
-    tx.append(b, c); li.append(n, bx, tx);
+    if (preso) {
+      const sl = document.createElement('div'); sl.className = 'selo'; sl.textContent = 'APREENDIDO';
+      const nm = document.createElement('div'); nm.className = 'nm2'; nm.textContent = frase(m[0]);
+      tx.append(sl, c, nm);
+    } else {
+      const b = document.createElement('div'); b.className = 'bem'; b.textContent = m[0];
+      tx.append(b, c);
+    }
+    li.append(n, bx, tx);
     li.onclick = () => tocar(i);
     L.append(li);
   });
   const tot = MAQ.length, np = P.size;
   $('barra').style.width = (np / tot * 100) + '%';
-  $('resumo').innerHTML = np === tot ? '🎉 <b>Todas as ' + tot + ' presas!</b>' : '<b>' + np + ' de ' + tot + '</b> presas · faltam ' + (tot - np);
+  $('resumo').innerHTML = np === tot ? '🎉 <b>Todas as ' + tot + ' apreendidas!</b>' : '<b>' + np + ' de ' + tot + '</b> · faltam ' + (tot - np);
   const tipos = {}; MAQ.forEach((m, i) => { const t = tipos[m[2]] || (tipos[m[2]] = { tot: 0, p: 0 }); t.tot++; if (P.has(CHAVES[i])) t.p++; });
   $('tipos').innerHTML = Object.keys(tipos).map(k => '<div class="' + (tipos[k].p === tipos[k].tot ? 'fim' : '') + '">' + k + '<br><b>' + tipos[k].p + ' / ' + tipos[k].tot + '</b></div>').join('');
+}
+function frase(t) {
+  const fixo = { case: 'Case', af: 'AF', sp: 'SP', terraflex: 'Terraflex' };
+  const r = t.toLowerCase().split(' ').map(w => fixo[w] || w.replace(/^terraflex/, 'Terraflex')).join(' ');
+  return r.charAt(0).toUpperCase() + r.slice(1);
 }
 function aviso(t) { $('aviso').textContent = t || ''; }
 
