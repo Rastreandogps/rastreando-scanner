@@ -37,6 +37,8 @@
   li.preso .bem{text-decoration:none;color:#86efac}
   li.preso .ch{color:#86efac}
   li.conf{outline:2px solid #f59e0b}
+  .rede{display:none;background:#78350f;color:#fde68a;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin:0 0 8px}
+  .rede.on{display:block}
   .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1.2em}
   .pdf{display:block;width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-size:16px;font-weight:700}
   .pdf:disabled{opacity:.6}
@@ -50,6 +52,7 @@
 <div class="barra"><i id="barra"></i></div>
 <div class="resumo" id="resumo">Carregando…</div>
 <div class="tipos" id="tipos"></div>
+<div class="rede" id="rede"></div>
 <div class="aviso" id="aviso"></div>
 <ul id="lista"></ul>
 <button class="pdf" id="bPdf" type="button">📄 Gerar PDF das não encontradas</button>
@@ -81,6 +84,11 @@ const chave = (i) => String(i + 1).padStart(2, '0') + '|' + MAQ[i][1];
 const CHAVES = MAQ.map((_, i) => chave(i));
 let ESTADO = { itens: [], v: -1 };
 let ocupado = false, iniciando = false, ultOk = 0;
+// OFFLINE: a última lista fica guardada no celular e os toques sem internet ficam numa fila (PEND = chassi → presa sim/não)
+let PEND = {};
+try { const e = JSON.parse(localStorage.getItem('apr_estado') || 'null'); if (e && Array.isArray(e.itens)) { ESTADO = e; ultOk = e.em || 0; } } catch (e) {}
+try { PEND = JSON.parse(localStorage.getItem('apr_pend') || '{}') || {}; } catch (e) { PEND = {}; }
+function guardarPend() { try { localStorage.setItem('apr_pend', JSON.stringify(PEND)); } catch (e) {} }
 const $ = (id) => document.getElementById(id);
 
 async function api(corpo) {
@@ -89,7 +97,8 @@ async function api(corpo) {
   if (!r.ok) throw new Error(j.erro || 'Sem conexão.');
   return j;
 }
-function presos() { const s = new Set(); (ESTADO.itens || []).forEach(it => { if (it.q && CHAVES.includes(it.n)) s.add(it.n); }); return s; }
+function presos() { const s = new Set(); (ESTADO.itens || []).forEach(it => { if (it.q && CHAVES.includes(it.n)) s.add(it.n); });
+  Object.keys(PEND).forEach(k => { if (PEND[k]) s.add(k); else s.delete(k); }); return s; }
 
 // 1ª abertura: deixa a lista do servidor só com as 15 máquinas (sem repetir; não desmarca nada)
 async function garantirLista(j) {
@@ -103,7 +112,8 @@ async function garantirLista(j) {
   } finally { iniciando = false; }
   return j;
 }
-function aplicar(j) { if (j && Array.isArray(j.itens) && (j.v || 0) >= ESTADO.v) { ESTADO = { itens: j.itens, v: j.v || 0 }; ultOk = Date.now(); render(); } }
+function aplicar(j) { if (j && Array.isArray(j.itens) && (j.v || 0) >= ESTADO.v) { ultOk = Date.now(); ESTADO = { itens: j.itens, v: j.v || 0, em: ultOk };
+  try { localStorage.setItem('apr_estado', JSON.stringify(ESTADO)); } catch (e) {} render(); } }
 
 let confirmando = -1, tConf = 0;
 function render() {
@@ -142,36 +152,56 @@ function frase(t) {
 }
 function aviso(t) { $('aviso').textContent = t || ''; }
 
-async function mandar(i) {
+// manda a fila: para cada máquina, confere no servidor e só toca se estiver diferente do que a pessoa marcou
+async function sincronizar() {
+  if (ocupado || iniciando || !Object.keys(PEND).length) { estadoRede(); return; }
   ocupado = true;
-  const quer = !!(ESTADO.itens.find(x => x.n === CHAVES[i]) || {}).q;
   try {
-    let j = await api({ op: 'marcar', nome: CHAVES[i], quem: 'eu' });
-    // o servidor inverte a marca: se outra pessoa tocou ao mesmo tempo e ficou o contrário, toca de novo uma vez
-    const it = (j.itens || []).find(x => x.n === CHAVES[i]);
-    if (it && !!it.q !== quer) j = await api({ op: 'marcar', nome: CHAVES[i], quem: 'eu' });
-    aplicar(j); aviso('✓ salvo para todos');
-  }
-  catch (e) { aviso('Não salvou (' + e.message + '). Toque de novo.'); atualizar(true); }
-  ocupado = false;
+    let j = await api({}); j = await garantirLista(j);
+    for (const k of Object.keys(PEND)) {
+      const quer = PEND[k];
+      for (let t = 0; t < 2; t++) {
+        const it = (j.itens || []).find(x => x.n === k);
+        if (!it || !!it.q === quer) break;
+        j = await api({ op: 'marcar', nome: k, quem: 'eu' });
+      }
+      const it = (j.itens || []).find(x => x.n === k);
+      if (it && !!it.q === quer) { delete PEND[k]; guardarPend(); }
+    }
+    aplicar(j); aviso(Object.keys(PEND).length ? '' : '✓ salvo para todos');
+  } catch (e) { /* sem internet: fica guardado e tenta de novo */ }
+  ocupado = false; estadoRede();
+}
+function estadoRede() {
+  const n = Object.keys(PEND).length, off = navigator.onLine === false || (Date.now() - ultOk > 12000 && ultOk > 0);
+  const el = $('rede');
+  if (n) { el.className = 'rede on'; el.textContent = '📴 ' + (n === 1 ? '1 marcação guardada' : n + ' marcações guardadas') + ' no celular. Vão para todos assim que a internet voltar.'; }
+  else if (off) { el.className = 'rede on'; el.textContent = '📴 Sem internet. Pode marcar normalmente: fica guardado e envia sozinho quando voltar.'; }
+  else { el.className = 'rede'; el.textContent = ''; }
 }
 function tocar(i) {
-  const it = ESTADO.itens.find(x => x.n === CHAVES[i]);
-  if (!it) { aviso('Carregando a lista… tente de novo em 2 segundos.'); return; }
-  if (it.q) {                       // desmarcar pede um segundo toque
+  const k = CHAVES[i], preso = presos().has(k);
+  if (preso) {                       // desmarcar pede um segundo toque
     if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR o chassi ' + MAQ[i][1] + '.'); render(); return; }
-    confirmando = -1; it.q = '';
-  } else { confirmando = -1; it.q = 'eu'; }
-  render(); mandar(i);
+  }
+  confirmando = -1; PEND[k] = !preso; guardarPend();
+  aviso(navigator.onLine === false ? 'Guardado no celular. Envia quando a internet voltar.' : 'Enviando…');
+  render(); estadoRede(); sincronizar();
 }
 
 async function atualizar(forcar) {
   if ((ocupado || iniciando || document.hidden) && !forcar) return;
+  if (Object.keys(PEND).length) { sincronizar(); return; }
   try { let j = await api({}); j = await garantirLista(j); aplicar(j); }
-  catch (e) { aviso('Sem conexão. Tentando de novo…'); }
+  catch (e) { /* sem internet: mostra a última lista guardada */ }
+  estadoRede();
 }
 setInterval(() => { const s = ultOk ? Math.round((Date.now() - ultOk) / 1000) : null;
-  $('rod').textContent = s == null ? '' : 'Atualiza sozinho a cada 3 s · última há ' + s + ' s'; }, 1000);
+  $('rod').textContent = s == null ? '' : 'Atualiza sozinho a cada 3 s · última atualização há ' + (s < 120 ? s + ' s' : Math.round(s / 60) + ' min'); estadoRede(); }, 1000);
+window.addEventListener('online', () => { aviso(''); atualizar(true); });
+window.addEventListener('offline', estadoRede);
+// guarda a página no celular para abrir mesmo sem internet
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('apreensao-sw.js', { scope: './apreensao' }).catch(() => {});
 // PDF das que faltam (gerado no próprio celular)
 function carregarJsPdf() {
   if (window.jspdf) return Promise.resolve();
@@ -211,7 +241,7 @@ async function gerarPdf(achadas) {
 }
 $('bPdf').onclick = () => gerarPdf(false);
 $('bPdfOk').onclick = () => gerarPdf(true);
-render(); atualizar(); setInterval(atualizar, 3000);
+render(); estadoRede(); atualizar(); setInterval(atualizar, 3000);
 document.addEventListener('visibilitychange', () => atualizar());
 </script>
 </body>
