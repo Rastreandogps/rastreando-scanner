@@ -38,6 +38,8 @@
   li.preso .ch{color:#86efac}
   li.conf{outline:2px solid #f59e0b}
   .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1.2em}
+  .pdf{display:block;width:100%;margin-top:16px;padding:15px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-size:16px;font-weight:700}
+  .pdf:disabled{opacity:.6}
   .rod{color:var(--sub);font-size:12px;text-align:center;margin-top:14px}
 </style>
 </head>
@@ -49,6 +51,7 @@
 <div class="tipos" id="tipos"></div>
 <div class="aviso" id="aviso"></div>
 <ul id="lista"></ul>
+<button class="pdf" id="bPdf" type="button">📄 Gerar PDF das não encontradas</button>
 <div class="rod" id="rod"></div>
 
 <script>
@@ -167,6 +170,43 @@ async function atualizar(forcar) {
 }
 setInterval(() => { const s = ultOk ? Math.round((Date.now() - ultOk) / 1000) : null;
   $('rod').textContent = s == null ? '' : 'Atualiza sozinho a cada 3 s · última há ' + s + ' s'; }, 1000);
+// PDF das que faltam (gerado no próprio celular)
+function carregarJsPdf() {
+  if (window.jspdf) return Promise.resolve();
+  return new Promise((ok, erro) => { const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    sc.onload = ok; sc.onerror = () => erro(new Error('não carregou')); document.head.append(sc); });
+}
+$('bPdf').onclick = async () => {
+  const P = presos(), falta = MAQ.map((m, i) => i).filter(i => !P.has(CHAVES[i]));
+  if (!falta.length) { aviso('Todas foram apreendidas. Não há o que pôr no PDF.'); return; }
+  const bt = $('bPdf'); bt.disabled = true; bt.textContent = 'Gerando o PDF…';
+  try {
+    await carregarJsPdf();
+    const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+    const agora = new Date(), dh = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    let y = 18;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Máquinas NÃO encontradas', 15, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(90);
+    doc.text('Situação em ' + dh + ' · ' + falta.length + ' de ' + MAQ.length + ' faltando · ' + (MAQ.length - falta.length) + ' apreendidas', 15, y); y += 9;
+    doc.setTextColor(0); doc.setFillColor(230, 230, 230); doc.rect(15, y - 5, 180, 8, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('Nº', 18, y); doc.text('CHASSI', 30, y); doc.text('BEM', 92, y); y += 8;
+    falta.forEach((i, k) => {
+      if (y > 280) { doc.addPage(); y = 18; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(String(k + 1), 18, y); doc.text(MAQ[i][1], 30, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(MAQ[i][0], 92, y);
+      doc.setDrawColor(210); doc.line(15, y + 3, 195, y + 3); y += 9;
+    });
+    const nome = 'maquinas-nao-encontradas-' + agora.toISOString().slice(0, 16).replace(/[-:T]/g, '') + '.pdf';
+    const blob = doc.output('blob'), arq = new File([blob], nome, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+      try { await navigator.share({ files: [arq], title: 'Máquinas não encontradas' }); aviso('PDF pronto.'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    doc.save(nome); aviso('PDF baixado.');
+  } catch (e) { aviso('Não consegui gerar o PDF (' + e.message + '). Tente de novo.'); }
+  finally { bt.disabled = false; bt.textContent = '📄 Gerar PDF das não encontradas'; }
+};
 render(); atualizar(); setInterval(atualizar, 3000);
 document.addEventListener('visibilitychange', () => atualizar());
 </script>
