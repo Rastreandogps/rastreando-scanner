@@ -105,10 +105,10 @@ function render() {
   const P = presos(), L = $('lista'); L.textContent = '';
   // achadas (presas) em cima, depois as que faltam; dentro de cada grupo, pela numeração
   const ordem = MAQ.map((_, i) => i).sort((x, y) => (P.has(CHAVES[y]) - P.has(CHAVES[x])) || (x - y));
-  ordem.forEach((i) => { const m = MAQ[i];
+  ordem.forEach((i, pos) => { const m = MAQ[i];
     const preso = P.has(CHAVES[i]);
     const li = document.createElement('li'); if (preso) li.classList.add('preso'); if (confirmando === i) li.classList.add('conf');
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = pos + 1;
     const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = preso ? '✓' : '';
     const tx = document.createElement('div'); tx.className = 'tx';
     const c = document.createElement('div'); c.className = 'ch'; c.textContent = m[1];
