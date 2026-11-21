@@ -32,7 +32,7 @@
   li .tag{flex:none;font-size:12px;font-weight:800;padding:4px 9px;border-radius:20px;background:#14532d;color:#bbf7d0}
   li.preso{border-left-color:var(--ok);background:#10231a}
   li.preso .bx{background:var(--ok);border-color:var(--ok)}
-  li.preso .bem{text-decoration:line-through}
+  li.preso .bem{text-decoration:none;color:#86efac}
   li.preso .ch{color:#86efac}
   li.conf{outline:2px solid #f59e0b}
   .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1.2em}
@@ -109,10 +109,9 @@ function render() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
     const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = preso ? '✓' : '';
     const tx = document.createElement('div'); tx.className = 'tx';
-    const b = document.createElement('div'); b.className = 'bem'; b.textContent = m[0];
+    const b = document.createElement('div'); b.className = 'bem'; b.textContent = (preso ? '✅ PRESA · ' : '') + m[0];
     const c = document.createElement('div'); c.className = 'ch'; c.textContent = m[1];
     tx.append(b, c); li.append(n, bx, tx);
-    if (preso) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'PRESA'; li.append(t); }
     li.onclick = () => tocar(i);
     L.append(li);
   });
