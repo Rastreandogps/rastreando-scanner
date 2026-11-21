@@ -154,7 +154,7 @@ function tocar(i) {
   const it = ESTADO.itens.find(x => x.n === CHAVES[i]);
   if (!it) { aviso('Carregando a lista… tente de novo em 2 segundos.'); return; }
   if (it.q) {                       // desmarcar pede um segundo toque
-    if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR a nº ' + (i + 1) + '.'); render(); return; }
+    if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR o chassi ' + MAQ[i][1] + '.'); render(); return; }
     confirmando = -1; it.q = '';
   } else { confirmando = -1; it.q = 'eu'; }
   render(); mandar(i);
