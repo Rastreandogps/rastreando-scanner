@@ -114,7 +114,7 @@ function presos() { const s = new Set(); (ESTADO.itens || []).forEach(it => { if
   Object.keys(PEND).forEach(k => { if (PEND[k].q) s.add(k); else s.delete(k); }); return s; }
 // hora em que a máquina foi marcada (a do toque guardado no celular vale até enviar)
 function horaDe(k) { if (PEND[k]) return PEND[k].q ? PEND[k].em : 0; const it = (ESTADO.itens || []).find(x => x.n === k); return (it && it.q && it.em) || 0; }
-const hhmm = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const hhmm = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
 // 1ª abertura: deixa a lista do servidor só com as 15 máquinas (sem repetir; não desmarca nada)
 async function garantirLista(j) {
@@ -253,13 +253,13 @@ async function gerarPdf(achadas) {
     doc.text('Situação em ' + dh + ' · ' + (achadas ? falta.length + ' de ' + MAQ.length + ' apreendidas · ' + (MAQ.length - falta.length) + ' faltando' : falta.length + ' de ' + MAQ.length + ' faltando · ' + (MAQ.length - falta.length) + ' apreendidas'), 15, y); y += 9;
     doc.setTextColor(0); doc.setFillColor(230, 230, 230); doc.rect(15, y - 5, 180, 8, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text('Nº', 18, y); doc.text('CHASSI', 30, y); doc.text('BEM', 92, y); if (achadas) doc.text('HORA', 180, y); y += 8;
+    doc.text('Nº', 18, y); doc.text('CHASSI', 30, y); doc.text('BEM', 92, y); if (achadas) doc.text('HORA', 178, y); y += 8;
     if (achadas) falta.sort((a, b) => (horaDe(CHAVES[a]) - horaDe(CHAVES[b])) || (a - b));
     falta.forEach((i, k) => {
       if (y > 280) { doc.addPage(); y = 18; }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(String(k + 1), 18, y); doc.text(MAQ[i][1], 30, y);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(MAQ[i][0], 92, y);
-      if (achadas && horaDe(CHAVES[i])) doc.text(hhmm(horaDe(CHAVES[i])), 180, y);
+      if (achadas && horaDe(CHAVES[i])) doc.text(hhmm(horaDe(CHAVES[i])), 178, y);
       doc.setDrawColor(210); doc.line(15, y + 3, 195, y + 3); y += 9;
     });
     const nome = (achadas ? 'maquinas-encontradas-' : 'maquinas-nao-encontradas-') + agora.toISOString().slice(0, 16).replace(/[-:T]/g, '') + '.pdf';
