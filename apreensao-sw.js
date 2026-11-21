@@ -1,5 +1,5 @@
 // Guarda a página da apreensão no celular para abrir sem internet (só vale para apreensao*.html).
-const CACHE = 'apreensao-v5';
+const CACHE = 'apreensao-v6';
 const JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all([
