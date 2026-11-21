@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apreensão — máquinas</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚜</text></svg>">
+<meta name="theme-color" content="#0b1016">
+<style>
+  :root{--bg:#0b1016;--card:#151c25;--linha:#222c38;--txt:#eef2f6;--sub:#8a97a6;--ok:#22c55e}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       padding:calc(14px + env(safe-area-inset-top)) 14px calc(30px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+  h1{font-size:21px;margin:4px 0 4px}
+  .sub{color:var(--sub);font-size:13px;margin:0 2px 12px}
+  .barra{height:12px;background:var(--card);border-radius:20px;overflow:hidden;margin:6px 0 6px}
+  .barra i{display:block;height:100%;width:0;background:var(--ok);transition:width .4s}
+  .resumo{font-size:15px;margin:0 2px 10px}
+  .resumo b{color:var(--ok)}
+  .tipos{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+  .tipos div{background:var(--card);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--sub)}
+  .tipos div b{color:var(--txt);font-size:15px}
+  .tipos div.fim b{color:var(--ok)}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:6px;background:var(--card);border-radius:12px;border-left:5px solid transparent;user-select:none;cursor:pointer}
+  li .n{flex:none;width:24px;color:var(--sub);font-size:14px;text-align:right}
+  li .bx{width:28px;height:28px;border-radius:7px;border:2px solid #5b6776;flex:none;display:grid;place-items:center;font-size:17px;font-weight:800;color:#06240f}
+  li .tx{flex:1;min-width:0}
+  li .bem{font-size:15px;font-weight:600}
+  li .ch{font:14px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#c9d3de;letter-spacing:.5px;word-break:break-all;margin-top:2px}
+  li .tag{flex:none;font-size:12px;font-weight:800;padding:4px 9px;border-radius:20px;background:#14532d;color:#bbf7d0}
+  li.preso{border-left-color:var(--ok);background:#10231a}
+  li.preso .bx{background:var(--ok);border-color:var(--ok)}
+  li.preso .bem{color:var(--sub);text-decoration:line-through}
+  li.conf{outline:2px solid #f59e0b}
+  .aviso{font-size:13px;color:#f5c26b;text-align:center;margin:8px 0;min-height:1.2em}
+  .rod{color:var(--sub);font-size:12px;text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<h1>🚜 Apreensão das máquinas</h1>
+<div class="sub">Toque na máquina quando ela for presa. Todos que têm este link veem na hora.</div>
+<div class="barra"><i id="barra"></i></div>
+<div class="resumo" id="resumo">Carregando…</div>
+<div class="tipos" id="tipos"></div>
+<div class="aviso" id="aviso"></div>
+<ul id="lista"></ul>
+<div class="rod" id="rod"></div>
+
+<script>
+const API = 'https://rastreamentoapi-7a524tmnrq-rj.a.run.app';
+const LISTA = 'apreensaor2e74l9od7k';
+const MAQ = [
+  ['COLHEITADEIRA DE GRÃO AXIAL CASE','JHFY5130EKJG13880','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃO AF','JHFY4150TPJG23938','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃOS AF','JHFY4150JPJG23510','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃOS AF','JHFY4150APJG23475','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃOS AF','JHFY8250TRJB26756','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃOS AF','JHFY4150JPG25791','Colheitadeira'],
+  ['COLHEITADEIRA DE GRÃOS AF','JHFY8250ARJB26765','Colheitadeira'],
+  ['PLATAFORMA DE CORTE TERRAFLEX 3020','HCCB252KHNC325236','Plataforma de corte'],
+  ['PLATAFORMA DE CORTE TERRAFLEX 3020','HCCB252KHNC325611','Plataforma de corte'],
+  ['PLATAFORMA DE CORTE TERRAFLEX 3020','HCCB252KPMC324575','Plataforma de corte'],
+  ['PLATAFORMA DE CORTE TERRAFLEX 3020','HCCB252KPNC325615','Plataforma de corte'],
+  ['PLATAFORMA DRAPER TERRAFLEX4F-40P','HCCB40FCERCK23832','Plataforma draper'],
+  ['PLATAFORMA DRAPER TERRAFLEX4F-40P','HCCB40FCPRCK23835','Plataforma draper'],
+  ['PULVERIZADOR AUTOPROPELIDO SP','PRCYP250ENPC06241','Pulverizador'],
+  ['PULVERIZADOR AUTOPROPELIDO SP','PRCYP250TPPC06732','Pulverizador']
+];
+// nome guardado no servidor: "NN|CHASSI"
+const chave = (i) => String(i + 1).padStart(2, '0') + '|' + MAQ[i][1];
+const CHAVES = MAQ.map((_, i) => chave(i));
+let ESTADO = { itens: [], v: -1 };
+let ocupado = false, iniciando = false, ultOk = 0;
+const $ = (id) => document.getElementById(id);
+
+async function api(corpo) {
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ acao: 'compras', lista: LISTA }, corpo)) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || 'Sem conexão.');
+  return j;
+}
+function presos() { const s = new Set(); (ESTADO.itens || []).forEach(it => { if (it.q && CHAVES.includes(it.n)) s.add(it.n); }); return s; }
+
+// 1ª abertura: deixa a lista do servidor só com as 15 máquinas (sem repetir; não desmarca nada)
+async function garantirLista(j) {
+  const nomes = (j.itens || []).map(x => x.n);
+  const faltam = CHAVES.filter(c => !nomes.includes(c)), sobram = nomes.filter(n => !CHAVES.includes(n));
+  if ((!faltam.length && !sobram.length) || iniciando) return j;
+  iniciando = true;
+  try {
+    for (const n of sobram) j = await api({ op: 'del', nome: n });
+    for (const c of faltam) j = await api({ op: 'add', nome: c });
+  } finally { iniciando = false; }
+  return j;
+}
+function aplicar(j) { if (j && Array.isArray(j.itens) && (j.v || 0) >= ESTADO.v) { ESTADO = { itens: j.itens, v: j.v || 0 }; ultOk = Date.now(); render(); } }
+
+let confirmando = -1, tConf = 0;
+function render() {
+  const P = presos(), L = $('lista'); L.textContent = '';
+  MAQ.forEach((m, i) => {
+    const preso = P.has(CHAVES[i]);
+    const li = document.createElement('li'); if (preso) li.classList.add('preso'); if (confirmando === i) li.classList.add('conf');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
+    const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = preso ? '✓' : '';
+    const tx = document.createElement('div'); tx.className = 'tx';
+    const b = document.createElement('div'); b.className = 'bem'; b.textContent = m[0];
+    const c = document.createElement('div'); c.className = 'ch'; c.textContent = m[1];
+    tx.append(b, c); li.append(n, bx, tx);
+    if (preso) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'PRESA'; li.append(t); }
+    li.onclick = () => tocar(i);
+    L.append(li);
+  });
+  const tot = MAQ.length, np = P.size;
+  $('barra').style.width = (np / tot * 100) + '%';
+  $('resumo').innerHTML = np === tot ? '🎉 <b>Todas as ' + tot + ' presas!</b>' : '<b>' + np + ' de ' + tot + '</b> presas · faltam ' + (tot - np);
+  const tipos = {}; MAQ.forEach((m, i) => { const t = tipos[m[2]] || (tipos[m[2]] = { tot: 0, p: 0 }); t.tot++; if (P.has(CHAVES[i])) t.p++; });
+  $('tipos').innerHTML = Object.keys(tipos).map(k => '<div class="' + (tipos[k].p === tipos[k].tot ? 'fim' : '') + '">' + k + '<br><b>' + tipos[k].p + ' / ' + tipos[k].tot + '</b></div>').join('');
+}
+function aviso(t) { $('aviso').textContent = t || ''; }
+
+async function mandar(i) {
+  ocupado = true;
+  const quer = !!(ESTADO.itens.find(x => x.n === CHAVES[i]) || {}).q;
+  try {
+    let j = await api({ op: 'marcar', nome: CHAVES[i], quem: 'eu' });
+    // o servidor inverte a marca: se outra pessoa tocou ao mesmo tempo e ficou o contrário, toca de novo uma vez
+    const it = (j.itens || []).find(x => x.n === CHAVES[i]);
+    if (it && !!it.q !== quer) j = await api({ op: 'marcar', nome: CHAVES[i], quem: 'eu' });
+    aplicar(j); aviso('✓ salvo para todos');
+  }
+  catch (e) { aviso('Não salvou (' + e.message + '). Toque de novo.'); atualizar(true); }
+  ocupado = false;
+}
+function tocar(i) {
+  const it = ESTADO.itens.find(x => x.n === CHAVES[i]);
+  if (!it) { aviso('Carregando a lista… tente de novo em 2 segundos.'); return; }
+  if (it.q) {                       // desmarcar pede um segundo toque
+    if (confirmando !== i || Date.now() - tConf > 4000) { confirmando = i; tConf = Date.now(); aviso('Toque de novo para DESMARCAR a nº ' + (i + 1) + '.'); render(); return; }
+    confirmando = -1; it.q = '';
+  } else { confirmando = -1; it.q = 'eu'; }
+  render(); mandar(i);
+}
+
+async function atualizar(forcar) {
+  if ((ocupado || iniciando || document.hidden) && !forcar) return;
+  try { let j = await api({}); j = await garantirLista(j); aplicar(j); }
+  catch (e) { aviso('Sem conexão. Tentando de novo…'); }
+}
+setInterval(() => { const s = ultOk ? Math.round((Date.now() - ultOk) / 1000) : null;
+  $('rod').textContent = s == null ? '' : 'Atualiza sozinho a cada 3 s · última há ' + s + ' s'; }, 1000);
+render(); atualizar(); setInterval(atualizar, 3000);
+document.addEventListener('visibilitychange', () => atualizar());
+</script>
+</body>
+</html>
