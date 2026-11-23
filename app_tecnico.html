@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-19-v182-voltar-caixa-massa';
+const BUILD_VERSION = '2026-11-23-v183-selecao-sincronizacao';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -7860,7 +7860,7 @@ function _renderCardOSCompacto(o) {
   const modelo = _modelosVeiculos(o.veiculo);
   return '<div class="' + _flashCls(o).trim() + '" data-os-id="' + esc(o.id) + '" data-os-tech="' + esc(tech) + '" onclick="abrirModalVerOS(\'' + esc(o.id) + '\',\'' + esc(tech) + '\')" style="position:relative;cursor:pointer;border-radius:12px;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:white;box-shadow:0 0 0 3px ' + cor + ',0 2px 6px rgba(0,0,0,.12);">' +
     '<label onclick="event.stopPropagation()" style="position:absolute;top:5px;right:5px;cursor:pointer;">' +
-      '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '" onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
+      '<input type="checkbox" class="os-select-cb" data-id="' + esc(o.id) + '" data-tech="' + esc(tech) + '"' + _selMarcada(o.id, tech) + ' onchange="atualizarSelecao(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#3b82f6;">' +
     '</label>' +
     _bagIcone(o) +
     _badgeTipoLed(o, true) +
@@ -7922,7 +7922,7 @@ function _renderCardOSDetalhado(o) {
 
         // ── Checkbox seleção em massa
         '<label onclick="event.stopPropagation()" style="position:absolute;top:10px;right:10px;cursor:pointer;z-index:2;">' +
-          '<input type="checkbox" class="os-select-cb" data-id="' + o.id + '" data-tech="' + esc(tech) + '" ' +
+          '<input type="checkbox" class="os-select-cb" data-id="' + o.id + '" data-tech="' + esc(tech) + '" ' + _selMarcada(o.id, tech) +
             'onchange="atualizarSelecao(this)" ' +
             'style="width:18px;height:18px;cursor:pointer;accent-color:#3b82f6;">' +
         '</label>' +
@@ -8087,9 +8087,12 @@ function _esperarOrdensFirestore(ms) {
 
 async function adminVerTecnico(tech) {
   const _seq = ++_adminVerSeq;
+  /* 23/11/2026 (dono): a sincronização recarrega esta tela a cada ~30 s e apagava a marcação em massa.
+     Agora a seleção só é limpa quando o administrador TROCA de técnico; recarregar o mesmo técnico mantém. */
+  const _mesmoTec = (adminTechSelecionado === tech && !_adminVendoTodos);
   adminTechSelecionado = tech;
   _adminVendoTodos = false;
-  limparSelecao();
+  if (!_mesmoTec) limparSelecao();
   // Limpar busca ao trocar de técnico
   const buscaInput = document.getElementById('admin-cal-busca');
   if (buscaInput) buscaInput.value = '';
@@ -10653,6 +10656,9 @@ function fecharModalNovaOS() {
 // Filtra os cards reais da lista: só ficam visíveis os que batem com o termo
 // ── REAGENDAMENTO EM MASSA
 let _selecaoAtiva = new Set();
+
+/* 23/11/2026: o card já nasce marcado se a OS está na seleção (a tela é redesenhada a cada sincronização) */
+function _selMarcada(id, tech) { try { return _selecaoAtiva.has(id + '|' + tech) ? ' checked ' : ' '; } catch (e) { return ' '; } }
 
 function atualizarSelecao(cb) {
   // Acumula/remove individualmente em vez de reconstruir do zero
