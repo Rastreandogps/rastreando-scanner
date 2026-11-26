@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-23-v183-selecao-sincronizacao';
+const BUILD_VERSION = '2026-11-26-v184-aviso-tecnico-nao-salvo';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -4423,7 +4423,13 @@ document.addEventListener('click', function(e) {
   if (concluirBtn) {
     const id   = concluirBtn.getAttribute('data-id');
     const tech = concluirBtn.getAttribute('data-tech');
-    if (id && tech) adminConcluirOS(id, tech);
+    if (id && tech) {
+      /* 26/11/2026 (dono): trocou o técnico e tocou no ✅ sem salvar? Pergunta antes de concluir */
+      const selT = document.querySelector('.admin-view-reassign-sel[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+      const novoT = selT ? selT.value : '';
+      if (selT && novoT && novoT !== (selT.getAttribute('data-tech') || '')) _avisoTecnicoNaoSalvo(id, tech, novoT, selT);
+      else adminConcluirOS(id, tech);
+    }
   }
   // Listener para botão excluir admin na aba Técnico
   const delTechBtn = e.target.closest('.admin-del-tech-btn');
@@ -4492,6 +4498,32 @@ document.addEventListener('click', function(e) {
     }
   }
 });
+
+/* 26/11/2026 (dono): aviso quando o técnico foi trocado no card e não foi salvo, e o ✅ (concluir) foi tocado */
+function _avisoTecnicoNaoSalvo(id, techAtual, techNovo, sel) {
+  const old = document.getElementById('avisoTecNS'); if (old) old.remove();
+  const ov = document.createElement('div');
+  ov.id = 'avisoTecNS';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = '<div style="background:white;border-radius:16px;max-width:360px;width:100%;padding:18px 16px 14px;box-shadow:0 20px 50px rgba(0,0,0,.3);font-family:inherit;">' +
+    '<div style="font-size:30px;text-align:center;margin-bottom:6px;">⚠️</div>' +
+    '<div style="font-size:16px;font-weight:800;color:#1e293b;text-align:center;margin-bottom:6px;">Técnico não foi salvo</div>' +
+    '<div style="font-size:13px;color:#475569;text-align:center;line-height:1.45;margin-bottom:14px;">Você trocou o técnico de <b>' + esc(techAtual || 'sem técnico') + '</b> para <b>' + esc(techNovo) + '</b>, mas não tocou no ✔.<br>O que você quer fazer?</div>' +
+    '<button type="button" data-r="salvar" style="width:100%;padding:11px;background:var(--accent,#2563eb);color:white;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">👷 Salvar o técnico (' + esc(techNovo) + ')</button>' +
+    '<button type="button" data-r="concluir" style="width:100%;padding:10px;background:#ecfdf5;color:#065f46;border:1.5px solid #10b981;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">✅ Concluir a OS mesmo assim</button>' +
+    '<button type="button" data-r="cancelar" style="width:100%;padding:9px;background:#f1f5f9;color:#334155;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>' +
+    '</div>';
+  ov.addEventListener('click', function (ev) {
+    const b = ev.target.closest('button[data-r]');
+    if (!b && ev.target !== ov) return;
+    ev.stopPropagation();
+    const r = b ? b.getAttribute('data-r') : 'cancelar';
+    ov.remove();
+    if (r === 'salvar') adminReatribuirDireto(id, techAtual, techNovo);
+    else if (r === 'concluir') adminConcluirOS(id, techAtual);
+  });
+  document.body.appendChild(ov);
+}
 
 // Funções auxiliares para evitar problema de aspas nos onclick inline
 function cardSaveDate(btn) {
