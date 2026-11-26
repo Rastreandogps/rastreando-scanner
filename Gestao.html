@@ -4230,7 +4230,30 @@ body.modal-aberto{overflow:hidden}
       '<polyline points="' + reDados.map(function (d, k) { return reX(k).toFixed(2) + ',' + reY(d.v).toFixed(2); }).join(' ') + '" fill="none" stroke="#16804A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + rePontos + '</svg>' +
       '<details class="rg-details"><summary>Ver valores de cada mês</summary>' + reTabela + '</details>' +
       '<p class="rg-note">Até set/26: planilha financeira (valor líquido). Depois: foto automática do sistema no último dia do mês. “≈” = estimado a partir do valor bruto (erro de até uns R$ 100). O mês atual entra quando fechar.</p></article>';
-    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard1 + rgCard2 + rgCard3 + rgCard4 + '</section>';
+    /* 26/11/2026 (dono): tamanho da base mês a mês = clientes com mensalidade no mês. Até ago/26 da planilha FINANC (célula B14 de cada aba RELATORIO,
+       conta por boleto); de set/26 em diante da foto do fim do mês (inad_historico → inadimplencia.assinantes, conta por cliente). Eixo começa no zero. */
+    var baPlan = { '2025-06': 223, '2025-07': 217, '2025-08': 226, '2025-09': 259, '2025-10': 268, '2025-11': 263, '2025-12': 270,
+      '2026-01': 272, '2026-02': 278, '2026-03': 282, '2026-04': 298, '2026-05': 296, '2026-06': 296, '2026-07': 296, '2026-08': 348 };
+    var baMap = {}; Object.keys(baPlan).forEach(function (k) { baMap[k] = { v: baPlan[k], f: 'Planilha' }; });
+    (HIST || []).forEach(function (h) { if (h && h.chave && !baPlan[h.chave] && h.inadimplencia && h.inadimplencia.assinantes != null) baMap[h.chave] = { v: h.inadimplencia.assinantes, f: 'Sistema' }; });
+    var baDados = Object.keys(baMap).sort().map(function (k) { return { lb: mesLb(k), v: baMap[k].v, f: baMap[k].f }; });
+    var baN = baDados.length, baX = function (k) { return baN > 1 ? 39 + k * (299 / (baN - 1)) : 188; };
+    var baTopo = Math.max(100, Math.ceil(Math.max.apply(null, baDados.map(function (d) { return d.v; }).concat([0])) / 100) * 100), baY = function (v) { return 218 - v / baTopo * 190; };
+    var baGrade = ''; for (var bv = 0; bv <= baTopo; bv += 50) { var by = baY(bv).toFixed(2); baGrade += '<line class="rg-grid" x1="39" x2="338" y1="' + by + '" y2="' + by + '"/><text class="rg-axis" x="34" y="' + (+by + 4).toFixed(2) + '" text-anchor="end">' + bv + '</text>'; }
+    var baEixoX = baDados.map(function (d, k) { return '<text class="rg-axis" transform="translate(' + baX(k).toFixed(2) + ' 232) rotate(-60)" text-anchor="end" dominant-baseline="middle">' + esc(d.lb) + '</text>'; }).join('');
+    var baPontos = baDados.map(function (d, k) { var x = baX(k).toFixed(2), y = baY(d.v), mostra = k === 0 || k === baN - 1 || k % 2 === 0;
+      return '<circle cx="' + x + '" cy="' + y.toFixed(2) + '" r="3.4" fill="#397CCB" stroke="white" stroke-width="1"><title>' + esc(d.lb) + ' — ' + d.v + ' clientes (' + d.f + ')</title></circle>' +
+        (mostra ? '<text class="rg-value" x="' + x + '" y="' + (y - 8).toFixed(2) + '" text-anchor="' + (k === 0 ? 'start' : k === baN - 1 ? 'end' : 'middle') + '" fill="#1B3A6B" style="font-size:10.5px">' + d.v + '</text>' : ''); }).join('');
+    var baUlt = baN ? baDados[baN - 1] : null, baPri = baN ? baDados[0] : null, baDif = baN ? baUlt.v - baPri.v : 0;
+    var baTabela = '<table class="rg-table"><thead><tr><th>Mês</th><th>Clientes</th><th>No mês</th><th>Origem</th></tr></thead><tbody>' +
+      baDados.map(function (d, k) { var df = k ? d.v - baDados[k - 1].v : null; return '<tr><td>' + esc(d.lb) + '</td><td>' + d.v + '</td><td>' + (df == null ? '—' : (df > 0 ? '+' : '') + df) + '</td><td>' + d.f + '</td></tr>'; }).join('') + '</tbody></table>';
+    var rgCard0 = !baN ? '' : '<article class="rg-card"><header class="rg-header"><div><h2 class="rg-title">Clientes ativos mês a mês</h2><p class="rg-sub">Clientes com mensalidade no mês · ' + esc(baPri.lb) + ' a ' + esc(baUlt.lb) + '</p></div>' +
+      '<div class="rg-current"><strong style="color:#1B3A6B">' + baUlt.v + '</strong><span>' + esc(baUlt.lb) + ' · ' + (baDif >= 0 ? '+' : '') + baDif + ' desde ' + esc(baPri.lb) + '</span></div></header>' +
+      '<svg viewBox="0 0 350 270" role="img" aria-label="Clientes ativos por mês">' + baGrade + baEixoX +
+      '<polyline points="' + baDados.map(function (d, k) { return baX(k).toFixed(2) + ',' + baY(d.v).toFixed(2); }).join(' ') + '" fill="none" stroke="#397CCB" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + baPontos + '</svg>' +
+      '<details class="rg-details"><summary>Ver números de cada mês</summary>' + baTabela + '</details>' +
+      '<p class="rg-note">Até ago/26: planilha financeira (conta por boleto; quem tem 2 boletos conta 2). De set/26 em diante: foto do sistema no último dia do mês (conta por cliente). Não entram planos anuais nem quem só tem o 1º boleto no mês seguinte. O mês atual entra quando fechar.</p></article>';
+    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard0 + rgCard1 + rgCard2 + rgCard3 + rgCard4 + '</section>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
