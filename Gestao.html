@@ -4142,9 +4142,9 @@ body.modal-aberto{overflow:hidden}
     var rgN = rgDados.length, rgX = function (k) { return rgN > 1 ? 39 + k * (299 / (rgN - 1)) : 188; };
     var rgPasso = function (mx) { var p = [1, 2, 5, 10, 15, 20, 25, 50, 100]; for (var a = 0; a < p.length; a++) if (p[a] * 4 >= mx) return p[a]; return Math.ceil(mx / 4 / 10) * 10; };
     var rgEixoX = rgDados.map(function (d, k) { return '<text class="rg-axis" transform="translate(' + rgX(k).toFixed(2) + ' 232) rotate(-60)" text-anchor="end" dominant-baseline="middle">' + esc(d.lb) + '</text>'; }).join('');
-    var rgMax = Math.max.apply(null, rgDados.map(function (d) { return d.e; }).concat([1])), rgP = rgPasso(rgMax), rgTopo = rgP * 4;
+    var rgMax = Math.max.apply(null, rgDados.map(function (d) { return d.e; }).concat([1])), rgP = 5, rgTopo = Math.max(10, Math.ceil(rgMax / 5) * 5); /* dono 26/11: linhas de 5 em 5 clientes */
     var rgY = function (v) { return 218 - v / rgTopo * 190; };
-    var rgGrade = [0, 1, 2, 3, 4].map(function (q) { var v = q * rgP, y = rgY(v).toFixed(2); return '<line class="rg-grid" x1="39" x2="338" y1="' + y + '" y2="' + y + '"/><text class="rg-axis" x="34" y="' + (+y + 4).toFixed(2) + '" text-anchor="end">' + v + '</text>'; }).join('');
+    var rgGrade = Array.apply(null, Array(rgTopo / 5 + 1)).map(function (_, q) { var v = q * rgP, y = rgY(v).toFixed(2); return '<line class="rg-grid" x1="39" x2="338" y1="' + y + '" y2="' + y + '"/><text class="rg-axis" x="34" y="' + (+y + 4).toFixed(2) + '" text-anchor="end">' + v + '</text>'; }).join('');
     var rgSerie = function (campo, cor, nome) {
       return '<polyline points="' + rgDados.map(function (d, k) { return rgX(k).toFixed(2) + ',' + rgY(d[campo]).toFixed(2); }).join(' ') + '" fill="none" stroke="' + cor + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
         rgDados.map(function (d, k) { return '<circle cx="' + rgX(k).toFixed(2) + '" cy="' + rgY(d[campo]).toFixed(2) + '" r="3" fill="' + cor + '" stroke="white" stroke-width="1"><title>' + esc(d.lb) + ' — ' + nome + ': ' + d[campo] + '</title></circle>'; }).join('');
