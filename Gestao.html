@@ -378,6 +378,18 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .mt-graf .mt-cab b{color:var(--navy);font-size:.95rem}
 .mt-graf .mt-cab span{font-size:.74rem;color:var(--text-3)}
 .mt-graf svg{display:block;width:100%;height:auto;max-height:300px;margin:0 auto;font-family:var(--font-body,inherit)}
+.mb-lista{display:flex;flex-direction:column;gap:2px;margin:4px 0}
+.mb-lin{display:grid;grid-template-columns:46px 1fr 40px;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #eef1f6}
+.mb-lin.mb-cur{background:#f5f8ff;border-radius:8px}
+.mb-mes{font-weight:800;font-size:.8rem;color:var(--text,#1e293b);line-height:1.1}
+.mb-mes small{display:block;font-weight:600;font-size:.62rem;color:var(--text-2,#64748b)}
+.mb-barras{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mb-b{display:flex;align-items:center;gap:6px;min-width:0}
+.mb-b i{display:block;height:10px;border-radius:5px;flex:none}
+.mb-e{background:#1B3A6B}.mb-s{background:#DC2626}
+.mb-b span{font-size:.72rem;color:var(--text-2,#475569);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-sal{font-weight:800;font-size:.95rem;text-align:right}
+.mb-sal.bom{color:#059669}.mb-sal.ruim{color:#DC2626}
 .mt-graf .mt-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:.74rem;color:var(--text-2);margin:4px 4px 2px}
 .mt-graf .mt-legenda i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .mt-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
@@ -4121,13 +4133,23 @@ body.modal-aberto{overflow:hidden}
       '<div class="g-card"><b class="bom">' + (M.clientesAtivos != null ? M.clientesAtivos : '—') + '</b><span>Clientes ativos hoje</span><small>' + (M.assinaturas != null ? M.assinaturas + ' assinaturas' : '') + '</small></div>' +
       '<div class="g-card"><b' + (ultFoto && ultFoto.inadimplencia.taxaClientes > 15 ? ' class="ruim"' : '') + '>' + (ultFoto ? pct2(ultFoto.inadimplencia.taxaClientes) : '—') + '</b><span>Inadimplência</span><small>' + (ultFoto ? 'foto de ' + esc(ultFoto.mes) : 'sem foto do mês') + '</small></div>' +
       '</div>';
-    var g1 = '<div class="mt-graf"><div class="mt-cab"><b>Entradas e saídas de clientes</b><span>por mês, pelo Asaas</span></div>' +
-      graficoLinha([{ v: meses.map(function (m) { return m.entradas; }), cor: '#1B3A6B' }, { v: meses.map(saidaDe), cor: '#DC2626', tracejada: true }, { v: meses.map(function (m) { return m.aindaAtivos; }), cor: '#059669', tracejada: true }],
-        { id: 'ent', labels: meses.map(function (m) { return mesLb(m.chave); }), titulo: 'Entradas e saídas de clientes por mês' }) +
-      '<div class="mt-legenda"><span><i style="background:#1B3A6B"></i>Entraram</span><span><i style="background:#DC2626"></i>Saíram' + (nExatas < meses.length ? ' (estimado)' : '') + '</span><span><i style="background:#059669"></i>Dos que entraram, ainda ativos hoje</span></div>' +
-      '<div class="cls-info" style="margin:6px 4px 4px">O mês atual ainda está em andamento. Bolinha verde = subiu em relação ao mês anterior; vermelha = caiu. ' +
-      'Saídas: o Asaas não guarda a data do cancelamento, então a estimativa usa o mês seguinte ao último boleto de cada cliente (erro de até 1 mês). ' +
-      (nExatas ? 'Nos meses com foto salva (' + nExatas + '), o número é exato.' : 'A partir da foto do mês, o número passa a ser exato.') + '</div></div>';
+    /* 26/11/2026 (dono não entendia o gráfico de linhas): virou BARRAS por mês, uma linha por mês (o mais novo em cima),
+       com o número escrito em cada barra e o SALDO do mês (entraram − saíram) à direita */
+    var maxB = Math.max.apply(null, meses.map(function (m) { return Math.max(m.entradas || 0, saidaDe(m) || 0); }).concat([1]));
+    var linhasB = meses.slice().reverse().map(function (m, k) {
+      var e = m.entradas || 0, sd = saidaDe(m) || 0, sal = e - sd, at = m.aindaAtivos;
+      var est = exatas[m.chave] == null, cur = k === 0;
+      return '<div class="mb-lin' + (cur ? ' mb-cur' : '') + '"><div class="mb-mes">' + esc(mesLb(m.chave)) + (cur ? '<small>até hoje</small>' : '') + '</div>' +
+        '<div class="mb-barras"><div class="mb-b"><i class="mb-e" style="width:' + Math.max(2, Math.round(e / maxB * 58)) + '%"></i><span>' + e + ' entraram</span></div>' +
+        '<div class="mb-b"><i class="mb-s" style="width:' + Math.max(2, Math.round(sd / maxB * 58)) + '%"></i><span>' + sd + ' saíram' + (est ? '*' : '') + '</span></div></div>' +
+        '<div class="mb-sal ' + (sal >= 0 ? 'bom' : 'ruim') + '">' + (sal > 0 ? '+' : '') + sal + '</div></div>';
+    }).join('');
+    var g1 = '<div class="mt-graf"><div class="mt-cab"><b>Entradas e saídas de clientes</b><span>por mês · o número da direita é o saldo do mês</span></div>' +
+      '<div class="mb-lista">' + linhasB + '</div>' +
+      '<div class="mt-legenda"><span><i style="background:#1B3A6B"></i>Entraram</span><span><i style="background:#DC2626"></i>Saíram</span><span><b style="color:#059669">+N</b> saldo (cresceu)</span><span><b style="color:#DC2626">−N</b> saldo (diminuiu)</span></div>' +
+      '<div class="cls-info" style="margin:6px 4px 4px">' +
+      '* Saídas estimadas: o Asaas não guarda a data do cancelamento, então conta no mês seguinte ao último boleto de cada cliente (erro de até 1 mês)' +
+      (nExatas ? '; nos meses com foto salva (' + nExatas + ') o número é exato e não tem *.' : '.') + '</div></div>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
