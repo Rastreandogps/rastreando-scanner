@@ -4170,7 +4170,35 @@ body.modal-aberto{overflow:hidden}
       '<polyline points="' + rgDados.filter(function (d) { return d.r != null; }).map(function (d) { return rgX(rgDados.indexOf(d)).toFixed(2) + ',' + rgYp(d.r).toFixed(2); }).join(' ') + '" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + rgPontos + '</svg>' +
       '<div class="rg-legend"><span class="rg-key"><i style="--key:#16804A"></i>80%+</span><span class="rg-key"><i style="--key:#B47B00"></i>60–79%</span><span class="rg-key"><i style="--key:#C83B42"></i>Abaixo de 60%</span></div>' +
       '<p class="rg-note">Os meses recentes tiveram menos tempo para registrar cancelamentos. A retenção é a parte dos clientes de cada mês que continua hoje (mesma assinatura ativa no Asaas).</p></article>';
-    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard1 + rgCard2 + '</section>';
+    /* 26/11/2026 (dono): inadimplência mês a mês. Até ago/26 vem da planilha FINANC (célula D2 de cada aba RELATORIO, lida uma vez);
+       de set/26 em diante, da foto automática do fim do mês (inad_historico → inadimplencia.taxaClientes). Mesma conta: clientes que não pagaram ÷ clientes do mês. */
+    var inPlan = { '2025-06': 18.83, '2025-07': 16.59, '2025-08': 14.16, '2025-09': 12.36, '2025-10': 11.94, '2025-11': 16.73, '2025-12': 16.30,
+      '2026-01': 13.97, '2026-02': 17.63, '2026-03': 15.60, '2026-04': 13.09, '2026-05': 10.81, '2026-06': 12.84, '2026-07': 12.16, '2026-08': 7.76 };
+    var inMap = {}; Object.keys(inPlan).forEach(function (k) { inMap[k] = { v: inPlan[k], f: 'Planilha' }; });
+    (HIST || []).forEach(function (h) { if (h && h.chave && !inPlan[h.chave] && h.inadimplencia && h.inadimplencia.taxaClientes != null) inMap[h.chave] = { v: h.inadimplencia.taxaClientes, f: 'Sistema', n: h.inadimplencia.naoPagaram, t: h.inadimplencia.assinantes }; });
+    var inDados = Object.keys(inMap).sort().map(function (k) { return { k: k, lb: mesLb(k), v: inMap[k].v, f: inMap[k].f, n: inMap[k].n, t: inMap[k].t }; });
+    var inN = inDados.length, inX = function (k) { return inN > 1 ? 39 + k * (299 / (inN - 1)) : 188; };
+    var inTopo = Math.max(25, Math.ceil(Math.max.apply(null, inDados.map(function (d) { return d.v; }).concat([0])) / 5) * 5), inY = function (v) { return 218 - v / inTopo * 190; };
+    var inCor = function (v) { return v < 10 ? '#16804A' : v <= 15 ? '#B47B00' : '#C83B42'; };
+    var inMed = inN ? inDados.reduce(function (t, d) { return t + d.v; }, 0) / inN : null, inUlt = inN ? inDados[inN - 1] : null;
+    var inGrade = Array.apply(null, Array(inTopo / 5 + 1)).map(function (_, q) { var v = q * 5, y = inY(v).toFixed(2); return '<line class="rg-grid" x1="39" x2="338" y1="' + y + '" y2="' + y + '"/><text class="rg-axis" x="34" y="' + (+y + 4).toFixed(2) + '" text-anchor="end">' + v + '%</text>'; }).join('');
+    var inFaixas = '<rect x="39" y="' + inY(inTopo).toFixed(2) + '" width="299" height="' + (inY(15) - inY(inTopo)).toFixed(2) + '" fill="#FDF0F0"/><rect x="39" y="' + inY(15).toFixed(2) + '" width="299" height="' + (inY(10) - inY(15)).toFixed(2) + '" fill="#FFF6DB"/><rect x="39" y="' + inY(10).toFixed(2) + '" width="299" height="' + (inY(0) - inY(10)).toFixed(2) + '" fill="#EAF6EE"/>';
+    var inEixoX = inDados.map(function (d, k) { return '<text class="rg-axis" transform="translate(' + inX(k).toFixed(2) + ' 232) rotate(-60)" text-anchor="end" dominant-baseline="middle">' + esc(d.lb) + '</text>'; }).join('');
+    var inMedLinha = inMed == null ? '' : '<line x1="39" x2="338" y1="' + inY(inMed).toFixed(2) + '" y2="' + inY(inMed).toFixed(2) + '" stroke="#1B3A6B" stroke-width="1" stroke-dasharray="6 4" opacity=".55"/>';
+    var inPontos = inDados.map(function (d, k) { var x = inX(k).toFixed(2), y = inY(d.v), cor = inCor(d.v), ant = k ? inDados[k - 1].v : null, nx = k < inN - 1 ? inDados[k + 1].v : null;
+      var embaixo = (ant != null && ant > d.v + 1.5) || (nx != null && nx > d.v + 1.5 && !(ant != null && ant < d.v));
+      return '<circle cx="' + x + '" cy="' + y.toFixed(2) + '" r="3.6" fill="' + cor + '" stroke="white" stroke-width="1"><title>' + esc(d.lb) + ' — ' + rgPct(d.v) + ' (' + d.f + ')</title></circle>' +
+        '<text class="rg-value" x="' + x + '" y="' + (embaixo ? y + 15 : y - 8).toFixed(2) + '" text-anchor="middle" fill="' + cor + '" style="font-size:10.5px">' + Math.round(d.v) + '</text>'; }).join('');
+    var inTabela = '<table class="rg-table"><thead><tr><th>Mês</th><th>Inadimplência</th><th>Origem</th></tr></thead><tbody>' +
+      inDados.map(function (d) { return '<tr><td>' + esc(d.lb) + '</td><td>' + rgPct(d.v) + (d.t ? ' <small>(' + d.n + ' de ' + d.t + ')</small>' : '') + '</td><td>' + d.f + '</td></tr>'; }).join('') + '</tbody></table>';
+    var rgCard3 = !inN ? '' : '<article class="rg-card"><header class="rg-header"><div><h2 class="rg-title">Inadimplência mês a mês</h2><p class="rg-sub">Clientes que não pagaram o boleto do mês · ' + esc(inDados[0].lb) + ' a ' + esc(inUlt.lb) + '</p></div>' +
+      '<div class="rg-current"><strong style="color:' + inCor(inMed) + '">' + rgPct(inMed) + '</strong><span>média de ' + inN + ' meses</span></div></header>' +
+      '<svg viewBox="0 0 350 270" role="img" aria-label="Inadimplência por mês">' + inFaixas + inGrade + inEixoX + inMedLinha +
+      '<polyline points="' + inDados.map(function (d, k) { return inX(k).toFixed(2) + ',' + inY(d.v).toFixed(2); }).join(' ') + '" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + inPontos + '</svg>' +
+      '<div class="rg-legend"><span class="rg-key"><i style="--key:#16804A"></i>Abaixo de 10%</span><span class="rg-key"><i style="--key:#B47B00"></i>10–15%</span><span class="rg-key"><i style="--key:#C83B42"></i>Acima de 15%</span><span class="rg-key"><i style="--key:#1B3A6B;border-radius:0;height:2px;width:14px"></i>Média</span></div>' +
+      '<details class="rg-details"><summary>Ver números de cada mês</summary>' + inTabela + '</details>' +
+      '<p class="rg-note">Até ago/26: números da planilha financeira. De set/26 em diante: foto automática do sistema no último dia do mês. O mês atual entra quando fechar.</p></article>';
+    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard1 + rgCard2 + rgCard3 + '</section>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
