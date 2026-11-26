@@ -4253,7 +4253,62 @@ body.modal-aberto{overflow:hidden}
       '<polyline points="' + baDados.map(function (d, k) { return baX(k).toFixed(2) + ',' + baY(d.v).toFixed(2); }).join(' ') + '" fill="none" stroke="#397CCB" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + baPontos + '</svg>' +
       '<details class="rg-details"><summary>Ver números de cada mês</summary>' + baTabela + '</details>' +
       '<p class="rg-note">Até ago/26: planilha financeira (conta por boleto; quem tem 2 boletos conta 2). De set/26 em diante: foto do sistema no último dia do mês (conta por cliente). Não entram planos anuais nem quem só tem o 1º boleto no mês seguinte. O mês atual entra quando fechar.</p></article>';
-    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard0 + rgCard1 + rgCard2 + rgCard3 + rgCard4 + '</section>';
+    /* 26/11/2026 (dono): PREVISÃO REALISTA rumo a 500 clientes. Conta (estimativa): de cada turma de entrada (mês da 1ª assinatura no Asaas) sabemos
+       quantos entraram e quantos continuam → curva "de cada 100 que entram, quantos ainda estão depois de N meses". A previsão aplica essa curva
+       a quem já é cliente (pela idade de cada turma) e a quem vai entrar (média de entradas dos 12 últimos meses fechados). */
+    var pvCard = '';
+    try {
+      var pvTodos = (M.meses || []), pvNn = pvTodos.length;
+      if (pvNn >= 14) {
+        var pvCoh = pvTodos.map(function (m, k) { var e = m.entradas || 0; return { id: pvNn - 1 - k, e: e, a: Math.min(m.aindaAtivos != null ? m.aindaAtivos : e, e) }; });
+        var pvS = [1], PV_MAX = 36;
+        for (var pa = 1; pa <= PV_MAX; pa++) { var pw = pa <= 6 ? 1 : pa <= 18 ? 2 : 4, pe = 0, pvv = 0; pvCoh.forEach(function (c) { if (c.id >= 1 && Math.abs(c.id - pa) <= pw) { pe += c.e; pvv += c.a; } }); pvS[pa] = pe >= 15 ? pvv / pe : pvS[pa - 1]; if (pvS[pa] > pvS[pa - 1]) pvS[pa] = pvS[pa - 1]; }
+        var pvHT = 1 - Math.pow(pvS[PV_MAX] / pvS[PV_MAX - 12], 1 / 12); if (!(pvHT >= 0)) pvHT = 0;
+        var pvH = function (id) { return id < PV_MAX ? (pvS[id] > 0 ? 1 - pvS[id + 1] / pvS[id] : 0) : pvHT; };
+        var pvFech = pvTodos.slice(-13, -1), pvE = pvFech.reduce(function (t, m) { return t + (m.entradas || 0); }, 0) / pvFech.length;
+        var pvBase = pvCoh.reduce(function (t, c) { return t + c.a; }, 0);
+        var pvAlvo = pvBase < 500 ? 500 : (Math.floor(pvBase / 100) + 1) * 100;
+        var pvSim = function (ent, fator, mx) { var cs = pvCoh.map(function (c) { return { id: c.id, a: c.a }; }), out = [pvBase], sai1 = 0;
+          for (var k = 1; k <= mx; k++) { var sai = 0; cs.forEach(function (c) { var x = c.a * pvH(c.id) * (c.id < 12 ? fator : 1); sai += x; c.a -= x; c.id++; }); cs.push({ id: 0, a: ent }); out.push(cs.reduce(function (t, c) { return t + c.a; }, 0)); if (k === 1) sai1 = sai; }
+          return { out: out, sai1: sai1 }; };
+        var pvAte = function (ent, fator) { var r = pvSim(ent, fator, 120).out; for (var k = 0; k < r.length; k++) if (r[k] >= pvAlvo) return k; return null; };
+        var pvNec = function (mm) { var lo = 0, hi = 500; for (var q = 0; q < 40; q++) { var md = (lo + hi) / 2; if (pvSim(md, 1, mm).out[mm] >= pvAlvo) hi = md; else lo = md; } return Math.ceil(hi); };
+        var pvA = pvSim(pvE, 1, 24), pvB = pvSim(pvE, 0.5, 24), pvKa = pvAte(pvE, 1), pvKb = pvAte(pvE, 0.5);
+        var pvHoje = new Date(), pvMesDe = function (k) { var d = new Date(pvHoje.getFullYear(), pvHoje.getMonth() + k, 1); return String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getFullYear()).slice(2); };
+        var pvTopo = Math.ceil(Math.max(pvAlvo, pvB.out[24], pvA.out[24]) / 100) * 100, pvX = function (k) { return 39 + k * (299 / 24); }, pvY = function (v) { return 218 - v / pvTopo * 190; };
+        var pvGrade = ''; for (var gv = 0; gv <= pvTopo; gv += 100) { var gy = pvY(gv).toFixed(2); pvGrade += '<line class="rg-grid" x1="39" x2="338" y1="' + gy + '" y2="' + gy + '"/><text class="rg-axis" x="34" y="' + (+gy + 4).toFixed(2) + '" text-anchor="end">' + gv + '</text>'; }
+        var pvEixo = ''; for (var gk = 0; gk <= 24; gk += 3) pvEixo += '<text class="rg-axis" transform="translate(' + pvX(gk).toFixed(2) + ' 232) rotate(-60)" text-anchor="end" dominant-baseline="middle">' + (gk ? pvMesDe(gk) : 'hoje') + '</text>';
+        var pvLin = function (arr, cor, tr) { return '<polyline points="' + arr.map(function (v, k) { return pvX(k).toFixed(2) + ',' + pvY(v).toFixed(2); }).join(' ') + '" fill="none" stroke="' + cor + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"' + (tr ? ' stroke-dasharray="5 4"' : '') + '/>'; };
+        var pvMarca = function (k, arr, cor) { return k != null && k <= 24 ? '<circle cx="' + pvX(k).toFixed(2) + '" cy="' + pvY(arr[k]).toFixed(2) + '" r="4.2" fill="' + cor + '" stroke="white" stroke-width="1.5"/>' : ''; };
+        var pvAlvoY = pvY(pvAlvo).toFixed(2);
+        var pvQuando = function (k) { return k == null ? 'não chega em 10 anos' : k === 0 ? 'já chegou' : pvMesDe(k) + ' (' + k + (k === 1 ? ' mês' : ' meses') + ')'; };
+        var pvAno1 = pvS.slice(0, 12).reduce(function (t, v) { return t + v; }, 0);
+        var pvSobra = pvE - pvA.sai1;
+        var pvLi = function (t) { return '<tr style="background:none;font-weight:400"><td style="text-align:left">' + t[0] + '</td><td><b>' + t[1] + '</b></td></tr>'; };
+        pvCard = '<article class="rg-card"><header class="rg-header"><div><h2 class="rg-title">Previsão realista · rumo a ' + pvAlvo + '</h2><p class="rg-sub">Já descontando quem costuma sair · estimativa</p></div>' +
+          '<div class="rg-current"><strong style="color:#1B3A6B">' + (pvKa == null ? '—' : pvKa + (pvKa === 1 ? ' mês' : ' meses')) + '</strong><span>no ritmo de hoje' + (pvKa ? ' · ' + pvMesDe(pvKa) : '') + '</span></div></header>' +
+          '<svg viewBox="0 0 350 270" role="img" aria-label="Previsão de clientes nos próximos 24 meses">' + pvGrade + pvEixo +
+          '<line x1="39" x2="338" y1="' + pvAlvoY + '" y2="' + pvAlvoY + '" stroke="#C83B42" stroke-width="1.2" stroke-dasharray="6 4"/><text class="rg-value" x="42" y="' + (+pvAlvoY - 5).toFixed(2) + '" text-anchor="start" fill="#C83B42" style="font-size:10.5px">meta ' + pvAlvo + '</text>' +
+          pvLin(pvB.out, '#16804A', true) + pvLin(pvA.out, '#397CCB', false) + pvMarca(pvKb, pvB.out, '#16804A') + pvMarca(pvKa, pvA.out, '#397CCB') +
+          '<text class="rg-value" x="' + pvX(0).toFixed(2) + '" y="' + (pvY(pvBase) + 15).toFixed(2) + '" text-anchor="start" fill="#1B3A6B" style="font-size:10.5px">' + pvBase + '</text></svg>' +
+          '<div class="rg-legend"><span class="rg-key"><i style="--key:#397CCB"></i>Ritmo de hoje</span><span class="rg-key"><i style="--key:#16804A"></i>Segurando metade das saídas do 1º ano</span></div>' +
+          '<table class="rg-table" style="margin:10px 0 0"><tbody>' + [
+            ['Clientes com assinatura ativa hoje', pvBase],
+            ['Entram por mês (média de 12 meses)', Math.round(pvE)],
+            ['Saem por mês (estimado)', Math.round(pvA.sai1)],
+            ['Sobra por mês', (pvSobra >= 0 ? '+' : '') + Math.round(pvSobra)],
+            ['Chega a ' + pvAlvo + ' no ritmo de hoje', pvQuando(pvKa)],
+            ['Chega a ' + pvAlvo + ' segurando metade das saídas do 1º ano', pvQuando(pvKb)],
+            ['Para chegar em 6 meses, precisa vender', pvNec(6) + ' por mês'],
+            ['Para chegar em 12 meses, precisa vender', pvNec(12) + ' por mês'],
+            ['Um cliente novo paga, em média, no 1º ano', pvAno1.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' de 12 mensalidades']
+          ].map(pvLi).join('') + '</tbody></table>' +
+          '<details class="rg-details"><summary>De cada 100 que entram, quantos continuam</summary><table class="rg-table"><thead><tr><th>Depois de</th><th>Continuam</th></tr></thead><tbody>' +
+          [1, 3, 6, 9, 12, 18, 24, 36].map(function (q) { return '<tr><td>' + q + (q === 1 ? ' mês' : ' meses') + '</td><td>' + Math.round(pvS[q] * 100) + '</td></tr>'; }).join('') + '</tbody></table></details>' +
+          '<p class="rg-note">Estimativa. Conta clientes com assinatura ativa no Asaas (inclui quem entrou este mês e ainda não teve o 1º boleto; por isso é maior que o quadro “Clientes ativos mês a mês”). Supõe que as vendas e o comportamento de saída continuem como no histórico. Cadastro de clientes antigos no Asaas conta como entrada e pode inflar a média.</p></article>';
+      }
+    } catch (ePv) { pvCard = ''; }
+    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard0 + pvCard + rgCard1 + rgCard2 + rgCard3 + rgCard4 + '</section>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
