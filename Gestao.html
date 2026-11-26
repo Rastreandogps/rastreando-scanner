@@ -378,6 +378,8 @@ body.privado .vp{filter:blur(7px);-webkit-user-select:none;user-select:none;tran
 .mt-graf .mt-cab b{color:var(--navy);font-size:.95rem}
 .mt-graf .mt-cab span{font-size:.74rem;color:var(--text-3)}
 .mt-graf svg{display:block;width:100%;height:auto;max-height:300px;margin:0 auto;font-family:var(--font-body,inherit)}
+/* 26/11/2026: quadros de histórico e retenção (layout do dono) */
+.rg-panel,.rg-panel *{box-sizing:border-box}.rg-panel{width:100%;max-width:none;margin:0 0 12px;display:grid;gap:12px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1B3A6B;font-size:12px;line-height:1.45}.rg-card{background:#fff;border:1px solid #e0e6ee;border-radius:14px;padding:14px 10px 12px;box-shadow:0 2px 8px #1b3a6b09;min-width:0}.rg-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:0 4px}.rg-title{font-size:17px;line-height:1.25;margin:0 0 4px;font-weight:750}.rg-sub{font-size:12px;color:#64748b;margin:0}.rg-panel svg{width:100%;height:auto;display:block;overflow:visible;margin-top:8px}.rg-axis{font-size:12px;fill:#64748b}.rg-value{font-size:12px;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}.rg-grid{stroke:#cbd5e1;stroke-width:.8;stroke-dasharray:3 4}.rg-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;font-size:12px;color:#475569}.rg-key{display:inline-flex;align-items:center;gap:5px}.rg-key i{width:9px;height:9px;background:var(--key);border-radius:50%;display:inline-block}.rg-current{text-align:right;white-space:nowrap}.rg-current strong{display:block;font-size:25px;line-height:1.1;color:#16804A}.rg-current span{font-size:12px;color:#64748b}.rg-note{font-size:12px;color:#64748b;margin:12px 4px 0;border-top:1px solid #e9edf3;padding-top:9px}.rg-details{margin:10px 4px 0;color:#475569}.rg-details summary{cursor:pointer;font-size:12px;color:#1B3A6B;font-weight:600}.rg-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;text-align:right}.rg-table th,.rg-table td{padding:5px 2px;border-bottom:1px solid #edf0f4}.rg-table th:first-child,.rg-table td:first-child{text-align:left}.rg-table tr:last-child{background:#edf3fc;font-weight:700}
 .mb-lista{display:flex;flex-direction:column;gap:2px;margin:4px 0}
 .mb-lin{display:grid;grid-template-columns:46px 1fr 48px;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #eef1f6}
 .mb-lin.mb-cur{background:#f5f8ff;border-radius:8px}
@@ -4135,24 +4137,40 @@ body.modal-aberto{overflow:hidden}
       '<div class="g-card"><b class="bom">' + (M.clientesAtivos != null ? M.clientesAtivos : '—') + '</b><span>Clientes ativos hoje</span><small>' + (M.assinaturas != null ? M.assinaturas + ' assinaturas' : '') + '</small></div>' +
       '<div class="g-card"><b' + (ultFoto && ultFoto.inadimplencia.taxaClientes > 15 ? ' class="ruim"' : '') + '>' + (ultFoto ? pct2(ultFoto.inadimplencia.taxaClientes) : '—') + '</b><span>Inadimplência</span><small>' + (ultFoto ? 'foto de ' + esc(ultFoto.mes) : 'sem foto do mês') + '</small></div>' +
       '</div>';
-    /* 26/11/2026 (dono): barras por mês pela TURMA de entrada (exato, sem estimativa): dos que entraram no mês,
-       quantos continuam hoje e quantos já saíram. O número da direita = quantos continuam. */
-    var maxB = Math.max.apply(null, meses.map(function (m) { return m.entradas || 0; }).concat([1]));
-    var linhasB = meses.slice().reverse().map(function (m, k) {
-      var e = m.entradas || 0, at = m.aindaAtivos != null ? Math.min(m.aindaAtivos, e) : null, sa = at == null ? null : e - at, cur = k === 0;
-      var pctFica = e && at != null ? Math.round(at / e * 100) : null;
-      return '<div class="mb-lin' + (cur ? ' mb-cur' : '') + '"><div class="mb-mes">' + esc(mesLb(m.chave)) + (cur ? '<small>até hoje</small>' : '') + '</div>' +
-        '<div class="mb-barras"><div class="mb-b"><i class="mb-e" style="width:' + Math.max(2, Math.round(e / maxB * 58)) + '%"></i><span>' + e + ' entraram</span></div>' +
-        (at == null ? '' : '<div class="mb-b"><i class="mb-v" style="width:' + Math.max(2, Math.round(at / maxB * 58)) + '%"></i><span>' + at + ' continuam</span></div>' +
-          '<div class="mb-b"><i class="mb-s" style="width:' + Math.max(sa ? 2 : 0, Math.round(sa / maxB * 58)) + '%"></i><span>' + sa + ' já saíram</span></div>') + '</div>' +
-        '<div class="mb-sal ' + (pctFica == null ? '' : pctFica >= 80 ? 'bom' : pctFica >= 60 ? 'med' : 'ruim') + '">' + (pctFica == null ? '—' : pctFica + '%') + '<small>ficaram</small></div></div>';
-    }).join('');
-    var g1 = '<div class="mt-graf"><div class="mt-cab"><b>Clientes que entraram em cada mês</b><span>e quantos deles continuam hoje</span></div>' +
-      '<div class="mb-lista">' + linhasB + '</div>' +
-      '<div class="mt-legenda"><span><i style="background:#1B3A6B"></i>Entraram</span><span><i style="background:#059669"></i>Continuam hoje</span><span><i style="background:#DC2626"></i>Já saíram</span></div>' +
-      '<div class="cls-info" style="margin:6px 4px 4px">Número exato, pelo Asaas: cada cliente conta no mês em que a assinatura dele foi criada. ' +
-      'À direita, a % da turma daquele mês que ainda é cliente (verde 80% ou mais, amarelo 60–79%, vermelho abaixo de 60%). ' +
-      'Saídas por mês (de qualquer turma): média nos cartões acima.</div></div>';
+    /* 26/11/2026 (dono): layout feito por outra IA a pedido do dono (2 cartões: histórico em linhas + retenção %), ligado aos números reais */
+    var rgDados = meses.map(function (m) { var e = m.entradas || 0, c = m.aindaAtivos != null ? Math.min(m.aindaAtivos, e) : e; return { lb: mesLb(m.chave), e: e, c: c, s: e - c, r: e ? c / e * 100 : null }; });
+    var rgN = rgDados.length, rgX = function (k) { return rgN > 1 ? 39 + k * (299 / (rgN - 1)) : 188; };
+    var rgPasso = function (mx) { var p = [1, 2, 5, 10, 15, 20, 25, 50, 100]; for (var a = 0; a < p.length; a++) if (p[a] * 4 >= mx) return p[a]; return Math.ceil(mx / 4 / 10) * 10; };
+    var rgEixoX = rgDados.map(function (d, k) { return '<text class="rg-axis" transform="translate(' + rgX(k).toFixed(2) + ' 232) rotate(-60)" text-anchor="end" dominant-baseline="middle">' + esc(d.lb) + '</text>'; }).join('');
+    var rgMax = Math.max.apply(null, rgDados.map(function (d) { return d.e; }).concat([1])), rgP = rgPasso(rgMax), rgTopo = rgP * 4;
+    var rgY = function (v) { return 218 - v / rgTopo * 190; };
+    var rgGrade = [0, 1, 2, 3, 4].map(function (q) { var v = q * rgP, y = rgY(v).toFixed(2); return '<line class="rg-grid" x1="39" x2="338" y1="' + y + '" y2="' + y + '"/><text class="rg-axis" x="34" y="' + (+y + 4).toFixed(2) + '" text-anchor="end">' + v + '</text>'; }).join('');
+    var rgSerie = function (campo, cor, nome) {
+      return '<polyline points="' + rgDados.map(function (d, k) { return rgX(k).toFixed(2) + ',' + rgY(d[campo]).toFixed(2); }).join(' ') + '" fill="none" stroke="' + cor + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+        rgDados.map(function (d, k) { return '<circle cx="' + rgX(k).toFixed(2) + '" cy="' + rgY(d[campo]).toFixed(2) + '" r="3" fill="' + cor + '" stroke="white" stroke-width="1"><title>' + esc(d.lb) + ' — ' + nome + ': ' + d[campo] + '</title></circle>'; }).join('');
+    };
+    var rgPct = function (v) { return v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%'; };
+    var rgCor = function (v) { return v >= 80 ? '#16804A' : v >= 60 ? '#B47B00' : '#C83B42'; };
+    var rgTabela = '<table class="rg-table"><thead><tr><th>Mês</th><th>Entraram</th><th>Continuam</th><th>Saíram</th><th>Ficaram</th></tr></thead><tbody>' +
+      rgDados.map(function (d) { return '<tr><td>' + esc(d.lb) + '</td><td>' + d.e + '</td><td>' + d.c + '</td><td>' + d.s + '</td><td>' + rgPct(d.r) + '</td></tr>'; }).join('') + '</tbody></table>';
+    var rgCard1 = '<article class="rg-card"><header class="rg-header"><div><h2 class="rg-title">Histórico de clientes</h2><p class="rg-sub">' + (rgN ? esc(rgDados[0].lb) + ' a ' + esc(rgDados[rgN - 1].lb) : '') + ' · por mês de entrada</p></div></header>' +
+      '<svg viewBox="0 0 350 270" role="img" aria-label="Clientes que entraram, continuam e saíram por mês">' + rgGrade + rgEixoX + rgSerie('e', '#397CCB', 'Entraram') + rgSerie('c', '#16804A', 'Continuam') + rgSerie('s', '#C83B42', 'Saíram') + '</svg>' +
+      '<div class="rg-legend"><span class="rg-key"><i style="--key:#397CCB"></i>Entraram</span><span class="rg-key"><i style="--key:#16804A"></i>Continuam</span><span class="rg-key"><i style="--key:#C83B42"></i>Saíram</span></div>' +
+      '<details class="rg-details"><summary>Ver números de cada mês</summary>' + rgTabela + '</details></article>';
+    var rgYp = function (v) { return 218 - v / 100 * 190; };
+    var rgUlt = rgN ? rgDados[rgN - 1] : null;
+    var rgPontos = rgDados.map(function (d, k) { if (d.r == null) return ''; var x = rgX(k).toFixed(2), y = rgYp(d.r), cor = rgCor(d.r), ant = k ? rgDados[k - 1].r : null, nx = k < rgN - 1 ? rgDados[k + 1].r : null;
+      var embaixo = (ant != null && ant > d.r + 6) || (nx != null && nx > d.r + 6 && !(ant != null && ant < d.r)); /* número embaixo quando o vizinho está mais alto, para não encostar na linha */
+      return '<circle cx="' + x + '" cy="' + y.toFixed(2) + '" r="3.8" fill="' + cor + '" stroke="white" stroke-width="1"><title>' + esc(d.lb) + ' — Retenção: ' + rgPct(d.r) + '</title></circle>' +
+        '<text class="rg-value" x="' + x + '" y="' + (embaixo ? y + 15 : y - 9).toFixed(2) + '" text-anchor="middle" fill="' + cor + '">' + Math.round(d.r) + '%</text>'; }).join('');
+    var rgCard2 = '<article class="rg-card"><header class="rg-header"><div><h2 class="rg-title">Retenção de clientes</h2><p class="rg-sub">Por mês de entrada</p></div>' +
+      (rgUlt && rgUlt.r != null ? '<div class="rg-current"><strong style="color:' + rgCor(rgUlt.r) + '">' + Math.round(rgUlt.r) + '%</strong><span>' + esc(rgUlt.lb) + ' · até hoje</span></div>' : '') + '</header>' +
+      '<svg viewBox="0 0 350 270" role="img" aria-label="Retenção percentual por mês de entrada"><rect x="39" y="104.00" width="299" height="114.00" fill="#FDF0F0"/><rect x="39" y="66.00" width="299" height="38.00" fill="#FFF6DB"/><rect x="39" y="28.00" width="299" height="38.00" fill="#EAF6EE"/>' +
+      [0, 20, 40, 60, 80, 100].map(function (v) { var y = rgYp(v).toFixed(2); return '<line class="rg-grid" x1="39" x2="338" y1="' + y + '" y2="' + y + '"/><text class="rg-axis" x="34" y="' + (+y + 4).toFixed(2) + '" text-anchor="end">' + v + '%</text>'; }).join('') + rgEixoX +
+      '<polyline points="' + rgDados.filter(function (d) { return d.r != null; }).map(function (d) { return rgX(rgDados.indexOf(d)).toFixed(2) + ',' + rgYp(d.r).toFixed(2); }).join(' ') + '" fill="none" stroke="#1B3A6B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' + rgPontos + '</svg>' +
+      '<div class="rg-legend"><span class="rg-key"><i style="--key:#16804A"></i>80%+</span><span class="rg-key"><i style="--key:#B47B00"></i>60–79%</span><span class="rg-key"><i style="--key:#C83B42"></i>Abaixo de 60%</span></div>' +
+      '<p class="rg-note">Os meses recentes tiveram menos tempo para registrar cancelamentos. A retenção é a parte dos clientes de cada mês que continua hoje (mesma assinatura ativa no Asaas).</p></article>';
+    var g1 = '<section class="rg-panel" aria-label="Histórico e retenção de clientes">' + rgCard1 + rgCard2 + '</section>';
     var g2 = '<div class="mt-graf"><div class="mt-cab"><b>Inadimplência por mês</b><span>% dos assinantes que não pagaram no mês</span></div>' +
       graficoLinha([{ v: fotos.map(function (h) { return h.inadimplencia.taxaClientes; }), cor: '#DC2626', menorMelhor: true }],
         { id: 'ina', labels: fotos.map(function (h) { return mesLb(h.chave); }), titulo: 'Inadimplência por mês', min: 0, fmt: function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%'; } }) +
