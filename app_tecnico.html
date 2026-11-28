@@ -1774,7 +1774,7 @@
 // ════════════════════════════════
 // CONFIGURAÇÃO
 // ════════════════════════════════
-const BUILD_VERSION = '2026-11-26-v184-aviso-tecnico-nao-salvo';
+const BUILD_VERSION = '2026-11-28-v185-excluir-caixa-em-massa';
 console.log('[APP Técnico] Build:', BUILD_VERSION);
 // Mostra a versão na tela de login (rodapé discreto) — assim dá pra
 // conferir se a última atualização já está no ar, sem precisar abrir
@@ -10715,6 +10715,7 @@ function _atualizarBarra() {
       const temCaixa = Array.from(_selecaoAtiva).some(function (k) { return (_bagTodos && _bagTodos.has(String(k.split('|')[0]))); });
       const w = document.getElementById('barra-reagendar-caixa-wrap'); if (w) w.style.display = temCaixa ? 'flex' : 'none';
       const bv = document.getElementById('barra-bag-voltar'); if (bv) bv.style.display = (temCaixa && currentRole === 'admin') ? 'inline-block' : 'none';
+      const bx = document.getElementById('barra-bag-excluir'); if (bx) bx.style.display = (temCaixa && currentRole === 'admin') ? 'inline-block' : 'none'; /* 28/11/2026 (dono): excluir da Caixa em massa */
     } catch (e) {}
     if (count) count.textContent = _selecaoAtiva.size + ' OS selecionada' + (_selecaoAtiva.size > 1 ? 's' : '');
     // Restaurar estado dos checkboxes após re-render
@@ -10775,6 +10776,37 @@ async function bagVoltarSemTecnicoSelecionadas() {
     } catch (e) { falhas.push(it.id); }
   }
   showToast('📦 ' + ok + ' OS voltaram para a Caixa sem técnico' + (conc ? ' · ' + conc + ' concluída(s) ficaram' : '') + (falhas.length ? ' · ' + falhas.length + ' com erro' : '') + ' ✅', falhas.length ? 'error' : 'success');
+  limparSelecao(); marcarMapaDesatualizado();
+  try { await loadAllOrders(); if (adminTechSelecionado) await adminVerTecnico(adminTechSelecionado); } catch (e) {}
+  setTimeout(_atualizarBarra, 100);
+}
+/* 28/11/2026 (dono): EXCLUIR DE VEZ as OS da Caixa de Bagulho marcadas (mesmo que o "🗑️ Excluir de vez" de cada OS, só que em massa).
+   Só mexe nas que estão na caixa; as outras marcadas ficam como estão. Concluídas não são apagadas. */
+async function bagExcluirSelecionadas() {
+  if (currentRole !== 'admin') { showToast('Só o administrador exclui OS da Caixa de Bagulho.', 'error'); return; }
+  const db = getFirestoreDb(); if (!db) { showToast('Sem conexão com o Firebase. Tente de novo.', 'error'); return; }
+  const itens = Array.from(_selecaoAtiva).map(function (k) { const p = k.split('|'); return { id: p[0], tech: p[1] }; })
+    .filter(function (it) { return _bagTodos && _bagTodos.has(String(it.id)); });
+  if (!itens.length) { showToast('Nenhuma das marcadas é da Caixa de Bagulho.', 'error'); return; }
+  const pulou = _selecaoAtiva.size - itens.length;
+  if (!confirm('EXCLUIR DE VEZ ' + itens.length + ' OS da Caixa de Bagulho?\n\nElas somem da caixa, da agenda e do app do técnico. Não dá para desfazer.' + (pulou ? '\n(' + pulou + ' marcada(s) fora da caixa ficam como estão.)' : ''))) return;
+  setSyncStatus('syncing'); let ok = 0, conc = 0; const falhas = [];
+  for (const it of itens) {
+    try {
+      const ref = db.collection('ordens_servico').doc(String(it.id)), sn = await ref.get();
+      if (!sn.exists) { ok++; continue; } // já não existe
+      const o = sn.data() || {};
+      if (o.status === 'concluido') { conc++; continue; }
+      const tec = o.tecnico || '';
+      if (tec) enviarParaPlanilha({ action: 'deleteOrder', id: it.id, tech: tec }); // sai da lista do técnico na Planilha
+      await ref.delete();
+      await db.collection('os_excluidas').doc(String(it.id)).set({ tech: tec, em: firebase.firestore.FieldValue.serverTimestamp() }).catch(function () {}); // a sincronização nunca traz de volta
+      try { await _syncHorarioOcupado(it.id); await _syncOSPublica(it.id); } catch (e) {}
+      try { await _chamarRemocoes({ acao: 'os_excluida', osId: it.id }); } catch (e) {}
+      _bagIds.delete(String(it.id)); _bagTodos.delete(String(it.id)); ok++;
+    } catch (e) { falhas.push(it.id); }
+  }
+  showToast('🗑️ ' + ok + ' OS excluída(s) da Caixa' + (conc ? ' · ' + conc + ' concluída(s) ficaram' : '') + (falhas.length ? ' · ' + falhas.length + ' com erro' : '') + (falhas.length ? '' : ' ✅'), falhas.length ? 'error' : 'success');
   limparSelecao(); marcarMapaDesatualizado();
   try { await loadAllOrders(); if (adminTechSelecionado) await adminVerTecnico(adminTechSelecionado); } catch (e) {}
   setTimeout(_atualizarBarra, 100);
@@ -12746,6 +12778,7 @@ try {
   <select id="barra-reagendar-tec" title="Mandar para o técnico" style="padding:8px 10px;border:none;border-radius:8px;font-size:13px;font-weight:600;outline:none;color:#1a2744;"><option value="">👷 Manter técnico</option></select>
   <span id="barra-reagendar-caixa-wrap" style="display:none;align-items:center;gap:4px;font-size:10.5px;font-weight:700;opacity:.8;white-space:nowrap;">📦 Continuam na Caixa</span>
   <button id="barra-bag-voltar" onclick="bagVoltarSemTecnicoSelecionadas()" style="display:none;padding:8px 12px;background:#f59e0b;color:#1a2744;border:none;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;">📦 Voltar p/ Caixa (sem técnico)</button><!-- 19/11/2026 (dono) -->
+  <button id="barra-bag-excluir" onclick="bagExcluirSelecionadas()" style="display:none;padding:8px 12px;background:#dc2626;color:white;border:none;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap;">🗑️ Excluir</button>
   <button onclick="reagendarSelecionadas()" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Aplicar</button>
   <button onclick="limparSelecao()" style="padding:8px 12px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">✕</button>
 </div>
